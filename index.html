@@ -279,26 +279,44 @@ a grid. Each polygon is emitted twice with opposite winding, once per piece.</p>
 
 <figure>
   <img src="assets/subdivision.png" alt="Cut faces at three subdivision levels">
-  <figcaption>Subdivision level 1, 2 and 3 on a plane deliberately offset from a cell boundary
-  by 0.37 of a cell — the normal case, since a user's plane does not land on the grid. Against
-  the analytic spherical cap the piece-volume error falls monotonically with level and reaches
-  under 1% at level 3. What subdivision buys is where the cut falls, not new interior
-  texture.</figcaption>
+  <figcaption>No subdivision, then levels 1, 2 and 3, on an oblique plane offset from the cell
+  boundaries by 0.37 of a cell — the normal case, since a user's plane neither lands on the grid
+  nor lines up with it. The four images are indistinguishable, which is the point: what
+  subdivision buys is <em>where the cut falls</em>, not interior texture.</figcaption>
 </figure>
+
+<div class="tw"><table>
+<thead><tr><th>subdivision</th><th>leaves in the band</th><th>piece-volume error</th></tr></thead>
+<tbody>
+<tr><td>none</td><td>0</td><td>0.87%</td></tr>
+<tr><td>level 1</td><td>91,672</td><td>0.51%</td></tr>
+<tr><td>level 2</td><td>733,376</td><td>0.23%</td></tr>
+<tr><td>level 3</td><td>5,867,008</td><td>0.11%</td></tr>
+</tbody></table></div>
+
+<p>Error against the exactly clipped volumes of the same cut, so the reference is the cut this
+plane really makes rather than an analytic stand-in. It roughly halves per level, which is what
+a boundary accurate to h<sub>l</sub> should do, and each halving costs eight times the leaves.
+The plane has to be <em>oblique</em> for that to be the behaviour: axis-aligned, every cut cell
+meets the plane at the same fraction of its height, so they are all wrong by the same amount and
+the error stops falling at all — flat at 0.19% from level 1 to level 3.</p>
 
 <h2>Compositing two renderers</h2>
 
 <p>The exterior keeps its Gaussian renderer and the cut surface gets a mesh one. Both emit
-colour and depth, and the frame is the nearer of the two at every pixel.</p>
+colour and depth, and the frame is the nearer of the two at every pixel. This is the v1
+arrangement; converting the exterior to O-Voxel as well removes the need for it entirely, which
+is <a href="#ext" style="color:var(--acc)">further down</a>.</p>
 
 <figure>
   <img src="assets/compositing.png" alt="Exterior, cut surface, depth and composite">
-  <figcaption>Left to right: the original Gaussians with the removed half culled, the cut
-  surface alone, the composited depth, and the result. The rasteriser accumulates
-  \(\sum_i z_i \alpha_i T_i\), so its depth has to be divided by the accumulated alpha before
-  it means metres — composite it raw and every partially covered pixel claims to be nearer
-  than it is, outlining the cut face in peel. Checked against an analytic sphere: 2.2797
-  rendered against 2.2642 expected, 0.68%, which is the shell's own thickness.</figcaption>
+  <figcaption>Left to right: the 1,557,032 original Gaussians with each piece's removed half
+  culled, the cut surface alone, the composited depth, and the result. The rasteriser
+  accumulates \(\sum_i z_i \alpha_i T_i\), so its depth has to be divided by the accumulated
+  alpha before it means metres — composite it raw and every partially covered pixel claims to be
+  nearer than it is, outlining the cut face in peel. Checked at this viewpoint against a sphere
+  of the object's own radius: 2.2516 rendered against 2.2180 expected, 1.5%, which is about the
+  peel's thickness. 84.3% of the covered pixels come from the exterior.</figcaption>
 </figure>
 
 <p>The newly exposed surface is converted to an O-Voxel Flexible Dual Grid — a field-free
@@ -341,9 +359,11 @@ are clipped by the others' half-spaces.</p>
 
 <figure>
   <img src="assets/multicut.png" alt="One cut, and two cuts from two viewpoints">
-  <figcaption>One plane, then two, then the same two from another direction. With two cuts
-  the object separates into four pieces and each is pushed out along the planes it is on the
-  far side of, so both cut faces of every quarter are visible at once.</figcaption>
+  <figcaption>One plane, then two, then the same two from another direction. With two cuts the
+  object separates into four pieces and each is pushed out along the planes it is on the far
+  side of, so both cut faces of every quarter are visible at once. Skin and faces are all
+  O-Voxel patches in one pass, so a quarter's second cut face is drawn rather than left as a
+  hole through its own peel.</figcaption>
 </figure>
 
 <div class="note">A polygon that <em>straddles</em> another plane has to be
@@ -355,9 +375,9 @@ line, so the cost is a line's worth of cells rather than the patch's.</div>
 <div class="tw"><table>
 <thead><tr><th>planes</th><th>pieces</th><th>first plane's face area</th><th>max |&Pi;(v)|</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>2</td><td>1.58554</td><td>2.0&times;10<sup>&minus;8</sup></td></tr>
-<tr><td>2</td><td>4</td><td>1.58554</td><td>2.0&times;10<sup>&minus;8</sup></td></tr>
-<tr><td>3</td><td>8</td><td>1.58554</td><td>2.0&times;10<sup>&minus;8</sup></td></tr>
+<tr><td>1</td><td>2</td><td>1.49818</td><td>1.2&times;10<sup>&minus;7</sup></td></tr>
+<tr><td>2</td><td>4</td><td>1.49818</td><td>1.2&times;10<sup>&minus;7</sup></td></tr>
+<tr><td>3</td><td>8</td><td>1.49818</td><td>6.0&times;10<sup>&minus;8</sup></td></tr>
 </tbody></table></div>
 
 <p>The area column is the check worth making. Adding a cut does not remove any of the first
@@ -603,7 +623,7 @@ the refinement criterion spends on, so eviction and refinement agree rather than
 volume is invariant because coarser leaves still tile the same object, and the piece count is
 what degrades &mdash; which is the trade being bought, stated rather than hidden.</p>
 
-<h3>5. The original exterior as O-Voxel too</h3>
+<h3 id="ext">5. The original exterior as O-Voxel too</h3>
 
 <p>Keeping the photographed outside as Gaussians and only the cut face as O-Voxel is what makes
 specification 12.2's third limitation necessary: two renderers, a depth convention to agree on,
@@ -614,9 +634,10 @@ handles the cut face takes the staircase off it.</p>
 
 <figure>
   <img src="assets/exterior.png" alt="Voxel boundary, dual-contoured O-Voxel, and a cut object drawn in one pass">
-  <figcaption>Left: the raw occupancy boundary, faceted at h<sub>c</sub>. Middle: the same surface
-  after O-Voxel dual contouring. Right: a cut object with both halves separated &mdash; skin and
-  cut face, four patches, one z-buffered pass, no depth convention between them.</figcaption>
+  <figcaption>Left: the raw occupancy boundary, faceted at h<sub>c</sub>. Middle: the same
+  surface after O-Voxel dual contouring &mdash; 6.65 of surface area against the boundary's 9.76,
+  a third of it removed as staircase. Right: a cut object with both halves separated &mdash; skin
+  and cut face, four patches, one z-buffered pass, no depth convention between them.</figcaption>
 </figure>
 
 <div class="tw"><table>
@@ -883,7 +904,10 @@ thing it was costing measured. What is left is what none of that reached.</p>
 
 <footer>
 Every number on this page was measured on one machine under one protocol, and the results
-that did not work are included. Continues
+that did not work are included. Every figure is regenerated by one script,
+<code>cube_ovoxel.figures</code>, which prints the numbers its own captions quote &mdash; a
+figure whose script no longer exists cannot be checked against the code it depicts, and the
+caption drifts from the picture without either of them looking wrong. Continues
 <a href="https://gino6178.github.io/project2/" style="color:var(--acc)">Voxel-Lattice
 Gaussians</a>.
 </footer>
