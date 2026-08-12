@@ -88,6 +88,19 @@
   once.</figcaption>
 </figure>
 
+<figure>
+  <img src="assets/cutface.png" alt="The exposed cut face, as the volume renders it and after cut-time super-resolution">
+  <figcaption>The exposed face on its own, seen down the cut plane's own normal. Left: what the
+  trained coarse volume renders &mdash; the pith column and the pale albedo under the peel are
+  there, the flesh is flat. Right: the same face after one generative pass is baked into the
+  refined band's child features, then rendered again through the same decoder. The right-hand
+  image is not the diffusion output; it is the volume, read back.
+  <strong>Those membranes are invented</strong> &mdash; no photograph of this fruit's interior
+  was taken and none was used here. What baking buys is that the invention is the same from
+  every angle and travels with the pieces when they separate, which is measured
+  <a href="#sr" style="color:var(--acc)">further down</a>, not that it is true.</figcaption>
+</figure>
+
 <h2>The problem with one primitive doing two jobs</h2>
 
 <p class="lead">A 3D Gaussian reconstruction has no interior. FruitNinja<sup>1</sup> gives it
@@ -629,7 +642,7 @@ straight from the reconstruction, which does have a photographed outside, and it
 trained with the identical protocol &mdash; 21.38&nbsp;dB and 0.851&nbsp;SSIM held out, against
 21.49 and 0.856 for the run every other number on this page comes from.</div>
 
-<h3>6. Cut-time generative super-resolution</h3>
+<h3 id="sr">6. Cut-time generative super-resolution</h3>
 
 <p>This is the one that answers 12.2's first limitation, and the only one that adds information
 rather than arranging it better. A planar face seen down its own normal has no occlusion and no
