@@ -657,39 +657,50 @@ silhouette is slightly <em>smaller</em> &mdash; 0.3981 of the frame against 0.40
 dual contouring pulls the surface off the voxel corners, which is the same shrink the area
 column measures rather than a disagreement about where the object is.</p>
 
-<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">What it costs</h4>
+<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">What it costs, and how to buy
+it back</h4>
 
-<p>The staircase goes; so does the texture. The skin is one coloured quad per exposed coarse
-cell, so its appearance is stored at h<sub>c</sub> however finely the dual grid is contoured
-&mdash; and the primitives it was aggregated from are still on disk, so the loss can be
-rendered rather than argued about.</p>
+<p>The staircase goes; so does the texture. The skin is one coloured quad per exposed cell, so
+its appearance is stored at whatever the grid's spacing is — and the primitives it was
+aggregated from are still on disk, so the loss can be rendered rather than argued about.</p>
 
 <figure>
-  <img src="assets/skin.png" alt="The source Gaussians and the O-Voxel skin, from two directions">
-  <figcaption>The original 1,557,032 primitives and our skin, same camera, two directions. The
-  colour and the shape survive; the fine pores do not, and on the shadowed side the coarse cells
-  turn the peel's speckle into blotches. 21.9 and 21.6&nbsp;dB, LPIPS 0.248 and 0.267.</figcaption>
+  <img src="assets/skin.png" alt="The source Gaussians and the O-Voxel skin at two grid spacings">
+  <figcaption>The original 1,557,032 primitives, then the skin built on the interior's own grid,
+  then on one half its spacing. Same camera.</figcaption>
+</figure>
+
+<figure>
+  <img src="assets/skin_zoom.png" alt="The same patch of peel at 1:1 in all three">
+  <figcaption>The same 400&nbsp;px of peel at 1:1, which is where the difference lives. At
+  h<sub>c</sub> the dark cells read as flat facets, because a cell is about twelve pixels across
+  here and each one is a single colour. At h<sub>c</sub>/2 they are small and dense enough to
+  read as mottling. The Gaussians' own texture is finer than either, and much of it is isolated
+  single-pixel speckle — 64 times ours by isolated-pixel energy, with 1.65% of pixels nearly
+  black — which is what a cloud of primitives looks like up close as much as it is what a peel
+  looks like.</figcaption>
 </figure>
 
 <div class="tw"><table>
-<thead><tr><th>skin</th><th>dual vertices</th><th>PSNR vs the primitives</th><th>LPIPS</th></tr></thead>
+<thead><tr><th>skin</th><th>cells</th><th>dual vertices</th><th>PSNR vs the primitives</th><th>LPIPS</th></tr></thead>
 <tbody>
-<tr><td>at h<sub>c</sub>, colour from the grid</td><td>45,269</td><td><strong>21.87</strong></td><td><strong>0.2477</strong></td></tr>
-<tr><td>at h<sub>c</sub>/2</td><td>180,491</td><td>21.16</td><td>0.2574</td></tr>
-<tr><td>at h<sub>c</sub>, colour from the primitives</td><td>45,269</td><td>21.73</td><td>0.2524</td></tr>
-<tr><td>at h<sub>c</sub>/2, colour from the primitives</td><td>180,491</td><td>21.06</td><td>0.2591</td></tr>
+<tr><td>on the interior's grid, h<sub>c</sub></td><td>443,295</td><td>45,269</td><td>16.82</td><td>0.4494</td></tr>
+<tr><td>on its own grid, h<sub>c</sub>/2</td><td>2,632,668</td><td>1,168,969</td><td><strong>18.15</strong></td><td><strong>0.4132</strong></td></tr>
 </tbody></table></div>
 
-<p>Contouring four times as finely does not help &mdash; it is very slightly <em>worse</em>
-&mdash; and neither does reading the colour from the primitives directly instead of from the
-cells. Both are the same fact from two sides: the dual grid decides where the surface is, and
-the boundary mesh decides how finely it is coloured. Recovering the peel means a finer boundary,
-which means a finer grid for the exterior than the interior ever needed.</p>
+<p>The knob that works is the <em>grid</em>, not the contouring. Refining the dual grid four
+times on the same coarse boundary changes nothing and measures very slightly worse: the dual
+grid decides where the surface is, and the boundary mesh decides how finely it is coloured.
+Nothing ties the two grids together, either — the exterior's is built from the same
+reconstruction, so it lands in the same frame and composites with the interior without a
+transform, and only its boundary survives the call.</p>
 
-<p>Which is the case for specification 1.2's deferral, restated as a number. Keeping the
-photographed outside as the Gaussians it was reconstructed as costs a second renderer, a depth
-convention and a compositing step; converting it costs about 22&nbsp;dB of the skin. That is a
-trade, not an improvement, and the v1 default is the right way round.</p>
+<p>It is not free. Halving the spacing is 5.9&times; the cells to build through and 26&times;
+the dual vertices to keep, and halving it again did not finish in twenty minutes of dual-grid
+conversion. So the exterior's resolution becomes its own decision, separate from the
+interior's, which is the honest form of specification 1.2's deferral: keeping the photographed
+outside as Gaussians costs a second renderer, a depth convention and a compositing step, and
+converting it costs a grid of its own.</p>
 
 <div class="note"><strong>The title figure is this section.</strong> Skin and cut face, four
 patches, one pass, no Gaussians. It uses a different build of the same fruit from the rest of
