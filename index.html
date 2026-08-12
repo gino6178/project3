@@ -674,6 +674,85 @@ h<sub>c</sub>/2<sup>l</sup> just averages the enhancement away: at one pixel per
 of the added detail is retained, and at 3.5&ndash;14 pixels per leaf 5&ndash;10% of it is. The
 default render resolution is therefore derived from the band's depth rather than chosen.</div>
 
+<h2>Borrowing FruitNinja's fine-tuned models</h2>
+
+<p>FruitNinja does not supervise with a stock diffusion model. It DreamBooths the depth2img
+checkpoint on photographs of the fruit being reconstructed, and it does so <em>once per cut
+orientation</em> &mdash; one run on longitudinal sections, one on transverse. Those two
+checkpoints were sitting in the reference implementation's directory unused by this package,
+which was asking a stock model in words for what they were trained to produce.</p>
+
+<p>Words do not carry it reliably. Asked eight times for a longitudinal section of the same
+render, the stock model returns one five times; the other three come back transverse, radial
+segments and all &mdash; and one of the eight arrives with a stock-photo watermark that the
+negative prompt did not remove. The fine-tuned checkpoint returns a longitudinal section eight
+times out of eight, and by a wider margin each time.</p>
+
+<figure>
+  <img src="assets/orientation.png" alt="A longitudinal request answered by the stock model and by the fine-tuned one">
+  <figcaption>Left column: the render being refined, and the real longitudinal photograph
+  underneath it. Right of them, three seeds in order, top from the stock model and bottom from
+  the checkpoint fine-tuned on longitudinal sections. The first stock seed answers a
+  longitudinal request with a transverse section. Measured over eight seeds by how far the pale
+  pith runs down the disc &mdash; 0.59 on the real longitudinal photograph, 0.25 on the real
+  transverse one &mdash; the stock model clears the midpoint 5 times and the fine-tuned one 8.
+  </figcaption>
+</figure>
+
+<p>Routing a plane to the right checkpoint needs no prompt engineering, because the plane
+already knows: the angle between its normal and the object's axis <em>is</em> the cut's
+orientation. The same geometry fixes a second thing that turned out to matter as much. A model
+fine-tuned on longitudinal photographs learned them with the pith upright, so the face has to
+be rendered upright too; handed the same section rolled ninety degrees, the model spends its
+strength arguing with the layout instead of adding anatomy to it.</p>
+
+<div class="tw"><table>
+<thead><tr><th>cut-time super-resolution</th><th>stock model</th><th>fine-tuned, routed and rolled</th></tr></thead>
+<tbody>
+<tr><td>longitudinal &mdash; detail retained</td><td>2.54</td><td><strong>2.72</strong></td></tr>
+<tr><td>transverse &mdash; detail gain</td><td>1.47</td><td><strong>1.89</strong></td></tr>
+</tbody></table></div>
+
+<p>That is where borrowing pays: the generative path, where the object has no photograph of its
+own interior to be measured against and the only question is whether the invention is the right
+anatomy, consistently.</p>
+
+<h3>Where it does not pay</h3>
+
+<p>The obvious next step is to supervise <em>training</em> with the fine-tuned models rather
+than with the two photographs, and it does not work. It is worth reporting because the reason
+is not the one the fix was aimed at.</p>
+
+<div class="tw"><table>
+<thead><tr><th>interior supervision</th><th>held-out PSNR</th><th>SSIM</th><th>best iteration</th></tr></thead>
+<tbody>
+<tr><td>the two photographs (what this page reports)</td><td><strong>21.49</strong></td><td><strong>0.856</strong></td><td>59 of 59</td></tr>
+<tr><td>stock diffusion, 200 iterations, anchor 0.30</td><td>17.57</td><td>0.775</td><td>&mdash;</td></tr>
+<tr><td>stock diffusion, 200 iterations, anchor 0.75</td><td>17.97</td><td>0.786</td><td>&mdash;</td></tr>
+<tr><td>fine-tuned per family, 60 iterations</td><td>15.80</td><td>0.745</td><td>20 of 59</td></tr>
+<tr><td>fine-tuned + phase alignment + anchor 0.50</td><td>16.94</td><td>0.753</td><td>20 of 59</td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/supervision.png" alt="Two cross-sections under photograph supervision and under diffusion supervision">
+  <figcaption>The same two held-out planes, longitudinal and transverse. Top: supervised by the
+  photographs. Bottom: supervised by the fine-tuned diffusion models. The bottom row is more
+  saturated and its texture is speckle rather than membrane &mdash; and the transverse view has
+  gone <em>concentric</em>, which is what a volume does when each plane of a family is drawn
+  independently and they disagree about where the segments are. The eye and the metric say the
+  same thing here.</figcaption>
+</figure>
+
+<div class="note">The sharpest number in that table is the last column. Both diffusion runs
+score highest at <strong>iteration 20</strong> &mdash; the last iteration before the first
+reference is regenerated &mdash; and fall from there. Correct anatomy did not change that, and
+neither did aligning the segment phase across a family or anchoring halfway back to the
+photograph. It is not the model: a regenerated reference is a picture of <em>an</em> orange,
+the held-out metric asks about <em>this</em> one, and photograph supervision optimises that
+target directly. Two photographs beat a fine-tuned generative model at reconstructing the fruit
+they are photographs of, which is less a defeat for the model than a statement about what the
+metric is asking.</div>
+
 <h2>What did not work</h2>
 
 <p>The supervision concept is carried over unchanged: photographs of real cross-sections
