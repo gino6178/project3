@@ -313,6 +313,41 @@ lies on the plane. This is not a defect in TRELLIS.2 — its O-Voxel targets clo
 surfaces, where the QEF is well-posed and strictly better; the analytic cut face just happens
 to be the one degenerate case.</p>
 
+<h2>Several cuts at once</h2>
+
+<p>One plane first, and then several — which is the order the specification recommends,
+because what several cost is data management rather than a new idea. The cut band becomes
+the union of the planes, so a cell where two cuts cross is allocated once and its leaves are
+classified against both. A leaf's side becomes a bitmask, one bit per plane, so "same side"
+stays a single integer comparison however many planes there are. And each plane's polygons
+are clipped by the others' half-spaces.</p>
+
+<figure>
+  <img src="assets/multicut.png" alt="One cut, and two cuts from two viewpoints">
+  <figcaption>One plane, then two, then the same two from another direction. With two cuts
+  the object separates into four pieces and each is pushed out along the planes it is on the
+  far side of, so both cut faces of every quarter are visible at once.</figcaption>
+</figure>
+
+<div class="note">A polygon that <em>straddles</em> another plane has to be
+<strong>split</strong>, not clipped. Clip it to whichever side its own cell centre sits on
+and a gap up to one leaf wide opens along the intersection line — which is exactly where two
+cuts meet and where a gap is most visible. Splitting duplicates only the polygons on that
+line, so the cost is a line's worth of cells rather than the patch's.</div>
+
+<div class="tw"><table>
+<thead><tr><th>planes</th><th>pieces</th><th>first plane's face area</th><th>max |&Pi;(v)|</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>2</td><td>1.58554</td><td>2.0&times;10<sup>&minus;8</sup></td></tr>
+<tr><td>2</td><td>4</td><td>1.58554</td><td>2.0&times;10<sup>&minus;8</sup></td></tr>
+<tr><td>3</td><td>8</td><td>1.58554</td><td>2.0&times;10<sup>&minus;8</sup></td></tr>
+</tbody></table></div>
+
+<p>The area column is the check worth making. Adding a cut does not remove any of the first
+plane's surface — it only redistributes it among more pieces — so a total that shrinks means
+polygons were clipped away instead of split, and one that grows means they were duplicated.
+It stays fixed to six figures, and the faces stay flat to machine precision.</p>
+
 <h2>Physics keeps what the lattice had</h2>
 
 <p>The O-Voxel patch is a visible boundary and takes no part in volume physics; the cube
@@ -331,6 +366,34 @@ maximum drift of 1.3&times;10<sup>&minus;7</sup>.</p>
 <p>Permanent interior storage is 32.2 MB for 465,080 cells — 72.6 bytes per cell, holding
 occupancy, an 8-dimensional latent, a piece id and a refinement handle. The cut band costs a
 further 20.4 MB while it exists.</p>
+
+<h3>The material attribute</h3>
+
+<p>The decoder's second output, \(D_\theta(f) \to (c, a)\), is trained too. \(a\) is a
+<em>relative</em> stiffness in [0, 1] — how stiff this cell is compared with the rest of the
+same object — read from the same feature the colour head reads. That sharing is the point
+rather than an economy: material and appearance are not independent, peel is the colour of
+peel, so predicting one from the feature that produces the other is a constraint on the
+feature for the price of a few thousand parameters.</p>
+
+<div class="tw"><table>
+<thead><tr><th></th><th>held-out PSNR</th><th>held-out SSIM</th><th>mean |a &minus; target|</th></tr></thead>
+<tbody>
+<tr><td>appearance only</td><td>21.60</td><td>0.856</td><td>&mdash;</td></tr>
+<tr><td>+ material head</td><td>21.49</td><td>0.856</td><td class="win">0.0122</td></tr>
+</tbody></table></div>
+
+<p>The head fits the ordering to 0.012 on a target spanning 0.365 to 1.00 — under 2% of its
+range — for 0.11 dB of appearance, which is inside the run-to-run spread.</p>
+
+<div class="note"><strong>Two things are deliberately kept out of the network.</strong> The
+<em>absolute scale</em>: the ordering is learned and the magnitude is a category table
+lookup, because a Young's modulus recovered from appearance is not a claim this version
+makes. And the <em>discrete label</em>: \(a\) regresses a bounded scalar rather than
+classifying, because a label is better read off a trained field afterwards than constrained
+into it — the version that learned the label needed a volume quota, a total-variation term,
+an entropy term and a three-stage anneal, and the measurements went against every premise it
+rested on.</div>
 
 <h2>What did not work</h2>
 
