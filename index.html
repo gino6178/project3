@@ -41,6 +41,7 @@
   figure img{width:100%;display:block;border-radius:3px;background:#fff}
   figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
   .tw{overflow-x:auto;margin:20px 0}
+  td.mut{color:var(--mut)}
   table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px;
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
   th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
@@ -441,6 +442,226 @@ into it — the version that learned the label needed a volume quota, a total-va
 an entropy term and a three-stage anneal, and the measurements went against every premise it
 rested on.</div>
 
+<h2>Doing the six things v1 said it would not do</h2>
+
+<p>Section&nbsp;1.2 of the specification is a list of deliberate omissions, and section&nbsp;12.2
+turns three of them into limitations the paper is told to admit. Every one is now implemented,
+measured, and off by default &mdash; the fixed block, the inherited feature and the single
+renderer are still what runs unless asked otherwise, so every number earlier on this page still
+stands. What follows is what each omission was costing.</p>
+
+<h3>1. Exact polyhedral cut-cell fragments</h3>
+
+<p>A leaf the plane passes through is handed whole to whichever side its centre fell on, and the
+material on the other side is the error. Subdivision shrinks it by making the leaves smaller;
+clipping removes it by computing the volume that is actually there. Each cut leaf is intersected
+with the planes' half-spaces, the resulting convex polyhedron is decomposed into tetrahedra, and
+every side code with a non-zero volume becomes a fragment of its own piece &mdash; emit only the
+leaf's own side and the total under-counts, which is the voxel approximation in a different
+hat.</p>
+
+<div class="tw"><table>
+<thead><tr><th>subdivision</th><th>leaves</th><th>voxel-approximate error</th><th>exact-fragment error</th></tr></thead>
+<tbody>
+<tr><td>none</td><td>0</td><td>0.00997</td><td><strong>0.00251</strong></td></tr>
+<tr><td>level 1</td><td>14,328</td><td>0.00997</td><td>0.00251</td></tr>
+<tr><td>level 2</td><td>114,624</td><td>0.00969</td><td>0.00251</td></tr>
+<tr><td>level 3</td><td>916,992</td><td>0.00242</td><td>0.00251</td></tr>
+</tbody></table></div>
+
+<p>Relative piece-volume error against the closed form for a sphere cut at 0.37&nbsp;of a cell
+from centre. Clipping at <em>no</em> subdivision matches what the voxel approximation needs
+917k&nbsp;leaves to reach, and the exact column does not move with level because it does not
+depend on how the cut was voxelised. The 0.00251 that remains is the sphere's own occupancy
+discretisation &mdash; the floor for both columns, and not something a cut-cell method can
+remove.</p>
+
+<h3>2. Adaptive octree refinement</h3>
+
+<p>A fixed 2<sup>L</sup> block spends the deepest level any cut cell needed on every cut cell.
+What varies across a band is how badly a leaf is <em>misclassified</em>, and that has a closed
+form: \(e = h^3 - \max_c \mathrm{vol}_c\), the leaf's volume minus the largest exactly-clipped
+side. Refine a cell only while its leaves still get more than a tolerance of a coarse cell's
+volume wrong, and <code>level</code> becomes a ceiling rather than a depth.</p>
+
+<figure>
+  <img src="assets/adaptive.png" alt="The cut band coloured by the depth chosen per cell">
+  <figcaption>The band seen down the plane's normal, each coarse cell coloured by the depth the
+  criterion chose: <span style="color:#4c72cc">level&nbsp;1</span>,
+  <span style="color:#c99a10">level&nbsp;2</span>, <span style="color:#db3840">level&nbsp;3</span>.
+  Left, tolerance 0.10: most cells stop at level&nbsp;2, the blue ones split cleanly enough to
+  stop at level&nbsp;1, and depth concentrates where the plane meets the lattice at an unlucky
+  phase. Right, tolerance 0.03: the criterion asks for the ceiling almost everywhere, which is
+  the honest signal that the tolerance, not the object, is what is being measured.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>object and cut</th><th>uniform level&nbsp;3</th><th>adaptive, same accuracy</th><th>leaves saved</th></tr></thead>
+<tbody>
+<tr><td>dumbbell, through one ball</td><td>487,424 leaves</td><td>7,616 leaves</td><td>98.4%</td></tr>
+<tr><td>ball, oblique (1,2,3)</td><td>1,252,352 &middot; err 0.00040</td><td>912,992 &middot; err 0.00037</td><td>27.1%</td></tr>
+<tr><td>orange, oblique</td><td>5,440,512 &middot; err 0.000266</td><td>3,229,632 &middot; err 0.000266</td><td>40.6%</td></tr>
+</tbody></table></div>
+
+<p>Piece counts are identical to uniform in every case, which is the part that could have failed
+silently: mixed depth makes one child's face meet 4<sup>d</sup> children of a coarser block, and
+a wrong adjacency there splits a piece or fuses two with no error raised. Rather than enumerate
+that fifth case by hand, every leaf emits the cells of its two faces on one common finest grid as
+integer keys and adjacency is a sort &mdash; all five cases, including coarse-to-coarse, collapse
+into one join.</p>
+
+<div class="note">Two honest limits. On an <strong>axis-aligned</strong> cut every cut cell is
+misclassified identically, so the criterion cannot discriminate and adaptive saves nothing &mdash;
+correctly. And the criterion is a volume, so it is <strong>blind to topology</strong>: a cell where
+the cut nearly severs a thin neck holds a tiny wrong volume, stays coarse, and can pinch off a
+speck as its own piece. On the orange that speck is 10<sup>&minus;6</sup> of the object and
+uniform level&nbsp;1 reports it too; requiring level&nbsp;2 in the band buys the piece count
+back.</div>
+
+<h3>3. Child features by parent + neighbour interpolation</h3>
+
+<p>Equation&nbsp;19 copies \(f_{\text{parent}}\) into every child. The band is then piecewise
+constant <em>per parent</em>, so all of its variation sits on the coarse-cell boundaries &mdash;
+a staircase put in at exactly the place resolution was raised to remove one. Trilinear
+interpolation over the parent's six-neighbourhood, with missing neighbours dropped and the
+weights renormalised so a child near the boundary falls back toward its parent, costs one gather
+per corner and removes it.</p>
+
+<figure>
+  <img src="assets/interp.png" alt="A cut face with inherited and with interpolated child features">
+  <figcaption>The same cut face at subdivision level&nbsp;2, magnified 4&times;: inherited
+  (eq.&nbsp;19) on the left, interpolated on the right. The left is quantised to the
+  <em>coarse</em> cell even though the band is subdivided, which is the staircase the ratio
+  below measures.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>child features</th><th>|&Delta;f| between siblings</th><th>|&Delta;f| across a parent boundary</th><th>staircase ratio</th></tr></thead>
+<tbody>
+<tr><td>inherited (eq. 19)</td><td>0.000000</td><td>0.045836</td><td>&infin;</td></tr>
+<tr><td>parent + neighbour</td><td>0.007074</td><td>0.008381</td><td>1.18</td></tr>
+</tbody></table></div>
+
+<p>Measured on the orange at level&nbsp;2. Inheritance puts every bit of variation on the parent
+boundaries; interpolation spreads it evenly, at a ratio of 1.18 rather than infinity. It adds no
+information &mdash; specification 12.2 is right that neither version invents interior texture,
+and that is what the last of these six items is for.</p>
+
+<h3>4. Refined-block cache, merge and hierarchy management</h3>
+
+<p>Three problems live in specification 12.2's one sentence about blocks accumulating.
+<em>Cache</em>: every cut rebuilds the whole band, so a second plane redoes the first's work.
+<em>Merge</em>: nothing ever gives depth back, so an undone cut leaves its blocks behind.
+<em>Hierarchy</em>: nothing bounds the total. <code>CutBand</code> does all three on the ragged
+adaptive layout, where adding blocks is a concatenation and dropping them a gather.</p>
+
+<p>The cache is exact &mdash; adding planes one at a time lands on the same blocks, leaves and
+piece counts as one call over all of them &mdash; and it is also, measured, not worth much:</p>
+
+<div class="tw"><table>
+<thead><tr><th colspan="2">five concentrated cuts on the orange, from scratch</th></tr></thead>
+<tbody>
+<tr><td>building the refined band</td><td><strong>0.003&nbsp;s</strong></td></tr>
+<tr><td>labelling the pieces</td><td>0.419&nbsp;s</td></tr>
+</tbody></table></div>
+
+<p>Band construction is 0.7% of a cut. Caching it cannot matter, because connected components
+over 4.4&nbsp;million leaves has to be redone whenever the plane set changes at all. The
+accumulation specification 12.2 warns about is a <em>memory</em> problem, and merge and budget
+are what address it.</p>
+
+<div class="tw"><table>
+<thead><tr><th>state</th><th>blocks</th><th>leaves</th><th>band memory</th><th>pieces</th><th>total volume</th></tr></thead>
+<tbody>
+<tr><td>after five cuts</td><td>36,430</td><td>2,331,520</td><td>91.30 MB</td><td>25</td><td>1.437070</td></tr>
+<tr><td>three of them removed</td><td>13,716</td><td>877,824</td><td>34.38 MB</td><td>4</td><td>&mdash;</td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the same two, from scratch</td><td class="mut">13,716</td><td class="mut">877,824</td><td class="mut">&mdash;</td><td class="mut">4</td><td class="mut">&mdash;</td></tr>
+<tr><td>budget 1,500,000</td><td>36,430</td><td>1,499,976</td><td>58.79 MB</td><td>24</td><td>1.437070</td></tr>
+<tr><td>budget 700,000</td><td>36,430</td><td>699,960</td><td>27.51 MB</td><td>25</td><td>1.437070</td></tr>
+<tr><td>budget 200,000</td><td>25,000</td><td>200,000</td><td>7.92 MB</td><td>23</td><td>1.437070</td></tr>
+</tbody></table></div>
+
+<p>Removal is exact to the block: the band left behind is byte-for-byte the one a fresh cut with
+the surviving planes builds. The budget coarsens cheapest-first by the same misclassified volume
+the refinement criterion spends on, so eviction and refinement agree rather than fight; the total
+volume is invariant because coarser leaves still tile the same object, and the piece count is
+what degrades &mdash; which is the trade being bought, stated rather than hidden.</p>
+
+<h3>5. The original exterior as O-Voxel too</h3>
+
+<p>Keeping the photographed outside as Gaussians and only the cut face as O-Voxel is what makes
+specification 12.2's third limitation necessary: two renderers, a depth convention to agree on,
+and a compositing step. Converting the exterior removes the seam instead of managing it. The
+occupancy grid already holds the volume, so the exterior <em>is</em> its boundary &mdash; every
+face of an occupied cell with an empty neighbour &mdash; and the same dual-grid encoder that
+handles the cut face takes the staircase off it.</p>
+
+<figure>
+  <img src="assets/exterior.png" alt="Voxel boundary, dual-contoured O-Voxel, and a cut object drawn in one pass">
+  <figcaption>Left: the raw occupancy boundary, faceted at h<sub>c</sub>. Middle: the same surface
+  after O-Voxel dual contouring. Right: a cut object with both halves separated &mdash; skin and
+  cut face, four patches, one z-buffered pass, no depth convention between them.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>surface</th><th>area &divide; 4&pi;R&sup2;</th><th>dual-vertex radius</th></tr></thead>
+<tbody>
+<tr><td>voxel boundary</td><td>1.485</td><td>&mdash;</td></tr>
+<tr><td>O-Voxel dual grid</td><td><strong>1.023</strong></td><td>0.4994 &plusmn; 0.0029 (true 0.5)</td></tr>
+</tbody></table></div>
+
+<p>An axis-aligned voxelisation of a sphere has exactly 3/2 the sphere's surface area, and the
+measurement lands on it. Dual contouring removes 95% of that excess. Against the
+equation&nbsp;27 path the unified render agrees to 25.1&nbsp;dB at 119&nbsp;FPS, and its
+silhouette is slightly <em>smaller</em> &mdash; 0.3981 of the frame against 0.4058 &mdash; because
+dual contouring pulls the surface off the voxel corners, which is the same shrink the area
+column measures rather than a disagreement about where the object is.</p>
+
+<h3>6. Cut-time generative super-resolution</h3>
+
+<p>This is the one that answers 12.2's first limitation, and the only one that adds information
+rather than arranging it better. A planar face seen down its own normal has no occlusion and no
+foreshortening, so one image is the whole face; enhance that image; then &mdash; the step that
+makes it super-resolution rather than a filter &mdash; write it back into the refined child
+features by fitting them through equation&nbsp;7's shared decoder. The detail becomes a property
+of the leaves, not of the frame.</p>
+
+<figure>
+  <img src="assets/supersr.png" alt="Cut face before, the diffusion target, and after baking">
+  <figcaption>Left: the cut face as the trained coarse volume renders it &mdash; correct in colour
+  and silhouette, flat. Middle: one depth-conditioned img2img pass at strength 0.35. Right: the
+  same face after the enhanced image is baked into the band's child features and rendered again
+  through the decoder. 113% of the enhancer's added detail survives the round trip.</figcaption>
+</figure>
+
+<div class="note">Those membranes are <strong>invented</strong>. The diffusion model was not shown
+the inside of this orange and neither was the reconstruction; what the baking guarantees is that
+the invention is <em>consistent</em> &mdash; the same from every angle, and carried by the pieces
+when they separate &mdash; not that it is true. Read it as the specification names it: generative
+super-resolution.</div>
+
+<p>Consistency is the claim that can be checked. The face is planar, so two views of it are
+related by an exact homography and one can be warped onto the other with no depth and no
+occlusion to argue about:</p>
+
+<div class="tw"><table>
+<thead><tr><th>cut face detail comes from</th><th>cross-view agreement</th><th>detail in the view</th></tr></thead>
+<tbody>
+<tr><td>nothing &mdash; the trained volume alone</td><td>35.32 dB</td><td>0.0136</td></tr>
+<tr><td>the enhancer, run on every frame</td><td>21.15 dB</td><td>0.0240</td></tr>
+<tr><td>the enhancer, baked into the leaves</td><td><strong>34.56 dB</strong></td><td>0.0207</td></tr>
+</tbody></table></div>
+
+<p>Painting each frame costs 14.2&nbsp;dB of agreement between views &mdash; the detail swims,
+because it belongs to the image. Baking costs 0.8&nbsp;dB while carrying 52% more detail than the
+bare volume.</p>
+
+<div class="note">Super-resolution and subdivision are <strong>one budget</strong>. A baked detail
+can be no finer than the leaf holding it, so rendering the face finer than
+h<sub>c</sub>/2<sup>l</sup> just averages the enhancement away: at one pixel per leaf 53&ndash;115%
+of the added detail is retained, and at 3.5&ndash;14 pixels per leaf 5&ndash;10% of it is. The
+default render resolution is therefore derived from the band's depth rather than chosen.</div>
+
 <h2>What did not work</h2>
 
 <p>The supervision concept is carried over unchanged: photographs of real cross-sections
@@ -484,19 +705,23 @@ not tested here.</p>
 
 <h2>What this version does not claim</h2>
 
+<p>The specification's own list of limitations is above, six sections of it, each with the
+thing it was costing measured. What is left is what none of that reached.</p>
+
 <ul>
-  <li>Local subdivision improves geometry and topology resolution, but a child inheriting its
-      parent's feature gains no interior texture. High-frequency cut appearance is still
-      bounded by the coarse latent volume.</li>
-  <li>The topology boundary is a refined voxel approximation, not exact material fragment
-      geometry.</li>
-  <li>The exterior and the cut surface use different renderers, so depth convention and
-      compositing have to be integrated rather than assumed.</li>
+  <li>Cut appearance beyond the leaf is <em>generated</em>, not recovered. Baking a diffusion
+      draw into the band makes the detail consistent from every angle and carried by the pieces;
+      it does not make it true. Nothing here recovers the actual interior of the actual
+      fruit.</li>
   <li>Under large deformation the extracted surface must follow the deformation field; this
       version binds surface vertices to nearby particles with fixed weights.</li>
-  <li>Repeated cuts in one region accumulate refined blocks. Cache and merge management is
-      left to a later version.</li>
-  <li>One cutting plane. Several add data management and change none of the conclusions here.</li>
+  <li>The adaptive refinement criterion is a volume, so it cannot see topology. A floor on the
+      band's depth is the workaround, not a fix.</li>
+  <li>LPIPS is the one metric the cube interior loses on, against all three Gaussian baselines,
+      and super-resolving the cut face does not change that &mdash; it is measured on cross-section
+      renders whose detail the coarse latent never had.</li>
+  <li>One object, one machine, one protocol. The comparisons are between representations built
+      here under one budget, not reproductions of published systems.</li>
 </ul>
 
 <h2>References</h2>
