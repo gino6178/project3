@@ -657,50 +657,99 @@ silhouette is slightly <em>smaller</em> &mdash; 0.3981 of the frame against 0.40
 dual contouring pulls the surface off the voxel corners, which is the same shrink the area
 column measures rather than a disagreement about where the object is.</p>
 
-<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">What it costs, and how to buy
-it back</h4>
+<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">How dense does it have to
+be</h4>
 
-<p>The staircase goes; so does the texture. The skin is one coloured quad per exposed cell, so
-its appearance is stored at whatever the grid's spacing is — and the primitives it was
-aggregated from are still on disk, so the loss can be rendered rather than argued about.</p>
+<p>The skin is one coloured quad per exposed cell, so how it looks is a question about
+<em>screen pixels per cell</em>, not about the grid in the abstract. Sweeping the render
+resolution at a fixed framing varies that number while the object's angular size stays put,
+and doing it at two grid spacings answers whether the faceting is a property of the sampling
+rate or of the representation.</p>
 
 <figure>
-  <img src="assets/skin.png" alt="The source Gaussians and the O-Voxel skin at two grid spacings">
-  <figcaption>The original 1,557,032 primitives, then the skin built on the interior's own grid,
-  then on one half its spacing. Same camera.</figcaption>
+  <img src="assets/pxcell.png" alt="Facet visibility and LPIPS against screen pixels per cell">
+  <figcaption>Flat-facet pixels — the share sitting in a 3&times;3 block of exactly one colour,
+  which a facet larger than a pixel produces and a texture does not. The two grid spacings land
+  on the same curve, so this is a sampling rate and not a limit: facets are unmeasurable below
+  about two pixels per cell, appear at three, and reach 22% at nine. The right panel is the
+  same sweep in LPIPS, and it stops being informative below two pixels per cell because the
+  reference is a cloud of primitives whose own speckle resolves differently at every
+  resolution.</figcaption>
 </figure>
 
+<p>The reconstruction's own cameras are 923&times;840 with f&nbsp;=&nbsp;1344, and they put the
+fruit 507&nbsp;px across. That is 5.4&nbsp;pixels per cell on the interior's grid — well past
+where facets show — and holding two pixels per cell there needs h<sub>c</sub>/2.7. So the
+exterior's spacing is genuinely its own decision, and it is about three times finer than what
+the hidden interior ever needed.</p>
+
+<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">And dual contouring turns out to
+be optional</h4>
+
 <figure>
-  <img src="assets/skin_zoom.png" alt="The same patch of peel at 1:1 in all three">
-  <figcaption>The same 400&nbsp;px of peel at 1:1, which is where the difference lives. At
-  h<sub>c</sub> the dark cells read as flat facets, because a cell is about twelve pixels across
-  here and each one is a single colour. At h<sub>c</sub>/2 they are small and dense enough to
-  read as mottling. The Gaussians' own texture is finer than either, and much of it is isolated
-  single-pixel speckle — 64 times ours by isolated-pixel energy, with 1.65% of pixels nearly
-  black — which is what a cloud of primitives looks like up close as much as it is what a peel
-  looks like.</figcaption>
+  <img src="assets/skin_options.png" alt="The Gaussians and three skins at 1:1">
+  <figcaption>The same patch of peel at 1:1, at the reconstruction's own camera. Top left the
+  source primitives; then the dual-contoured skin at h<sub>c</sub>/2, the raw voxel boundary at
+  h<sub>c</sub>/2, and the raw voxel boundary at h<sub>c</sub>/4.</figcaption>
 </figure>
 
 <div class="tw"><table>
-<thead><tr><th>skin</th><th>cells</th><th>dual vertices</th><th>PSNR vs the primitives</th><th>LPIPS</th></tr></thead>
+<thead><tr><th>skin</th><th>px/cell</th><th>facets</th><th>LPIPS vs the primitives</th><th>to build</th></tr></thead>
 <tbody>
-<tr><td>on the interior's grid, h<sub>c</sub></td><td>443,295</td><td>45,269</td><td>16.82</td><td>0.4494</td></tr>
-<tr><td>on its own grid, h<sub>c</sub>/2</td><td>2,632,668</td><td>1,168,969</td><td><strong>18.15</strong></td><td><strong>0.4132</strong></td></tr>
+<tr><td>O-Voxel dual grid, h<sub>c</sub>/2</td><td>2.72</td><td>0.02%</td><td>0.2076</td><td>312 s</td></tr>
+<tr><td>raw voxel boundary, h<sub>c</sub>/2</td><td>2.72</td><td>2.36%</td><td>0.2006</td><td>0.4 s</td></tr>
+<tr><td>raw voxel boundary, h<sub>c</sub>/4</td><td>1.36</td><td><strong>0.00%</strong></td><td><strong>0.1554</strong></td><td><strong>0.8 s</strong></td></tr>
 </tbody></table></div>
 
-<p>The knob that works is the <em>grid</em>, not the contouring. Refining the dual grid four
-times on the same coarse boundary changes nothing and measures very slightly worse: the dual
-grid decides where the surface is, and the boundary mesh decides how finely it is coloured.
-Nothing ties the two grids together, either — the exterior's is built from the same
-reconstruction, so it lands in the same frame and composites with the interior without a
-transform, and only its boundary survives the call.</p>
+<p>Dual contouring exists to take the staircase off a voxel boundary, and at h<sub>c</sub>/2 it
+earns its keep: 2.36% facets become 0.02%. At h<sub>c</sub>/4 the staircase is already finer
+than a pixel, so there is nothing left for it to remove — the raw boundary is facet-free on its
+own and beats the contoured one on every column, in 0.8 seconds instead of 312. The expensive
+half of the pipeline is only needed while cells are large on screen, which is exactly when one
+would rather not be paying for it.</p>
 
-<p>It is not free. Halving the spacing is 5.9&times; the cells to build through and 26&times;
-the dual vertices to keep, and halving it again did not finish in twenty minutes of dual-grid
-conversion. So the exterior's resolution becomes its own decision, separate from the
-interior's, which is the honest form of specification 1.2's deferral: keeping the photographed
-outside as Gaussians costs a second renderer, a depth convention and a compositing step, and
-converting it costs a grid of its own.</p>
+<div class="note">Two caveats on the finer grid. Its silhouette is 0.4% wider than the
+Gaussians' against 1.0% at h<sub>c</sub>/2 — the occupancy's outer face sits half a cell beyond
+the primitives that marked it, so the inflation halves with the spacing. And at
+h<sub>c</sub>/4 the occupancy is no longer <em>solid</em>: 1.58M cells produce 8.3M boundary
+quads where a solid of that size would produce 80k, because the primitive density cannot fill
+cells that small. Fine for a skin, whose outside is all anyone sees. Not a volume to cut.</div>
+
+<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">Cleaning the peel with the
+diffusion model</h4>
+
+<p>The cut face gets its detail from a generative pass baked into the leaves. The skin can have
+the same, and needs the multi-view version of it: a cut face is planar so one view is a
+bijection with it, while a closed surface needs several views and a bake. Render from fourteen
+directions, enhance each, scatter the enhanced pixels back onto the faces they came from
+weighted by cos&sup2; of the viewing angle, and average.</p>
+
+<figure>
+  <img src="assets/skin_sd.png" alt="The Gaussians, our skin, and the skin after a multi-view diffusion bake">
+  <figcaption>1:1 again. The source, the h<sub>c</sub>/4 skin, and the same skin after the
+  bake. The per-cell aggregate leaves scattered dark points; the bake turns them into an even
+  pitting that reads as peel. Colour is untouched, because the enhancer keeps only the model's
+  high frequencies and takes every low frequency from the surface.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>skin</th><th>PSNR</th><th>LPIPS</th><th>bake</th></tr></thead>
+<tbody>
+<tr><td>h<sub>c</sub>/2</td><td>21.02</td><td>0.2006</td><td>&mdash;</td></tr>
+<tr><td>h<sub>c</sub>/2 + diffusion bake</td><td>21.17</td><td>0.1754</td><td>37 s</td></tr>
+<tr><td>h<sub>c</sub>/4</td><td>21.97</td><td>0.1554</td><td>&mdash;</td></tr>
+<tr><td>h<sub>c</sub>/4 + diffusion bake</td><td><strong>22.04</strong></td><td><strong>0.1386</strong></td><td>39 s</td></tr>
+</tbody></table></div>
+
+<p>Consistent by construction, for the same reason the cut face is: the detail lands in the
+surface rather than in the frame, so it survives moving the camera and travels with a piece
+that is cut off and thrown. And invented, for the same reason too — the model has never seen
+this fruit's peel at that scale, and a better LPIPS means closer to the primitives' statistics,
+not closer to the fruit.</p>
+
+<p>The bake touches 1,200,505 of the mesh's 16,527,864 faces. The rest are interior walls of a
+porous grid that nothing will ever look at, which is a standing invitation to keep only the
+visible shell and spend a sixth of the memory.</p>
 
 <div class="note"><strong>The title figure is this section.</strong> Skin and cut face, four
 patches, one pass, no Gaussians. It uses a different build of the same fruit from the rest of
