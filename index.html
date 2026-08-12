@@ -79,10 +79,13 @@
 
 <figure style="margin-top:26px">
   <img src="assets/cut_views.png" alt="One cut seen from four directions">
-  <figcaption>One cutting plane, four viewpoints. The outside is the original Gaussians; the
-  exposed face is decoded from a coarse cube grid that no cross-section of the training set
-  ever passed through at this angle. The two halves are drawn apart so both the shell and the
-  new surface are visible at once.</figcaption>
+  <figcaption>One cutting plane, four viewpoints, and nothing in the picture is a Gaussian.
+  Skin and cut face are both O-Voxel patches and both go through one z-buffered pass, so
+  whichever is nearer wins per pixel rather than by a depth convention agreed between two
+  renderers. The skin carries the photographed colour the reconstruction was built with; the
+  exposed face is decoded from the coarse cube grid at an angle no cross-section of the
+  training set ever passed through. The two halves are drawn apart so both are visible at
+  once.</figcaption>
 </figure>
 
 <h2>The problem with one primitive doing two jobs</h2>
@@ -616,6 +619,15 @@ equation&nbsp;27 path the unified render agrees to 25.1&nbsp;dB at 119&nbsp;FPS,
 silhouette is slightly <em>smaller</em> &mdash; 0.3981 of the frame against 0.4058 &mdash; because
 dual contouring pulls the surface off the voxel corners, which is the same shrink the area
 column measures rather than a disagreement about where the object is.</p>
+
+<div class="note"><strong>The title figure is this section.</strong> Skin and cut face, four
+patches, one pass, no Gaussians. It uses a different build of the same fruit from the rest of
+the page, and the reason is worth stating: the asset the other figures use is a generated
+sphere whose outside was never photographed, so its boundary cells hold pale flesh rather than
+peel and there is nothing for an O-Voxel skin to carry. The title figure's grid is built
+straight from the reconstruction, which does have a photographed outside, and its interior was
+trained with the identical protocol &mdash; 21.38&nbsp;dB and 0.851&nbsp;SSIM held out, against
+21.49 and 0.856 for the run every other number on this page comes from.</div>
 
 <h3>6. Cut-time generative super-resolution</h3>
 
