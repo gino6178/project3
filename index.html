@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cube Interior + O-Voxel Cut Surface</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+      integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+        integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<style>
+  :root{ --ink:#111; --mut:#5c5c5c; --line:#e6e6e6; --acc:#a8412a; --panel:#f7f7f7; }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:#fff;color:var(--ink);
+       font:17px/1.7 "Charter","Georgia","Times New Roman",serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  .eq{display:flex;align-items:center;gap:14px;margin:20px 0}
+  .eq .body{flex:1;overflow-x:auto;overflow-y:hidden;text-align:center}
+  .eq .num{color:var(--mut);font-size:14px;flex:none}
+  .katex{font-size:1.02em}
+  header{padding:56px 0 30px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(27px,4.4vw,40px);line-height:1.22;margin:0 0 10px;font-weight:600;
+     letter-spacing:-.01em}
+  .sub{color:var(--mut);font-size:clamp(15px,2.2vw,19px);margin:0 0 6px;font-style:italic}
+  .authors{font-size:17px;margin:14px 0 2px}
+  .venue{color:var(--mut);font-size:15px;margin:0 0 20px}
+  .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:16px}
+  .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.35);
+           padding-bottom:1px}
+  .links a:hover{border-bottom-color:var(--acc)}
+  h2{font-size:25px;margin:52px 0 10px;font-weight:600;letter-spacing:-.01em;text-align:left}
+  h3{font-size:19px;margin:34px 0 8px;font-weight:600}
+  p{margin:0 0 16px;text-align:left}
+  .lead{font-size:17.5px}
+  figure{margin:26px 0}
+  figure img{width:100%;display:block;border-radius:3px;background:#fff}
+  figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
+  .tw{overflow-x:auto;margin:20px 0}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-weight:600;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+  .win{font-weight:700}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:14px 18px;
+        border-radius:0 3px 3px 0;font-size:16px;margin:22px 0;color:#3c3c3c}
+  .note strong{color:var(--ink)}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:14px;
+      overflow-x:auto;font-size:13.5px;line-height:1.5;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+  footer{margin:60px 0 48px;padding-top:22px;border-top:1px solid var(--line);
+         color:var(--mut);font-size:14.5px}
+  ul{margin:0 0 16px;padding-left:24px} li{margin-bottom:7px}
+  ol.refs{padding-left:30px;font-size:14.5px;line-height:1.55;color:#333}
+  ol.refs li{margin-bottom:9px}
+  ol.refs a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.3)}
+  @media (max-width:640px){ body{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Cube Interior + O&#8209;Voxel Cut Surface</h1>
+  <p class="sub">The hidden volume stops being a rendering primitive</p>
+  <p class="authors">Anonymous</p>
+  <p class="venue">Implementation study &middot; v1</p>
+  <div class="links">
+    <a href="https://gino6178.github.io/project2/">Previous: Voxel-Lattice Gaussians</a>
+  </div>
+</header>
+
+<figure style="margin-top:26px">
+  <img src="assets/cut_views.png" alt="One cut seen from four directions">
+  <figcaption>One cutting plane, four viewpoints. The outside is the original Gaussians; the
+  exposed face is decoded from a coarse cube grid that no cross-section of the training set
+  ever passed through at this angle. The two halves are drawn apart so both the shell and the
+  new surface are visible at once.</figcaption>
+</figure>
+
+<h2>The problem with one primitive doing two jobs</h2>
+
+<p class="lead">A 3D Gaussian reconstruction has no interior. FruitNinja<sup>1</sup> gives it
+one by filling the enclosed volume with small opaque Gaussians and supervising them against
+diffusion-generated cross-sections. That works, and it binds two different requirements to
+one parameter. Write \(\rho = \sigma/h\) for the Gaussian support scale over the sample
+spacing:</p>
+
+<div class="eq"><div class="body">
+$$\text{small }\sigma \;\Rightarrow\; \text{holes / high primitive count},
+\qquad \text{large }\sigma \;\Rightarrow\; \text{overlap / material blending}.$$
+</div><div class="num">(1)</div></div>
+
+<p>Small support leaves gaps that only a very high primitive count or the rasteriser's
+screen-space footprint can hide. Large enough support to cover the spacing means neighbouring
+primitives overlap, and alpha compositing then blends across the boundaries — seed against
+flesh, peel against pith — that the interior exists to show.</p>
+
+<p>The volume does not need a rendering primitive. It needs occupancy, connectivity, an
+appearance feature and a collision lookup. A cube supplies all four and has no
+\(\sigma\), no opacity, no rotation and no overlap to tune. A surface, once a cut has exposed
+one, is better served by an explicit polygonal boundary than by alpha-blended ellipsoids.</p>
+
+<div class="note"><strong>Volume primitive for the hidden volume, surface primitive for the
+visible boundary.</strong> The interior becomes a coarse cube grid holding occupancy and an
+8-dimensional latent. Only where a cut passes are cells subdivided, and only the newly
+exposed cross-section becomes an O-Voxel<sup>2</sup> surface. The original exterior is left
+in whatever representation it already had.</div>
+
+<h2>Occupancy is a question about a volume</h2>
+
+<p>The interior grid is built by reusing the existing inside/outside detection and changing
+only its last step: an occupied cell stores a cube and a feature instead of initialising a
+Gaussian. That step turned out to hide a sampling problem worth reporting.</p>
+
+<figure>
+  <img src="assets/fill.png" alt="Aliased occupancy against solidified occupancy">
+  <figcaption>Left: the source lattice binned straight into cells. Right: the same data after
+  the occupancy is resolved as a volume. The source samples the interior at 0.0157 while its
+  own metadata records a cell size of 0.0148, and binning one into the other drops whole
+  lattice planes in a beat pattern — 17% of the object, which the slice renderer draws as
+  background stripes. Morphological closing, an outside flood and a union with the samples
+  turn 368,738 sampled cells into 465,080 solid ones, against 454k for the analytic
+  ball.</figcaption>
+</figure>
+
+<p>The check that matters is not a picture but a property: a solid occupancy is a fixed point
+of the closing operation, with nothing left for it to seal. After the repair that count is
+zero, which settles every future cut plane and every output resolution at once.</p>
+
+<h2>Rendering a cross-section</h2>
+
+<p>For a plane \(\Pi(x)=n^\top x + d = 0\), each pixel has a position \(x(u)\) on it. Find the
+containing cell and emit its decoded colour:</p>
+
+<div class="eq"><div class="body">
+$$(i,j,k)=\left\lfloor \frac{x(u)-o}{h_c} \right\rfloor, \qquad
+I(u) = D_\theta(f_{ijk})_{\mathrm{RGB}}.$$
+</div><div class="num">(2)</div></div>
+
+<p>That is the whole renderer: piecewise constant, no interpolation. Interpolation would
+reintroduce smoothing across exactly the material boundaries the cube representation was
+adopted to keep. Coverage is a containment test on a cube rather than the union of a set of
+splats, so the section is hole-free by construction — measured at 0.0 background-gap ratio at
+both 512 and 2048 output resolution.</p>
+
+<figure>
+  <img src="assets/slices.png" alt="Six cross-sections through the trained interior">
+  <figcaption>Cross-sections through the trained volume. The first four are longitudinal
+  planes at azimuths halfway between the supervised ones and the last two are transverse
+  planes outside the supervised depth window, so none of the six was optimised against. The
+  pith core, the radial membranes and the pale rim under the peel all continue through
+  angles the training never saw.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>Iteration</th><th>Loss</th><th>Residual</th><th>Held-out PSNR</th><th>Held-out SSIM</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0.217</td><td>0.0214</td><td>16.70</td><td>0.758</td></tr>
+<tr><td>20</td><td>0.096</td><td>0.0041</td><td>20.48</td><td>0.836</td></tr>
+<tr><td>40</td><td>0.090</td><td>0.0035</td><td>21.26</td><td>0.849</td></tr>
+<tr><td>59</td><td>0.085</td><td>0.0030</td><td class="win">21.60</td><td class="win">0.856</td></tr>
+</tbody></table></div>
+
+<p>Held-out planes have their references drawn once and frozen, so the score is measured
+against a target that does not follow the model. 60 iterations over 8 longitudinal and 16
+transverse planes at 512&sup2;, eight minutes on one RTX 3090.</p>
+
+<h2>Cutting: discrete topology, analytic boundary</h2>
+
+<p>A cut refines only the cells the plane passes through — a fixed 2&times;2&times;2 block per
+cut cell rather than a general octree — classifies every leaf by the sign of \(\Pi\) at its
+centre, keeps adjacency only between leaves on the same side, and takes connected components.
+The piece boundary is therefore voxel-approximate, and its accuracy is the leaf size.</p>
+
+<p>The drawn face is not. Intersecting the plane with each leaf's twelve edges gives a convex
+polygon lying exactly on \(\Pi\), so the visible cut is flat to machine precision
+(\(\max|\Pi(v)| \le 7\times10^{-8}\)) while collision and connectivity keep the simplicity of
+a grid. Each polygon is emitted twice with opposite winding, once per piece.</p>
+
+<figure>
+  <img src="assets/subdivision.png" alt="Cut faces at three subdivision levels">
+  <figcaption>Subdivision level 1, 2 and 3 on a plane deliberately offset from a cell boundary
+  by 0.37 of a cell — the normal case, since a user's plane does not land on the grid. Against
+  the analytic spherical cap the piece-volume error falls monotonically with level and reaches
+  under 1% at level 3. What subdivision buys is where the cut falls, not new interior
+  texture.</figcaption>
+</figure>
+
+<h2>Compositing two renderers</h2>
+
+<p>The exterior keeps its Gaussian renderer and the cut surface gets a mesh one. Both emit
+colour and depth, and the frame is the nearer of the two at every pixel.</p>
+
+<figure>
+  <img src="assets/compositing.png" alt="Exterior, cut surface, depth and composite">
+  <figcaption>Left to right: the original Gaussians with the removed half culled, the cut
+  surface alone, the composited depth, and the result. The rasteriser accumulates
+  \(\sum_i z_i \alpha_i T_i\), so its depth has to be divided by the accumulated alpha before
+  it means metres — composite it raw and every partially covered pixel claims to be nearer
+  than it is, outlining the cut face in peel. Checked against an analytic sphere: 2.2797
+  rendered against 2.2642 expected, 0.68%, which is the shell's own thickness.</figcaption>
+</figure>
+
+<p>The newly exposed surface is converted to an O-Voxel Flexible Dual Grid — a field-free
+sparse voxel surface, which is what lets a single open cross-section patch be represented
+without first being closed into a watertight volume. Only the new patch is converted; the
+object is not re-voxelised per cut.</p>
+
+<h3>Where the official encoder degenerates</h3>
+
+<p>Compared against TRELLIS.2's own <code>mesh_to_flexible_dual_grid</code> on the same patch,
+the two agree about topology almost exactly — 8,409 dual quads against 8,410, from the same
+active voxels — and disagree about where the dual vertex goes.</p>
+
+<div class="tw"><table>
+<thead><tr><th>Encoder</th><th>Dual quads</th><th>Dual vertices off-plane</th><th>Patch area</th></tr></thead>
+<tbody>
+<tr><td>Built-in (mean of edge crossings)</td><td>8,410</td><td class="win">9&times;10<sup>&minus;8</sup></td><td>0.778</td></tr>
+<tr><td>TRELLIS.2 (QEF)</td><td>8,409</td><td>0.58 voxel</td><td>0.928</td></tr>
+<tr><td>reference</td><td>&mdash;</td><td>0</td><td>0.782</td></tr>
+</tbody></table></div>
+
+<p>The official encoder solves the QEF unconstrained and falls back to axis-constrained solves
+when the answer leaves the voxel. For a perfectly planar patch every face constraint is the
+same plane equation, so that first system is rank-deficient, the solution is free in two
+directions, it leaves the voxel, and the fallback clamps it onto a voxel face — off the plane.
+Inert across four orders of magnitude of the regularisation weight. Taking the mean of the
+crossings on each voxel's edges is exact for a planar patch instead, because every crossing
+lies on the plane. This is not a defect in TRELLIS.2 — its O-Voxel targets closed curved
+surfaces, where the QEF is well-posed and strictly better; the analytic cut face just happens
+to be the one degenerate case.</p>
+
+<h2>Physics keeps what the lattice had</h2>
+
+<p>The O-Voxel patch is a visible boundary and takes no part in volume physics; the cube
+hierarchy remains the physical volume. Collision stays integer indexing into a dense map with
+a descent into refined blocks, never a point-to-polyhedron query. A cut relabels the existing
+MPM particles rather than creating new ones, so local subdivision does not inflate the
+simulation.</p>
+
+<p>On 100,000 particles: occupancy hit rate 100%, and 100% agreement between a particle's
+assigned piece and which side of the analytic plane it lies on. That second number needs the
+narrow-phase test — the piece boundary is voxel-approximate while the drawn face is analytic,
+and up to half a leaf of material sits between them. Cut-surface vertices are bound to nearby
+particles with fixed weights; a rigid translation of the particles moves the surface with a
+maximum drift of 1.3&times;10<sup>&minus;7</sup>.</p>
+
+<p>Permanent interior storage is 32.2 MB for 465,080 cells — 72.6 bytes per cell, holding
+occupancy, an 8-dimensional latent, a piece id and a refinement handle. The cut band costs a
+further 20.4 MB while it exists.</p>
+
+<h2>What did not work</h2>
+
+<p>The supervision concept is carried over unchanged: photographs of real cross-sections
+through a warmup, then diffusion regeneration from the model's own render under a convergence
+gate, with each new target blended back toward the photograph so the closed loop has a fixed
+point. It runs — 200 iterations in 16 minutes, the gate firing three times. It also makes the
+result worse, at both restoring-force settings tried.</p>
+
+<figure>
+  <img src="assets/refinement.png" alt="Photographs only, anchor 0.30, anchor 0.75">
+  <figcaption>Same held-out planes under three configurations. Top: photographs only. Middle:
+  diffusion refinement with the target blended 30% back toward the photograph. Bottom: the
+  same at 75%.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>Configuration</th><th>Speckle</th><th>Structure</th><th>Mean RGB</th><th>Held-out PSNR</th></tr></thead>
+<tbody>
+<tr><td>Photographs only, 60 it</td><td>5.72</td><td>3.56</td><td>(0.974, 0.735, 0.251)</td><td class="win">21.60</td></tr>
+<tr><td>+ diffusion, anchor 0.30</td><td>7.83</td><td>4.47</td><td>(0.974, 0.781, 0.227)</td><td>17.57</td></tr>
+<tr><td>+ diffusion, anchor 0.75</td><td>5.19</td><td>2.40</td><td>(0.972, 0.794, 0.306)</td><td>17.97</td></tr>
+<tr><td>the photograph itself</td><td>5.27</td><td>4.54</td><td>(0.975, 0.730, 0.235)</td><td>&mdash;</td></tr>
+</tbody></table></div>
+
+<p>At 0.30 the loop amplifies structure and noise together and the sections come out crossed
+by vertical streaks along the extrusion axis. At 0.75 the restoring force removes the speckle
+and takes the structure with it. There is no setting here that buys structure without buying
+noise, and both refined runs sit about 4 dB below the photograph-only one.</p>
+
+<div class="note"><strong>A single sharpness statistic cannot referee this.</strong> The
+Laplacian detail of the 0.30 run rises from 17.2 to 25.2, matching the photograph's 25.0
+exactly — and that number is speckle and streaks, not membranes. It was misread twice here
+before the images were looked at. Split it into pixel-scale noise and scale-2 structure, and
+look at the pictures.</div>
+
+<p>This is a property of the object and its references rather than of the method: the object
+is a generated sphere whose only real supervision is two photographs, and closing the loop on
+a diffusion prior gives it nothing the photographs did not already have. An object with
+genuinely view-varying interior structure is where the loop is supposed to pay, and that is
+not tested here.</p>
+
+<h2>What this version does not claim</h2>
+
+<ul>
+  <li>Local subdivision improves geometry and topology resolution, but a child inheriting its
+      parent's feature gains no interior texture. High-frequency cut appearance is still
+      bounded by the coarse latent volume.</li>
+  <li>The topology boundary is a refined voxel approximation, not exact material fragment
+      geometry.</li>
+  <li>The exterior and the cut surface use different renderers, so depth convention and
+      compositing have to be integrated rather than assumed.</li>
+  <li>Under large deformation the extracted surface must follow the deformation field; this
+      version binds surface vertices to nearby particles with fixed weights.</li>
+  <li>Repeated cuts in one region accumulate refined blocks. Cache and merge management is
+      left to a later version.</li>
+  <li>One cutting plane. Several add data management and change none of the conclusions here.</li>
+</ul>
+
+<h2>References</h2>
+<ol class="refs">
+  <li>F. Wu and Y. Chen. <em>FruitNinja: 3D Object Interior Texture Generation with Gaussian
+      Splatting.</em> <a href="https://arxiv.org/abs/2411.12089">arXiv:2411.12089</a>, 2024.</li>
+  <li>J. Xiang et&nbsp;al. <em>Native and Compact Structured Latents for 3D Generation.</em>
+      CVPR 2026. <a href="https://github.com/microsoft/TRELLIS.2">TRELLIS.2</a>.</li>
+  <li>T. Xie et&nbsp;al. <em>PhysGaussian: Physics-Integrated 3D Gaussians for Generative
+      Dynamics.</em> <a href="https://arxiv.org/abs/2311.12198">arXiv:2311.12198</a>, CVPR 2024.</li>
+</ol>
+
+<footer>
+Every number on this page was measured on one machine under one protocol, and the results
+that did not work are included. Continues
+<a href="https://gino6178.github.io/project2/" style="color:var(--acc)">Voxel-Lattice
+Gaussians</a>.
+</footer>
+
+</div>
+</body>
+</html>
