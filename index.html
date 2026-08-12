@@ -138,12 +138,15 @@ Gaussian. That step turned out to hide a sampling problem worth reporting.</p>
 
 <figure>
   <img src="assets/fill.png" alt="Aliased occupancy against solidified occupancy">
-  <figcaption>Left: the source lattice binned straight into cells. Right: the same data after
-  the occupancy is resolved as a volume. The source samples the interior at 0.0157 while its
-  own metadata records a cell size of 0.0148, and binning one into the other drops whole
-  lattice planes in a beat pattern — 17% of the object, which the slice renderer draws as
-  background stripes. Morphological closing, an outside flood and a union with the samples
-  turn 368,738 sampled cells into 465,080 solid ones, against 454k for the analytic
+  <figcaption>The same cross-section three times. <strong>Left</strong>: the source lattice
+  binned straight into cells — the white bands are not features of the fruit, they are rows of
+  cells that no sample landed in. The source samples the interior at 0.0157 while its own
+  metadata records a cell size of 0.0148, and binning one into the other drops whole lattice
+  planes in a beat pattern, which is why the gaps are straight, evenly spaced and in two
+  directions at once. <strong>Middle</strong>: the cells the repair added, painted red — the
+  dropped planes and the whole rim, 21.7% of this section. <strong>Right</strong>: the result.
+  Morphological closing, an outside flood and a union with the samples turn 368,738 sampled
+  cells into 465,080 solid ones, an added 96,342, against 454k for the analytic
   ball.</figcaption>
 </figure>
 
@@ -583,7 +586,7 @@ boundaries; interpolation spreads it evenly, at a ratio of 1.18 rather than infi
 information &mdash; specification 12.2 is right that neither version invents interior texture,
 and that is what the last of these six items is for.</p>
 
-<h3>4. Refined-block cache, merge and hierarchy management</h3>
+<h3 id="band">4. Refined-block cache, merge and hierarchy management</h3>
 
 <p>Three problems live in specification 12.2's one sentence about blocks accumulating.
 <em>Cache</em>: every cut rebuilds the whole band, so a second plane redoes the first's work.
@@ -704,6 +707,36 @@ occlusion to argue about:</p>
 because it belongs to the image. Baking costs 3.6&nbsp;dB, and carries more detail than painting
 does while doing it: 0.0267 against 0.0188, because a detail written into the leaves is there at
 every angle rather than redrawn differently at each one.</p>
+
+<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">Why the cross-sections above do
+not look like this</h4>
+
+<p>The face at the top of this page is sharp and the six held-out cross-sections earlier are
+flat, and they are renders of the same object. The difference is deliberate and it is the whole
+design: super-resolution writes into the <em>refined band</em>, not into the volume. The band
+exists along one cut plane, for as long as that cut lasts, and
+<a href="#band" style="color:var(--acc)">is released</a> when the plane is dropped. The trained
+coarse volume is not touched — <code>superresolve</code> asserts that it is not, on every call.</p>
+
+<p>Three reasons, in increasing order of how much they cost to ignore.</p>
+
+<ul>
+  <li><strong>It would not fit.</strong> The band's leaves are h<sub>c</sub>/2<sup>3</sup> across
+      and the volume's cells are h<sub>c</sub> — eight times coarser per axis, 512 times fewer
+      cells for the same space. This one cut face was baked into 893,704 leaves; the entire
+      object is 465,080 cells. Writing that detail into the volume means averaging away most of
+      it, which is the leaf limit above, one level up.</li>
+  <li><strong>It would be the wrong detail everywhere else.</strong> Anatomy invented for one
+      plane is not anatomy for another. Baked into the volume it would be visible from every
+      later cut, at whatever angle, in the arrangement one particular diffusion draw happened
+      to produce.</li>
+  <li><strong>It has been measured, and it is worse.</strong> Putting generated content into the
+      volume is exactly the supervision experiment two sections down: the held-out score drops
+      from 21.49&nbsp;dB to 15.80, and the cross-sections come back saturated, speckled and
+      concentric. The flat sections are what a volume supervised by photographs of this fruit
+      actually looks like; the sharp face is what a generative model adds on top, for one cut,
+      for as long as that cut is on screen.</li>
+</ul>
 
 <div class="note">Super-resolution and subdivision are <strong>one budget</strong>. A baked detail
 can be no finer than the leaf holding it, so rendering the face finer than
