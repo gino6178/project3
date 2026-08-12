@@ -356,6 +356,27 @@ a descent into refined blocks, never a point-to-polyhedron query. A cut relabels
 MPM particles rather than creating new ones, so local subdivision does not inflate the
 simulation.</p>
 
+<p>After a cut the pieces have to move and collide <em>independently</em>, and that is a
+question the rest frame cannot even ask — there the pieces are disjoint sets of leaves and
+cannot overlap. Giving each piece a rigid pose turns it into one: map a world point back
+through that piece's pose, then run the same integer-indexed lookup.</p>
+
+<div class="tw"><table>
+<thead><tr><th>one half driven into the other</th><th>overlap / claimed</th></tr></thead>
+<tbody>
+<tr><td>0.00 (rest)</td><td class="win">0.00%</td></tr>
+<tr><td>0.05</td><td>8.01%</td></tr>
+<tr><td>0.15</td><td>27.19%</td></tr>
+<tr><td>0.30</td><td>55.48%</td></tr>
+<tr><td>0.60</td><td>26.07%</td></tr>
+</tbody></table></div>
+
+<p>Zero at rest, monotone as one half is pushed into the other, and falling again past 0.60
+— which is larger than the radius, so the halves have passed through each other and their
+intersection is shrinking. Pushed <em>apart</em> instead, it stays zero at every distance.
+Rigid on purpose: the particle set stays the deformable state and the cube hierarchy stays
+the collision volume, which is the division of labour eq. (28) sets out.</p>
+
 <p>On 100,000 particles: occupancy hit rate 100%, and 100% agreement between a particle's
 assigned piece and which side of the analytic plane it lies on. That second number needs the
 narrow-phase test — the piece boundary is voxel-approximate while the drawn face is analytic,
@@ -366,6 +387,31 @@ maximum drift of 1.3&times;10<sup>&minus;7</sup>.</p>
 <p>Permanent interior storage is 32.2 MB for 465,080 cells — 72.6 bytes per cell, holding
 occupancy, an 8-dimensional latent, a piece id and a refinement handle. The cut band costs a
 further 20.4 MB while it exists.</p>
+
+<h3>The surface material</h3>
+
+<p>An O-Voxel surface can hold PBR attributes, not only colour, and the decoder's second
+output \(a\) is where they come from. Two channels are trained, under their own names, from
+the same feature the colour head reads.</p>
+
+<figure>
+  <img src="assets/attributes.png" alt="Albedo, shaded, roughness field, stiffness field">
+  <figcaption>Left to right: the decoded albedo; the same face shaded by its roughness; the
+  roughness channel; the stiffness channel. Roughness is derived from saturation, because on
+  a cut fruit the wet parts are the coloured ones — the juice vesicles come out dark (smooth
+  and specular) and the pith and the cut rind come out bright (dry and spongy). Stiffness is
+  nearly uniform across this face because its target takes only two values and the rind is a
+  thin ring at the edge; that is the target, not a failure to fit it.</figcaption>
+</figure>
+
+<p>Both channels travel the whole path — cut mesh, to the patch's surface attributes, to the
+renderer, which shades the face with a lobe whose width the decoded roughness sets. That last
+step matters more than it looks: an attribute nothing renders is an attribute nothing can be
+wrong about. Roughness spans 0.013 to 0.982 across a patch, and shading moves 11% of the
+covered pixels by up to 0.074.</p>
+
+<p>Derived from saturation and <em>not</em> from the two facts the stiffness target uses —
+two channels regressed onto the same target would be one channel reported twice.</p>
 
 <h3>The material attribute</h3>
 
