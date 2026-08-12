@@ -172,6 +172,82 @@ both 512 and 2048 output resolution.</p>
 against a target that does not follow the model. 60 iterations over 8 longitudinal and 16
 transverse planes at 512&sup2;, eight minutes on one RTX 3090.</p>
 
+<h2>Four interiors, one protocol</h2>
+
+<p>The argument above is about a representation, so it has to be measured against the
+alternatives rather than asserted. Every row below gets the same occupied volume, the same
+latent width, the same shared decoder, the same references on the same planes, the same
+optimiser and 40 iterations, and is scored on the same eight held-out planes. Only the
+primitive and the way a cross-section is drawn from it differ.</p>
+
+<div class="note"><strong>These rows are representations, not reproductions.</strong> The
+first row is dense small opaque Gaussians built and trained here, not FruitNinja's pipeline
+and not their numbers — nothing below runs their filling, supervision schedule, appearance
+model or renderer settings. Read every row as "this representation, under one
+protocol".</div>
+
+<div class="tw"><table>
+<thead><tr><th>interior representation</th><th>primitives</th><th>&rho;</th><th>MB</th>
+<th>PSNR</th><th>SSIM</th><th>LPIPS</th><th>gap@4096</th><th>blend px</th><th>FPS</th></tr></thead>
+<tbody>
+<tr><td>Opaque-Atom GS (dense small)</td><td>3,720,640</td><td>0.35</td><td>269.7</td>
+    <td>19.09</td><td>0.738</td><td>0.360</td><td>0.0000</td><td>5.73</td><td>57.4</td></tr>
+<tr><td>Coarse large-support GS</td><td>465,080</td><td>1.00</td><td>33.7</td>
+    <td>17.04</td><td>0.758</td><td>0.387</td><td>0.0000</td><td>15.59</td><td>250.8</td></tr>
+<tr><td>Voxel-Lattice GS</td><td>465,080</td><td>0.50</td><td>33.7</td>
+    <td>18.36</td><td>0.746</td><td class="win">0.358</td><td>0.0000</td><td>9.73</td><td>285.6</td></tr>
+<tr><td>Cube + O-Voxel (ours-v1)</td><td>465,080</td><td>&mdash;</td><td class="win">32.2</td>
+    <td class="win">19.21</td><td class="win">0.770</td><td>0.402</td><td>0.0000</td>
+    <td class="win">3.93</td><td class="win">701.1</td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/baselines.png" alt="Five held-out planes under each of the four representations">
+  <figcaption>Five held-out planes, one row per representation: dense small Gaussians,
+  coarse large-support Gaussians, one Gaussian per lattice cell, and the cube grid. The
+  second row's rim shows the colour fringing that overlapping primitives produce; the fourth
+  is flat between boundaries and sharp across them.</figcaption>
+</figure>
+
+<p>The cube row has the sharpest material boundaries by a factor of 1.5 over the next best,
+renders 12&times; faster than the dense row, uses 8.4&times; less memory, and reaches the
+best PSNR and SSIM against a representation with eight times the primitives.</p>
+
+<p>It loses LPIPS, to all three. Half of that gap is the unsupersampled rendering used for
+parity with the rasteriser; the rest is the representation, and the mechanism is not the
+obvious one. It is not blockiness — side by side the cube row is the smoothest of the four,
+and it has the sharpest boundaries by the blend measure. What it lacks is the incidental
+grain that overlapping primitives generate everywhere. LPIPS compares texture statistics
+against a photograph, which is full of grain, so a volume that is constant inside each cell
+is penalised for exactly the smoothness the other three metrics reward.</p>
+
+<h3>&rho; = &sigma;/h, swept</h3>
+
+<p>Both halves of eq. (1) are geometric, so neither needs training. Sweeping the support
+scale at fixed spacing:</p>
+
+<div class="tw"><table>
+<thead><tr><th>&rho;</th><th>gap@1024</th><th>gap@4096</th><th>blend px</th></tr></thead>
+<tbody>
+<tr><td>0.20</td><td>0.0048</td><td>0.0117</td><td>4.41</td></tr>
+<tr><td>0.35</td><td>0.0000</td><td>0.0000</td><td>6.14</td></tr>
+<tr><td>0.50</td><td>0.0000</td><td>0.0000</td><td>7.70</td></tr>
+<tr><td>0.75</td><td>0.0000</td><td>0.0000</td><td>9.58</td></tr>
+<tr><td>1.00</td><td>0.0000</td><td>0.0000</td><td>11.00</td></tr>
+<tr><td>1.50</td><td>0.0000</td><td>0.0000</td><td>13.00</td></tr>
+<tr><td>cube</td><td class="win">0.0000</td><td class="win">0.0000</td><td class="win">2.11</td></tr>
+</tbody></table></div>
+
+<p>Holes below &rho; &asymp; 0.35, blending rising linearly above it, and no setting that
+avoids both. The cube has neither and sits below the whole curve, because it has no &rho; to
+tune — which is the claim, now with a measurement under it.</p>
+
+<p>One nuance the sweep exposes, and which section 2 predicts: the holes vanish at quite a
+small &rho; because the rasteriser's screen-space footprint hides them. The cost of a small
+&sigma; is therefore paid not in gaps but in density — the dense row needs eight times the
+primitives, 8.4&times; the memory and 12&times; the render time to reach a fidelity the cube
+row matches.</p>
+
 <h2>Cutting: discrete topology, analytic boundary</h2>
 
 <p>A cut refines only the cells the plane passes through — a fixed 2&times;2&times;2 block per
