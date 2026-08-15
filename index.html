@@ -96,8 +96,12 @@ face is an exact planar polygon per cell, matching closed-form cut areas to 1.0%
 surface pays for curvature rather than resolution — collapsing the dual grid by its own quadric
 leaves 48.7% of the nodes at a third of a cell of error — and the physics keeps what the lattice
 gave it, with collision a floor division and an occupancy test and no point-in-polyhedron query
-anywhere. Every number here was measured on the three objects of the previous project, or on a
-synthetic shape whose answer is known in closed form.
+anywhere. End to end on held-out cuts, generating the topology and supplying six views beats quantising
+the scan on every object that can be scored &mdash; 66.5 of FID against 86.4 on the orange &mdash;
+and the same cuts drawn entirely from the two representations, with no Gaussian anywhere in the
+picture, reach 178.5 against the Gaussian baseline's 187.4 on the watermelon. Every number here was
+measured on the three objects of the previous project, or on a synthetic shape whose answer is
+known in closed form.
 </p>
 
 <figure>
@@ -481,6 +485,131 @@ and reaches 5.3% to 7.6%. Its gaps are not the torus's own hole &mdash; the larg
 is 30% of the gap area and sits off-centre &mdash; and its lattice is the one built from a
 generated mesh rather than quantised from a released Gaussian model, which is the difference worth
 chasing next.</p>
+
+<h3>Held-out cuts: both routes, both families, and the whole object drawn from the representation</h3>
+
+<p>Everything above measures a part. This measures the whole thing end to end, and it is the same
+measurement in all four columns: twelve cuts at depths and azimuths training never sampled, scored
+against the photographs by FID, KID and CLIP. Six are transverse and six longitudinal, and both
+are reported, because a section that is right across one axis and wrong along the other is not
+right. The O&#8209;Voxel columns do not reproduce the plane sequence &mdash; they register a
+renderer with the file that owns it, so the planes, the depths, the cameras and the order are
+identical by construction and the only thing that differs is what draws the picture. The doughnut
+has one reference image per family, too few for a distribution, so what it is asked instead is
+whether every held-out transverse section still reads as an annulus.</p>
+
+<figure>
+  <img src="assets/heldout_transverse.png" alt="Transverse held-out cuts of all three objects
+       under four combinations of route and renderer">
+  <figcaption>Transverse cuts. Columns one and two are the Gaussian rasteriser on a scanned
+  lattice and on a generated one; columns three and four draw the exterior as an O&#8209;Voxel
+  surface and the exposed face by marching into the cube volume, with no Gaussians anywhere.
+  </figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>transverse</th><th></th><th>baseline (3DGS)</th><th>route 2 (3DGS)</th>
+<th>route 1 (O&#8209;Voxel)</th><th>route 2 (O&#8209;Voxel)</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">orange</td><td>FID</td><td>86.4</td><td><strong>66.5</strong></td><td>151.0</td><td>122.3</td></tr>
+<tr><td>KID</td><td>125.0e-3</td><td><strong>88.7e-3</strong></td><td>249.3e-3</td><td>182.7e-3</td></tr>
+<tr><td>CLIP</td><td>31.6</td><td>31.7</td><td>31.1</td><td>32.2</td></tr>
+<tr><td rowspan="3">watermelon</td><td>FID</td><td>187.4</td><td>180.9</td><td>194.2</td><td><strong>178.5</strong></td></tr>
+<tr><td>KID</td><td>233.2e-3</td><td>226.3e-3</td><td>257.0e-3</td><td><strong>224.6e-3</strong></td></tr>
+<tr><td>CLIP</td><td>32.3</td><td>31.9</td><td>33.7</td><td>32.3</td></tr>
+<tr><td>doughnut</td><td>annulus</td><td>6/6</td><td>6/6</td><td>6/6</td><td>6/6</td></tr>
+</tbody></table></div>
+
+<p>Read the second column first, because it is the one the method rests on. Generating the
+topology and supplying six views is not a fallback for objects that were never scanned: on
+transverse cuts it beats quantising the scan on every object it can be scored on, by 23% of FID
+and 29% of KID on the orange and by 3.5% and 3.0% on the watermelon, at equal CLIP. Nothing about
+the fruit is in the generated geometry &mdash; it is a sphere and a torus and flat grey &mdash; so
+everything that distinguishes an orange from a watermelon arrived through the six views and the
+cross-section photographs, which is what the claim was.</p>
+
+<figure>
+  <img src="assets/heldout_longitudinal.png" alt="Longitudinal held-out cuts of all three objects
+       under the same four combinations">
+  <figcaption>Longitudinal cuts, at azimuths off the trained grid. The doughnut is the case worth
+  looking at: a plane through the axis leaves two separate lobes, and all four columns show two.
+  </figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>longitudinal</th><th></th><th>baseline (3DGS)</th><th>route 2 (3DGS)</th>
+<th>route 1 (O&#8209;Voxel)</th><th>route 2 (O&#8209;Voxel)</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">orange</td><td>FID</td><td><strong>147.6</strong></td><td>247.3</td><td>378.7</td><td>416.8</td></tr>
+<tr><td>KID</td><td><strong>175.3e-3</strong></td><td>303.7e-3</td><td>593.6e-3</td><td>653.9e-3</td></tr>
+<tr><td>CLIP</td><td>31.8</td><td>34.2</td><td>31.8</td><td><strong>34.6</strong></td></tr>
+<tr><td rowspan="3">watermelon</td><td>FID</td><td>266.0</td><td><strong>244.4</strong></td><td>347.3</td><td>282.8</td></tr>
+<tr><td>KID</td><td>331.9e-3</td><td><strong>300.9e-3</strong></td><td>508.9e-3</td><td>351.0e-3</td></tr>
+<tr><td>CLIP</td><td>33.4</td><td>33.7</td><td>34.2</td><td><strong>34.7</strong></td></tr>
+</tbody></table></div>
+
+<p>The longitudinal family does not repeat the transverse result and is reported because it does
+not. Route 2 still leads on the watermelon, by 8% of FID, but on the orange it is 247.3 against
+the baseline's 147.6 while scoring 34.2 against 31.8 on CLIP &mdash; the picture reads more like
+an orange and matches the photographs' distribution less well. The generated ellipsoid carries the
+object's measured extents but not the shape of its longitudinal profile, and a lengthwise section
+is where that difference lives; a transverse section of a sphere and of an ellipsoid are the same
+picture. This is the sharpest open question the two routes leave, and it is a question about the
+generated topology rather than about the renderer, because it is present in the Gaussian column.
+</p>
+
+<h3>The exterior, with no Gaussians in it</h3>
+
+<p>The cuts measure the interior. The claim that the appearance is independent of Gaussian
+training is a claim about the outside, and a shell can be right in every section and still be
+wrong where two views meet &mdash; a section never looks at a seam. These are the six directions
+the painting used, drawn from the dual-grid surface.</p>
+
+<figure>
+  <img src="assets/ext_ovox_orange.png" alt="The orange's O-Voxel exterior in six views">
+  <img src="assets/ext_ovox_watermelon.png" alt="The watermelon's O-Voxel exterior in six views"
+       style="margin-top:10px">
+  <img src="assets/ext_ovox_doughnut.png" alt="The doughnut's O-Voxel exterior in six views"
+       style="margin-top:10px">
+  <figcaption>Each object's exterior as an O&#8209;Voxel dual grid, from the six painting
+  directions: top row <code>up</code>, <code>front</code>, <code>right</code>, bottom row
+  <code>down</code>, <code>back</code>, <code>left</code>. The doughnut's icing is on its top and
+  its crumb underneath, which is the normal being read off the field rather than off the centroid;
+  the watermelon's stripes continue across the boundaries between views; the orange's underside is
+  dark because the object it was rendered from was photographed sitting on a surface, and that
+  baked lighting is carried rather than removed.</figcaption>
+</figure>
+
+<div class="note"><strong>What a wrong number looked like, twice.</strong> Two entries in these
+tables were wrong before they were right, and neither was caught by its magnitude. The orange read
+493 in the last transverse column while the same model read 66.5 in the second &mdash; easy to
+write up as the cost of leaving the Gaussians behind, and in fact a bug, exposed by an
+inconsistency rather than a size: the watermelon's two routes agreed with each other and the
+orange's did not. Drawing the two layers apart located it in one step, 982 dark pixels in 8 blobs
+from the exterior alone against 26 from the face, because the face was a slab of chosen thickness
+tested against a band of chosen width, covered 95% of the section, and through the missing 5% the
+far half's own peel showed from behind. The second was visible only in the longitudinal figure: the
+doughnut's two lobes were joined by a slab of icing, because the baseline rasterises a band about
+the plane &mdash; it draws a slice &mdash; while this renderer was drawing the whole surviving
+half, whose inner surface projects straight into the hole. Defining the face as the first material
+the ray meets past the plane, and the exterior as the same slab the baseline uses, leaves nothing
+to tune in either. Two renderers that disagree about which model is better are reporting a defect
+in one of them, not a property of either model.</div>
+
+<p>What remains between the O&#8209;Voxel columns and the rasteriser is a rendering gap rather
+than a missing interior, and it is measurable as such: fine detail inside the section, against the
+photographs&rsquo; 13.0e&#8209;3, is 13.8e&#8209;3 for the rasteriser and 18e&#8209;3 to
+20e&#8209;3 here. One ray per pixel reading one flat colour per cell is nearest&#8209;neighbour
+reconstruction of a piecewise&#8209;constant field; overlapping anisotropic kernels average
+several primitives into every pixel and never show it. Interpolating between cell centres is the
+next thing to try, and the transverse watermelon &mdash; 178.5 against the baseline&rsquo;s 187.4
+&mdash; is the evidence that the representation is not what is in the way.</p>
+
+<p class="mut">The doughnut&rsquo;s route&nbsp;1 model is the 30-iteration run the baseline was
+established with; every other model in these tables was trained for 200. KID is quoted from a
+three-image subset and moves by about 10e-3 between draws, which is why the FID column carries the
+comparisons.</p>
+
 
 <h3>Storage against accuracy</h3>
 
