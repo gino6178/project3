@@ -264,19 +264,31 @@ same thing at every resolution and on every object: \(\tau = 0.5\) is "within ha
 planes it replaces, on average".</p>
 
 <div class="tw"><table>
-<thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>mean error</th><th>95th</th><th>triangles</th><th>area</th></tr></thead>
+<thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
 <tbody>
-<tr><td>&minus;1 (identity)</td><td>442,253</td><td>100.0%</td><td>0.000</td><td>0.000</td><td>934,520</td><td>100.0%</td></tr>
-<tr><td>0.10</td><td>315,661</td><td>71.4%</td><td>0.024 \(h\)</td><td>0.107</td><td>&mdash;</td><td>&mdash;</td></tr>
-<tr><td>0.35</td><td>280,491</td><td>63.4%</td><td>0.036</td><td>0.363</td><td>614,129</td><td>104.2%</td></tr>
-<tr><td>0.50</td><td>215,304</td><td><strong>48.7%</strong></td><td>0.072</td><td>0.510</td><td>474,742</td><td>102.7%</td></tr>
-<tr><td>1.00</td><td>149,031</td><td><strong>33.7%</strong></td><td>0.093</td><td>0.639</td><td>326,341</td><td>101.8%</td></tr>
+<tr><td>&minus;1 (identity)</td><td>442,253</td><td>100.0%</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>934,520</td></tr>
+<tr><td>0.10</td><td>315,661</td><td>71.4%</td><td>0.024</td><td>0.262</td><td>0.163 \(h\)</td><td>1.000</td><td>&mdash;</td></tr>
+<tr><td>0.35</td><td>280,491</td><td>63.4%</td><td>0.036</td><td>0.328</td><td>0.215</td><td>1.000</td><td>614,129</td></tr>
+<tr><td>0.50</td><td>215,304</td><td><strong>48.7%</strong></td><td>0.072</td><td>0.468</td><td>0.338</td><td>1.209</td><td>474,742</td></tr>
+<tr><td>0.75</td><td>164,647</td><td>37.2%</td><td>0.112</td><td>0.619</td><td>0.481</td><td>1.478</td><td>&mdash;</td></tr>
+<tr><td>1.00</td><td>149,031</td><td><strong>33.7%</strong></td><td>0.093</td><td>0.712</td><td>0.556</td><td>1.637</td><td>326,341</td></tr>
 </tbody></table></div>
+
+<div class="note"><strong>One direction is not enough, and the give-away is that it stops being
+monotone.</strong> Measuring only from each surviving node to the nearest original vertex asks
+whether a node is on the surface and never whether the surface is still covered &mdash; a node
+standing in for a large patch scores perfectly as long as it sits on it. Read that way the error
+rises to 0.112 at \(\tau = 0.75\) and then <em>falls</em> to 0.093 at 1.00 while the node count
+keeps dropping, which is a measure running out of things to say rather than a surface improving.
+The reverse direction is five to eight times larger and monotone throughout, and the symmetric
+mean is what the table quotes. An earlier version of this page quoted the forward direction alone
+and understated the cost at \(\tau = 0.5\) by a factor of six.</div>
 
 <p>The orange's exterior, against the uniform grid it replaces; the doughnut's 530,958 nodes fall
 to 197,017 at \(\tau = 0.5\) and 143,247 at \(\tau = 1.0\). The error is how far the collapse
 moved the surface: a node nobody merged keeps the vertex the library solved for it, so the
-identity row is exactly zero rather than nearly so, and half the nodes cost 0.07 of a cell.</p>
+identity row is exactly zero rather than nearly so, and half the nodes cost a third of a
+cell.</p>
 
 <p>The identity row is also the check that the meshing is right. An adaptive dual grid has no
 uniform mesh to hand back to the library, so the faces are rebuilt here: every crossed fine edge
