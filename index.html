@@ -35,6 +35,13 @@
   .links a:hover{border-bottom-color:var(--acc)}
   h2{font-size:25px;margin:52px 0 10px;font-weight:600;letter-spacing:-.01em;text-align:left}
   h3{font-size:19px;margin:34px 0 8px;font-weight:600}
+  h4{font-size:16.5px;margin:24px 0 6px;font-weight:600;color:#2a2a2a}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0}
+  .grid3 figure{margin:0}
+  .grid3 video{width:100%;display:block;border-radius:3px;background:#fff}
+  .grid3 .cap{color:var(--mut);font-size:13.5px;margin-top:5px;text-align:center}
+  @media (max-width:640px){ .grid3{grid-template-columns:1fr} }
+  .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
   p{margin:0 0 16px;text-align:left}
   .lead{font-size:17.5px}
   figure{margin:26px 0}
@@ -104,12 +111,31 @@ measured on the three objects of the previous project, or on a synthetic shape w
 known in closed form.
 </p>
 
+<div class="grid3">
+  <figure>
+    <video src="assets/ovox_orange.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">orange</div>
+  </figure>
+  <figure>
+    <video src="assets/ovox_watermelon.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">watermelon</div>
+  </figure>
+  <figure>
+    <video src="assets/ovox_doughnut.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">doughnut</div>
+  </figure>
+</div>
+
+<p class="mut" style="text-align:center;margin-top:-10px">Three planes, eight pieces, drawn apart
+and back &mdash; each object as a cube volume with an O&#8209;Voxel surface, with no Gaussian
+anywhere in the picture. The pieces come out of connected-component labelling on the lattice; the
+colour on every exposed face is read from the volume that was already there, and no face is
+tinted.</p>
+
 <figure>
   <video src="assets/multicut.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption>Three planes, eight pieces, drawn apart and back. 850,822 solid cells refine to
-  1,159,634 leaves in the bands; the pieces come out of connected-component labelling on the
-  lattice and range from 127,115 to 174,231 leaves. Nothing in the picture is a Gaussian: the
-  exterior carries the model's own colour and the cut faces are tinted per piece.</figcaption>
+  <figcaption>The same for the orange at full size. 850,822 solid cells refine to 1,159,634 leaves
+  in the bands, and the pieces range from 127,115 to 174,231 leaves.</figcaption>
 </figure>
 
 <h2 id="intro">Introduction</h2>
@@ -191,6 +217,151 @@ the existing particle set and give it piece identity, so subdividing a cut band 
 and not particles.</p>
 
 <h2 id="method">Method</h2>
+
+<h3>The pipeline, in order</h3>
+
+<p>Everything below is one path, and every object takes it. What differs between two objects is a
+parameter file, never a branch in the code: an object arrives, a two-level lattice is built from
+it, the interior is trained against cross-sections, the boundary is converted, and from then on
+cutting, drawing and simulating are the same three operations on the same two structures. The
+steps are numbered here so that the sections that follow can be read as the justification for one
+of them rather than as a list of techniques.</p>
+
+<ol>
+<li><strong>The lattice.</strong> Cells at a coarse spacing \(h_c\) fill the volume and cells
+within a skin band of the boundary are subdivided to \(h_f = h_c/2\). The occupancy must be a
+solid, because a cube's support is exactly its own cell and a gap is therefore a hole rather than
+a coverage parameter. Two routes reach this and they are the subject of the next two sections.</li>
+<li><strong>The skin.</strong> The outermost cells take the object's appearance &mdash; carried
+already if the lattice was quantised from a reconstruction, projected from six rendered views if
+the topology was generated.</li>
+<li><strong>The interior.</strong> Trained against cross-section photographs and diffusion
+targets, with the skin pinned to what step 2 wrote. The exterior therefore owes nothing to this
+training, which is what makes the appearance claim testable at all.</li>
+<li><strong>The boundary.</strong> The occupancy boundary at any level is converted to an
+O&#8209;Voxel dual grid, each node placed by its own quadric. This is the whole visible surface,
+not a patch: the original peel and every face a cut will expose are one representation.</li>
+<li><strong>The cut.</strong> Refine the band the plane crosses, drop the adjacencies the plane
+separates, label connected components. Piece identity is discrete; the visible face is an exact
+planar polygon per cell.</li>
+<li><strong>Drawing and simulating.</strong> The dual grid answers what is visible; the cube
+hierarchy answers where material is. Neither borrows the other's job.</li>
+<li><strong>The loop.</strong> A dual grid is a closed surface, so it is a valid occupancy input:
+the object that was cut can be voxelised again and cut again, with no path back through a
+reconstruction.</li>
+</ol>
+
+<div class="flow">
+<svg viewBox="0 0 820 1010" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="The pipeline from an input object to a cut, composited and simulated result">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5c5c5c"/>
+    </marker>
+    <style>
+      .b  { fill:#f7f7f7; stroke:#d8d8d8; stroke-width:1 }
+      .ba { fill:#fdf4f1; stroke:#e0b6aa; stroke-width:1 }
+      .t  { font:600 13.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#111 }
+      .s  { font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#5c5c5c }
+      .n  { font:600 11.5px ui-monospace,Menlo,Consolas,monospace; fill:#a8412a }
+      .l  { stroke:#5c5c5c; stroke-width:1.3; fill:none; marker-end:url(#ar) }
+      .lb { font:italic 12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#5c5c5c }
+    </style>
+  </defs>
+
+  <text class="s" x="10" y="16">step 0 &mdash; what arrives</text>
+  <rect class="b" x="10" y="26" width="380" height="52" rx="3"/>
+  <text class="t" x="24" y="47">a scanned model</text>
+  <text class="s" x="24" y="66">a reconstruction exists: structure and appearance are both in it</text>
+  <rect class="b" x="430" y="26" width="380" height="52" rx="3"/>
+  <text class="t" x="444" y="47">nothing but a description</text>
+  <text class="s" x="444" y="66">no model was ever made &mdash; the doughnut</text>
+
+  <path class="l" d="M200,78 L200,112"/>
+  <path class="l" d="M620,78 L620,112"/>
+
+  <text class="s" x="10" y="132">step 1 &mdash; the two-level lattice, solid by construction</text>
+  <rect class="ba" x="10" y="142" width="380" height="76" rx="3"/>
+  <text class="t" x="24" y="163">route 1 &nbsp;quantise the reconstruction</text>
+  <text class="s" x="24" y="182">occupancy is whatever the scan put there, so holes are repaired</text>
+  <text class="n" x="24" y="201">voxelize.py &rarr; close_and_fill</text>
+  <rect class="ba" x="430" y="142" width="380" height="76" rx="3"/>
+  <text class="t" x="444" y="163">route 2 &nbsp;generate the topology</text>
+  <text class="s" x="444" y="182">a cell is inside when the signed-distance field says so</text>
+  <text class="n" x="444" y="201">make_shape.py &rarr; sphere / torus / ellipsoid</text>
+
+  <path class="l" d="M200,218 L200,252"/>
+  <path class="l" d="M620,218 L620,252"/>
+  <text class="lb" x="636" y="240">six views, projected</text>
+
+  <text class="s" x="10" y="272">step 2 &mdash; the skin takes the appearance</text>
+  <rect class="b" x="10" y="282" width="380" height="58" rx="3"/>
+  <text class="t" x="24" y="303">already carried by the quantised cells</text>
+  <text class="s" x="24" y="322">nothing to project: the scan's colour is on the cells</text>
+  <rect class="b" x="430" y="282" width="380" height="58" rx="3"/>
+  <text class="t" x="444" y="303">project through the camera that made each view</text>
+  <text class="n" x="444" y="322">ply_six_refs.py &rarr; skin_project.py</text>
+
+  <path class="l" d="M200,340 L200,372 L400,372 L400,392"/>
+  <path class="l" d="M620,340 L620,372 L420,372 L420,392"/>
+
+  <rect class="ba" x="150" y="396" width="520" height="62" rx="3"/>
+  <text class="t" x="170" y="418">one two-level lattice, whatever the route</text>
+  <text class="s" x="170" y="437">interior at h_c, skin refined to h_f, occupancy solid, colour on the skin</text>
+  <text class="n" x="170" y="452">gs_fill.ply + cell_level.pt + lattice.pt</text>
+
+  <path class="l" d="M410,458 L410,492"/>
+
+  <rect class="b" x="150" y="496" width="520" height="66" rx="3"/>
+  <text class="t" x="170" y="518">step 3 &mdash; train the interior only</text>
+  <text class="s" x="170" y="537">cross-sections supervise the volume; the skin is pinned to what the views wrote,</text>
+  <text class="s" x="170" y="553">so the exterior owes nothing to this run</text>
+  <text class="n" x="600" y="553">train_voxel.py</text>
+
+  <path class="l" d="M410,562 L410,596"/>
+
+  <rect class="b" x="150" y="600" width="520" height="66" rx="3"/>
+  <text class="t" x="170" y="622">step 4 &mdash; convert the whole boundary to O&#8209;Voxel</text>
+  <text class="s" x="170" y="641">the occupancy boundary at any level becomes a dual grid, each node placed by its</text>
+  <text class="s" x="170" y="657">own quadric &mdash; the surface pays for curvature, not for resolution</text>
+  <text class="n" x="600" y="657">globalovox.py</text>
+
+  <path class="l" d="M410,666 L410,700"/>
+
+  <rect class="b" x="150" y="704" width="520" height="66" rx="3"/>
+  <text class="t" x="170" y="726">step 5 &mdash; cut: discrete topology, analytic boundary</text>
+  <text class="s" x="170" y="745">refine the band, drop the edges the plane separates, label components;</text>
+  <text class="s" x="170" y="761">each cut cell contributes an exact planar polygon</text>
+  <text class="n" x="560" y="761">subdivide.py, cutmesh.py</text>
+
+  <path class="l" d="M280,770 L280,806"/>
+  <path class="l" d="M540,770 L540,806"/>
+
+  <rect class="b" x="10" y="810" width="390" height="76" rx="3"/>
+  <text class="t" x="24" y="832">step 6a &mdash; draw it</text>
+  <text class="s" x="24" y="851">one surface representation for the original peel and</text>
+  <text class="s" x="24" y="867">every new face; nearer takes the pixel</text>
+  <text class="n" x="24" y="882">composite.py</text>
+
+  <rect class="b" x="420" y="810" width="390" height="76" rx="3"/>
+  <text class="t" x="434" y="832">step 6b &mdash; simulate it</text>
+  <text class="s" x="434" y="851">particles are relabelled, not resampled; collision is a floor</text>
+  <text class="s" x="434" y="867">division, an occupancy test and one plane comparison</text>
+  <text class="n" x="434" y="882">physics.py, binding.py</text>
+
+  <path class="l" d="M205,886 L205,918 L400,918 L400,938"/>
+  <path class="l" d="M615,886 L615,918 L420,918 L420,938"/>
+
+  <rect class="ba" x="150" y="942" width="520" height="56" rx="3"/>
+  <text class="t" x="170" y="964">the loop closes</text>
+  <text class="s" x="170" y="983">the O&#8209;Voxel surface is a closed surface, so it is the occupancy the next cut is built from</text>
+</svg>
+</div>
+
+<p class="mut">Steps 1 and 2 are where the two routes differ and nothing after step 3 can tell
+which was taken. That is the point of drawing it this way: the representation is downstream of
+how the object arrived.</p>
 
 <h3>The occupancy has to be a solid first</h3>
 
@@ -704,23 +875,79 @@ keeps dropping. The reverse direction is five to eight times larger and monotone
 
 <h3>The four things the first version deferred</h3>
 
+<p>The first version left four things out on purpose, each because doing it early would have
+tangled a hard question with an easy one. All four are done, and what follows is what each is,
+why it was worth deferring, and what it turned out to be worth &mdash; measured, in the same way
+as everything else here.</p>
+
+<h4>Exact polyhedral fragments</h4>
+
+<p>A cut cell can be handled two ways. Subdivide it until the misclassified sliver is small, which
+is what the first version does and what every number about band refinement is about; or clip the
+cell against the plane and keep the exact polyhedron, which has no error to shrink. Clipping was
+deferred because it introduces a second geometric representation for exactly the cells that are
+hardest to reason about, and the piece-labelling had to be trusted first.</p>
+
+<p>The comparison, on a sphere whose volume is known: clipping with <em>no</em> subdivision beats
+voxel approximation at \(h/8\), which needs ten times the leaves &mdash; 0.00392 relative volume
+error against 0.00457. The exact column does not move with level, because it does not depend on
+how the cut was voxelised, and 0.00392 is not its error at all: it is the sphere's own occupancy
+discretisation, the floor both methods sit on. So the honest statement is that clipping reaches
+the floor immediately and refinement approaches it by spending leaves.</p>
+
+<h4>Adaptive band refinement</h4>
+
+<p>Refining every cell the plane crosses to the same level is uniform and wasteful: a cell the
+plane clips at a corner is nearly all on one side and gains almost nothing from being split, while
+a cell the plane bisects gains a great deal. The criterion is how much of the cell's own volume
+the plane would misclassify if it stopped here, and refinement continues only where that is
+large.</p>
+
+<p>It buys 20.6%, 32.6% and 35.8% fewer leaves at uniform levels 1, 2 and 3 on an oblique cut, at
+equal misclassified volume and identical piece counts &mdash; the same answer for two thirds of
+the memory at the deepest level. On an axis-aligned cut it buys nothing at all, and that is worth
+saying rather than hiding: every cut cell is then misclassified identically, there is no variation
+for the criterion to exploit, and it correctly declines to refine. A method that helped on the
+easy case and not the hard one would be the wrong way round.</p>
+
+<h4>Several cuts at once</h4>
+
+<p>Real use is not one plane. Two questions had to be separated: whether \(k\) planes applied
+together give what \(k\) planes applied one at a time give, and whether the cost of the second
+plane depends on where it falls relative to the first. Both are properties of the band, which is
+why this waited until the band was measured.</p>
+
+<p>One-at-a-time equals all-at-once exactly &mdash; the same leaves, the same pieces. The cost is
+strongly local: a second cut 0.02 from the first costs +77 leaves, where an unrelated one costs
++3,983, because two nearby planes refine largely the same cells. And when no cut is live the
+blocks fold back to precisely the uncut lattice, 850,822 leaves from 1,159,634, so the structure
+carries no permanent tax for having been cut.</p>
+
+<h4>Cut-time super-resolution</h4>
+
+<p>A freshly exposed face is the one surface a viewer inspects closely, and it is also the one
+surface that was never observed. Generating detail for it at render time would put that detail on
+the frame &mdash; it would change when the camera moved, and two pieces of the same cut would not
+agree. Baking it into the band puts it in the volume instead, where it is the same detail from
+every direction and survives the piece being picked up and turned over.</p>
+
+<p>What that costs is resolution, so the question is how much of the generated detail a given
+band spends. At one pixel per leaf, 95.2% of the distance from the original face to the generated
+one is kept; at six pixels per leaf, 77.4%. Super-resolution and subdivision are therefore one
+budget and not two, which is the useful conclusion: asking for finer detail on the face and asking
+for a finer band are the same request, and the band is where it has to be paid for.</p>
+
 <div class="tw"><table>
 <thead><tr><th>deferred item</th><th>what it buys</th></tr></thead>
 <tbody>
-<tr><td>Exact polyhedral fragments</td><td>Clipping with <em>no</em> subdivision beats the voxel
-approximation at \(h/8\), which needs ten times the leaves: 0.00392 relative volume error against
-0.00457. The exact column does not move with level because it does not depend on how the cut was
-voxelised, and 0.00392 is the sphere's own occupancy discretisation, the floor for both.</td></tr>
-<tr><td>Adaptive band refinement</td><td>20.6%, 32.6% and 35.8% fewer leaves at uniform levels 1,
-2 and 3 on an oblique cut, at equal misclassified volume and identical piece counts. On an
-axis-aligned cut, nothing — every cut cell is then misclassified identically and the criterion
-correctly declines.</td></tr>
-<tr><td>Several cuts at once</td><td>A second cut 0.02 from the first costs +77 leaves where an
-unrelated one costs +3,983, and one-at-a-time equals all-at-once exactly. When no cut is live the
-blocks fold back to precisely the uncut lattice, 850,822 leaves from 1,159,634.</td></tr>
-<tr><td>Cut-time super-resolution</td><td>Baked into the band, so the detail is in the volume and
-not on the frame. At one pixel per leaf 95.2% of the distance from the original face to the
-generated one is kept; at six pixels 77.4%. Super-resolution and subdivision are one budget.</td></tr>
+<tr><td>Exact polyhedral fragments</td><td>0.00392 against 0.00457 relative volume error, with no
+subdivision against ten times the leaves</td></tr>
+<tr><td>Adaptive band refinement</td><td>20.6% / 32.6% / 35.8% fewer leaves at levels 1 / 2 / 3,
+at equal error and identical piece counts</td></tr>
+<tr><td>Several cuts at once</td><td>+77 leaves for a nearby second cut against +3,983 for an
+unrelated one; exact agreement with one-at-a-time</td></tr>
+<tr><td>Cut-time super-resolution</td><td>95.2% of the generated detail kept at one pixel per leaf,
+77.4% at six</td></tr>
 </tbody></table></div>
 
 <h2 id="conclusion">Conclusion</h2>
