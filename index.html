@@ -264,23 +264,33 @@ same thing at every resolution and on every object: \(\tau = 0.5\) is "within ha
 planes it replaces, on average".</p>
 
 <div class="tw"><table>
-<thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>mean error</th><th>95th</th><th>max</th></tr></thead>
+<thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>mean error</th><th>95th</th><th>triangles</th><th>area</th></tr></thead>
 <tbody>
-<tr><td>0.00</td><td>294,111</td><td>95.2%</td><td>0.312 \(h\)</td><td>0.787</td><td>1.193</td></tr>
-<tr><td>0.10</td><td>141,995</td><td>46.0%</td><td>0.339</td><td>0.787</td><td>1.120</td></tr>
-<tr><td>0.35</td><td>106,649</td><td>34.5%</td><td>0.347</td><td>0.787</td><td>1.754</td></tr>
-<tr><td>0.50</td><td>90,803</td><td><strong>29.4%</strong></td><td>0.356</td><td>0.787</td><td>1.715</td></tr>
-<tr><td>1.00</td><td>56,357</td><td><strong>18.2%</strong></td><td>0.446</td><td>0.841</td><td>1.548</td></tr>
+<tr><td>&minus;1 (identity)</td><td>442,253</td><td>100.0%</td><td>0.000</td><td>0.000</td><td>934,520</td><td>100.0%</td></tr>
+<tr><td>0.10</td><td>315,661</td><td>71.4%</td><td>0.024 \(h\)</td><td>0.107</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td>0.35</td><td>280,491</td><td>63.4%</td><td>0.036</td><td>0.363</td><td>614,129</td><td>104.2%</td></tr>
+<tr><td>0.50</td><td>215,304</td><td><strong>48.7%</strong></td><td>0.072</td><td>0.510</td><td>474,742</td><td>102.7%</td></tr>
+<tr><td>1.00</td><td>149,031</td><td><strong>33.7%</strong></td><td>0.093</td><td>0.639</td><td>326,341</td><td>101.8%</td></tr>
 </tbody></table></div>
 
-<p>The orange's exterior, against the uniform grid it replaces. The doughnut's 530,958 nodes fall
-to 197,025 at \(\tau = 0.5\) and 143,258 at \(\tau = 1.0\). The error stays under one cell
-throughout: 3.4&times; fewer nodes costs 0.04 of a cell in the mean. The uniform grid is
-\(\tau = 0\) on this curve rather than a different method.</p>
+<p>The orange's exterior, against the uniform grid it replaces; the doughnut's 530,958 nodes fall
+to 197,017 at \(\tau = 0.5\) and 143,247 at \(\tau = 1.0\). The error is how far the collapse
+moved the surface: a node nobody merged keeps the vertex the library solved for it, so the
+identity row is exactly zero rather than nearly so, and half the nodes cost 0.07 of a cell.</p>
+
+<p>The identity row is also the check that the meshing is right. An adaptive dual grid has no
+uniform mesh to hand back to the library, so the faces are rebuilt here: every crossed fine edge
+is shared by four fine voxels, each is resolved to the node that survived and contains it, and
+the four resolved nodes are the quad &mdash; degenerating to a triangle where two of them are the
+same node, which is what a collapse across an edge means. That is adaptive dual contouring's
+output without its recursion, and cracks cannot arise because neighbouring cells of different
+sizes resolve to the <em>same</em> node along their shared edge. With nothing merged it
+reproduces the library's own mesh exactly: 934,520 triangles, area 15.22346 against 15.22352, and
+the same 12,606 boundary and 41,947 non-manifold edges the library's mesh already has.</p>
 
 <figure>
   <img src="assets/qef_collapse.png" alt="The collapsed surface at three tolerances">
-  <figcaption>The same exterior at \(\tau = 0\), 0.5 and 1.0. At 29% and 18% of the nodes it is
+  <figcaption>The same exterior at \(\tau = 0\), 0.5 and 1.0. At 49% and 34% of the nodes it is
   the same orange; the rim steps visibly at \(\tau = 1.0\), which is what a coarser node is. Each
   node is drawn as the patch it stands for &mdash; a square of its own cell's size in the plane
   its quadric fitted &mdash; so a coarse region is not merely a sparser one. The residual speckle
@@ -373,8 +383,8 @@ leaf it sits in is inside some <em>other</em> leaf is circular; it never is.</di
 <ul>
   <li><strong>The exterior costs more, before the collapse.</strong> 442,253 dual-grid voxels
       replace 118,142 skin Gaussians on the orange and 850,790 replace 280,672 on the doughnut.
-      The collapse takes the first of those to 90,803 at \(\tau = 0.5\), and the quantisation is
-      available to both representations, so the comparison that matters is not yet run.</li>
+      The collapse takes the first of those to 215,304 at \(\tau = 0.5\), and the quantisation
+      is available to both representations, so the comparison that matters is not yet run.</li>
   <li><strong>The surface is faceted, and a perceptual score will say so.</strong> A dual-grid
       skin is one small planar patch per node, and CLIP or LPIPS against a photograph is exactly
       the kind of measurement that punishes that even where the geometry is right. No perceptual
