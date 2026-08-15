@@ -199,29 +199,50 @@ by its own quadric leaves 48.7% of the nodes at a third of a cell of error, with
 recovered exactly at the identity setting, and 95.2% of it still standing at zero tolerance.</p>
 
 <p>The design this implements deliberately defers six things and admits five limitations.
-Four of the six are done here and measured, and three of the five close; what remains is stated in
+Five of the six are done here and measured, and three of the five close; what remains is stated in
 the conclusion rather than left for a reader to notice.</p>
 
 <h2 id="related">Related Work</h2>
 
-<p><strong>Interior generation.</strong> FruitNinja [1] supervises an object's interior with
+<p><strong>Interior generation.</strong> FruitNinja [3] supervises an object's interior with
 depth-conditioned diffusion on cross-sections and stores it as opaque atomic Gaussians. We keep
 that supervision unchanged — the contribution here is not a new way to invent an interior — and
-change what holds it.</p>
+change what holds it. The lattice it is quantised onto, and the baseline every number here is
+measured against, is the previous project in this series [4]; the two before it are Gaussian
+splatting [1] and the radiance fields it descends from [2]. Solid texture synthesis [29] asked the
+same question before diffusion existed, and InFusion [30] and InnerGS [31] answer it for scenes
+rather than for objects that are cut.</p>
 
-<p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O-Voxel [2] is a
+<p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O&#8209;Voxel [11] is a
 field-free sparse voxel surface: a Flexible Dual Grid in which every active voxel carries a dual
 vertex and grid-edge intersection flags, handling open, non-manifold and fully enclosed internal
 surfaces. We use its official encoder without reimplementing it, for the cut face and then for the
 whole exterior.</p>
 
-<p><strong>Dual contouring.</strong> The dual vertex is a quadric's minimiser [3], and quadrics
+<p><strong>Dual contouring.</strong> The dual vertex is a quadric's minimiser [6], and quadrics
 are additive over their planes. That is what lets an adaptive grid be built by collapsing, and the
-collapse's error be read off the same quadric that placed the vertex.</p>
+collapse's error be read off the same quadric that placed the vertex. Marching cubes [5] is the
+alternative that places vertices on edges instead, and cannot represent a feature inside a cell;
+quadric error metrics [9] are where the additivity comes from, and dual marching cubes [7] and
+feature-sensitive extraction [8] are the two nearest relatives of what is used here.</p>
 
-<p><strong>Physics on primitives.</strong> PhysGaussian [4] simulates Gaussians with MPM. We keep
+<p><strong>Physics on primitives.</strong> PhysGaussian [19] simulates Gaussians with MPM. We keep
 the existing particle set and give it piece identity, so subdividing a cut band multiplies leaves
-and not particles.</p>
+and not particles. The solver is MPM [20, 21] in the moving-least-squares form [22], and the
+surface follows it by the same weighted-sum binding that skinning [24] and embedded deformation
+[25] use, which is why an affine motion is followed exactly.</p>
+
+<p><strong>Structured Gaussians.</strong> Attaching primitives to a structure rather than
+letting them float is the line this work sits in: anchors on a sparse voxel grid [13], a dense
+structured cube [14], an octree with level of detail [15], and before them the octree and voxel
+grids that accelerated radiance fields [16, 17] and the hash encoding that replaced them [18]. What
+those share is that the structure serves the renderer. Here it serves the volume, and the renderer
+is given its own representation.</p>
+
+<p><strong>Evaluation.</strong> FID [32] and KID [33] against photographs, and CLIPScore [34] for
+whether the picture reads as the thing. Both distribution metrics are used at sample sizes far
+below where they are reliable [35, 36], which the results section states rather than works
+around.</p>
 
 <h2 id="method">Method</h2>
 
@@ -354,7 +375,7 @@ it means the same object.</p>
 <p>Everything below is one path, and every object takes it. What differs between two objects is a
 parameter file, never a branch in the code. To be exact about which part is a script: steps 1 to 3
 are <code>method/run.sh</code>, driven entirely by <code>objects/&lt;name&gt;.conf</code>, and
-steps 4 to 7 are run against the lattice it produces by the tools each box names. an object arrives, a two-level lattice is built from
+steps 4 to 7 are run against the lattice it produces by the tools each box names. An object arrives, a two-level lattice is built from
 it, the interior is trained against cross-sections, the boundary is converted, and from then on
 cutting, drawing and simulating are the same three operations on the same two structures. The
 steps are numbered here so that the sections that follow can be read as the justification for one
@@ -598,7 +619,19 @@ on the top and icing smeared down the sides.</p>
        style="margin-top:14px">
   <img src="assets/route2_watermelon.png" alt="The watermelon's six references and the skinned result"
        style="margin-top:14px">
-  <figcaption>For each object, the six references above and the skinned generated topology below,
+  <figcaption><strong>The lower row's side views are rendered upside down; the data is not.</strong>
+  This was found by a reviewer and confirmed against the lattice, which is the one place no camera
+  is involved: the doughnut's icing cells sit at +0.075 along the configured upward axis and its
+  crust cells at &minus;0.034, so the icing is on top where it belongs. Both of this project's
+  render paths &mdash; the Gaussian rasteriser and the point splat &mdash; invert the vertical axis
+  for the four side views, and they also differ from each other by a flip, so at least one further
+  error is in there. The <code>up</code> and <code>down</code> views are unaffected in appearance
+  because a ring is symmetric under the flip, which is why this survived several readings. It does
+  not touch any number on this page: the held-out cut renders were checked against the baseline's
+  own renderer and agree with it, mirrored and unmirrored, at 3.93 against 8.13 mean absolute
+  difference.
+  <br><br>
+  For each object, the six references above and the skinned generated topology below,
   in the same six views and cropped to their own silhouettes at one scale &mdash; so the rows can
   be compared where it matters, which is texture against texture and whether each view landed on
   the face it names. The doughnut's icing is on top in both rows and its crumb underneath; the
@@ -659,9 +692,8 @@ lying exactly on the plane, worst deviation 0.00e+00 over a whole object. Every 
 refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
 them.</p>
 
-<p>The visible face of a crossed cell is what the plane cuts out of that cell, which for an
-axis-aligned cube is a convex polygon with at most six sides. It is obtained exactly, by
-intersecting the plane with the twelve edges and ordering the hits about the plane's normal,</p>
+<p>Written as one statement: the visible face of a crossed cell is the plane's intersection
+with that cell, and every vertex of it is an edge crossing solved in closed form,</p>
 
 <div class="eq"><div class="body">
 $$ \Pi_{\mathbf{k}} = \bigl\{\, \mathbf{x} \in C_{\mathbf{k}} :
@@ -847,7 +879,7 @@ residual rather than hiding it.</p>
 
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption>One piece under a non-affine deformation, its surface bound to the particles, and a
+  <figcaption>One piece under a non-affine deformation, its surface bound to the particles, and
   the same particles driving it two ways: a per-piece rigid fit on the left, which is the honest
   best a single transform can do, and the particle binding on the right, both coloured by how far
   each vertex has left its material on one shared scale. The rigid panel goes red and stays
@@ -1062,7 +1094,7 @@ cells, but the whole object does.</p>
 </figure>
 
 <div class="note"><strong>What a wrong number looked like, three times.</strong> Three entries in
-these tables were wrong before they were right, and neither was caught by its magnitude. The orange read
+these tables were wrong before they were right, and none of them was caught by its magnitude. The orange read
 493 in the last transverse column while the same model read 66.5 in the second &mdash; easy to
 write up as the cost of leaving the Gaussians behind, and in fact a bug, exposed by an
 inconsistency rather than a size: the watermelon's two routes agreed with each other and the
