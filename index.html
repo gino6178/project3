@@ -151,12 +151,8 @@ interior that is plausible rather than measured, supervising it with depth-condi
 on cross-sections.</p>
 
 <p>FruitNinja generates an object's interior so that cutting it open reveals something plausible,
-and represents that interior as a cloud of small opaque Gaussians. The previous project put the
-whole object on a two-level voxel lattice, one Gaussian per occupied cell, which turned a set of
-points into a graph and made cutting, collision and material decomposition follow from the same
-eight numbers per cell. This one asks what the interior primitives are still for.</p>
-
-<p>The previous project in this series kept that supervision and changed the representation,
+and represents that interior as a cloud of small opaque Gaussians. The previous project in this
+series kept that supervision and changed the representation,
 putting the whole object &mdash; interior and skin alike &mdash; on a two-level voxel lattice with
 one Gaussian per occupied cell. Quantising is what turns a set of points into a graph, and three
 properties followed from it: a cut could be answered by exact connected-component labelling rather
@@ -167,7 +163,7 @@ feature, what is the Gaussian in it still for?</p>
 
 <p>They are doing two jobs. As <em>volume</em> they answer whether space is occupied, which cells
 are connected, which piece a point is in, and what a colliding body has hit. As <em>image</em>
-they are splatted, blended and composited. Equation&nbsp;(2) of the specification this work
+they are splatted, blended and composited. The trade this work
 implements states the conflict directly: a Gaussian's support has one scale \(\sigma\) and the
 lattice has one spacing \(h\), and</p>
 
@@ -194,7 +190,7 @@ pays for curvature rather than resolution.</strong> A dual grid costs \(O(A/h^2)
 by its own quadric leaves 48.7% of the nodes at a third of a cell of error, with the uniform grid
 recovered exactly at the identity setting, and 95.2% of it still standing at zero tolerance.</p>
 
-<p>The specification this implements deliberately defers six things and admits five limitations.
+<p>The design this implements deliberately defers six things and admits five limitations.
 Four of the six are done here and measured, and three of the five close; what remains is stated in
 the conclusion rather than left for a reader to notice.</p>
 
@@ -221,10 +217,136 @@ and not particles.</p>
 
 <h2 id="method">Method</h2>
 
+<h3>What a dual grid is</h3>
+
+<p>The rest of this section assumes one structure, so it is worth drawing before it is used. A
+dual grid is the surface counterpart of an occupancy grid. The occupancy answers inside-or-outside
+per cell, and its boundary is a staircase at the cell size &mdash; that is what makes it a good
+volume and a poor surface. A dual grid keeps the same cells and puts <em>one vertex inside each
+boundary cell</em>, connected to the vertices of the cells it shares a face with. The connectivity
+is therefore fixed by the occupancy and needs no marching table; only the positions are free, and
+that is where the surface comes back.</p>
+
+<p>Where each vertex goes is decided by a quadric. Every surface plane passing through the cell
+contributes a term \(( \mathbf{n} \cdot \mathbf{x} - \mathbf{n} \cdot \mathbf{p} )^2\), the
+terms add, and the vertex is placed at the minimum of the sum. Two consequences matter here. On a
+flat patch every cell's quadric has the same minimum, so those vertices coincide and can be merged
+&mdash; a flat region costs almost nothing, which is what &ldquo;paying for curvature instead of
+resolution&rdquo; means. And a cell the quadric cannot pin down, because it has seen too little
+surface, can be detected and left alone rather than guessed at.</p>
+
+<div class="flow">
+<svg viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="What a dual grid is: occupancy, dual vertices, the quadric that places one, and a cut">
+  <defs>
+    <style>
+      .gl { stroke:#dedede; stroke-width:1; fill:none }
+      .oc { fill:#fbe6de; stroke:#e6c3b6; stroke-width:1 }
+      .st { stroke:#a8412a; stroke-width:2.4; fill:none }
+      .du { stroke:#a8412a; stroke-width:2.2; fill:none; stroke-linejoin:round }
+      .dv { fill:#a8412a }
+      .sf { stroke:#3a3a3a; stroke-width:1.8; fill:none; stroke-dasharray:5 3 }
+      .nm { stroke:#5c5c5c; stroke-width:1.1; fill:none }
+      .cp { stroke:#1b6ca8; stroke-width:2.2; fill:none }
+      .cf { fill:#1b6ca8 }
+      .h  { font:600 13.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#111 }
+      .s  { font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#5c5c5c }
+    </style>
+  </defs>
+
+  <!-- A: occupancy -->
+  <text class="h" x="10" y="18">a &nbsp;the occupancy</text>
+  <text class="s" x="10" y="36">a cell is inside or it is not</text>
+  <g transform="translate(10,46)">
+    <g class="oc">
+      <rect x="80" y="40" width="40" height="40"/><rect x="120" y="40" width="40" height="40"/>
+      <rect x="40" y="80" width="40" height="40"/><rect x="80" y="80" width="40" height="40"/>
+      <rect x="120" y="80" width="40" height="40"/><rect x="160" y="80" width="40" height="40"/>
+      <rect x="40" y="120" width="40" height="40"/><rect x="80" y="120" width="40" height="40"/>
+      <rect x="120" y="120" width="40" height="40"/><rect x="160" y="120" width="40" height="40"/>
+      <rect x="80" y="160" width="40" height="40"/><rect x="120" y="160" width="40" height="40"/>
+    </g>
+    <g class="gl">
+      <path d="M0,0 H240 M0,40 H240 M0,80 H240 M0,120 H240 M0,160 H240 M0,200 H240 M0,240 H240"/>
+      <path d="M0,0 V240 M40,0 V240 M80,0 V240 M120,0 V240 M160,0 V240 M200,0 V240 M240,0 V240"/>
+    </g>
+    <path class="st" d="M80,40 H160 V80 H200 V160 H160 V200 H80 V160 H40 V80 H80 Z"/>
+    <text class="s" x="0" y="262">the boundary is a staircase at the cell size</text>
+  </g>
+
+  <!-- B: dual vertices -->
+  <text class="h" x="290" y="18">b &nbsp;one dual vertex per boundary cell</text>
+  <text class="s" x="290" y="36">joined across the faces the cells share</text>
+  <g transform="translate(290,46)">
+    <g class="gl">
+      <path d="M0,0 H240 M0,40 H240 M0,80 H240 M0,120 H240 M0,160 H240 M0,200 H240 M0,240 H240"/>
+      <path d="M0,0 V240 M40,0 V240 M80,0 V240 M120,0 V240 M160,0 V240 M200,0 V240 M240,0 V240"/>
+    </g>
+    <path class="du" d="M104,52 L140,52 L172,72 L182,112 L182,140 L166,176 L134,190 L104,190
+                        L70,174 L56,138 L56,100 L70,66 Z"/>
+    <g class="dv">
+      <circle cx="104" cy="52" r="3.6"/><circle cx="140" cy="52" r="3.6"/>
+      <circle cx="172" cy="72" r="3.6"/><circle cx="182" cy="112" r="3.6"/>
+      <circle cx="182" cy="140" r="3.6"/><circle cx="166" cy="176" r="3.6"/>
+      <circle cx="134" cy="190" r="3.6"/><circle cx="104" cy="190" r="3.6"/>
+      <circle cx="70" cy="174" r="3.6"/><circle cx="56" cy="138" r="3.6"/>
+      <circle cx="56" cy="100" r="3.6"/><circle cx="70" cy="66" r="3.6"/>
+    </g>
+    <text class="s" x="0" y="262">the vertex moves inside its cell; the staircase does not</text>
+  </g>
+
+  <!-- C: the quadric -->
+  <text class="h" x="570" y="18">c &nbsp;where the vertex goes</text>
+  <text class="s" x="570" y="36">the minimum of its own quadric</text>
+  <g transform="translate(570,46)">
+    <g class="gl"><rect x="20" y="60" width="120" height="120" fill="none"/></g>
+    <rect x="20" y="60" width="120" height="120" class="oc" fill-opacity="0.5"/>
+    <path class="sf" d="M20,150 L96,74"/>
+    <path class="sf" d="M96,74 L140,96"/>
+    <path class="nm" d="M58,112 L40,94"/><path class="nm" d="M118,85 L128,66"/>
+    <circle cx="96" cy="74" r="4.2" class="dv"/>
+    <text class="s" x="0" y="206">each plane through the cell contributes</text>
+    <text class="s" x="0" y="222">a term; the sum is one quadric, and its</text>
+    <text class="s" x="0" y="238">minimum is the vertex. Flat cells agree,</text>
+    <text class="s" x="0" y="254">so their vertices merge and the count falls.</text>
+  </g>
+
+  <!-- D: a cut -->
+  <g transform="translate(10,330)">
+    <text class="h" x="0" y="14">d &nbsp;and a cut</text>
+    <text class="s" x="80" y="14">the plane crosses a band of cells; each crossed cell contributes one exact planar polygon,</text>
+    <text class="s" x="80" y="32">and the pieces are the connected components of what the plane did not separate</text>
+    <g transform="translate(0,26)">
+      <g class="gl">
+        <path d="M0,0 H240 M0,30 H240 M0,60 H240 M0,90 H240"/>
+        <path d="M0,0 V90 M40,0 V90 M80,0 V90 M120,0 V90 M160,0 V90 M200,0 V90 M240,0 V90"/>
+      </g>
+      <path class="cp" d="M0,74 L240,20"/>
+      <g class="cf">
+        <rect x="0" y="60" width="40" height="14" fill-opacity="0.25"/>
+        <rect x="40" y="55" width="40" height="19" fill-opacity="0.25"/>
+        <rect x="80" y="46" width="40" height="20" fill-opacity="0.25"/>
+        <rect x="120" y="37" width="40" height="20" fill-opacity="0.25"/>
+        <rect x="160" y="28" width="40" height="20" fill-opacity="0.25"/>
+        <rect x="200" y="20" width="40" height="17" fill-opacity="0.25"/>
+      </g>
+    </g>
+  </g>
+</svg>
+</div>
+
+<p class="mut">O&#8209;Voxel is TRELLIS.2's implementation of this &mdash; a Flexible Dual Grid, in
+which every active voxel carries its dual vertex and flags for which of its edges the surface
+crosses. &ldquo;Field-free&rdquo; means it stores those crossings rather than a signed-distance
+field to reconstruct them from. Where this page says <em>dual grid</em> and <em>O&#8209;Voxel</em>
+it means the same object.</p>
+
 <h3>The pipeline, in order</h3>
 
 <p>Everything below is one path, and every object takes it. What differs between two objects is a
-parameter file, never a branch in the code: an object arrives, a two-level lattice is built from
+parameter file, never a branch in the code. To be exact about which part is a script: steps 1 to 3
+are <code>method/run.sh</code>, driven entirely by <code>objects/&lt;name&gt;.conf</code>, and
+steps 4 to 7 are run against the lattice it produces by the tools each box names. an object arrives, a two-level lattice is built from
 it, the interior is trained against cross-sections, the boundary is converted, and from then on
 cutting, drawing and simulating are the same three operations on the same two structures. The
 steps are numbered here so that the sections that follow can be read as the justification for one
@@ -288,7 +410,7 @@ reconstruction.</li>
   <rect class="ba" x="10" y="142" width="380" height="76" rx="3"/>
   <text class="t" x="24" y="163">route 1 &nbsp;quantise the reconstruction</text>
   <text class="s" x="24" y="182">occupancy is whatever the scan put there, so holes are repaired</text>
-  <text class="n" x="24" y="201">voxelize.py &rarr; close_and_fill</text>
+  <text class="n" x="24" y="201">voxelize.py</text>
   <rect class="ba" x="430" y="142" width="380" height="76" rx="3"/>
   <text class="t" x="444" y="163">route 2 &nbsp;generate the topology</text>
   <text class="s" x="444" y="182">a cell is inside when the signed-distance field says so</text>
@@ -343,9 +465,9 @@ reconstruction.</li>
 
   <rect class="b" x="10" y="810" width="390" height="76" rx="3"/>
   <text class="t" x="24" y="832">step 6a &mdash; draw it</text>
-  <text class="s" x="24" y="851">one surface representation for the original peel and</text>
-  <text class="s" x="24" y="867">every new face; nearer takes the pixel</text>
-  <text class="n" x="24" y="882">composite.py</text>
+  <text class="s" x="24" y="851">the dual grid for the whole object; a march into the</text>
+  <text class="s" x="24" y="867">cube volume for a slice, since a slice is a slab</text>
+  <text class="n" x="24" y="882">exterior_views.py, ovox_cuts.py</text>
 
   <rect class="b" x="420" y="810" width="390" height="76" rx="3"/>
   <text class="t" x="434" y="832">step 6b &mdash; simulate it</text>
@@ -382,7 +504,10 @@ how much it mattered is the connected-component count of the <em>uncut</em> obje
 <tr><td>watermelon</td><td>553,043 &rarr; 561,805 <span class="mut">(+1.6%)</span></td><td>1</td><td><strong>1</strong></td></tr>
 </tbody></table></div>
 
-<p>Those are holes, not fragments. A piece count means nothing until this has run, so the cutting
+<p>A sponge falls into many
+connected components and a solid into one, so the component count of the <em>uncut</em> object is
+a direct read-out of whether the occupancy is solid &mdash; and it says these are holes, not
+fragments. A piece count means nothing until this has run, so the cutting
 code runs it rather than assuming it.</p>
 
 <h3>Two routes to an exterior</h3>
@@ -390,7 +515,7 @@ code runs it rather than assuming it.</p>
 <p>An object arrives one of two ways, and the representation has to be reachable from both. If it
 was scanned there is a reconstruction, and the structure and the appearance are both in it: the
 baseline quantises that model directly and is done. If it was not scanned &mdash; the doughnut,
-which has no released model and never had one &mdash; there is nothing to take, so the topology
+for which no reconstruction was ever released &mdash; there is nothing to take, so the topology
 has to be generated and the appearance supplied as six views. Both routes end at the same thing:
 a two-level lattice whose interior is solid and whose skin carries the object's colour.</p>
 
@@ -557,7 +682,7 @@ view \(z\), &minus;0.058 against +0.060.</p>
 
 <p>The exterior here is the boundary of the occupancy at whatever level, not the refined cells.
 Taking it as <code>cell_level &ne; 0</code> looks right and is not: the orange's refined cells run
-from \(r/R\) 0.808 to 1.000 while its coarse cells reach 0.936, so much of the outer surface is
+from \(r/R\) &mdash; distance from the centroid over the maximum such distance &mdash; 0.808 to 1.000 while its coarse cells reach 0.936, so much of the outer surface is
 coarse cells the level test discards, and 77% of what remains sits in the bottom 40% of the object.
 Even correct, a Gaussian shell is not opaque &mdash; it covers 20% to 24% of the frame &mdash; so
 at the silhouette the cut face shows through from the side it should be hidden on. That, and not
@@ -706,7 +831,9 @@ chasing next.</p>
 
 <p>Everything above measures a part. This measures the whole thing end to end, and it is the same
 measurement in all four columns: twelve cuts at depths and azimuths training never sampled, scored
-against the photographs by FID, KID and CLIP. Six are transverse and six longitudinal, and both
+against the photographs by FID, KID and CLIP. <em>Transverse</em> cuts are across the object's
+upright axis &mdash; the picture of a slice of orange &mdash; and <em>longitudinal</em> ones pass
+through it, which for the doughnut means through the hole and for the orange through the core. Six are transverse and six longitudinal, and both
 are reported, because a section that is right across one axis and wrong along the other is not
 right. The O&#8209;Voxel columns do not reproduce the plane sequence &mdash; they register a
 renderer with the file that owns it, so the planes, the depths, the cameras and the order are
@@ -737,6 +864,9 @@ whether every held-out transverse section still reads as an annulus.</p>
 <tr><td>KID</td><td>233.2e-3</td><td>226.3e-3</td><td>234.9e-3</td><td><strong>206.9e-3</strong></td></tr>
 <tr><td>CLIP</td><td>32.3</td><td>31.9</td><td>32.5</td><td>32.2</td></tr>
 <tr><td>doughnut</td><td>annulus</td><td>6/6</td><td>6/6</td><td>6/6</td><td>6/6</td></tr>
+<tr><td colspan="6" class="mut">The doughnut has no released reconstruction to quantise, so its
+&ldquo;route 1&rdquo; is a lattice built from a generated mesh by the older shell-and-fill route
+&mdash; a third path, kept because it is what the baseline was established on.</td></tr>
 </tbody></table></div>
 
 <p>Read the second column first, because it is the one the method rests on. Generating the
@@ -858,16 +988,27 @@ anisotropy, median 116 to 1, inside them.</p>
 
 <p>Trilinear interpolation over the eight surrounding cell centres puts twenty-four numbers into
 every pixel, more than the rasteriser&rsquo;s fourteen and all of them the cube
-representation&rsquo;s own, with no Gaussian introduced. Fine detail inside the section falls from
-18&ndash;20e&#8209;3 to 15.1&ndash;15.7e&#8209;3 against the photographs&rsquo; 13.0e&#8209;3 and
-the rasteriser&rsquo;s 13.8e&#8209;3. The route-2 watermelon then sits below the Gaussian baseline
+representation&rsquo;s own, with no Gaussian introduced. Fine detail inside the section &mdash;
+throughout this page, the standard deviation of a Laplacian of the render taken over the
+section&rsquo;s own pixels, so more of it means more high-frequency content and the photographs
+set the target rather than a floor &mdash; falls from 18&ndash;20e&#8209;3 to
+15.1&ndash;15.7e&#8209;3 against the photographs&rsquo; 13.0e&#8209;3 and the
+rasteriser&rsquo;s 13.8e&#8209;3. The route-2 watermelon then sits below the Gaussian baseline
 on both families, 167.5 against 187.4 and 263.5 against 266.0, which is the claim this section
 exists to test: the representation is not what is in the way.</p>
 
-<p class="mut">The doughnut&rsquo;s route&nbsp;1 model is the 30-iteration run the baseline was
-established with; every other model in these tables was trained for 200. KID is quoted from a
-three-image subset and moves by about 10e-3 between draws, which is why the FID column carries the
-comparisons.</p>
+<div class="note"><strong>What these numbers can and cannot carry.</strong> Each score is
+computed on six renders against six to twenty-three photographs. FID is badly behaved at that
+sample size &mdash; the Inception covariance is rank-deficient and the estimate is dominated by
+its own bias &mdash; so a difference of a few points between two columns is not evidence of
+anything, and where the text below says one route &ldquo;beats&rdquo; another on a margin like
+187.4 against 180.9, read it as <em>not distinguishable</em>. What the tables do support is the
+large separations: 66.5 against 130.5 on the orange&rsquo;s transverse row, and 147.6 against
+370.2 on its longitudinal one. KID is the less biased estimator at this size and is quoted from a
+three-image subset, moving by about 10e-3 between draws; it agrees with FID on every ordering
+here, which is the only cross-check available without more renders. The doughnut&rsquo;s
+route&nbsp;1 model is the 30-iteration run the baseline was established with; every other model in
+these tables was trained for 200.</div>
 
 
 <h3>Storage against accuracy</h3>
@@ -896,12 +1037,14 @@ standing in for a large patch scores perfectly as long as it sits on it. Read th
 rises to 0.112 at \(\tau = 0.75\) and then <em>falls</em> to 0.093 at 1.00 while the node count
 keeps dropping. The reverse direction is five to eight times larger and monotone throughout.</div>
 
-<h3>The four things the first version deferred</h3>
+<h3>Four of the six deferred items, done and measured</h3>
 
-<p>The first version left four things out on purpose, each because doing it early would have
-tangled a hard question with an easy one. All four are done, and what follows is what each is,
-why it was worth deferring, and what it turned out to be worth &mdash; measured, in the same way
-as everything else here.</p>
+<p>Six things were left out of the first version on purpose, each because doing it early would
+have tangled a hard question with an easy one. A fifth &mdash; converting the original exterior to
+a dual grid &mdash; is done and has its own section above. The sixth, deriving a child cell's
+feature by interpolating its parent and neighbours, is not done and is not implemented. The four
+below are, and what follows is what each is, why it was worth deferring, and what it turned out to
+be worth.</p>
 
 <h4>Exact polyhedral fragments</h4>
 
@@ -996,22 +1139,36 @@ quantised one's do not. Run again on both, on the orange, with the same planes:<
     <td><strong>0.000</strong></td></tr>
 <tr><td>Cut-time super-resolution<br><span class="mut">detail kept, at 256 / 512 / 1536 px</span></td>
     <td>93.4% / 77.4% / 74.6%</td>
-    <td>100.0% / <strong>62.7%</strong> / <strong>57.5%</strong></td></tr>
+    <td>100.0% / 76.1% / 73.2%</td></tr>
 </tbody></table></div>
 
-<p>Three of the four are indifferent to which route built the lattice, within a percentage point or
-two, and the piece counts and the exact-agreement checks are unchanged. Exact fragments is slightly
-<em>better</em> on the generated lattice &mdash; the split moves by 0.000 points rather than 0.004
-&mdash; which is what a lattice whose cells are exactly on their grid should give, since there is
-no quantisation of the cell positions left for the clipping to disagree with.</p>
+<p>All four transfer. Adaptive refinement and several-cuts-at-once differ by a percentage point or
+two, the piece counts and the exact-agreement checks are unchanged, and super-resolution keeps the
+same fraction of its generated detail on both. Exact fragments is slightly <em>better</em> on the
+generated lattice &mdash; the split moves by 0.000 points rather than 0.004 &mdash; which is what a
+lattice whose cells sit exactly on their grid should give, since there is no quantisation of the
+cell positions left for the clipping to disagree with.</p>
 
-<p>Super-resolution is the one that does not transfer. At one pixel per leaf the generated lattice
-keeps everything, 100.0% against 93.4%, and from there it falls away faster: 62.7% against 77.4% at
-512, 57.5% against 74.6% at 1536. The generated skin is three fine cells deep and uniform, so it
-has less depth to bake generated detail into than a quantised skin that varies in thickness; asking
-for more detail than the band can hold is where the two diverge. That is a property of the band and
-not of the algorithm, and it says the two should be chosen together &mdash; which is the same
-conclusion the single-route measurement reached, arrived at from the other side.</p>
+<figure>
+  <img src="assets/deferred_supersr.png" alt="Super-resolution on both routes: the face as held,
+       the generated detail, the baked result, and a nearby plane">
+  <figcaption>Cut-time super-resolution, both routes, on the orange. Left to right: the face as the
+  volume holds it, the detail generated for it, that detail baked into the band and the face
+  redrawn from the cells, and &mdash; the point of baking rather than enhancing &mdash; a plane six
+  degrees away drawn from the same cells, which inherits what was baked because the detail is in
+  the volume and not on the frame. The two rows are the same procedure on a quantised and on a
+  generated lattice.</figcaption>
+</figure>
+
+<div class="note"><strong>The first version of this measurement was of nothing.</strong> Run on the
+generated lattice, every panel came out uniform grey and the retention read 100.0% / 62.7% / 57.5%
+&mdash; which we wrote up as the generated skin having less depth to bake into. It has nothing to
+do with depth. <code>supersr.py</code> read colour from the lattice, and a lattice built by
+<code>make_shape</code> carries flat grey in its interior on purpose, so the measurement was asking
+how much of a constant survived being resampled. Reading colour from the trained model instead
+gives the row above, and the conclusion reverses: super-resolution transfers. The same
+wrong-colour-source defect had already been found and fixed in three other files, which is what
+made it recognisable in a fourth.</div>
 
 <h2 id="conclusion">Conclusion</h2>
 
@@ -1040,7 +1197,7 @@ operations on a structured grid, not queries against arbitrary free particles.</
       the ones the Gaussian run learned; refitting them for the cube renderer flattened the
       orange's segment walls twice, and the criterion for "the walls survived" — the angular
       oscillation of a section over its middle radii — is in place but the fit is not.</li>
-  <li><strong>Section 11 of the specification is not done.</strong> The four-representation
+  <li><strong>The experimental programme is not done.</strong> The four-representation
       baseline and the interior-appearance, resolution-stability, memory and runtime families wait
       until the architecture is finished. Topology and collision are the two already measured.</li>
 </ul>
@@ -1069,7 +1226,7 @@ operations on a structured grid, not queries against arbitrary free particles.</
 Every number on this page was measured on the three objects the previous project reports, or on a
 synthetic shape whose answer is known in closed form, and the things that were wrong on the way are
 kept rather than tidied away. An earlier version of this page described a different implementation
-of the same specification; it was replaced rather than amended, because it did not survive the real
+of the same design; it was replaced rather than amended, because it did not survive the real
 objects. Continues
 <a href="https://gino6178.github.io/project2/" style="color:var(--acc)">Voxel-Lattice
 Gaussians</a>.
