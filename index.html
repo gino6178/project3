@@ -110,11 +110,28 @@ synthetic shape whose answer is known in closed form.
 
 <h2 id="intro">Introduction</h2>
 
+<p>A reconstruction of a real object knows only its outside. Photographs see a surface, so a
+model fitted to photographs has a surface and nothing behind it, and the moment such an object is
+cut open the cut reveals an empty shell. That is a problem for any application in which objects
+are handled rather than merely viewed &mdash; surgery rehearsal, food and material simulation,
+games in which things break &mdash; and it is the problem FruitNinja addresses by generating an
+interior that is plausible rather than measured, supervising it with depth-conditioned diffusion
+on cross-sections.</p>
+
 <p>FruitNinja generates an object's interior so that cutting it open reveals something plausible,
 and represents that interior as a cloud of small opaque Gaussians. The previous project put the
 whole object on a two-level voxel lattice, one Gaussian per occupied cell, which turned a set of
 points into a graph and made cutting, collision and material decomposition follow from the same
 eight numbers per cell. This one asks what the interior primitives are still for.</p>
+
+<p>The previous project in this series kept that supervision and changed the representation,
+putting the whole object &mdash; interior and skin alike &mdash; on a two-level voxel lattice with
+one Gaussian per occupied cell. Quantising is what turns a set of points into a graph, and three
+properties followed from it: a cut could be answered by exact connected-component labelling rather
+than by clustering, material separated into peel, flesh and pith without supervision, and the
+appearance stopped depending on the resolution it was rendered at. This project asks the question
+that lattice leaves open. If every interior cell already has an address, a neighbourhood and a
+feature, what is the Gaussian in it still for?</p>
 
 <p>They are doing two jobs. As <em>volume</em> they answer whether space is occupied, which cells
 are connected, which piece a point is in, and what a colliding body has hit. As <em>image</em>
@@ -123,9 +140,9 @@ implements states the conflict directly: a Gaussian's support has one scale \(\s
 lattice has one spacing \(h\), and</p>
 
 <div class="eq"><div class="body">
-\[ \rho = \frac{\sigma}{h}, \qquad
+$$ \rho = \frac{\sigma}{h}, \qquad
    \rho \ll 1 \Rightarrow \text{holes in the volume}, \qquad
-   \rho \gtrsim 1 \Rightarrow \text{blending across material boundaries} \]
+   \rho \gtrsim 1 \Rightarrow \text{blending across material boundaries} $$
 </div><div class="num">(1)</div></div>
 
 <p>Neither is a bug to be tuned away; they are the same parameter pulling in two directions. The
@@ -133,6 +150,20 @@ resolution is to stop asking one primitive for both. A cube's support <em>is</em
 solid occupancy renders solid at any resolution with nothing to tune, and a dual-grid surface has
 an explicit polygonal boundary, so coverage comes from triangles rather than from ellipsoids
 overlapping enough to hide the gaps between them.</p>
+
+<p>Three things follow from splitting them, and they are what this paper reports. <strong>The
+volume becomes solid.</strong> A cube's support is its cell, so the occupancy has to be right
+rather than the primitives fat, and making it right turns objects that label as 44, 1,561 and
+2,641 disconnected pieces into one piece each. <strong>The cut becomes exact where it shows.</strong>
+Topology stays discrete on the lattice, where discreteness is cheap, and the visible face becomes
+an analytic polygon per cell, matching closed-form cut areas to 1.0% and 1.3%. <strong>The surface
+pays for curvature rather than resolution.</strong> A dual grid costs \(O(A/h^2)\); collapsing it
+by its own quadric leaves 48.7% of the nodes at a third of a cell of error, with the uniform grid
+recovered exactly at zero tolerance.</p>
+
+<p>The specification this implements deliberately defers six things and admits five limitations.
+Four of the six are done here and measured, and three of the five close; what remains is stated in
+the conclusion rather than left for a reader to notice.</p>
 
 <h2 id="related">Related Work</h2>
 
@@ -185,7 +216,7 @@ because a cube's extreme values on a plane sit at two opposite corners and which
 on the signs of \(\mathbf{n}\):</p>
 
 <div class="eq"><div class="body">
-\[ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| \]
+$$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
 </div><div class="num">(2)</div></div>
 
 <p>Adjacency is arithmetic too. A leaf's neighbour is at its own level or coarser — were it finer,
@@ -226,11 +257,11 @@ dual vertex is already the minimiser of a quadric. For supporting planes
 \(\{(\mathbf{n}_i, d_i)\}\),</p>
 
 <div class="eq"><div class="body">
-\[ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
+$$ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
    = \mathbf{x}^\top\! A\,\mathbf{x} - 2\,\mathbf{b}^\top\mathbf{x} + c, \qquad
    A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;
    \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;
-   c = \sum_i d_i^2 \]
+   c = \sum_i d_i^2 $$
 </div><div class="num">(3)</div></div>
 
 <p>so a quadric is ten numbers and — the property everything rests on — it is additive over the
@@ -241,7 +272,7 @@ block, add the quadrics, solve \(A\mathbf{x} = \mathbf{b}\), and read the residu
 plane the block covers. The tolerance is a length rather than a residual,</p>
 
 <div class="eq"><div class="body">
-\[ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{planes the block covers}, \]
+$$ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{planes the block covers}, $$
 </div><div class="num">(4)</div></div>
 
 <p>because a raw residual grows with how many planes fall in a block and would coarsen a dense
@@ -308,7 +339,7 @@ the orange and 1,509 on the watermelon; with the plane test, none.</p>
 its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
 
 <div class="eq"><div class="body">
-\[ \mathbf{x}_v(t) = \sum_j w_{vj}\,\mathbf{x}_j(t), \qquad \sum_j w_{vj} = 1, \]
+$$ \mathbf{x}_v(t) = \sum_j w_{vj}\,\mathbf{x}_j(t), \qquad \sum_j w_{vj} = 1, $$
 </div><div class="num">(5)</div></div>
 
 <p>which follows any affine motion <em>exactly</em> — 8.9e-16, machine precision, for a rotation
@@ -361,6 +392,36 @@ piece below a stated threshold rejoins the neighbour it shares the most faces wi
 
 <p>That 1% is the voxelisation of the silhouette, not the polygons — every vertex lies on the plane
 to 0.00e+00.</p>
+
+<h3>Cross-sections, on all three objects</h3>
+
+<figure>
+  <img src="assets/sections.png" alt="Three cross-sections of each of the three objects">
+  <figcaption>Three planes through each object, drawn by cube lookup from the filled occupancy:
+  the smallest cell containing each pixel, decoded through the shared head. The orange's segments
+  and pale pith, the watermelon's seeds, white pith and rind, and the doughnut's crumb are what
+  the volume holds, not what a renderer adds.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>cells after filling</th><th>holes, before</th><th>holes, after</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>877,494 &rarr; 1,059,348</td><td>14.9% / 8.7% / 6.6%</td><td><strong>0.28% / 0.02% / 0.00%</strong></td></tr>
+<tr><td>watermelon</td><td>1,741,169 &rarr; 2,534,444</td><td>9.2% / 9.5% / 11.4%</td><td><strong>0.08% / 0.05% / 0.10%</strong></td></tr>
+<tr><td>doughnut</td><td>797,838 &rarr; 809,318</td><td>10.6% / 10.7% / 11.4%</td><td>9.5% / 8.7% / 10.2%</td></tr>
+</tbody></table></div>
+
+<p>The fraction of each section's own area the renderer leaves unpainted, before and after the
+occupancy is made solid. A cube's support is exactly its cell, so a gap is a hole in the occupancy
+and not a coverage parameter, which is why the first column exists at all &mdash; those holes were
+always there and Gaussians were covering them with their skirts.</p>
+
+<p>The doughnut does not solidify, and that is worth stating rather than tuning. Closing at radius
+one adds 1.1% of its coarse cells and leaves 8.7% to 10.2%; radius three costs 38% more fine cells
+and reaches 5.3% to 7.6%. Its gaps are not the torus's own hole &mdash; the largest connected gap
+is 30% of the gap area and sits off-centre &mdash; and its lattice is the one built from a
+generated mesh rather than quantised from a released Gaussian model, which is the difference worth
+chasing next.</p>
 
 <h3>Storage against accuracy</h3>
 
