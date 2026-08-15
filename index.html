@@ -898,9 +898,9 @@ residual rather than hiding it.</p>
 <div class="tw"><table>
 <thead><tr><th>object</th><th>band leaves</th><th>total leaves</th><th>pieces, one cut</th><th>pieces, three cuts</th></tr></thead>
 <tbody>
-<tr><td>doughnut</td><td>21,760 (3.9%)</td><td>552,276</td><td>2</td><td>8 <span class="mut">(18 raw, slivers rejoined)</span></td></tr>
-<tr><td>orange</td><td>86,776 (9.4%)</td><td>926,751</td><td>2</td><td>8</td></tr>
-<tr><td>watermelon</td><td>66,408 (10.7%)</td><td>618,382</td><td>2</td><td>&mdash;</td></tr>
+<tr><td>doughnut</td><td>21,760 (4.0%)</td><td>545,586</td><td>2</td><td>8 <span class="mut">(18 raw, slivers rejoined)</span></td></tr>
+<tr><td>orange</td><td>86,776 (9.4%)</td><td>924,252</td><td>2</td><td>8</td></tr>
+<tr><td>watermelon</td><td>66,408 (10.7%)</td><td>620,162</td><td>2</td><td>&mdash;</td></tr>
 </tbody></table></div>
 
 <p>The band is \(O(N^{2/3})\) of the volume. On synthetic shapes the piece counts are the known
@@ -1301,9 +1301,13 @@ cell positions left for the clipping to disagree with.</p>
        the generated detail, the baked result, and a nearby plane">
   <figcaption>Cut-time super-resolution, both routes, on the orange. Left to right: the face as the
   volume holds it, the detail generated for it, that detail baked into the band and the face
-  redrawn from the cells, and &mdash; the point of baking rather than enhancing &mdash; a plane six
-  degrees away drawn from the same cells, which inherits what was baked because the detail is in
-  the volume and not on the frame. The two rows are the same procedure on a quantised and on a
+  redrawn from the cells, and a plane six degrees away drawn from the same cells.
+  <strong>That fourth panel is where the method stops, not where it succeeds.</strong> The
+  write-back reaches the cells the face passed through and no others, so the tilted plane meets
+  mostly cells that never received it: it correlates more with panel 1 than with panel 3, and it
+  has two streaks where panel 3 has thirty membranes. Baking puts the detail in the volume rather
+  than on the frame, which is what makes it survive the piece being turned over &mdash; but only
+  within the band that was written. The two rows are the same procedure on a quantised and on a
   generated lattice.</figcaption>
 </figure>
 
