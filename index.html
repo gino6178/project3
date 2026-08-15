@@ -511,12 +511,12 @@ whether every held-out transverse section still reads as an annulus.</p>
 <thead><tr><th>transverse</th><th></th><th>baseline (3DGS)</th><th>route 2 (3DGS)</th>
 <th>route 1 (O&#8209;Voxel)</th><th>route 2 (O&#8209;Voxel)</th></tr></thead>
 <tbody>
-<tr><td rowspan="3">orange</td><td>FID</td><td>86.4</td><td><strong>66.5</strong></td><td>151.0</td><td>122.3</td></tr>
-<tr><td>KID</td><td>125.0e-3</td><td><strong>88.7e-3</strong></td><td>249.3e-3</td><td>182.7e-3</td></tr>
-<tr><td>CLIP</td><td>31.6</td><td>31.7</td><td>31.1</td><td>32.2</td></tr>
-<tr><td rowspan="3">watermelon</td><td>FID</td><td>187.4</td><td>180.9</td><td>194.2</td><td><strong>178.5</strong></td></tr>
-<tr><td>KID</td><td>233.2e-3</td><td>226.3e-3</td><td>257.0e-3</td><td><strong>224.6e-3</strong></td></tr>
-<tr><td>CLIP</td><td>32.3</td><td>31.9</td><td>33.7</td><td>32.3</td></tr>
+<tr><td rowspan="3">orange</td><td>FID</td><td>86.4</td><td><strong>66.5</strong></td><td>130.5</td><td>107.9</td></tr>
+<tr><td>KID</td><td>125.0e-3</td><td><strong>88.7e-3</strong></td><td>208.4e-3</td><td>158.8e-3</td></tr>
+<tr><td>CLIP</td><td>31.6</td><td>31.7</td><td>30.9</td><td>32.1</td></tr>
+<tr><td rowspan="3">watermelon</td><td>FID</td><td>187.4</td><td>180.9</td><td>188.3</td><td><strong>167.5</strong></td></tr>
+<tr><td>KID</td><td>233.2e-3</td><td>226.3e-3</td><td>234.9e-3</td><td><strong>206.9e-3</strong></td></tr>
+<tr><td>CLIP</td><td>32.3</td><td>31.9</td><td>32.5</td><td>32.2</td></tr>
 <tr><td>doughnut</td><td>annulus</td><td>6/6</td><td>6/6</td><td>6/6</td><td>6/6</td></tr>
 </tbody></table></div>
 
@@ -540,30 +540,51 @@ cross-section photographs, which is what the claim was.</p>
 <thead><tr><th>longitudinal</th><th></th><th>baseline (3DGS)</th><th>route 2 (3DGS)</th>
 <th>route 1 (O&#8209;Voxel)</th><th>route 2 (O&#8209;Voxel)</th></tr></thead>
 <tbody>
-<tr><td rowspan="3">orange</td><td>FID</td><td><strong>147.6</strong></td><td>247.3</td><td>378.7</td><td>416.8</td></tr>
-<tr><td>KID</td><td><strong>175.3e-3</strong></td><td>303.7e-3</td><td>593.6e-3</td><td>653.9e-3</td></tr>
-<tr><td>CLIP</td><td>31.8</td><td>34.2</td><td>31.8</td><td><strong>34.6</strong></td></tr>
-<tr><td rowspan="3">watermelon</td><td>FID</td><td>266.0</td><td><strong>244.4</strong></td><td>347.3</td><td>282.8</td></tr>
-<tr><td>KID</td><td>331.9e-3</td><td><strong>300.9e-3</strong></td><td>508.9e-3</td><td>351.0e-3</td></tr>
-<tr><td>CLIP</td><td>33.4</td><td>33.7</td><td>34.2</td><td><strong>34.7</strong></td></tr>
+<tr><td rowspan="3">orange</td><td>FID</td><td><strong>147.6</strong></td><td>247.3</td><td>292.6</td><td>370.2</td></tr>
+<tr><td>KID</td><td><strong>175.3e-3</strong></td><td>303.7e-3</td><td>437.3e-3</td><td>585.4e-3</td></tr>
+<tr><td>CLIP</td><td>31.8</td><td>34.2</td><td>31.1</td><td><strong>33.8</strong></td></tr>
+<tr><td rowspan="3">watermelon</td><td>FID</td><td>266.0</td><td>244.4</td><td>314.9</td><td><strong>263.5</strong></td></tr>
+<tr><td>KID</td><td>331.9e-3</td><td>300.9e-3</td><td>413.6e-3</td><td><strong>320.1e-3</strong></td></tr>
+<tr><td>CLIP</td><td>33.4</td><td>33.7</td><td>33.6</td><td><strong>34.7</strong></td></tr>
 </tbody></table></div>
 
 <p>The longitudinal family does not repeat the transverse result and is reported because it does
-not. Route 2 still leads on the watermelon, by 8% of FID, but on the orange it is 247.3 against
-the baseline's 147.6 while scoring 34.2 against 31.8 on CLIP &mdash; the picture reads more like
-an orange and matches the photographs' distribution less well. The generated ellipsoid carries the
-object's measured extents but not the shape of its longitudinal profile, and a lengthwise section
-is where that difference lives; a transverse section of a sphere and of an ellipsoid are the same
-picture. This is the sharpest open question the two routes leave, and it is a question about the
-generated topology rather than about the renderer, because it is present in the Gaussian column.
-</p>
+not. Route 2 leads on the watermelon in both renderers, but on the orange it is 247.3 against the
+baseline&rsquo;s 147.6 while scoring 34.2 against 31.8 on CLIP &mdash; the picture reads more like
+an orange and matches the photographs&rsquo; distribution less well. It is not the outline: the
+silhouette&rsquo;s aspect is 0.823 for route 2 and 0.820 for the baseline, both equally short of
+the photographs&rsquo; 0.894, and the radial luminance profile from centre to rind is the same
+curve in all three. It is not the poles either, where a skin painted from six views would be most
+exposed &mdash; the outer band differs between poles and sides by &minus;0.034 for route 2 against
+&minus;0.056 for the baseline, so route 2 is the more even of the two. What does differ is the
+colour of the pulp, and the transverse family says the same thing from the other side:</p>
+
+<div class="tw"><table>
+<thead><tr><th>pulp, blue channel</th><th>photographs</th><th>baseline</th><th>route 2</th></tr></thead>
+<tbody>
+<tr><td>transverse</td><td>0.149</td><td>0.168</td><td><strong>0.148</strong></td></tr>
+<tr><td>longitudinal</td><td>0.179</td><td>0.221</td><td>0.234</td></tr>
+</tbody></table></div>
+
+<p>Blue is the channel that separates orange pulp from pale pith, and route 2 matches the
+photographs almost exactly across the transverse family &mdash; 0.148 against 0.149, where the
+baseline sits at 0.168 &mdash; which is most of why it wins there. Along the other axis it
+overshoots instead, 0.234 against 0.179, and the baseline overshoots less. Fine detail tells the
+same story: 13.1e&#8209;3 in the photographs, 17.6e&#8209;3 in the baseline and 19.1e&#8209;3 in
+route 2, where transversally the three are 13.0, 13.8 and 15.2. Longitudinal sections are harder
+for both models &mdash; the baseline&rsquo;s own FID nearly doubles between the two families
+&mdash; and route 2 is further out on the axis it is already worse on. This is a property of the
+trained interior and not of the renderer, because it is present in the Gaussian column, and it is
+the sharpest question the two routes leave open.</p>
 
 <h3>The exterior, with no Gaussians in it</h3>
 
 <p>The cuts measure the interior. The claim that the appearance is independent of Gaussian
 training is a claim about the outside, and a shell can be right in every section and still be
 wrong where two views meet &mdash; a section never looks at a seam. These are the six directions
-the painting used, drawn from the dual-grid surface.</p>
+the painting used, drawn from the dual-grid surface. This is also what the exterior representation
+is for: a slice does not need it, because the rind a slice shows is the slab&rsquo;s own skin
+cells, but the whole object does.</p>
 
 <figure>
   <img src="assets/ext_ovox_orange.png" alt="The orange's O-Voxel exterior in six views">
@@ -592,18 +613,28 @@ far half's own peel showed from behind. The second was visible only in the longi
 doughnut's two lobes were joined by a slab of icing, because the baseline rasterises a band about
 the plane &mdash; it draws a slice &mdash; while this renderer was drawing the whole surviving
 half, whose inner surface projects straight into the hole. Defining the face as the first material
-the ray meets past the plane, and the exterior as the same slab the baseline uses, leaves nothing
-to tune in either. Two renderers that disagree about which model is better are reporting a defect
-in one of them, not a property of either model.</div>
+the ray meets past the plane leaves nothing to tune. The third followed from the second: once the
+exterior was restricted to the baseline&rsquo;s slab it was drawing the same rind the face march
+already reaches, and drawing the layers apart showed the face alone was the baseline&rsquo;s
+picture while the exterior alone was that ring and nothing else. It is off for slices now and
+kept for whole-object rendering, which is a different question. Two renderers that disagree about
+which model is better are reporting a defect in one of them, not a property of either model.</div>
 
-<p>What remains between the O&#8209;Voxel columns and the rasteriser is a rendering gap rather
-than a missing interior, and it is measurable as such: fine detail inside the section, against the
-photographs&rsquo; 13.0e&#8209;3, is 13.8e&#8209;3 for the rasteriser and 18e&#8209;3 to
-20e&#8209;3 here. One ray per pixel reading one flat colour per cell is nearest&#8209;neighbour
-reconstruction of a piecewise&#8209;constant field; overlapping anisotropic kernels average
-several primitives into every pixel and never show it. Interpolating between cell centres is the
-next thing to try, and the transverse watermelon &mdash; 178.5 against the baseline&rsquo;s 187.4
-&mdash; is the evidence that the representation is not what is in the way.</p>
+<p>What remains between the O&#8209;Voxel columns and the rasteriser is not capacity. The route-2
+orange stores 1,231,312 primitives against the baseline&rsquo;s 877,494, 65.8&nbsp;MiB against
+46.9. What was small was the use: a cell stores fourteen numbers and the first version of this
+renderer read three of them. The other eleven are the scale and the rotation, which is the
+primitive&rsquo;s shape, and a shape is a reconstruction filter &mdash; on these models
+\(\sigma/h\) has median 0.26, so the rasteriser is not blurring across cells; what it has is
+anisotropy, median 116 to 1, inside them.</p>
+
+<p>Trilinear interpolation over the eight surrounding cell centres puts twenty-four numbers into
+every pixel, more than the rasteriser&rsquo;s fourteen and all of them the cube
+representation&rsquo;s own, with no Gaussian introduced. Fine detail inside the section falls from
+18&ndash;20e&#8209;3 to 15.1&ndash;15.7e&#8209;3 against the photographs&rsquo; 13.0e&#8209;3 and
+the rasteriser&rsquo;s 13.8e&#8209;3. The route-2 watermelon then sits below the Gaussian baseline
+on both families, 167.5 against 187.4 and 263.5 against 266.0, which is the claim this section
+exists to test: the representation is not what is in the way.</p>
 
 <p class="mut">The doughnut&rsquo;s route&nbsp;1 model is the 30-iteration run the baseline was
 established with; every other model in these tables was trained for 200. KID is quoted from a
