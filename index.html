@@ -334,13 +334,24 @@ differ by \(1/\cos\) of the angle off the axis, so the wrong one leaves an error
 the corners. By radial slope it is view \(z\): &minus;0.058 against +0.060.</p>
 
 <figure>
-  <img src="assets/compositing.png" alt="Three compositing configurations">
-  <figcaption>Skin, cut surface and composite, for a piece whose cut faces the camera (top two
-  rows) and one whose cut points away (bottom). Whether a piece's cut face is visible is decided by
-  the sign of the plane at the camera against the side the piece's material is on, and it agrees
-  with the composite in all four configurations: the cut takes 73.7% and 70.9% of the contested
-  pixels when it faces the camera, 0.0% and 0.0% when it does not.</figcaption>
+  <img src="assets/compositing.png" alt="Four compositing configurations: skin, cut surface, composite">
+  <figcaption>All four configurations, each row skin Gaussians &#124; cut surface &#124; composite.
+  Whether a piece's cut face is visible is decided by the sign of the plane at the camera against
+  the side the piece's material is on, and it agrees with the composite every time: the cut takes
+  73.7% and 70.9% of the contested pixels when it faces the camera and 0.0% and 0.0% when it does
+  not, with the sign of the depth margin predicting the outcome in all four. The skin column is
+  sparse in three of the four rows and that is the lattice, not the render &mdash; see
+  below.</figcaption>
 </figure>
+
+<div class="note"><strong>The skin is not a uniform shell on this lattice.</strong> The refined
+cells that make up the exterior are concentrated low on the object: 77% of the orange's 118,141
+of them lie in the bottom 40% of its vertical extent, and their median height is 0.20 against the
+coarse cells' 0.70. The piece labelling is not what is uneven &mdash; it agrees with which side of
+the plane each primitive is on exactly, 98,020 against 20,121 by label and the same by geometry,
+including all 80,342 that fall outside the coarse grid and take their nearest leaf. So a cut
+through the solid's centroid really does put five times as much skin on one side, and three of the
+four configurations really do have little exterior to draw.</div>
 
 <div class="note">The honest limitation of this half-and-half arrangement, and the reason the
 exterior was converted: the skin alone covers 7% to 20% of the frame at alpha above a half, so
