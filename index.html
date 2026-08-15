@@ -539,12 +539,17 @@ view \(z\), &minus;0.058 against +0.060.</p>
 
 <figure>
   <img src="assets/compositing.png" alt="Four compositing configurations: exterior, cut surface, composite">
-  <figcaption>Each row exterior Gaussians &#124; cut surface &#124; composite. Whether a piece's
-  cut face is visible follows from the sign of the plane at the camera against the side the
-  piece's material is on, and it agrees with the composite every time: the cut takes 98.0% and
-  74.9% of the contested pixels when it faces the camera, 0.4% and 0.0% when it does not. Rows
-  three and four are the ones worth checking &mdash; the face is there in the middle column and
-  correctly absent from the composite.</figcaption>
+  <figcaption><strong>This is the design being argued against, not the one that shipped.</strong>
+  Two renderers and a per-pixel choice between them: each row is the exterior Gaussians, then the
+  cut surface drawn on its own, then the two composited. What the figure establishes is that the
+  choice is decidable &mdash; whether a piece's cut face should be visible follows from the sign
+  of the plane at the camera against the side the piece's material is on, and that prediction
+  agrees with the composite in all four configurations: the cut takes 98.0% and 74.9% of the
+  contested pixels when it faces the camera, 0.4% and 0.0% when it does not. Rows one and two are
+  the visible cases; in rows three and four the face is present in the middle column and correctly
+  absent from the composite, which is the whole content of those two rows and is meant to be a
+  difference you cannot see. What this arrangement could not fix is opacity, which is the next
+  paragraph and the reason the exterior was converted.</figcaption>
 </figure>
 
 <p>The exterior here is the boundary of the occupancy at whatever level, not the refined cells.
