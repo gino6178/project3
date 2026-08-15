@@ -554,11 +554,17 @@ on the top and icing smeared down the sides.</p>
   <img src="assets/route2_watermelon.png" alt="The watermelon's six references and the skinned result"
        style="margin-top:14px">
   <figcaption>For each object, the six references above and the skinned generated topology below,
-  in the same six views. 100% of every shell is covered, and each face takes about a sixth of it
-  &mdash; 16.6% to 16.8% on the sphere, against 48.3% and 3.7% for the two extremes on the
-  quantised lattice, whose shell is uneven. What remains is the source's own baked lighting: the
-  orange was photographed sitting on a surface and its underside is dark in the reconstruction, so
-  it is dark here.</figcaption>
+  in the same six views and cropped to their own silhouettes at one scale &mdash; so the rows can
+  be compared where it matters, which is texture against texture and whether each view landed on
+  the face it names. The doughnut's icing is on top in both rows and its crumb underneath; the
+  watermelon's rind pattern survives; the orange's result is visibly softer than its reference,
+  which is the projection resampling a 512-pixel view onto cells 0.0059 across.
+  <br><br>
+  What the figure cannot show, and what the numbers say: 100% of every shell is covered, and each
+  face takes about a sixth of it &mdash; 16.6% to 16.8% on the sphere, against 48.3% and 3.7% for
+  the two extremes on the quantised lattice, whose shell is uneven. What remains is the source's
+  own baked lighting: the orange was photographed sitting on a surface and its underside is dark
+  in the reconstruction, so it is dark here.</figcaption>
 </figure>
 
 <div class="note"><strong>Three framings have to agree, and fixing any one alone makes it worse.</strong>
@@ -665,7 +671,7 @@ primitive centres. What separates them is where the error lives — Euclidean di
 view-space \(z\) differ by \(1/\cos\) of the angle off the axis — and by radial slope it is
 view \(z\), &minus;0.058 against +0.060.</p>
 
-<figure>
+<figure style="max-width:430px">
   <img src="assets/compositing.png" alt="Four compositing configurations: exterior, cut surface, composite">
   <figcaption><strong>This is the design being argued against, not the one that shipped.</strong>
   Two renderers and a per-pixel choice between them: each row is the exterior Gaussians, then the
@@ -801,10 +807,13 @@ to 0.00e+00.</p>
 
 <figure>
   <img src="assets/sections.png" alt="Three cross-sections of each of the three objects">
-  <figcaption>Three planes through each object, drawn by cube lookup from the filled occupancy:
-  the smallest cell containing each pixel, decoded through the shared head. The orange's segments
-  and pale pith, the watermelon's seeds, white pith and rind, and the doughnut's crumb are what
-  the volume holds, not what a renderer adds.</figcaption>
+  <figcaption>Six planes sweeping through each object, drawn by cube lookup from the filled
+  occupancy: the smallest cell containing each pixel, decoded through the shared head. The orange's
+  segments and pale pith, the watermelon's seeds, white pith and rind, and the doughnut's crumb are
+  what the volume holds, not what a renderer adds &mdash; and the doughnut's two lobes appear and
+  separate as the plane moves, which is the topology and not the appearance. On the generated
+  lattices every one of these eighteen sections reports <strong>0.000%</strong> holes inside the
+  section, which is the claim of the next table reached without a repair step.</figcaption>
 </figure>
 
 <div class="tw"><table>
