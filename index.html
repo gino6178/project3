@@ -42,6 +42,10 @@
   .grid3 .cap{color:var(--mut);font-size:13.5px;margin-top:5px;text-align:center}
   @media (max-width:640px){ .grid3{grid-template-columns:1fr} }
   .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
+  nav.toc{display:flex;flex-wrap:wrap;gap:0 18px;justify-content:center;padding:14px 0 2px;
+          border-bottom:1px solid var(--line);font-size:14.5px}
+  nav.toc a{color:var(--mut);text-decoration:none}
+  nav.toc a:hover{color:var(--acc)}
   p{margin:0 0 16px;text-align:left}
   .lead{font-size:17.5px}
   figure{margin:26px 0}
@@ -86,6 +90,10 @@
     <a href="#">arXiv (coming soon)</a>
   </div>
 </header>
+
+<nav class="toc">
+  <a href="#abstract">Abstract</a><a href="#intro">Introduction</a><a href="#related">Related Work</a><a href="#method">Method</a><a href="#results">Results</a><a href="#conclusion">Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+</nav>
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
@@ -488,6 +496,43 @@ reconstruction.</li>
 which was taken. That is the point of drawing it this way: the representation is downstream of
 how the object arrived.</p>
 
+<h3>The lattice, written down</h3>
+
+<p>One definition serves the whole page. A cell is an axis-aligned cube; its index at level
+\(\ell\) is a floor division and its spacing halves with the level,</p>
+
+<div class="eq"><div class="body">
+$$ h_\ell = \frac{h_c}{2^{\ell}}, \qquad
+   \mathbf{k}_\ell(\mathbf{x}) = \left\lfloor \frac{\mathbf{x} - \mathbf{o}}{h_\ell} \right\rfloor,
+   \qquad \mathbf{o} = \min_i \mathbf{x}_i - \tfrac{1}{2} h_f $$
+</div><div class="num">(2)</div></div>
+
+<p>The origin \(\mathbf{o}\) is offset by half a cell on purpose: cell centres then fall at
+\(\mathbf{k} + \tfrac{1}{2}\) rather than on a boundary, where floating point would decide the
+index. The lattice is the occupied set at two levels, with the coarse level excluding whatever the
+fine level replaced,</p>
+
+<div class="eq"><div class="body">
+$$ \mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1, \qquad
+   \mathcal{V}_1 = \{\,\mathbf{k}_1 : \operatorname{dist}(\mathbf{x}_{\mathbf{k}_1},
+   \partial\Omega) < \beta h_f \,\}, \qquad
+   \mathcal{V}_0 \cap \operatorname{parent}(\mathcal{V}_1) = \emptyset $$
+</div><div class="num">(3)</div></div>
+
+<p>so the two levels partition the solid rather than overlap. \(\beta\) is the skin band in
+cells, three throughout this work. Two cells are adjacent when they share a face, which on a
+lattice is a comparison of indices and not a search:</p>
+
+<div class="eq"><div class="body">
+$$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
+   \lVert \mathbf{k} - \mathbf{k}' \rVert_1 = 1 \bigr\}
+   \;\cup\;
+   \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \mathbf{k}_1 \gg 1 \bigr\} $$
+</div><div class="num">(4)</div></div>
+
+<p>The second set is the cross-level case, and the arithmetic right shift is the whole of it: a
+fine cell's coarse neighbour is its index shifted down one bit.</p>
+
 <h3>The occupancy has to be a solid first</h3>
 
 <p>The lattice is not solid and never was. The paper's fill places one particle per <em>empty</em>
@@ -579,13 +624,27 @@ from an ellipse's silhouette bands, whichever way the mismatch is taken up.</div
 
 <p>A cut arrives as a plane. Cells it crosses are subdivided until \(h_\ell \le h_{\text{target}}\),
 leaves are joined to their face neighbours, edges the plane separates are dropped, and connected
-components are the pieces. The crossing test is one absolute value rather than eight corners,
+components are the pieces. Written out: a leaf takes the sign of the plane at its centre, an
+adjacency survives when its two leaves agree, and a piece is a class of the equivalence relation
+that generates,</p>
+
+<div class="eq"><div class="body">
+$$ q(\mathbf{k}) = \operatorname{sgn}\!\left(\mathbf{n}\cdot\mathbf{x}_{\mathbf{k}} + d\right),
+   \qquad
+   \mathcal{E} = \bigl\{ (\mathbf{k},\mathbf{k}') \in \mathcal{A} :
+   q(\mathbf{k}) = q(\mathbf{k}') \bigr\},
+   \qquad
+   \mathcal{P} = \mathcal{V} / \!\sim_{\mathcal{E}} $$
+</div><div class="num">(5)</div></div>
+
+<p>and nothing in it is a threshold. The crossing test is one absolute value rather than eight
+corners,
 because a cube's extreme values on a plane sit at two opposite corners and which two depends only
 on the signs of \(\mathbf{n}\):</p>
 
 <div class="eq"><div class="body">
 $$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
-</div><div class="num">(2)</div></div>
+</div><div class="num">(6)</div></div>
 
 <p>Adjacency is arithmetic too. A leaf's neighbour is at its own level or coarser — were it finer,
 the finer leaves on the shared face would find this one — so the coarser candidate is the
@@ -599,6 +658,20 @@ their centroid in the plane's own basis, and fan them: a convex polygon of three
 lying exactly on the plane, worst deviation 0.00e+00 over a whole object. Every crossed cell is
 refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
 them.</p>
+
+<p>The visible face of a crossed cell is what the plane cuts out of that cell, which for an
+axis-aligned cube is a convex polygon with at most six sides. It is obtained exactly, by
+intersecting the plane with the twelve edges and ordering the hits about the plane's normal,</p>
+
+<div class="eq"><div class="body">
+$$ \Pi_{\mathbf{k}} = \bigl\{\, \mathbf{x} \in C_{\mathbf{k}} :
+   \mathbf{n}\cdot\mathbf{x} + d = 0 \,\bigr\}, \qquad
+   \mathbf{v}_e = \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e), \quad
+   t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)} $$
+</div><div class="num">(7)</div></div>
+
+<p>so every vertex satisfies the plane equation to machine precision, and the face's area is the
+sum of the polygons' areas rather than a count of pixels.</p>
 
 <h3>The surface, all of it, as O-Voxel</h3>
 
@@ -630,7 +703,7 @@ $$ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
    A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;
    \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;
    c = \sum_i d_i^2 $$
-</div><div class="num">(3)</div></div>
+</div><div class="num">(8)</div></div>
 
 <p>so a quadric is ten numbers and — the property everything rests on — it is additive over the
 set of planes, \(Q_{\text{parent}} = \sum Q_{\text{child}}\), exactly and with no reference to the
@@ -641,7 +714,7 @@ plane the block covers. The tolerance is a length rather than a residual,</p>
 
 <div class="eq"><div class="body">
 $$ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{planes the block covers}, $$
-</div><div class="num">(4)</div></div>
+</div><div class="num">(9)</div></div>
 
 <p>because a raw residual grows with how many planes fall in a block and would coarsen a dense
 region and refuse a sparse one for no geometric reason. Two conditions make it correct rather than
@@ -694,6 +767,16 @@ Even correct, a Gaussian shell is not opaque &mdash; it covers 20% to 24% of the
 at the silhouette the cut face shows through from the side it should be hidden on. That, and not
 the depth test, is what converting the exterior removes.</p>
 
+<p>Two buffers and a comparison is the whole of the compositing rule, and it is worth stating
+because the paper's claim is that after the conversion there is only one of them:</p>
+
+<div class="eq"><div class="body">
+$$ C(u) = \begin{cases}
+     C_{O}(u), & D_{O}(u) < D_{G}(u) \\[2pt]
+     C_{G}(u), & \text{otherwise}
+   \end{cases} $$
+</div><div class="num">(10)</div></div>
+
 <h3>Physics keeps what the lattice had</h3>
 
 <p>The O-Voxel patch is the visible boundary and takes no part in the physics; the cube hierarchy
@@ -702,6 +785,16 @@ relabelling and not a resampling — the existing particle set stays as it is an
 the piece of the leaf it falls in, so subdividing a cut band multiplies leaves and not particles.
 Collision is a floor division and an occupancy test, with one more of each when the coarse cell was
 refined.</p>
+
+<p>Collision is then two table lookups and one comparison. A point is inside piece \(P\) when
+the leaf holding it belongs to \(P\) <em>and</em> the point is on that piece's own side of the
+plane:</p>
+
+<div class="eq"><div class="body">
+$$ \operatorname{occ}_P(\mathbf{x}) \;=\;
+   \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr] \;\wedge\;
+   \bigl[\, q_P \left(\mathbf{n}\cdot\mathbf{x} + d\right) > 0 \,\bigr] $$
+</div><div class="num">(11)</div></div>
 
 <p>Near the cut the voxel test claims material up to half a leaf past where the cut is, because a
 leaf the plane passes through is occupied as a whole. One comparison fixes it: the point must be on
@@ -744,7 +837,7 @@ its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
 
 <div class="eq"><div class="body">
 $$ \mathbf{x}_v(t) = \sum_j w_{vj}\,\mathbf{x}_j(t), \qquad \sum_j w_{vj} = 1, $$
-</div><div class="num">(5)</div></div>
+</div><div class="num">(12)</div></div>
 
 <p>which follows any affine motion <em>exactly</em> — 8.9e-16, machine precision, for a rotation
 with a translation and for a stretch with a shear — provided the vertex is written in terms of the
@@ -995,7 +1088,20 @@ primitive&rsquo;s shape, and a shape is a reconstruction filter &mdash; on these
 \(\sigma/h\) has median 0.26, so the rasteriser is not blurring across cells; what it has is
 anisotropy, median 116 to 1, inside them.</p>
 
-<p>Trilinear interpolation over the eight surrounding cell centres puts twenty-four numbers into
+<p>The reconstruction filter is where the two renderers differ, and it is one line each. Reading
+the cell a point falls in is nearest-neighbour; interpolating over the eight cell centres around it
+is trilinear:</p>
+
+<div class="eq"><div class="body">
+$$ \hat{c}(\mathbf{x}) = \sum_{\mathbf{\delta} \in \{0,1\}^3}
+   w_{\mathbf{\delta}}(\mathbf{x})\, c_{\mathbf{k}_0 + \mathbf{\delta}}, \qquad
+   w_{\mathbf{\delta}} = \prod_{a} \bigl[ \delta_a t_a + (1-\delta_a)(1-t_a) \bigr], \qquad
+   \mathbf{t} = \frac{\mathbf{x} - \mathbf{o}}{h_\ell} - \tfrac{1}{2} - \mathbf{k}_0 $$
+</div><div class="num">(13)</div></div>
+
+<p>with the weights of cells that do not exist dropped and the rest renormalised, so the boundary
+degrades to nearest-neighbour rather than to black. Trilinear interpolation over the eight
+surrounding cell centres puts twenty-four numbers into
 every pixel, more than the rasteriser&rsquo;s fourteen and all of them the cube
 representation&rsquo;s own, with no Gaussian introduced. Fine detail inside the section &mdash;
 throughout this page, the standard deviation of a Laplacian of the render taken over the
@@ -1212,16 +1318,90 @@ operations on a structured grid, not queries against arbitrary free particles.</
 </ul>
 
 <h2 id="refs">References</h2>
+
 <ol class="refs">
+  <li>B. Kerbl, G. Kopanas, T. Leimk&uuml;hler and G. Drettakis. <em>3D Gaussian Splatting for
+      Real-Time Radiance Field Rendering.</em> ACM TOG 42(4), 2023.</li>
+  <li>B. Mildenhall et&nbsp;al. <em>NeRF: Representing Scenes as Neural Radiance Fields for View
+      Synthesis.</em> ECCV 2020.</li>
   <li>F. Wu and Y. Chen. <em>FruitNinja: 3D Object Interior Texture Generation with Gaussian
-      Splatting.</em> <a href="https://arxiv.org/abs/2411.12089">arXiv:2411.12089</a>, 2024.</li>
+      Splatting.</em> <a href="https://arxiv.org/abs/2411.12089">arXiv:2411.12089</a>, CVPR 2025.</li>
+  <li>Voxel-Lattice Gaussians. <em>The previous project in this series.</em>
+      <a href="https://gino6178.github.io/project2/">gino6178.github.io/project2</a>, 2026.</li>
+
+  <li>W. E. Lorensen and H. E. Cline. <em>Marching Cubes: A High Resolution 3D Surface
+      Construction Algorithm.</em> SIGGRAPH 1987.</li>
+  <li>T. Ju, F. Losasso, S. Schaefer and J. Warren. <em>Dual Contouring of Hermite Data.</em>
+      ACM TOG 21(3), SIGGRAPH 2002.</li>
+  <li>S. Schaefer and J. Warren. <em>Dual Marching Cubes: Primal Contouring of the Dual Grid.</em>
+      Pacific Graphics 2004.</li>
+  <li>L. P. Kobbelt, M. Botsch, U. Schwanecke and H.-P. Seidel. <em>Feature Sensitive Surface
+      Extraction from Volume Data.</em> SIGGRAPH 2001.</li>
+  <li>M. Garland and P. S. Heckbert. <em>Surface Simplification Using Quadric Error Metrics.</em>
+      SIGGRAPH 1997.</li>
+  <li>T. Ju. <em>Robust Repair of Polygonal Models.</em> ACM TOG 23(3), SIGGRAPH 2004.</li>
   <li>J. Xiang et&nbsp;al. <em>Native and Compact Structured Latents for 3D Generation.</em>
       CVPR 2026. <a href="https://github.com/microsoft/TRELLIS.2">TRELLIS.2</a>.</li>
-  <li>T. Ju, F. Losasso, S. Schaefer and J. Warren. <em>Dual Contouring of Hermite Data.</em>
-      SIGGRAPH 2002.</li>
+  <li>J. Xiang et&nbsp;al. <em>Structured 3D Latents for Scalable and Versatile 3D Generation.</em>
+      CVPR 2025.</li>
+
+  <li>T. Lu et&nbsp;al. <em>Scaffold-GS: Structured 3D Gaussians for View-Adaptive Rendering.</em>
+      CVPR 2024.</li>
+  <li>B. Zhang et&nbsp;al. <em>GaussianCube: A Structured and Explicit Radiance Representation for
+      3D Generative Modeling.</em> NeurIPS 2024.</li>
+  <li>K. Ren et&nbsp;al. <em>Octree-GS: Towards Consistent Real-time Rendering with LOD-Structured
+      3D Gaussians.</em> IEEE TPAMI, 2025.</li>
+  <li>A. Yu, R. Li, M. Tancik, H. Li, R. Ng and A. Kanazawa. <em>PlenOctrees for Real-time
+      Rendering of Neural Radiance Fields.</em> ICCV 2021.</li>
+  <li>C. Sun, M. Sun and H.-T. Chen. <em>Direct Voxel Grid Optimization: Super-fast Convergence for
+      Radiance Fields Reconstruction.</em> CVPR 2022.</li>
+  <li>T. M&uuml;ller, A. Evans, C. Schied and A. Keller. <em>Instant Neural Graphics Primitives
+      with a Multiresolution Hash Encoding.</em> ACM TOG 41(4), 2022.</li>
+
   <li>T. Xie et&nbsp;al. <em>PhysGaussian: Physics-Integrated 3D Gaussians for Generative
       Dynamics.</em> <a href="https://arxiv.org/abs/2311.12198">arXiv:2311.12198</a>, CVPR 2024.</li>
+  <li>C. Jiang, C. Schroeder, J. Teran, A. Stomakhin and A. Selle. <em>The Material Point Method
+      for Simulating Continuum Materials.</em> SIGGRAPH Courses 2016.</li>
+  <li>A. Stomakhin, C. Schroeder, L. Chai, J. Teran and A. Selle. <em>A Material Point Method for
+      Snow Simulation.</em> ACM TOG 32(4), 2013.</li>
+  <li>Y. Hu et&nbsp;al. <em>A Moving Least Squares Material Point Method with Displacement
+      Discontinuity and Two-Way Rigid Body Coupling.</em> ACM TOG 37(4), 2018.</li>
+  <li>Y. Jiang et&nbsp;al. <em>VR-GS: A Physical Dynamics-Aware Interactive Gaussian Splatting
+      System in Virtual Reality.</em> SIGGRAPH 2024.</li>
+  <li>J. P. Lewis, M. Cordner and N. Fong. <em>Pose Space Deformation: A Unified Approach to Shape
+      Interpolation and Skeleton-Driven Deformation.</em> SIGGRAPH 2000.</li>
+  <li>R. W. Sumner, J. Schmid and M. Pauly. <em>Embedded Deformation for Shape Manipulation.</em>
+      ACM TOG 26(3), 2007.</li>
+
+  <li>R. Rombach, A. Blattmann, D. Lorenz, P. Esser and B. Ommer. <em>High-Resolution Image
+      Synthesis with Latent Diffusion Models.</em> CVPR 2022.</li>
+  <li>B. Poole, A. Jain, J. T. Barron and B. Mildenhall. <em>DreamFusion: Text-to-3D using 2D
+      Diffusion.</em> ICLR 2023.</li>
+  <li>E. Richardson et&nbsp;al. <em>TEXTure: Text-Guided Texturing of 3D Shapes.</em>
+      SIGGRAPH 2023.</li>
+  <li>J. Kopf et&nbsp;al. <em>Solid Texture Synthesis from 2D Exemplars.</em> ACM TOG 26(3), 2007.</li>
+  <li>H. Liu et&nbsp;al. <em>InFusion: Inpainting 3D Gaussians via Learning Depth Completion from
+      Diffusion Prior.</em> arXiv:2404.11613, 2024.</li>
+  <li>E. Liang et&nbsp;al. <em>InnerGS: Internal Scenes Reconstruction and Segmentation with
+      Gaussian Splatting.</em> arXiv, 2025.</li>
+
+  <li>M. Heusel, H. Ramsauer, T. Unterthiner, B. Nessler and S. Hochreiter. <em>GANs Trained by a
+      Two Time-Scale Update Rule Converge to a Local Nash Equilibrium.</em> NeurIPS 2017.
+      <span class="mut">(FID)</span></li>
+  <li>M. Bi&nacute;kowski, D. J. Sutherland, M. Arbel and A. Gretton. <em>Demystifying MMD
+      GANs.</em> ICLR 2018. <span class="mut">(KID)</span></li>
+  <li>J. Hessel, A. Holtzman, M. Forbes, R. Le Bras and Y. Choi. <em>CLIPScore: A Reference-free
+      Evaluation Metric for Image Captioning.</em> EMNLP 2021.</li>
+  <li>M. J. Chong and D. Forsyth. <em>Effectively Unbiased FID and Inception Score and Where to
+      Find Them.</em> CVPR 2020. <span class="mut">(why FID is unusable at the sample sizes here)</span></li>
+  <li>T. Kynk&auml;&auml;nniemi, T. Karras, M. Aittala, T. Aila and J. Lehtinen. <em>The Role of
+      ImageNet Classes in Fr&eacute;chet Inception Distance.</em> ICLR 2023.</li>
 </ol>
+
+<p class="mut">The two references that carry the most weight here are [6] and [11]: dual contouring
+is where the idea of one vertex per cell placed by a quadric comes from, and TRELLIS.2's Flexible
+Dual Grid is the implementation this work converts into. [4] is the lattice this project starts
+from, and its numbers are the baseline throughout.</p>
 
 <h2 id="bibtex">BibTeX</h2>
 <pre>@misc{cubeovoxel,
