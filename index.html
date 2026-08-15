@@ -808,7 +808,16 @@ cells, but the whole object does.</p>
   its crumb underneath, which is the normal being read off the field rather than off the centroid;
   the watermelon's stripes continue across the boundaries between views; the orange's underside is
   dark because the object it was rendered from was photographed sitting on a surface, and that
-  baked lighting is carried rather than removed.</figcaption>
+  baked lighting is carried rather than removed.
+  <br><br>
+  Each surface vertex takes its colour from the nearest <em>skin</em> cell, and the qualifier is
+  load-bearing. The boundary is the occupancy's, at any level, so 13.1% of these vertices are
+  nearer to an interior cell than to a skin one; colouring from the nearest cell of any kind gives
+  that 13% whatever the interior holds, which on a generated lattice is the flat grey
+  <code>make_shape</code> writes &mdash; drawn as blue-grey seams across the peel. Substituting
+  the trained model there replaces the grey with pale pulp and the seams with blotches, which is
+  no better. The cells that carry exterior appearance are the ones the six views painted, and
+  those are the ones to ask.</figcaption>
 </figure>
 
 <div class="note"><strong>What a wrong number looked like, twice.</strong> Two entries in these
