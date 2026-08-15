@@ -395,8 +395,39 @@ refined.</p>
 
 <p>Near the cut the voxel test claims material up to half a leaf past where the cut is, because a
 leaf the plane passes through is occupied as a whole. One comparison fixes it: the point must be on
-the piece's own side of \(\Pi\). Two freshly separated halves report 772 penetrating particles on
-the orange and 1,509 on the watermelon; with the plane test, none.</p>
+the piece's own side of \(\Pi\). Measured on the current models, two freshly separated halves
+report material inside each other from occupancy alone; with the plane test, none of them do.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>particles</th><th>solid cells</th><th>at rest, occupancy alone</th>
+<th>with the plane test</th><th>pushed 1 / 2 / 4 cells in</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>1,231,312</td><td>894,304</td><td>2,698 of 610,723</td>
+    <td><strong>0</strong></td><td>8,888 / 20,386 / 43,648</td></tr>
+<tr><td>watermelon</td><td>1,065,856</td><td>748,248</td><td>2,699 of 527,791</td>
+    <td><strong>0</strong></td><td>8,978 / 20,373 / 43,781</td></tr>
+<tr><td>doughnut</td><td>942,840</td><td>567,448</td><td>943 of 473,192</td>
+    <td><strong>0</strong></td><td>2,722 / 6,542 / 13,994</td></tr>
+</tbody></table></div>
+
+<p>The last column is the check that the test is a contact test and not a coincidence: pushing one
+piece into the other by one, two and four coarse cells has to report more penetration each time,
+and it does, on every object. An earlier version reported the opposite &mdash; false positives that
+grew with separation rather than with overlap &mdash; because the spatial key is a polynomial in
+the coordinates and a point far outside the table's range aliases onto a valid key.</p>
+
+<div class="note"><strong>Generated topology is on its grid; a quantised one is not.</strong>
+Collision here is a floor division, which presumes the cells lie on a lattice, and only one of the
+two routes gives that. On the generated lattices the distance from each coarse cell to the nearest
+lattice point is 0.0000 in the median and in the maximum &mdash; they are placed at \((i +
+\tfrac{1}{2})h\) by construction. On the lattices quantised from released Gaussian models it is
+0.23 to 0.26 of a cell in the median and 0.5 at the tail, which is a uniform spread: those cells
+are wherever the reconstruction put them. This is also where indexing them from a cell centre
+rather than from a corner does its damage &mdash; \(\lfloor (p - \min)/h \rfloor\) puts every
+centre exactly on a cell boundary and lets floating point choose the side, which on the generated
+lattices lost 49% of the cells and ran the physics on half the volume. Offsetting the origin by
+half a cell puts each centre in the middle of its own cell, half a cell from either boundary,
+and recovers all of them.</div>
 
 <p>A rigid transform per piece is correct only while nothing bends. Each surface vertex is bound to
 its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
@@ -413,10 +444,13 @@ residual rather than hiding it.</p>
 
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption>One piece under a non-affine deformation, its surface bound to the particles.
-  360,342 boundary vertices on 474,292 particles, bind residual 0.71 of a fine cell in the mean;
-  the tracking error over the sway is 0.0027 of a cell in the mean. A rest-frame checkerboard
-  shears with the material rather than sliding over it.</figcaption>
+  <figcaption>One piece under a non-affine deformation, its surface bound to the particles, and a
+  rest-frame checkerboard shearing with the material rather than sliding over it. The animation is
+  rendered from the earlier model; the numbers below are from the current ones. The bind residual
+  is 0.34 to 0.45 of a fine cell in the mean and 1.02 to 1.23 at the 95th, over 480,344, 419,404
+  and 442,956 surface vertices carried on 1.23M, 1.07M and 0.94M particles &mdash; the surface
+  being the whole O&#8209;Voxel exterior now rather than a cut patch, so what is bound is every
+  visible vertex the object has.</figcaption>
 </figure>
 
 <h2 id="results">Results</h2>
