@@ -38,6 +38,7 @@
   p{margin:0 0 16px;text-align:left}
   .lead{font-size:17.5px}
   figure{margin:26px 0}
+  figure video{width:100%;display:block;border-radius:3px;background:#fff}
   figure img{width:100%;display:block;border-radius:3px;background:#fff}
   figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
   .tw{overflow-x:auto;margin:20px 0}
@@ -71,41 +72,98 @@
   <h1>Cube Interior + O&#8209;Voxel Cut Surface</h1>
   <p class="sub">The hidden volume stops being a rendering primitive</p>
   <p class="authors">Anonymous</p>
-  <p class="venue">Implementation study &middot; rebuilt on the verified pipeline</p>
+  <p class="venue">Preprint</p>
   <div class="links">
     <a href="https://gino6178.github.io/project2/">Previous: Voxel-Lattice Gaussians</a>
+    <a href="#">Code (coming soon)</a>
+    <a href="#">arXiv (coming soon)</a>
   </div>
 </header>
 
-<div class="note"><strong>This page was rewritten.</strong> An earlier version reported an
-implementation of the same specification that was built beside the reconstruction pipeline
-rather than on it, and it did not survive contact with the three real objects. Everything below
-was rebuilt on the pipeline whose orange, watermelon and doughnut are the ones the previous
-project reports, and every number here was measured on those three or on a synthetic shape whose
-answer is known in closed form. Nothing from the earlier version is carried forward.</div>
+<h2 id="abstract">Abstract</h2>
+<p class="lead">
+An object that can be cut open is asked two different questions, and a Gaussian is made to answer
+both. Where is the material — occupancy, connectivity, which piece a point belongs to, what
+collides with what — and what does a surface look like, both the peel and the face a cut has just
+exposed. A rendering primitive is good at the second and pays for the first with a trade it cannot
+escape: with \(\rho = \sigma/h\) the support scale over the sample spacing, small \(\rho\) leaves
+holes in the volume and large \(\rho\) blends across the material boundaries the interior is made
+of. We give the two jobs two representations. A coarse cube grid holds the hidden volume, where a
+cell's support is exactly its own cell and therefore tiles; a dual-grid surface holds everything
+visible, the original exterior and every newly exposed cut face alike. Cutting is then discrete on
+the lattice and analytic on the boundary: connected components label the pieces and the visible
+face is an exact planar polygon per cell, matching closed-form cut areas to 1.0% and 1.3%. The
+surface pays for curvature rather than resolution — collapsing the dual grid by its own quadric
+leaves 48.7% of the nodes at a third of a cell of error — and the physics keeps what the lattice
+gave it, with collision a floor division and an occupancy test and no point-in-polyhedron query
+anywhere. Every number here was measured on the three objects of the previous project, or on a
+synthetic shape whose answer is known in closed form.
+</p>
 
-<h2>What the representation is</h2>
+<figure>
+  <video src="assets/multicut.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
+  <figcaption>Three planes, eight pieces, drawn apart and back. 850,822 solid cells refine to
+  1,159,634 leaves in the bands; the pieces come out of connected-component labelling on the
+  lattice and range from 127,115 to 174,231 leaves. Nothing in the picture is a Gaussian: the
+  exterior carries the model's own colour and the cut faces are tinted per piece.</figcaption>
+</figure>
 
-<p>An object that can be cut open has to answer two different questions, and a Gaussian is asked
-to answer both. Where is the material &mdash; occupancy, connectivity, which piece a point
-belongs to, what collides with what. And what does the surface look like &mdash; the peel, and
-the face a cut has just exposed. A rendering primitive is good at the second and pays for the
-first with a trade it cannot escape: let \(\rho = \sigma/h\) be the support scale over the sample
-spacing, and small \(\rho\) leaves holes in the volume while large \(\rho\) blends across the
-material boundaries the interior is made of.</p>
+<h2 id="intro">Introduction</h2>
 
-<p>So the two jobs get two representations. A coarse cube grid holds the hidden volume, where a
-cell's support is exactly its own cell and therefore tiles. A dual-grid surface holds everything
-visible. The interior never renders as primitives, and the surface never has to fill a volume.</p>
+<p>FruitNinja generates an object's interior so that cutting it open reveals something plausible,
+and represents that interior as a cloud of small opaque Gaussians. The previous project put the
+whole object on a two-level voxel lattice, one Gaussian per occupied cell, which turned a set of
+points into a graph and made cutting, collision and material decomposition follow from the same
+eight numbers per cell. This one asks what the interior primitives are still for.</p>
 
-<h2>Making the occupancy a solid</h2>
+<p>They are doing two jobs. As <em>volume</em> they answer whether space is occupied, which cells
+are connected, which piece a point is in, and what a colliding body has hit. As <em>image</em>
+they are splatted, blended and composited. Equation&nbsp;(2) of the specification this work
+implements states the conflict directly: a Gaussian's support has one scale \(\sigma\) and the
+lattice has one spacing \(h\), and</p>
 
-<p>The lattice is not solid and never was, and this is the precondition everything else rests on.
-The paper's fill places one particle per <em>empty</em> cell and skips cells that already hold a
-primitive, so the volume is a sponge; Gaussians hid it because their support overlaps, and a cube's
-does not. Closing the pinholes and filling what the closed shell encloses is idempotent &mdash;
-running it twice changes nothing &mdash; and the number that says how much it mattered is the
-connected-component count of the uncut object.</p>
+<div class="eq"><div class="body">
+\[ \rho = \frac{\sigma}{h}, \qquad
+   \rho \ll 1 \Rightarrow \text{holes in the volume}, \qquad
+   \rho \gtrsim 1 \Rightarrow \text{blending across material boundaries} \]
+</div><div class="num">(1)</div></div>
+
+<p>Neither is a bug to be tuned away; they are the same parameter pulling in two directions. The
+resolution is to stop asking one primitive for both. A cube's support <em>is</em> its cell, so a
+solid occupancy renders solid at any resolution with nothing to tune, and a dual-grid surface has
+an explicit polygonal boundary, so coverage comes from triangles rather than from ellipsoids
+overlapping enough to hide the gaps between them.</p>
+
+<h2 id="related">Related Work</h2>
+
+<p><strong>Interior generation.</strong> FruitNinja [1] supervises an object's interior with
+depth-conditioned diffusion on cross-sections and stores it as opaque atomic Gaussians. We keep
+that supervision unchanged — the contribution here is not a new way to invent an interior — and
+change what holds it.</p>
+
+<p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O-Voxel [2] is a
+field-free sparse voxel surface: a Flexible Dual Grid in which every active voxel carries a dual
+vertex and grid-edge intersection flags, handling open, non-manifold and fully enclosed internal
+surfaces. We use its official encoder without reimplementing it, for the cut face and then for the
+whole exterior.</p>
+
+<p><strong>Dual contouring.</strong> The dual vertex is a quadric's minimiser [3], and quadrics
+are additive over their planes. That is what lets an adaptive grid be built by collapsing, and the
+collapse's error be read off the same quadric that placed the vertex.</p>
+
+<p><strong>Physics on primitives.</strong> PhysGaussian [4] simulates Gaussians with MPM. We keep
+the existing particle set and give it piece identity, so subdividing a cut band multiplies leaves
+and not particles.</p>
+
+<h2 id="method">Method</h2>
+
+<h3>The occupancy has to be a solid first</h3>
+
+<p>The lattice is not solid and never was. The paper's fill places one particle per <em>empty</em>
+cell and skips cells that already hold a primitive, so the volume is a sponge; Gaussians hid it
+because their support overlaps and a cube's does not. Closing the pinholes and filling what the
+closed shell encloses is idempotent — running it twice changes nothing — and the number that says
+how much it mattered is the connected-component count of the <em>uncut</em> object.</p>
 
 <div class="tw"><table>
 <thead><tr><th>object</th><th>coarse cells</th><th>pieces before</th><th>pieces after</th></tr></thead>
@@ -118,50 +176,181 @@ connected-component count of the uncut object.</p>
 <p>Those are holes, not fragments. A piece count means nothing until this has run, so the cutting
 code runs it rather than assuming it.</p>
 
-<h2>Cutting: discrete topology, analytic boundary</h2>
+<h3>Cutting: discrete topology, analytic boundary</h3>
 
-<p>A cut arrives as a plane. The cells it crosses are subdivided until \(h_\ell \le h_{\text{target}}\),
-the leaves are joined to their face neighbours, the edges the plane separates are dropped, and
-connected components on what is left are the pieces. No geometry is involved: the polygons come
-afterwards, and keeping the two apart is the design.</p>
-
-<p>The crossing test is one absolute value rather than eight corners. A cube's extreme values on a
-plane sit at two opposite corners and which two depends only on the signs of \(\mathbf{n}\), so</p>
+<p>A cut arrives as a plane. Cells it crosses are subdivided until \(h_\ell \le h_{\text{target}}\),
+leaves are joined to their face neighbours, edges the plane separates are dropped, and connected
+components are the pieces. The crossing test is one absolute value rather than eight corners,
+because a cube's extreme values on a plane sit at two opposite corners and which two depends only
+on the signs of \(\mathbf{n}\):</p>
 
 <div class="eq"><div class="body">
-\[ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \sum_a \left|n_a\right| \]
-</div><div class="num">(1)</div></div>
+\[ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| \]
+</div><div class="num">(2)</div></div>
 
-<p>is exactly the eight-corner test. Adjacency is arithmetic too: a leaf's neighbour is at its own
-level or coarser &mdash; were it finer, the finer leaves on the shared face would find this one
-&mdash; so the coarser candidate is the neighbour's coordinate shifted right, which is floor
-division and therefore the cell containing it. The first version enumerated the layer of finest
-cells outside each face and looked each up in a dictionary: correct, and 96 probes per coarse leaf
-once two levels exist, tens of millions on a real lattice. Six vectorised passes per level instead,
-and the self-test went from minutes to 2.2&nbsp;seconds.</p>
+<p>Adjacency is arithmetic too. A leaf's neighbour is at its own level or coarser — were it finer,
+the finer leaves on the shared face would find this one — so the coarser candidate is the
+neighbour's coordinate shifted right, which is floor division and therefore the cell containing
+it. With \(Q\) planes a leaf carries a <em>side code</em>, the \(Q\) signs at its centre, and
+adjacency survives only between equal codes.</p>
+
+<p>Topology is voxel-approximate by construction; the visible face must not be, or it reads as a
+staircase. Per cut leaf we intersect the plane with the twelve edges, order the points around
+their centroid in the plane's own basis, and fan them: a convex polygon of three to six vertices
+lying exactly on the plane, worst deviation 0.00e+00 over a whole object. Every crossed cell is
+refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
+them.</p>
+
+<h3>The surface, all of it, as O-Voxel</h3>
+
+<p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
+two renderers, a depth convention and a compositing step necessary. Converting the exterior as
+well removes the seam instead of managing it. The occupancy already holds the volume, so the
+exterior <em>is</em> its boundary — every face of an occupied cell whose neighbour is empty — and
+the same dual-grid encoder that handles the cut face takes the staircase off it.</p>
+
+<figure>
+  <img src="assets/exterior_ovoxel.png" alt="The whole exterior as an O-Voxel surface, beside the Gaussian exterior">
+  <figcaption>Left: the orange's entire exterior as a dual-grid surface, 442,253 active voxels
+  drawn as the 934,520 triangles they encode. Right: the Gaussian exterior it replaces. Upper row
+  up / front / right. The peel, the calyx and the shaded underside survive the conversion; the
+  extent matches the model to 0.00% on the doughnut and 2.32% on the orange, the latter because
+  the boundary runs along cell corners and so sits half a cell proud.</figcaption>
+</figure>
+
+<h3>Paying for curvature instead of resolution</h3>
+
+<p>A dual grid stores one node per active surface voxel, so it costs \(O(A/h^2)\): a plane costs
+as much as a crumpled sheet of the same extent. That is fixable inside the algorithm, because the
+dual vertex is already the minimiser of a quadric. For supporting planes
+\(\{(\mathbf{n}_i, d_i)\}\),</p>
+
+<div class="eq"><div class="body">
+\[ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
+   = \mathbf{x}^\top\! A\,\mathbf{x} - 2\,\mathbf{b}^\top\mathbf{x} + c, \qquad
+   A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;
+   \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;
+   c = \sum_i d_i^2 \]
+</div><div class="num">(3)</div></div>
+
+<p>so a quadric is ten numbers and — the property everything rests on — it is additive over the
+set of planes, \(Q_{\text{parent}} = \sum Q_{\text{child}}\), exactly and with no reference to the
+mesh the children came from. The grid therefore collapses bottom-up: merge a \(2\times2\times2\)
+block, add the quadrics, solve \(A\mathbf{x} = \mathbf{b}\), and read the residual
+\(r = c - \mathbf{b}^\top\mathbf{x}\), the sum of squared distances from that one vertex to every
+plane the block covers. The tolerance is a length rather than a residual,</p>
+
+<div class="eq"><div class="body">
+\[ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{planes the block covers}, \]
+</div><div class="num">(4)</div></div>
+
+<p>because a raw residual grows with how many planes fall in a block and would coarsen a dense
+region and refuse a sparse one for no geometric reason. Two conditions make it correct rather than
+merely plausible. A parent is active when <em>any</em> child is, which is the rule for a surface
+and not a volume: a 2-manifold crossing a block activates four to six of its eight cells and never
+all eight. And a node may only claim an area it has seen — a patch of side \(2^L h\) contains on
+the order of \((2^L)^2\) fine cells, so the plane count has to keep up with the area, or a block
+holding two triangles merges to the top and represents a cell 256 wide on the evidence of a single
+plane.</p>
+
+<figure>
+  <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
+  <figcaption>\(\tau\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at
+  \(\tau=0\) and 149,031 at \(\tau=1\); the surface is the same orange throughout and the rim
+  steps visibly at the end, which is what a coarser node is.</figcaption>
+</figure>
+
+<h3>Why the exterior was converted too</h3>
+
+<p>Before it was, there were two renderers and a per-pixel choice between them,
+\(C(u) = C_G(u)\) if \(D_G(u) < D_O(u)\) and \(C_O(u)\) otherwise. The cut surface is planar
+by construction, so its rasterisation is a ray-plane intersection in closed form and a pixel is
+covered exactly when the hit lies in a cut leaf. The depth convention had to be measured and the
+obvious measurement cannot decide it: the Gaussian renderer returns an alpha-weighted depth along
+the ray rather than the nearest surface, so both candidates sit 0.08 to 0.10 behind a minimum over
+primitive centres. What separates them is where the error lives — Euclidean distance and
+view-space \(z\) differ by \(1/\cos\) of the angle off the axis — and by radial slope it is
+view \(z\), &minus;0.058 against +0.060.</p>
+
+<figure>
+  <img src="assets/compositing.png" alt="Four compositing configurations: exterior, cut surface, composite">
+  <figcaption>Each row exterior Gaussians &#124; cut surface &#124; composite. Whether a piece's
+  cut face is visible follows from the sign of the plane at the camera against the side the
+  piece's material is on, and it agrees with the composite every time: the cut takes 98.0% and
+  74.9% of the contested pixels when it faces the camera, 0.4% and 0.0% when it does not. Rows
+  three and four are the ones worth checking &mdash; the face is there in the middle column and
+  correctly absent from the composite.</figcaption>
+</figure>
+
+<p>The exterior here is the boundary of the occupancy at whatever level, not the refined cells.
+Taking it as <code>cell_level &ne; 0</code> looks right and is not: the orange's refined cells run
+from \(r/R\) 0.808 to 1.000 while its coarse cells reach 0.936, so much of the outer surface is
+coarse cells the level test discards, and 77% of what remains sits in the bottom 40% of the object.
+Even correct, a Gaussian shell is not opaque &mdash; it covers 20% to 24% of the frame &mdash; so
+at the silhouette the cut face shows through from the side it should be hidden on. That, and not
+the depth test, is what converting the exterior removes.</p>
+
+<h3>Physics keeps what the lattice had</h3>
+
+<p>The O-Voxel patch is the visible boundary and takes no part in the physics; the cube hierarchy
+is the physical volume and answers every question about where material is. Piece identity is a
+relabelling and not a resampling — the existing particle set stays as it is and each particle takes
+the piece of the leaf it falls in, so subdividing a cut band multiplies leaves and not particles.
+Collision is a floor division and an occupancy test, with one more of each when the coarse cell was
+refined.</p>
+
+<p>Near the cut the voxel test claims material up to half a leaf past where the cut is, because a
+leaf the plane passes through is occupied as a whole. One comparison fixes it: the point must be on
+the piece's own side of \(\Pi\). Two freshly separated halves report 772 penetrating particles on
+the orange and 1,509 on the watermelon; with the plane test, none.</p>
+
+<p>A rigid transform per piece is correct only while nothing bends. Each surface vertex is bound to
+its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
+
+<div class="eq"><div class="body">
+\[ \mathbf{x}_v(t) = \sum_j w_{vj}\,\mathbf{x}_j(t), \qquad \sum_j w_{vj} = 1, \]
+</div><div class="num">(5)</div></div>
+
+<p>which follows any affine motion <em>exactly</em> — 8.9e-16, machine precision, for a rotation
+with a translation and for a stretch with a shear — provided the vertex is written in terms of the
+particles' positions rather than their displacements plus a stored offset. So the binding keeps no
+offset and instead moves the vertex to its particles' weighted centre at bind time, reporting the
+residual rather than hiding it.</p>
+
+<figure>
+  <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
+  <figcaption>One piece under a non-affine deformation, its surface bound to the particles.
+  360,342 boundary vertices on 474,292 particles, bind residual 0.71 of a fine cell in the mean;
+  the tracking error over the sway is 0.0027 of a cell in the mean. A rest-frame checkerboard
+  shears with the material rather than sliding over it.</figcaption>
+</figure>
+
+<h2 id="results">Results</h2>
+
+<h3>Cutting</h3>
 
 <div class="tw"><table>
-<thead><tr><th>object</th><th>band leaves</th><th>total leaves</th><th>pieces after one cut</th></tr></thead>
+<thead><tr><th>object</th><th>band leaves</th><th>total leaves</th><th>pieces, one cut</th><th>pieces, three cuts</th></tr></thead>
 <tbody>
-<tr><td>doughnut</td><td>21,760 (3.9%)</td><td>552,276</td><td>2 &mdash; 265,853 / 286,423</td></tr>
-<tr><td>orange</td><td>86,776 (9.4%)</td><td>926,751</td><td>2 &mdash; 464,339 / 462,412</td></tr>
-<tr><td>watermelon</td><td>66,408 (10.7%)</td><td>618,382</td><td>2 &mdash; 278,479 / 339,903</td></tr>
+<tr><td>doughnut</td><td>21,760 (3.9%)</td><td>552,276</td><td>2</td><td>8 <span class="mut">(18 raw, slivers rejoined)</span></td></tr>
+<tr><td>orange</td><td>86,776 (9.4%)</td><td>926,751</td><td>2</td><td>8</td></tr>
+<tr><td>watermelon</td><td>66,408 (10.7%)</td><td>618,382</td><td>2</td><td>&mdash;</td></tr>
 </tbody></table></div>
 
-<p>The band is \(O(N^{2/3})\) of the volume, which is what it should be. On synthetic shapes the
-piece counts are the known ones &mdash; a ball cut through its centre is two, a plane clear of it
-is one, a torus is two whether the plane contains its axis or crosses it, a dumbbell cut through
-its neck is two. The case that justifies subdividing at all is a cap thinner than a coarse cell:
-every coarse centre stays on one side, so the coarse labelling reports <em>one</em> piece &mdash;
-the object, uncut &mdash; and refined to \(h_{\text{target}}\) it reports two.</p>
+<p>The band is \(O(N^{2/3})\) of the volume. On synthetic shapes the piece counts are the known
+ones — a ball is 2, 4 and 8 under one, two and three planes, a torus cut by two planes through its
+axis is 4, a dumbbell cut through each ball is 3 — and the case that justifies subdividing at all
+is a cap thinner than a coarse cell: every coarse centre stays on one side, so the coarse labelling
+reports the object uncut, and refined it reports two pieces.</p>
 
-<h3>The face is exact even though the topology is not</h3>
+<p>Where several planes meet they carve genuine slivers whose size scales with the cell, and
+refinement does not remove them: the doughnut's three cuts leave 18 pieces, eight of them under a
+hundred cells, and refining to a quarter of the spacing — five times the leaves — still leaves six.
+At one cell a sliver is \(10^{-7}\) of the object, so reporting them as pieces is what is wrong. A
+piece below a stated threshold rejoins the neighbour it shares the most faces with: 18 become 10 at
+64 cells and 8 at 512, with the smallest kept at 2,287.</p>
 
-<p>Topology is voxel-approximate by construction and the visible face must not be, or it reads as
-a staircase. Per cut leaf, intersect the plane with the twelve edges, order the points around
-their centroid in the plane's own basis, and fan them: a convex polygon of three to six vertices
-lying exactly on the plane. The worst deviation from the plane over a whole object is
-0.00e+00.</p>
+<h3>The cut face</h3>
 
 <div class="tw"><table>
 <thead><tr><th>shape</th><th>cut area, mesh</th><th>closed form</th><th>error</th></tr></thead>
@@ -170,98 +359,10 @@ lying exactly on the plane. The worst deviation from the plane over a whole obje
 <tr><td>torus across its axis</td><td>868.0</td><td>\(4\pi R r\) = 879.6</td><td>1.3%</td></tr>
 </tbody></table></div>
 
-<p>That 1% is the voxelisation of the silhouette, not the polygons. The mesh conforms without
-being made to: every crossed cell is refined to the same depth, so all cut cells are at one level
-and the polygons meet edge to edge, which is asserted rather than assumed.</p>
+<p>That 1% is the voxelisation of the silhouette, not the polygons — every vertex lies on the plane
+to 0.00e+00.</p>
 
-<div class="note">Two bugs here type-checked and produced pictures. A cut polygon is emitted twice
-with opposite winding, and the copy wound to \(+\mathbf{n}\) belongs to the piece <em>below</em>
-the plane &mdash; a boundary's normal points away from its own material. Paired the other way,
-0% of faces pointed out of the piece they belonged to. And which piece is on each side cannot be
-found by probing: the polygon is interior to its cell, so stepping a fraction of a leaf along
-\(\pm\mathbf{n}\) stays in the same cell and both sides report the same piece. On the doughnut one
-half came back with no cut surface at all, 0 faces against 43,520, while the orange looked correct
-because its polygons happen to sit nearer their cell faces. The answer was already in the
-labelling: one side is the cut cell's own piece, the other is the neighbour the side test
-deleted.</div>
-
-<h2>The surface, all of it, as O-Voxel</h2>
-
-<p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
-two renderers, a depth convention and a compositing step necessary. Converting the exterior as
-well removes the seam instead of managing it. The occupancy already holds the volume, so the
-exterior <em>is</em> its boundary &mdash; every face of an occupied cell whose neighbour is empty
-&mdash; and the same dual-grid encoder that handles the cut face takes the staircase off it.</p>
-
-<figure>
-  <img src="assets/exterior_ovoxel.png" alt="The whole exterior as an O-Voxel surface, beside the Gaussian exterior">
-  <figcaption>Left: the orange's entire exterior as a dual-grid surface, 442,253 active voxels
-  drawn as the 934,520 triangles they encode. Right: the Gaussian exterior it replaces. Six
-  canonical views, upper row up / front / right. The peel, the calyx and the shaded underside all
-  survive the conversion.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>object</th><th>active voxels</th><th>dual vertex to the model, mean</th><th>95th</th><th>extent error</th></tr></thead>
-<tbody>
-<tr><td>doughnut</td><td>850,790</td><td>0.95 \(h\)</td><td>1.70 \(h\)</td><td><strong>0.00%</strong></td></tr>
-<tr><td>orange</td><td>442,253</td><td>1.07 \(h\)</td><td>2.22 \(h\)</td><td>2.32%</td></tr>
-</tbody></table></div>
-
-<p>The boundary is blocky at the cell size, which is the honest shape of a cube representation,
-and the dual grid's quadric fit is what turns the staircase back into a surface. How well is the
-distance column, measured against the primitives of the model it came from rather than asserted.
-The orange's 2.32% is the boundary running along cell corners and therefore sitting half a cell
-proud.</p>
-
-<div class="note"><strong>A surface has to be drawn as a surface.</strong> One point per active
-voxel has no footprint, so wherever the projected voxel spacing exceeds a pixel the background
-shows through, and the exterior looks porous. The shape of the gaps says which it is: 2,400 to
-3,300 separate holes per view with a median size of one pixel is a point set being under-sampled,
-not a broken surface, which fails in a few large places instead. Drawn as its own mesh the
-unpainted fraction of the silhouette goes from 5.57%, 5.90% and 6.66% to 0.01%, 0.00% and
-0.00%.</div>
-
-<h2>Paying for curvature instead of resolution</h2>
-
-<p>A dual grid stores one node per active surface voxel, so it costs \(O(A/h^2)\): a plane costs
-as much as a crumpled sheet of the same extent. That is the wrong thing to pay for, and it is
-fixable inside the algorithm rather than by preprocessing the input, because the dual vertex is
-already the minimiser of a quadric. For supporting planes \(\{(\mathbf{n}_i, d_i)\}\),</p>
-
-<div class="eq"><div class="body">
-\[ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
-   = \mathbf{x}^\top\! A\,\mathbf{x} - 2\,\mathbf{b}^\top\mathbf{x} + c, \qquad
-   A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;\;
-   \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;\;
-   c = \sum_i d_i^2 \]
-</div><div class="num">(2)</div></div>
-
-<p>so a quadric is ten numbers, and &mdash; the property everything rests on &mdash; it is
-additive over the set of planes. The quadric of a merged block is exactly the sum of its
-children's, with no reference to the mesh they came from:</p>
-
-<div class="eq"><div class="body">
-\[ Q_{\text{parent}} = \sum_{\text{children}} Q_{\text{child}} \]
-</div><div class="num">(3)</div></div>
-
-<p>So the grid collapses bottom-up. Merge a \(2\times2\times2\) block, add the quadrics, solve
-\(A\mathbf{x} = \mathbf{b}\), and read the residual \(r = c - \mathbf{b}^\top\mathbf{x}\), which is
-the sum of squared distances from that one vertex to every plane the block covers. Flat regions
-coarsen, curvature does not, and only the geometry decides. \(A\) is rank-deficient wherever the
-block is locally planar, so the vertex is taken as the minimum-norm solution relative to the
-block's centre, which is what keeps it inside its own cell.</p>
-
-<p>The tolerance is a length rather than a residual:</p>
-
-<div class="eq"><div class="body">
-\[ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{the number of planes the block covers} \]
-</div><div class="num">(4)</div></div>
-
-<p>A raw residual grows with how many planes fall in a block, so the same number coarsens a dense
-region and refuses a sparse one for no geometric reason. The root-mean-square distance means the
-same thing at every resolution and on every object: \(\tau = 0.5\) is "within half a cell of the
-planes it replaces, on average".</p>
+<h3>Storage against accuracy</h3>
 
 <div class="tw"><table>
 <thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
@@ -270,162 +371,77 @@ planes it replaces, on average".</p>
 <tr><td>0.10</td><td>315,661</td><td>71.4%</td><td>0.024</td><td>0.262</td><td>0.163 \(h\)</td><td>1.000</td><td>&mdash;</td></tr>
 <tr><td>0.35</td><td>280,491</td><td>63.4%</td><td>0.036</td><td>0.328</td><td>0.215</td><td>1.000</td><td>614,129</td></tr>
 <tr><td>0.50</td><td>215,304</td><td><strong>48.7%</strong></td><td>0.072</td><td>0.468</td><td>0.338</td><td>1.209</td><td>474,742</td></tr>
-<tr><td>0.75</td><td>164,647</td><td>37.2%</td><td>0.112</td><td>0.619</td><td>0.481</td><td>1.478</td><td>&mdash;</td></tr>
 <tr><td>1.00</td><td>149,031</td><td><strong>33.7%</strong></td><td>0.093</td><td>0.712</td><td>0.556</td><td>1.637</td><td>326,341</td></tr>
 </tbody></table></div>
 
-<div class="note"><strong>One direction is not enough, and the give-away is that it stops being
-monotone.</strong> Measuring only from each surviving node to the nearest original vertex asks
-whether a node is on the surface and never whether the surface is still covered &mdash; a node
+<p>The doughnut's 530,958 nodes fall to 197,017 at \(\tau = 0.5\) and 143,247 at \(\tau = 1.0\).
+The identity row is the check that the rest means anything: an adaptive dual grid has no uniform
+mesh to hand back to the library, so the faces are rebuilt by resolving each crossed fine edge's
+four voxels to the nodes that survived, and with nothing merged that reproduces the library's own
+mesh exactly — 934,520 triangles, area 15.22346 against 15.22352, and the same 12,606 boundary and
+41,947 non-manifold edges its mesh already has.</p>
+
+<div class="note"><strong>One direction of error is not enough, and the give-away is that it stops
+being monotone.</strong> Measuring only from each surviving node to the nearest original vertex
+asks whether a node is on the surface and never whether the surface is still covered — a node
 standing in for a large patch scores perfectly as long as it sits on it. Read that way the error
 rises to 0.112 at \(\tau = 0.75\) and then <em>falls</em> to 0.093 at 1.00 while the node count
-keeps dropping, which is a measure running out of things to say rather than a surface improving.
-The reverse direction is five to eight times larger and monotone throughout, and the symmetric
-mean is what the table quotes. An earlier version of this page quoted the forward direction alone
-and understated the cost at \(\tau = 0.5\) by a factor of six.</div>
+keeps dropping. The reverse direction is five to eight times larger and monotone throughout.</div>
 
-<p>The orange's exterior, against the uniform grid it replaces; the doughnut's 530,958 nodes fall
-to 197,017 at \(\tau = 0.5\) and 143,247 at \(\tau = 1.0\). The error is how far the collapse
-moved the surface: a node nobody merged keeps the vertex the library solved for it, so the
-identity row is exactly zero rather than nearly so, and half the nodes cost a third of a
-cell.</p>
+<h3>The four things the first version deferred</h3>
 
-<p>The identity row is also the check that the meshing is right. An adaptive dual grid has no
-uniform mesh to hand back to the library, so the faces are rebuilt here: every crossed fine edge
-is shared by four fine voxels, each is resolved to the node that survived and contains it, and
-the four resolved nodes are the quad &mdash; degenerating to a triangle where two of them are the
-same node, which is what a collapse across an edge means. That is adaptive dual contouring's
-output without its recursion, and cracks cannot arise because neighbouring cells of different
-sizes resolve to the <em>same</em> node along their shared edge. With nothing merged it
-reproduces the library's own mesh exactly: 934,520 triangles, area 15.22346 against 15.22352, and
-the same 12,606 boundary and 41,947 non-manifold edges the library's mesh already has.</p>
+<div class="tw"><table>
+<thead><tr><th>deferred item</th><th>what it buys</th></tr></thead>
+<tbody>
+<tr><td>Exact polyhedral fragments</td><td>Clipping with <em>no</em> subdivision beats the voxel
+approximation at \(h/8\), which needs ten times the leaves: 0.00392 relative volume error against
+0.00457. The exact column does not move with level because it does not depend on how the cut was
+voxelised, and 0.00392 is the sphere's own occupancy discretisation, the floor for both.</td></tr>
+<tr><td>Adaptive band refinement</td><td>20.6%, 32.6% and 35.8% fewer leaves at uniform levels 1,
+2 and 3 on an oblique cut, at equal misclassified volume and identical piece counts. On an
+axis-aligned cut, nothing — every cut cell is then misclassified identically and the criterion
+correctly declines.</td></tr>
+<tr><td>Several cuts at once</td><td>A second cut 0.02 from the first costs +77 leaves where an
+unrelated one costs +3,983, and one-at-a-time equals all-at-once exactly. When no cut is live the
+blocks fold back to precisely the uncut lattice, 850,822 leaves from 1,159,634.</td></tr>
+<tr><td>Cut-time super-resolution</td><td>Baked into the band, so the detail is in the volume and
+not on the frame. At one pixel per leaf 95.2% of the distance from the original face to the
+generated one is kept; at six pixels 77.4%. Super-resolution and subdivision are one budget.</td></tr>
+</tbody></table></div>
 
-<figure>
-  <img src="assets/qef_collapse.png" alt="The collapsed surface at three tolerances">
-  <figcaption>The same exterior at \(\tau = 0\), 0.5 and 1.0. At 49% and 34% of the nodes it is
-  the same orange; the rim steps visibly at \(\tau = 1.0\), which is what a coarser node is. Each
-  node is drawn as the patch it stands for &mdash; a square of its own cell's size in the plane
-  its quadric fitted &mdash; so a coarse region is not merely a sparser one. The residual speckle
-  is this splat's; the table is what measures the collapse.</figcaption>
-</figure>
+<h2 id="conclusion">Conclusion</h2>
 
-<div class="note">Two things had to be right and each was wrong in a way that still produced a
-table. <strong>A parent is active when <em>any</em> child is</strong> &mdash; the rule for a
-surface, not for a volume. A 2-manifold crossing a \(2\times2\times2\) block activates four to six
-of its cells and never all eight, so requiring a full block refused every merge and reported 100.0%
-of the uniform grid at every tolerance: a table of nines that reads like a negative result. And
-<strong>the residual says nothing about coverage</strong>. A block holding one or two triangles has
-a residual of almost zero, merges to the top, and a node 256 cells wide then represents its whole
-cell on the evidence of a single plane &mdash; the worst error reached 82 cells while the mean
-stayed at 0.35, and it moved non-monotonically with \(\tau\), which is the signature of a bug
-rather than a trade. A patch of side \(2^L h\) contains on the order of \((2^L)^2\) fine cells, so
-requiring \(w \ge \alpha\,4^L\) is the missing condition: a node may only claim an area it has
-seen.</div>
+<p>Separating the two jobs costs less than it sounds and gives back more than the rendering. The
+hidden volume becomes occupancy plus a low-dimensional feature, with no \(\sigma\) to tune against
+\(h\); the visible boundary becomes a surface with an explicit polygonal extent, which is what lets
+a flat cut face be flat rather than a plane approximated by ellipsoids. Cutting stays discrete
+where discreteness is cheap and becomes analytic exactly where a staircase would show. And the
+lattice's own advantages survive intact — connectivity, piece identity and collision are integer
+operations on a structured grid, not queries against arbitrary free particles.</p>
 
-<p>Separately and orthogonally, the node encoding. A dual vertex lies inside its own cell by
-construction, so storing it as a quantised fraction has error at most \(\tfrac{\sqrt3}{2}h\,2^{-b}\),
-which at \(b = 8\) is \(h/512\); the index delta-codes along the space-filling curve the library
-already ships. That is coding rather than a contribution, and it is available to any
-representation including the Gaussians being compared against, so it is reported apart from the
-collapse.</p>
-
-<h2>Compositing, while the exterior is still Gaussian</h2>
-
-<p>Before the exterior was converted there were two renderers and a per-pixel choice between them,
-\(C(u) = C_G(u)\) if \(D_G(u) &lt; D_O(u)\) and \(C_O(u)\) otherwise. The cut surface is planar by
-construction, so its rasterisation is a ray-plane intersection in closed form and a pixel is
-covered exactly when the hit lies in a cut leaf: the union of the polygons, cell for cell. The rays
-are checked against the projection they were built from &mdash; a hit point put back through the
-camera lands on its own pixel to within 0.007&nbsp;px.</p>
-
-<p>The depth convention had to be measured, and the obvious measurement cannot decide it. The
-renderer returns an alpha-weighted depth along the ray rather than the nearest surface, so both
-candidates sit 0.08 to 0.10 behind a minimum over primitive centres and their means are too close
-to call. What separates them is where the error lives: Euclidean distance and view-space \(z\)
-differ by \(1/\cos\) of the angle off the axis, so the wrong one leaves an error that grows towards
-the corners. By radial slope it is view \(z\): &minus;0.058 against +0.060.</p>
-
-<figure>
-  <img src="assets/compositing.png" alt="Four compositing configurations: exterior, cut surface, composite">
-  <figcaption>All four configurations, each row exterior Gaussians &#124; cut surface &#124;
-  composite. Whether a piece's cut face is visible is decided by the sign of the plane at the
-  camera against the side the piece's material is on, and it agrees with the composite every time:
-  the cut takes 98.0% and 74.9% of the contested pixels when it faces the camera and 0.4% and 0.0%
-  when it does not, with the sign of the depth margin predicting the outcome in all four. Rows
-  three and four are the ones worth checking &mdash; the exposed face is there in the middle
-  column and correctly absent from the composite.</figcaption>
-</figure>
-
-<div class="note"><strong>The exterior is the boundary of the occupancy, not the refined cells.</strong>
-Taking it as <code>cell_level &ne; 0</code> looks right and is not: on the orange the refined
-cells run from \(r/R\) 0.808 to 1.000 while the coarse cells reach 0.936, so the shell is thick
-and uneven and much of the outer surface is made of coarse cells the level test throws away. What
-that leaves is the thick lower part of a shell &mdash; 77% of the refined cells sit in the bottom
-40% of the object &mdash; so a cut through the centroid handed one piece five times as much
-"exterior" as the other and three views of four had almost nothing to draw. A boundary cell is one
-with an empty face neighbour, which is the definition the exterior conversion already uses and
-does not care what level a cell is: 187,260 primitives, 20% to 24% of each frame, and the same
-answer from every direction.</div>
-
-<div class="note">The remaining limitation of the half-and-half arrangement, and the reason the
-exterior is converted at all: a Gaussian shell is not opaque, so at the silhouette &mdash; 2.4% of
-the frame in the worst of the four &mdash; the cut face shows through where the exterior does not
-cover. Where both are present the depth test is never wrong.</div>
-
-<h2>Physics keeps what the lattice had</h2>
-
-<p>The O-Voxel patch is the visible boundary and takes no part in the physics; the cube hierarchy
-is the physical volume and answers every question about where material is. So replacing the
-interior Gaussians costs nothing the occupancy-based collision was already giving.</p>
-
-<p>Piece identity is a relabelling and not a resampling: the existing particle set stays as it is
-and each particle takes the piece of the leaf it falls in. Subdividing the cut band multiplies
-leaves, not particles &mdash; 797,838, 877,495 and 1,741,169 particles labelled with none left
-over. Collision stays a floor division and an occupancy test, with one more of each when the coarse
-cell was refined; no point-in-polyhedron query appears anywhere.</p>
-
-<p>The narrow phase at the cut face is one comparison and it is not decoration. A leaf the cut
-passes through is occupied as a whole, so the voxel test claims material up to half a leaf past
-where the cut is: two freshly separated halves report 772 penetrating particles on the orange and
-1,509 on the watermelon, and requiring the point to be on the piece's own side of the plane leaves
-zero. Pulled apart, nothing penetrates at any distance; pushed together, penetration appears at
-the first quarter cell and grows monotonically; a body rotated 35&deg; as well as translated is
-still tested correctly, because each body carries its own rigid transform and every query is asked
-in the frame of the body being tested.</p>
-
-<div class="note">Three things this took, all of them tests that passed while being wrong. The cut
-plane has to be <strong>oblique and off the grid</strong> &mdash; an axis-aligned cut through the
-centroid lands on a cell boundary and straddles nothing, so the discrepancy the narrow phase exists
-to fix cannot occur and it reads 0 against 0, which looks like a pass. The particles have to be
-<strong>off the cell centres</strong> &mdash; at cell centres a push of half a cell lands them
-exactly on cell faces and penetration reads as zero. And the ground truth has to be
-<strong>the geometry, not the labelling</strong> &mdash; asking whether a particle labelled by the
-leaf it sits in is inside some <em>other</em> leaf is circular; it never is.</div>
-
-<h2>What this does not claim</h2>
-
+<h3>What this does not claim</h3>
 <ul>
   <li><strong>The exterior costs more, before the collapse.</strong> 442,253 dual-grid voxels
-      replace 118,142 skin Gaussians on the orange and 850,790 replace 280,672 on the doughnut.
-      The collapse takes the first of those to 215,304 at \(\tau = 0.5\), and the quantisation
-      is available to both representations, so the comparison that matters is not yet run.</li>
-  <li><strong>The surface is faceted, and a perceptual score will say so.</strong> A dual-grid
-      skin is one small planar patch per node, and CLIP or LPIPS against a photograph is exactly
-      the kind of measurement that punishes that even where the geometry is right. No perceptual
-      number is quoted here for that reason, and quoting one would need the faceting addressed
-      rather than the metric chosen.</li>
-  <li><strong>The collapse is measured geometrically, not perceptually.</strong> The error column
-      is the distance from a node's vertex to the model it came from. What that does to appearance
-      at a given screen resolution is a separate question and is not answered here.</li>
+      replace 118,142 skin Gaussians on the orange. The collapse takes that to 215,304 at
+      \(\tau = 0.5\), and the same quantisation is available to either representation, so the
+      comparison that matters is not yet run.</li>
+  <li><strong>The surface is faceted, and a perceptual score will say so.</strong> A dual-grid skin
+      is one small planar patch per node, and CLIP or LPIPS against a photograph is exactly the
+      measurement that punishes that even where the geometry is right. No perceptual number is
+      quoted here, and quoting one would need the faceting addressed rather than the metric
+      chosen.</li>
+  <li><strong>Cut-time detail is per cut.</strong> The write-back reaches the cells the face passed
+      through and no others, so a plane six degrees away shows the volume as it was.</li>
+  <li><strong>The interior features are not retrained.</strong> The per-cell features are still
+      the ones the Gaussian run learned; refitting them for the cube renderer flattened the
+      orange's segment walls twice, and the criterion for "the walls survived" — the angular
+      oscillation of a section over its middle radii — is in place but the fit is not.</li>
   <li><strong>Section 11 of the specification is not done.</strong> The four-representation
-      baseline and its metric families &mdash; interior appearance, resolution stability, memory,
-      runtime &mdash; wait until the architecture is finished. Topology and collision are the two
-      that are already measured, above.</li>
-  <li><strong>Local subdivision does not invent interior texture.</strong> A child feature is its
-      parent's, so a finer cut boundary is finer geometry and the same appearance.</li>
+      baseline and the interior-appearance, resolution-stability, memory and runtime families wait
+      until the architecture is finished. Topology and collision are the two already measured.</li>
 </ul>
 
-<h2>References</h2>
+<h2 id="refs">References</h2>
 <ol class="refs">
   <li>F. Wu and Y. Chen. <em>FruitNinja: 3D Object Interior Texture Generation with Gaussian
       Splatting.</em> <a href="https://arxiv.org/abs/2411.12089">arXiv:2411.12089</a>, 2024.</li>
@@ -436,6 +452,14 @@ leaf it sits in is inside some <em>other</em> leaf is circular; it never is.</di
   <li>T. Xie et&nbsp;al. <em>PhysGaussian: Physics-Integrated 3D Gaussians for Generative
       Dynamics.</em> <a href="https://arxiv.org/abs/2311.12198">arXiv:2311.12198</a>, CVPR 2024.</li>
 </ol>
+
+<h2 id="bibtex">BibTeX</h2>
+<pre>@misc{cubeovoxel,
+  title  = {Cube Interior + O-Voxel Cut Surface: the hidden volume stops being a rendering primitive},
+  author = {Anonymous},
+  year   = {2026},
+  note   = {Preprint}
+}</pre>
 
 <footer>
 Every number on this page was measured on the three objects the previous project reports, or on a
