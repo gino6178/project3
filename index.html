@@ -71,952 +71,324 @@
   <h1>Cube Interior + O&#8209;Voxel Cut Surface</h1>
   <p class="sub">The hidden volume stops being a rendering primitive</p>
   <p class="authors">Anonymous</p>
-  <p class="venue">Implementation study &middot; v1</p>
+  <p class="venue">Implementation study &middot; rebuilt on the verified pipeline</p>
   <div class="links">
     <a href="https://gino6178.github.io/project2/">Previous: Voxel-Lattice Gaussians</a>
   </div>
 </header>
 
-<figure style="margin-top:26px">
-  <img src="assets/cut_views.png" alt="One cut seen from four directions">
-  <figcaption>One cutting plane, four viewpoints, and nothing in the picture is a Gaussian.
-  Skin and cut face are both O-Voxel patches and both go through one z-buffered pass, so
-  whichever is nearer wins per pixel rather than by a depth convention agreed between two
-  renderers. The skin carries the photographed colour the reconstruction was built with; the
-  exposed face is decoded from the coarse cube grid at an angle no cross-section of the
-  training set ever passed through. The two halves are drawn apart so both are visible at
-  once.</figcaption>
-</figure>
+<div class="note"><strong>This page was rewritten.</strong> An earlier version reported an
+implementation of the same specification that was built beside the reconstruction pipeline
+rather than on it, and it did not survive contact with the three real objects. Everything below
+was rebuilt on the pipeline whose orange, watermelon and doughnut are the ones the previous
+project reports, and every number here was measured on those three or on a synthetic shape whose
+answer is known in closed form. Nothing from the earlier version is carried forward.</div>
 
-<figure>
-  <img src="assets/cutface.png" alt="The exposed cut face, as the volume renders it and after cut-time super-resolution">
-  <figcaption>The exposed face on its own, seen down the cut plane's own normal. Left: what the
-  trained coarse volume renders &mdash; the pith column and the pale albedo under the peel are
-  there, the flesh is flat. Right: the same face after one generative pass is baked into the
-  refined band's child features, then rendered again through the same decoder. The right-hand
-  image is not the diffusion output; it is the volume, read back.
-  <strong>Those membranes are invented</strong> &mdash; no photograph of this fruit's interior
-  was taken and none was used here. What baking buys is that the invention is the same from
-  every angle and travels with the pieces when they separate, which is measured
-  <a href="#sr" style="color:var(--acc)">further down</a>, not that it is true.</figcaption>
-</figure>
+<h2>What the representation is</h2>
 
-<h2>The problem with one primitive doing two jobs</h2>
+<p>An object that can be cut open has to answer two different questions, and a Gaussian is asked
+to answer both. Where is the material &mdash; occupancy, connectivity, which piece a point
+belongs to, what collides with what. And what does the surface look like &mdash; the peel, and
+the face a cut has just exposed. A rendering primitive is good at the second and pays for the
+first with a trade it cannot escape: let \(\rho = \sigma/h\) be the support scale over the sample
+spacing, and small \(\rho\) leaves holes in the volume while large \(\rho\) blends across the
+material boundaries the interior is made of.</p>
 
-<p class="lead">A 3D Gaussian reconstruction has no interior. FruitNinja<sup>1</sup> gives it
-one by filling the enclosed volume with small opaque Gaussians and supervising them against
-diffusion-generated cross-sections. That works, and it binds two different requirements to
-one parameter. Write \(\rho = \sigma/h\) for the Gaussian support scale over the sample
-spacing:</p>
+<p>So the two jobs get two representations. A coarse cube grid holds the hidden volume, where a
+cell's support is exactly its own cell and therefore tiles. A dual-grid surface holds everything
+visible. The interior never renders as primitives, and the surface never has to fill a volume.</p>
 
-<div class="eq"><div class="body">
-$$\text{small }\sigma \;\Rightarrow\; \text{holes / high primitive count},
-\qquad \text{large }\sigma \;\Rightarrow\; \text{overlap / material blending}.$$
-</div><div class="num">(1)</div></div>
+<h2>Making the occupancy a solid</h2>
 
-<p>Small support leaves gaps that only a very high primitive count or the rasteriser's
-screen-space footprint can hide. Large enough support to cover the spacing means neighbouring
-primitives overlap, and alpha compositing then blends across the boundaries — seed against
-flesh, peel against pith — that the interior exists to show.</p>
-
-<p>The volume does not need a rendering primitive. It needs occupancy, connectivity, an
-appearance feature and a collision lookup. A cube supplies all four and has no
-\(\sigma\), no opacity, no rotation and no overlap to tune. A surface, once a cut has exposed
-one, is better served by an explicit polygonal boundary than by alpha-blended ellipsoids.</p>
-
-<div class="note"><strong>Volume primitive for the hidden volume, surface primitive for the
-visible boundary.</strong> The interior becomes a coarse cube grid holding occupancy and an
-8-dimensional latent. Only where a cut passes are cells subdivided, and only the newly
-exposed cross-section becomes an O-Voxel<sup>2</sup> surface. The original exterior is left
-in whatever representation it already had.</div>
-
-<h2>Occupancy is a question about a volume</h2>
-
-<p>The interior grid is built by reusing the existing inside/outside detection and changing
-only its last step: an occupied cell stores a cube and a feature instead of initialising a
-Gaussian. That step turned out to hide a sampling problem worth reporting.</p>
-
-<figure>
-  <img src="assets/fill.png" alt="Aliased occupancy against solidified occupancy">
-  <figcaption>The same cross-section three times. <strong>Left</strong>: the source lattice
-  binned straight into cells — the white bands are not features of the fruit, they are rows of
-  cells that no sample landed in. The source samples the interior at 0.0157 while its own
-  metadata records a cell size of 0.0148, and binning one into the other drops whole lattice
-  planes in a beat pattern, which is why the gaps are straight, evenly spaced and in two
-  directions at once. <strong>Middle</strong>: the cells the repair added, painted red — the
-  dropped planes and the whole rim, 21.7% of this section. <strong>Right</strong>: the result.
-  Morphological closing, an outside flood and a union with the samples turn 368,738 sampled
-  cells into 465,080 solid ones, an added 96,342, against 454k for the analytic
-  ball.</figcaption>
-</figure>
-
-<p>The check that matters is not a picture but a property: a solid occupancy is a fixed point
-of the closing operation, with nothing left for it to seal. After the repair that count is
-zero, which settles every future cut plane and every output resolution at once.</p>
-
-<h2>Rendering a cross-section</h2>
-
-<p>For a plane \(\Pi(x)=n^\top x + d = 0\), each pixel has a position \(x(u)\) on it. Find the
-containing cell and emit its decoded colour:</p>
-
-<div class="eq"><div class="body">
-$$(i,j,k)=\left\lfloor \frac{x(u)-o}{h_c} \right\rfloor, \qquad
-I(u) = D_\theta(f_{ijk})_{\mathrm{RGB}}.$$
-</div><div class="num">(2)</div></div>
-
-<p>That is the whole renderer: piecewise constant, no interpolation. Interpolation would
-reintroduce smoothing across exactly the material boundaries the cube representation was
-adopted to keep. Coverage is a containment test on a cube rather than the union of a set of
-splats, so the section is hole-free by construction — measured at 0.0 background-gap ratio at
-both 512 and 2048 output resolution.</p>
-
-<figure>
-  <img src="assets/slices.png" alt="Six cross-sections through the trained interior">
-  <figcaption>Cross-sections through the trained volume. The first four are longitudinal
-  planes at azimuths halfway between the supervised ones and the last two are transverse
-  planes outside the supervised depth window, so none of the six was optimised against. The
-  pith core, the radial membranes and the pale rim under the peel all continue through
-  angles the training never saw.</figcaption>
-</figure>
+<p>The lattice is not solid and never was, and this is the precondition everything else rests on.
+The paper's fill places one particle per <em>empty</em> cell and skips cells that already hold a
+primitive, so the volume is a sponge; Gaussians hid it because their support overlaps, and a cube's
+does not. Closing the pinholes and filling what the closed shell encloses is idempotent &mdash;
+running it twice changes nothing &mdash; and the number that says how much it mattered is the
+connected-component count of the uncut object.</p>
 
 <div class="tw"><table>
-<thead><tr><th>Iteration</th><th>Loss</th><th>Residual</th><th>Held-out PSNR</th><th>Held-out SSIM</th></tr></thead>
+<thead><tr><th>object</th><th>coarse cells</th><th>pieces before</th><th>pieces after</th></tr></thead>
 <tbody>
-<tr><td>0</td><td>0.217</td><td>0.0214</td><td>16.70</td><td>0.758</td></tr>
-<tr><td>20</td><td>0.096</td><td>0.0041</td><td>20.48</td><td>0.836</td></tr>
-<tr><td>40</td><td>0.090</td><td>0.0035</td><td>21.26</td><td>0.849</td></tr>
-<tr><td>59</td><td>0.085</td><td>0.0030</td><td class="win">21.60</td><td class="win">0.856</td></tr>
+<tr><td>doughnut</td><td>462,131 &rarr; 533,236</td><td>44</td><td><strong>1</strong></td></tr>
+<tr><td>orange</td><td>551,848 &rarr; 850,822</td><td>1,561</td><td><strong>1</strong></td></tr>
+<tr><td>watermelon</td><td>310,741 &rarr; 560,275</td><td>2,641</td><td><strong>1</strong></td></tr>
 </tbody></table></div>
 
-<p>Held-out planes have their references drawn once and frozen, so the score is measured
-against a target that does not follow the model. 60 iterations over 8 longitudinal and 16
-transverse planes at 512&sup2;, eight minutes on one RTX 3090.</p>
-
-<h2>Four interiors, one protocol</h2>
-
-<p>The argument above is about a representation, so it has to be measured against the
-alternatives rather than asserted. Every row below gets the same occupied volume, the same
-latent width, the same shared decoder, the same references on the same planes, the same
-optimiser and 40 iterations, and is scored on the same eight held-out planes. Only the
-primitive and the way a cross-section is drawn from it differ.</p>
-
-<div class="note"><strong>These rows are representations, not reproductions.</strong> The
-first row is dense small opaque Gaussians built and trained here, not FruitNinja's pipeline
-and not their numbers — nothing below runs their filling, supervision schedule, appearance
-model or renderer settings. Read every row as "this representation, under one
-protocol".</div>
-
-<div class="tw"><table>
-<thead><tr><th>interior representation</th><th>primitives</th><th>&rho;</th><th>MB</th>
-<th>PSNR</th><th>SSIM</th><th>LPIPS</th><th>gap@4096</th><th>blend px</th><th>FPS</th></tr></thead>
-<tbody>
-<tr><td>Opaque-Atom GS (dense small)</td><td>3,720,640</td><td>0.35</td><td>269.7</td>
-    <td>19.09</td><td>0.738</td><td>0.360</td><td>0.0000</td><td>5.73</td><td>57.4</td></tr>
-<tr><td>Coarse large-support GS</td><td>465,080</td><td>1.00</td><td>33.7</td>
-    <td>17.04</td><td>0.758</td><td>0.387</td><td>0.0000</td><td>15.59</td><td>250.8</td></tr>
-<tr><td>Voxel-Lattice GS</td><td>465,080</td><td>0.50</td><td>33.7</td>
-    <td>18.36</td><td>0.746</td><td class="win">0.358</td><td>0.0000</td><td>9.73</td><td>285.6</td></tr>
-<tr><td>Cube + O-Voxel (ours-v1)</td><td>465,080</td><td>&mdash;</td><td class="win">32.2</td>
-    <td class="win">19.21</td><td class="win">0.770</td><td>0.402</td><td>0.0000</td>
-    <td class="win">3.93</td><td class="win">701.1</td></tr>
-</tbody></table></div>
-
-<figure>
-  <img src="assets/baselines.png" alt="Five held-out planes under each of the four representations">
-  <figcaption>Five held-out planes, one row per representation: dense small Gaussians,
-  coarse large-support Gaussians, one Gaussian per lattice cell, and the cube grid. The
-  second row's rim shows the colour fringing that overlapping primitives produce; the fourth
-  is flat between boundaries and sharp across them.</figcaption>
-</figure>
-
-<p>The cube row has the sharpest material boundaries by a factor of 1.5 over the next best,
-renders 12&times; faster than the dense row, uses 8.4&times; less memory, and reaches the
-best PSNR and SSIM against a representation with eight times the primitives.</p>
-
-<p>It loses LPIPS, to all three. Half of that gap is the unsupersampled rendering used for
-parity with the rasteriser; the rest is the representation, and the mechanism is not the
-obvious one. It is not blockiness — side by side the cube row is the smoothest of the four,
-and it has the sharpest boundaries by the blend measure. What it lacks is the incidental
-grain that overlapping primitives generate everywhere. LPIPS compares texture statistics
-against a photograph, which is full of grain, so a volume that is constant inside each cell
-is penalised for exactly the smoothness the other three metrics reward.</p>
-
-<h3>&rho; = &sigma;/h, swept</h3>
-
-<p>Both halves of eq. (1) are geometric, so neither needs training. Sweeping the support
-scale at fixed spacing:</p>
-
-<div class="tw"><table>
-<thead><tr><th>&rho;</th><th>gap@1024</th><th>gap@4096</th><th>blend px</th></tr></thead>
-<tbody>
-<tr><td>0.20</td><td>0.0048</td><td>0.0117</td><td>4.41</td></tr>
-<tr><td>0.35</td><td>0.0000</td><td>0.0000</td><td>6.14</td></tr>
-<tr><td>0.50</td><td>0.0000</td><td>0.0000</td><td>7.70</td></tr>
-<tr><td>0.75</td><td>0.0000</td><td>0.0000</td><td>9.58</td></tr>
-<tr><td>1.00</td><td>0.0000</td><td>0.0000</td><td>11.00</td></tr>
-<tr><td>1.50</td><td>0.0000</td><td>0.0000</td><td>13.00</td></tr>
-<tr><td>cube</td><td class="win">0.0000</td><td class="win">0.0000</td><td class="win">2.11</td></tr>
-</tbody></table></div>
-
-<p>Holes below &rho; &asymp; 0.35, blending rising linearly above it, and no setting that
-avoids both. The cube has neither and sits below the whole curve, because it has no &rho; to
-tune — which is the claim, now with a measurement under it.</p>
-
-<p>One nuance the sweep exposes, and which section 2 predicts: the holes vanish at quite a
-small &rho; because the rasteriser's screen-space footprint hides them. The cost of a small
-&sigma; is therefore paid not in gaps but in density — the dense row needs eight times the
-primitives, 8.4&times; the memory and 12&times; the render time to reach a fidelity the cube
-row matches.</p>
+<p>Those are holes, not fragments. A piece count means nothing until this has run, so the cutting
+code runs it rather than assuming it.</p>
 
 <h2>Cutting: discrete topology, analytic boundary</h2>
 
-<p>A cut refines only the cells the plane passes through — a fixed 2&times;2&times;2 block per
-cut cell rather than a general octree — classifies every leaf by the sign of \(\Pi\) at its
-centre, keeps adjacency only between leaves on the same side, and takes connected components.
-The piece boundary is therefore voxel-approximate, and its accuracy is the leaf size.</p>
+<p>A cut arrives as a plane. The cells it crosses are subdivided until \(h_\ell \le h_{\text{target}}\),
+the leaves are joined to their face neighbours, the edges the plane separates are dropped, and
+connected components on what is left are the pieces. No geometry is involved: the polygons come
+afterwards, and keeping the two apart is the design.</p>
 
-<p>The drawn face is not. Intersecting the plane with each leaf's twelve edges gives a convex
-polygon lying exactly on \(\Pi\), so the visible cut is flat to machine precision
-(\(\max|\Pi(v)| \le 7\times10^{-8}\)) while collision and connectivity keep the simplicity of
-a grid. Each polygon is emitted twice with opposite winding, once per piece.</p>
+<p>The crossing test is one absolute value rather than eight corners. A cube's extreme values on a
+plane sit at two opposite corners and which two depends only on the signs of \(\mathbf{n}\), so</p>
+
+<div class="eq"><div class="body">
+\[ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \sum_a \left|n_a\right| \]
+</div><div class="num">(1)</div></div>
+
+<p>is exactly the eight-corner test. Adjacency is arithmetic too: a leaf's neighbour is at its own
+level or coarser &mdash; were it finer, the finer leaves on the shared face would find this one
+&mdash; so the coarser candidate is the neighbour's coordinate shifted right, which is floor
+division and therefore the cell containing it. The first version enumerated the layer of finest
+cells outside each face and looked each up in a dictionary: correct, and 96 probes per coarse leaf
+once two levels exist, tens of millions on a real lattice. Six vectorised passes per level instead,
+and the self-test went from minutes to 2.2&nbsp;seconds.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>band leaves</th><th>total leaves</th><th>pieces after one cut</th></tr></thead>
+<tbody>
+<tr><td>doughnut</td><td>21,760 (3.9%)</td><td>552,276</td><td>2 &mdash; 265,853 / 286,423</td></tr>
+<tr><td>orange</td><td>86,776 (9.4%)</td><td>926,751</td><td>2 &mdash; 464,339 / 462,412</td></tr>
+<tr><td>watermelon</td><td>66,408 (10.7%)</td><td>618,382</td><td>2 &mdash; 278,479 / 339,903</td></tr>
+</tbody></table></div>
+
+<p>The band is \(O(N^{2/3})\) of the volume, which is what it should be. On synthetic shapes the
+piece counts are the known ones &mdash; a ball cut through its centre is two, a plane clear of it
+is one, a torus is two whether the plane contains its axis or crosses it, a dumbbell cut through
+its neck is two. The case that justifies subdividing at all is a cap thinner than a coarse cell:
+every coarse centre stays on one side, so the coarse labelling reports <em>one</em> piece &mdash;
+the object, uncut &mdash; and refined to \(h_{\text{target}}\) it reports two.</p>
+
+<h3>The face is exact even though the topology is not</h3>
+
+<p>Topology is voxel-approximate by construction and the visible face must not be, or it reads as
+a staircase. Per cut leaf, intersect the plane with the twelve edges, order the points around
+their centroid in the plane's own basis, and fan them: a convex polygon of three to six vertices
+lying exactly on the plane. The worst deviation from the plane over a whole object is
+0.00e+00.</p>
+
+<div class="tw"><table>
+<thead><tr><th>shape</th><th>cut area, mesh</th><th>closed form</th><th>error</th></tr></thead>
+<tbody>
+<tr><td>ball through its centre</td><td>448.0</td><td>\(\pi r^2\) = 452.4</td><td>1.0%</td></tr>
+<tr><td>torus across its axis</td><td>868.0</td><td>\(4\pi R r\) = 879.6</td><td>1.3%</td></tr>
+</tbody></table></div>
+
+<p>That 1% is the voxelisation of the silhouette, not the polygons. The mesh conforms without
+being made to: every crossed cell is refined to the same depth, so all cut cells are at one level
+and the polygons meet edge to edge, which is asserted rather than assumed.</p>
+
+<div class="note">Two bugs here type-checked and produced pictures. A cut polygon is emitted twice
+with opposite winding, and the copy wound to \(+\mathbf{n}\) belongs to the piece <em>below</em>
+the plane &mdash; a boundary's normal points away from its own material. Paired the other way,
+0% of faces pointed out of the piece they belonged to. And which piece is on each side cannot be
+found by probing: the polygon is interior to its cell, so stepping a fraction of a leaf along
+\(\pm\mathbf{n}\) stays in the same cell and both sides report the same piece. On the doughnut one
+half came back with no cut surface at all, 0 faces against 43,520, while the orange looked correct
+because its polygons happen to sit nearer their cell faces. The answer was already in the
+labelling: one side is the cut cell's own piece, the other is the neighbour the side test
+deleted.</div>
+
+<h2>The surface, all of it, as O-Voxel</h2>
+
+<p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
+two renderers, a depth convention and a compositing step necessary. Converting the exterior as
+well removes the seam instead of managing it. The occupancy already holds the volume, so the
+exterior <em>is</em> its boundary &mdash; every face of an occupied cell whose neighbour is empty
+&mdash; and the same dual-grid encoder that handles the cut face takes the staircase off it.</p>
 
 <figure>
-  <img src="assets/subdivision.png" alt="Cut faces at three subdivision levels">
-  <figcaption>No subdivision, then levels 1, 2 and 3, on an oblique plane offset from the cell
-  boundaries by 0.37 of a cell — the normal case, since a user's plane neither lands on the grid
-  nor lines up with it. The four images are indistinguishable, which is the point: what
-  subdivision buys is <em>where the cut falls</em>, not interior texture.</figcaption>
+  <img src="assets/exterior_ovoxel.png" alt="The whole exterior as an O-Voxel surface, beside the Gaussian exterior">
+  <figcaption>Left: the orange's entire exterior as a dual-grid surface, 442,253 active voxels
+  drawn as the 934,520 triangles they encode. Right: the Gaussian exterior it replaces. Six
+  canonical views, upper row up / front / right. The peel, the calyx and the shaded underside all
+  survive the conversion.</figcaption>
 </figure>
 
 <div class="tw"><table>
-<thead><tr><th>subdivision</th><th>leaves in the band</th><th>piece-volume error</th></tr></thead>
+<thead><tr><th>object</th><th>active voxels</th><th>dual vertex to the model, mean</th><th>95th</th><th>extent error</th></tr></thead>
 <tbody>
-<tr><td>none</td><td>0</td><td>0.87%</td></tr>
-<tr><td>level 1</td><td>91,672</td><td>0.51%</td></tr>
-<tr><td>level 2</td><td>733,376</td><td>0.23%</td></tr>
-<tr><td>level 3</td><td>5,867,008</td><td>0.11%</td></tr>
+<tr><td>doughnut</td><td>850,790</td><td>0.95 \(h\)</td><td>1.70 \(h\)</td><td><strong>0.00%</strong></td></tr>
+<tr><td>orange</td><td>442,253</td><td>1.07 \(h\)</td><td>2.22 \(h\)</td><td>2.32%</td></tr>
 </tbody></table></div>
 
-<p>Error against the exactly clipped volumes of the same cut, so the reference is the cut this
-plane really makes rather than an analytic stand-in. It roughly halves per level, which is what
-a boundary accurate to h<sub>l</sub> should do, and each halving costs eight times the leaves.
-The plane has to be <em>oblique</em> for that to be the behaviour: axis-aligned, every cut cell
-meets the plane at the same fraction of its height, so they are all wrong by the same amount and
-the error stops falling at all — flat at 0.19% from level 1 to level 3.</p>
+<p>The boundary is blocky at the cell size, which is the honest shape of a cube representation,
+and the dual grid's quadric fit is what turns the staircase back into a surface. How well is the
+distance column, measured against the primitives of the model it came from rather than asserted.
+The orange's 2.32% is the boundary running along cell corners and therefore sitting half a cell
+proud.</p>
 
-<h2>Compositing two renderers</h2>
+<div class="note"><strong>A surface has to be drawn as a surface.</strong> One point per active
+voxel has no footprint, so wherever the projected voxel spacing exceeds a pixel the background
+shows through, and the exterior looks porous. The shape of the gaps says which it is: 2,400 to
+3,300 separate holes per view with a median size of one pixel is a point set being under-sampled,
+not a broken surface, which fails in a few large places instead. Drawn as its own mesh the
+unpainted fraction of the silhouette goes from 5.57%, 5.90% and 6.66% to 0.01%, 0.00% and
+0.00%.</div>
 
-<p>The exterior keeps its Gaussian renderer and the cut surface gets a mesh one. Both emit
-colour and depth, and the frame is the nearer of the two at every pixel. This is the v1
-arrangement; converting the exterior to O-Voxel as well removes the need for it entirely, which
-is <a href="#ext" style="color:var(--acc)">further down</a>.</p>
+<h2>Paying for curvature instead of resolution</h2>
 
-<figure>
-  <img src="assets/compositing.png" alt="Exterior, cut surface, depth and composite">
-  <figcaption>Left to right: the 1,557,032 original Gaussians with each piece's removed half
-  culled, the cut surface alone, the composited depth, and the result. The rasteriser
-  accumulates \(\sum_i z_i \alpha_i T_i\), so its depth has to be divided by the accumulated
-  alpha before it means metres — composite it raw and every partially covered pixel claims to be
-  nearer than it is, outlining the cut face in peel. Checked at this viewpoint against a sphere
-  of the object's own radius: 2.2516 rendered against 2.2180 expected, 1.5%, which is about the
-  peel's thickness. 84.3% of the covered pixels come from the exterior.</figcaption>
-</figure>
+<p>A dual grid stores one node per active surface voxel, so it costs \(O(A/h^2)\): a plane costs
+as much as a crumpled sheet of the same extent. That is the wrong thing to pay for, and it is
+fixable inside the algorithm rather than by preprocessing the input, because the dual vertex is
+already the minimiser of a quadric. For supporting planes \(\{(\mathbf{n}_i, d_i)\}\),</p>
 
-<p>The newly exposed surface is converted to an O-Voxel Flexible Dual Grid — a field-free
-sparse voxel surface, which is what lets a single open cross-section patch be represented
-without first being closed into a watertight volume. Only the new patch is converted; the
-object is not re-voxelised per cut.</p>
+<div class="eq"><div class="body">
+\[ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
+   = \mathbf{x}^\top\! A\,\mathbf{x} - 2\,\mathbf{b}^\top\mathbf{x} + c, \qquad
+   A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;\;
+   \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;\;
+   c = \sum_i d_i^2 \]
+</div><div class="num">(2)</div></div>
 
-<h3>Where the official encoder degenerates</h3>
+<p>so a quadric is ten numbers, and &mdash; the property everything rests on &mdash; it is
+additive over the set of planes. The quadric of a merged block is exactly the sum of its
+children's, with no reference to the mesh they came from:</p>
 
-<p>Compared against TRELLIS.2's own <code>mesh_to_flexible_dual_grid</code> on the same patch,
-the two agree about topology almost exactly — 8,409 dual quads against 8,410, from the same
-active voxels — and disagree about where the dual vertex goes.</p>
+<div class="eq"><div class="body">
+\[ Q_{\text{parent}} = \sum_{\text{children}} Q_{\text{child}} \]
+</div><div class="num">(3)</div></div>
+
+<p>So the grid collapses bottom-up. Merge a \(2\times2\times2\) block, add the quadrics, solve
+\(A\mathbf{x} = \mathbf{b}\), and read the residual \(r = c - \mathbf{b}^\top\mathbf{x}\), which is
+the sum of squared distances from that one vertex to every plane the block covers. Flat regions
+coarsen, curvature does not, and only the geometry decides. \(A\) is rank-deficient wherever the
+block is locally planar, so the vertex is taken as the minimum-norm solution relative to the
+block's centre, which is what keeps it inside its own cell.</p>
+
+<p>The tolerance is a length rather than a residual:</p>
+
+<div class="eq"><div class="body">
+\[ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{the number of planes the block covers} \]
+</div><div class="num">(4)</div></div>
+
+<p>A raw residual grows with how many planes fall in a block, so the same number coarsens a dense
+region and refuses a sparse one for no geometric reason. The root-mean-square distance means the
+same thing at every resolution and on every object: \(\tau = 0.5\) is "within half a cell of the
+planes it replaces, on average".</p>
 
 <div class="tw"><table>
-<thead><tr><th>Encoder</th><th>Dual quads</th><th>Dual vertices off-plane</th><th>Patch area</th></tr></thead>
+<thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>mean error</th><th>95th</th><th>max</th></tr></thead>
 <tbody>
-<tr><td>Built-in (mean of edge crossings)</td><td>8,410</td><td class="win">9&times;10<sup>&minus;8</sup></td><td>0.778</td></tr>
-<tr><td>TRELLIS.2 (QEF)</td><td>8,409</td><td>0.58 voxel</td><td>0.928</td></tr>
-<tr><td>reference</td><td>&mdash;</td><td>0</td><td>0.782</td></tr>
+<tr><td>0.00</td><td>294,111</td><td>95.2%</td><td>0.312 \(h\)</td><td>0.787</td><td>1.193</td></tr>
+<tr><td>0.10</td><td>141,995</td><td>46.0%</td><td>0.339</td><td>0.787</td><td>1.120</td></tr>
+<tr><td>0.35</td><td>106,649</td><td>34.5%</td><td>0.347</td><td>0.787</td><td>1.754</td></tr>
+<tr><td>0.50</td><td>90,803</td><td><strong>29.4%</strong></td><td>0.356</td><td>0.787</td><td>1.715</td></tr>
+<tr><td>1.00</td><td>56,357</td><td><strong>18.2%</strong></td><td>0.446</td><td>0.841</td><td>1.548</td></tr>
 </tbody></table></div>
 
-<p>The official encoder solves the QEF unconstrained and falls back to axis-constrained solves
-when the answer leaves the voxel. For a perfectly planar patch every face constraint is the
-same plane equation, so that first system is rank-deficient, the solution is free in two
-directions, it leaves the voxel, and the fallback clamps it onto a voxel face — off the plane.
-Inert across four orders of magnitude of the regularisation weight. Taking the mean of the
-crossings on each voxel's edges is exact for a planar patch instead, because every crossing
-lies on the plane. This is not a defect in TRELLIS.2 — its O-Voxel targets closed curved
-surfaces, where the QEF is well-posed and strictly better; the analytic cut face just happens
-to be the one degenerate case.</p>
-
-<h2>Several cuts at once</h2>
-
-<p>One plane first, and then several — which is the order the specification recommends,
-because what several cost is data management rather than a new idea. The cut band becomes
-the union of the planes, so a cell where two cuts cross is allocated once and its leaves are
-classified against both. A leaf's side becomes a bitmask, one bit per plane, so "same side"
-stays a single integer comparison however many planes there are. And each plane's polygons
-are clipped by the others' half-spaces.</p>
+<p>The orange's exterior, against the uniform grid it replaces. The doughnut's 530,958 nodes fall
+to 197,025 at \(\tau = 0.5\) and 143,258 at \(\tau = 1.0\). The error stays under one cell
+throughout: 3.4&times; fewer nodes costs 0.04 of a cell in the mean. The uniform grid is
+\(\tau = 0\) on this curve rather than a different method.</p>
 
 <figure>
-  <img src="assets/multicut.png" alt="One cut, and two cuts from two viewpoints">
-  <figcaption>One plane, then two, then the same two from another direction. With two cuts the
-  object separates into four pieces and each is pushed out along the planes it is on the far
-  side of, so both cut faces of every quarter are visible at once. Skin and faces are all
-  O-Voxel patches in one pass, so a quarter's second cut face is drawn rather than left as a
-  hole through its own peel.</figcaption>
+  <img src="assets/qef_collapse.png" alt="The collapsed surface at three tolerances">
+  <figcaption>The same exterior at \(\tau = 0\), 0.5 and 1.0. At 29% and 18% of the nodes it is
+  the same orange; the rim steps visibly at \(\tau = 1.0\), which is what a coarser node is. Each
+  node is drawn as the patch it stands for &mdash; a square of its own cell's size in the plane
+  its quadric fitted &mdash; so a coarse region is not merely a sparser one. The residual speckle
+  is this splat's; the table is what measures the collapse.</figcaption>
 </figure>
 
-<div class="note">A polygon that <em>straddles</em> another plane has to be
-<strong>split</strong>, not clipped. Clip it to whichever side its own cell centre sits on
-and a gap up to one leaf wide opens along the intersection line — which is exactly where two
-cuts meet and where a gap is most visible. Splitting duplicates only the polygons on that
-line, so the cost is a line's worth of cells rather than the patch's.</div>
+<div class="note">Two things had to be right and each was wrong in a way that still produced a
+table. <strong>A parent is active when <em>any</em> child is</strong> &mdash; the rule for a
+surface, not for a volume. A 2-manifold crossing a \(2\times2\times2\) block activates four to six
+of its cells and never all eight, so requiring a full block refused every merge and reported 100.0%
+of the uniform grid at every tolerance: a table of nines that reads like a negative result. And
+<strong>the residual says nothing about coverage</strong>. A block holding one or two triangles has
+a residual of almost zero, merges to the top, and a node 256 cells wide then represents its whole
+cell on the evidence of a single plane &mdash; the worst error reached 82 cells while the mean
+stayed at 0.35, and it moved non-monotonically with \(\tau\), which is the signature of a bug
+rather than a trade. A patch of side \(2^L h\) contains on the order of \((2^L)^2\) fine cells, so
+requiring \(w \ge \alpha\,4^L\) is the missing condition: a node may only claim an area it has
+seen.</div>
 
-<div class="tw"><table>
-<thead><tr><th>planes</th><th>pieces</th><th>first plane's face area</th><th>max |&Pi;(v)|</th></tr></thead>
-<tbody>
-<tr><td>1</td><td>2</td><td>1.49818</td><td>1.2&times;10<sup>&minus;7</sup></td></tr>
-<tr><td>2</td><td>4</td><td>1.49818</td><td>1.2&times;10<sup>&minus;7</sup></td></tr>
-<tr><td>3</td><td>8</td><td>1.49818</td><td>6.0&times;10<sup>&minus;8</sup></td></tr>
-</tbody></table></div>
+<p>Separately and orthogonally, the node encoding. A dual vertex lies inside its own cell by
+construction, so storing it as a quantised fraction has error at most \(\tfrac{\sqrt3}{2}h\,2^{-b}\),
+which at \(b = 8\) is \(h/512\); the index delta-codes along the space-filling curve the library
+already ships. That is coding rather than a contribution, and it is available to any
+representation including the Gaussians being compared against, so it is reported apart from the
+collapse.</p>
 
-<p>The area column is the check worth making. Adding a cut does not remove any of the first
-plane's surface — it only redistributes it among more pieces — so a total that shrinks means
-polygons were clipped away instead of split, and one that grows means they were duplicated.
-It stays fixed to six figures, and the faces stay flat to machine precision.</p>
+<h2>Compositing, while the exterior is still Gaussian</h2>
+
+<p>Before the exterior was converted there were two renderers and a per-pixel choice between them,
+\(C(u) = C_G(u)\) if \(D_G(u) &lt; D_O(u)\) and \(C_O(u)\) otherwise. The cut surface is planar by
+construction, so its rasterisation is a ray-plane intersection in closed form and a pixel is
+covered exactly when the hit lies in a cut leaf: the union of the polygons, cell for cell. The rays
+are checked against the projection they were built from &mdash; a hit point put back through the
+camera lands on its own pixel to within 0.007&nbsp;px.</p>
+
+<p>The depth convention had to be measured, and the obvious measurement cannot decide it. The
+renderer returns an alpha-weighted depth along the ray rather than the nearest surface, so both
+candidates sit 0.08 to 0.10 behind a minimum over primitive centres and their means are too close
+to call. What separates them is where the error lives: Euclidean distance and view-space \(z\)
+differ by \(1/\cos\) of the angle off the axis, so the wrong one leaves an error that grows towards
+the corners. By radial slope it is view \(z\): &minus;0.058 against +0.060.</p>
+
+<figure>
+  <img src="assets/compositing.png" alt="Three compositing configurations">
+  <figcaption>Skin, cut surface and composite, for a piece whose cut faces the camera (top two
+  rows) and one whose cut points away (bottom). Whether a piece's cut face is visible is decided by
+  the sign of the plane at the camera against the side the piece's material is on, and it agrees
+  with the composite in all four configurations: the cut takes 73.7% and 70.9% of the contested
+  pixels when it faces the camera, 0.0% and 0.0% when it does not.</figcaption>
+</figure>
+
+<div class="note">The honest limitation of this half-and-half arrangement, and the reason the
+exterior was converted: the skin alone covers 7% to 20% of the frame at alpha above a half, so
+where it is transparent the cut face shows through from the side it should be hidden on. That is a
+semi-transparent exterior, not the depth test &mdash; where both are present the test is never
+wrong.</div>
 
 <h2>Physics keeps what the lattice had</h2>
 
-<p>The O-Voxel patch is a visible boundary and takes no part in volume physics; the cube
-hierarchy remains the physical volume. Collision stays integer indexing into a dense map with
-a descent into refined blocks, never a point-to-polyhedron query. A cut relabels the existing
-MPM particles rather than creating new ones, so local subdivision does not inflate the
-simulation.</p>
-
-<p>After a cut the pieces have to move and collide <em>independently</em>, and that is a
-question the rest frame cannot even ask — there the pieces are disjoint sets of leaves and
-cannot overlap. Giving each piece a rigid pose turns it into one: map a world point back
-through that piece's pose, then run the same integer-indexed lookup.</p>
-
-<div class="tw"><table>
-<thead><tr><th>one half driven into the other</th><th>overlap / claimed</th></tr></thead>
-<tbody>
-<tr><td>0.00 (rest)</td><td class="win">0.00%</td></tr>
-<tr><td>0.05</td><td>8.01%</td></tr>
-<tr><td>0.15</td><td>27.19%</td></tr>
-<tr><td>0.30</td><td>55.48%</td></tr>
-<tr><td>0.60</td><td>26.07%</td></tr>
-</tbody></table></div>
-
-<p>Zero at rest, monotone as one half is pushed into the other, and falling again past 0.60
-— which is larger than the radius, so the halves have passed through each other and their
-intersection is shrinking. Pushed <em>apart</em> instead, it stays zero at every distance.
-Rigid on purpose: the particle set stays the deformable state and the cube hierarchy stays
-the collision volume, which is the division of labour eq. (28) sets out.</p>
-
-<p>On 100,000 particles: occupancy hit rate 100%, and 100% agreement between a particle's
-assigned piece and which side of the analytic plane it lies on. That second number needs the
-narrow-phase test — the piece boundary is voxel-approximate while the drawn face is analytic,
-and up to half a leaf of material sits between them. Cut-surface vertices are bound to nearby
-particles with fixed weights; a rigid translation of the particles moves the surface with a
-maximum drift of 1.3&times;10<sup>&minus;7</sup>.</p>
-
-<p>Permanent interior storage is 32.2 MB for 465,080 cells — 72.6 bytes per cell, holding
-occupancy, an 8-dimensional latent, a piece id and a refinement handle. The cut band costs a
-further 20.4 MB while it exists.</p>
-
-<h3>The surface material</h3>
-
-<p>An O-Voxel surface can hold PBR attributes, not only colour, and the decoder's second
-output \(a\) is where they come from. Two channels are trained, under their own names, from
-the same feature the colour head reads.</p>
-
-<figure>
-  <img src="assets/attributes.png" alt="Albedo, shaded, roughness field, stiffness field">
-  <figcaption>Left to right: the decoded albedo; the same face shaded by its roughness; the
-  roughness channel; the stiffness channel. Roughness is derived from saturation, because on
-  a cut fruit the wet parts are the coloured ones — the juice vesicles come out dark (smooth
-  and specular) and the pith and the cut rind come out bright (dry and spongy). Stiffness is
-  nearly uniform across this face because its target takes only two values and the rind is a
-  thin ring at the edge; that is the target, not a failure to fit it.</figcaption>
-</figure>
-
-<p>Both channels travel the whole path — cut mesh, to the patch's surface attributes, to the
-renderer, which shades the face with a lobe whose width the decoded roughness sets. That last
-step matters more than it looks: an attribute nothing renders is an attribute nothing can be
-wrong about. Roughness spans 0.013 to 0.982 across a patch, and shading moves 11% of the
-covered pixels by up to 0.074.</p>
-
-<p>Derived from saturation and <em>not</em> from the two facts the stiffness target uses —
-two channels regressed onto the same target would be one channel reported twice.</p>
-
-<h3>The material attribute</h3>
-
-<p>The decoder's second output, \(D_\theta(f) \to (c, a)\), is trained too. \(a\) is a
-<em>relative</em> stiffness in [0, 1] — how stiff this cell is compared with the rest of the
-same object — read from the same feature the colour head reads. That sharing is the point
-rather than an economy: material and appearance are not independent, peel is the colour of
-peel, so predicting one from the feature that produces the other is a constraint on the
-feature for the price of a few thousand parameters.</p>
-
-<div class="tw"><table>
-<thead><tr><th></th><th>held-out PSNR</th><th>held-out SSIM</th><th>mean |a &minus; target|</th></tr></thead>
-<tbody>
-<tr><td>appearance only</td><td>21.60</td><td>0.856</td><td>&mdash;</td></tr>
-<tr><td>+ material head</td><td>21.49</td><td>0.856</td><td class="win">0.0122</td></tr>
-</tbody></table></div>
-
-<p>The head fits the ordering to 0.012 on a target spanning 0.365 to 1.00 — under 2% of its
-range — for 0.11 dB of appearance, which is inside the run-to-run spread.</p>
-
-<div class="note"><strong>Two things are deliberately kept out of the network.</strong> The
-<em>absolute scale</em>: the ordering is learned and the magnitude is a category table
-lookup, because a Young's modulus recovered from appearance is not a claim this version
-makes. And the <em>discrete label</em>: \(a\) regresses a bounded scalar rather than
-classifying, because a label is better read off a trained field afterwards than constrained
-into it — the version that learned the label needed a volume quota, a total-variation term,
-an entropy term and a three-stage anneal, and the measurements went against every premise it
-rested on.</div>
-
-<h2>Doing the six things v1 said it would not do</h2>
-
-<p>Section&nbsp;1.2 of the specification is a list of deliberate omissions, and section&nbsp;12.2
-turns three of them into limitations the paper is told to admit. Every one is now implemented,
-measured, and off by default &mdash; the fixed block, the inherited feature and the single
-renderer are still what runs unless asked otherwise, so every number earlier on this page still
-stands. What follows is what each omission was costing.</p>
-
-<h3>1. Exact polyhedral cut-cell fragments</h3>
-
-<p>A leaf the plane passes through is handed whole to whichever side its centre fell on, and the
-material on the other side is the error. Subdivision shrinks it by making the leaves smaller;
-clipping removes it by computing the volume that is actually there. Each cut leaf is intersected
-with the planes' half-spaces, the resulting convex polyhedron is decomposed into tetrahedra, and
-every side code with a non-zero volume becomes a fragment of its own piece &mdash; emit only the
-leaf's own side and the total under-counts, which is the voxel approximation in a different
-hat.</p>
-
-<div class="tw"><table>
-<thead><tr><th>subdivision</th><th>leaves</th><th>voxel-approximate error</th><th>exact-fragment error</th></tr></thead>
-<tbody>
-<tr><td>none</td><td>0</td><td>0.00997</td><td><strong>0.00251</strong></td></tr>
-<tr><td>level 1</td><td>14,328</td><td>0.00997</td><td>0.00251</td></tr>
-<tr><td>level 2</td><td>114,624</td><td>0.00969</td><td>0.00251</td></tr>
-<tr><td>level 3</td><td>916,992</td><td>0.00242</td><td>0.00251</td></tr>
-</tbody></table></div>
-
-<p>Relative piece-volume error against the closed form for a sphere cut at 0.37&nbsp;of a cell
-from centre. Clipping at <em>no</em> subdivision matches what the voxel approximation needs
-917k&nbsp;leaves to reach, and the exact column does not move with level because it does not
-depend on how the cut was voxelised. The 0.00251 that remains is the sphere's own occupancy
-discretisation &mdash; the floor for both columns, and not something a cut-cell method can
-remove.</p>
-
-<h3>2. Adaptive octree refinement</h3>
-
-<p>A fixed 2<sup>L</sup> block spends the deepest level any cut cell needed on every cut cell.
-What varies across a band is how badly a leaf is <em>misclassified</em>, and that has a closed
-form: \(e = h^3 - \max_c \mathrm{vol}_c\), the leaf's volume minus the largest exactly-clipped
-side. Refine a cell only while its leaves still get more than a tolerance of a coarse cell's
-volume wrong, and <code>level</code> becomes a ceiling rather than a depth.</p>
-
-<figure>
-  <img src="assets/adaptive.png" alt="The cut band coloured by the depth chosen per cell">
-  <figcaption>The band seen down the plane's normal, each coarse cell coloured by the depth the
-  criterion chose: <span style="color:#4c72cc">level&nbsp;1</span>,
-  <span style="color:#c99a10">level&nbsp;2</span>, <span style="color:#db3840">level&nbsp;3</span>.
-  Left, tolerance 0.10: most cells stop at level&nbsp;2, the blue ones split cleanly enough to
-  stop at level&nbsp;1, and depth concentrates where the plane meets the lattice at an unlucky
-  phase. Right, tolerance 0.03: the criterion asks for the ceiling almost everywhere, which is
-  the honest signal that the tolerance, not the object, is what is being measured.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>object and cut</th><th>uniform level&nbsp;3</th><th>adaptive, same accuracy</th><th>leaves saved</th></tr></thead>
-<tbody>
-<tr><td>dumbbell, through one ball</td><td>487,424 leaves</td><td>7,616 leaves</td><td>98.4%</td></tr>
-<tr><td>ball, oblique (1,2,3)</td><td>1,252,352 &middot; err 0.00040</td><td>912,992 &middot; err 0.00037</td><td>27.1%</td></tr>
-<tr><td>orange, oblique</td><td>5,440,512 &middot; err 0.000266</td><td>3,229,632 &middot; err 0.000266</td><td>40.6%</td></tr>
-</tbody></table></div>
-
-<p>Piece counts are identical to uniform in every case, which is the part that could have failed
-silently: mixed depth makes one child's face meet 4<sup>d</sup> children of a coarser block, and
-a wrong adjacency there splits a piece or fuses two with no error raised. Rather than enumerate
-that fifth case by hand, every leaf emits the cells of its two faces on one common finest grid as
-integer keys and adjacency is a sort &mdash; all five cases, including coarse-to-coarse, collapse
-into one join.</p>
-
-<div class="note">Two honest limits. On an <strong>axis-aligned</strong> cut every cut cell is
-misclassified identically, so the criterion cannot discriminate and adaptive saves nothing &mdash;
-correctly. And the criterion is a volume, so it is <strong>blind to topology</strong>: a cell where
-the cut nearly severs a thin neck holds a tiny wrong volume, stays coarse, and can pinch off a
-speck as its own piece. On the orange that speck is 10<sup>&minus;6</sup> of the object and
-uniform level&nbsp;1 reports it too; requiring level&nbsp;2 in the band buys the piece count
-back.</div>
-
-<h3>3. Child features by parent + neighbour interpolation</h3>
-
-<p>Equation&nbsp;19 copies \(f_{\text{parent}}\) into every child. The band is then piecewise
-constant <em>per parent</em>, so all of its variation sits on the coarse-cell boundaries &mdash;
-a staircase put in at exactly the place resolution was raised to remove one. Trilinear
-interpolation over the parent's six-neighbourhood, with missing neighbours dropped and the
-weights renormalised so a child near the boundary falls back toward its parent, costs one gather
-per corner and removes it.</p>
-
-<figure>
-  <img src="assets/interp.png" alt="A cut face with inherited and with interpolated child features">
-  <figcaption>The same cut face at subdivision level&nbsp;2, magnified 4&times;: inherited
-  (eq.&nbsp;19) on the left, interpolated on the right. The left is quantised to the
-  <em>coarse</em> cell even though the band is subdivided, which is the staircase the ratio
-  below measures.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>child features</th><th>|&Delta;f| between siblings</th><th>|&Delta;f| across a parent boundary</th><th>staircase ratio</th></tr></thead>
-<tbody>
-<tr><td>inherited (eq. 19)</td><td>0.000000</td><td>0.045836</td><td>&infin;</td></tr>
-<tr><td>parent + neighbour</td><td>0.007074</td><td>0.008381</td><td>1.18</td></tr>
-</tbody></table></div>
-
-<p>Measured on the orange at level&nbsp;2. Inheritance puts every bit of variation on the parent
-boundaries; interpolation spreads it evenly, at a ratio of 1.18 rather than infinity. It adds no
-information &mdash; specification 12.2 is right that neither version invents interior texture,
-and that is what the last of these six items is for.</p>
-
-<h3 id="band">4. Refined-block cache, merge and hierarchy management</h3>
-
-<p>Three problems live in specification 12.2's one sentence about blocks accumulating.
-<em>Cache</em>: every cut rebuilds the whole band, so a second plane redoes the first's work.
-<em>Merge</em>: nothing ever gives depth back, so an undone cut leaves its blocks behind.
-<em>Hierarchy</em>: nothing bounds the total. <code>CutBand</code> does all three on the ragged
-adaptive layout, where adding blocks is a concatenation and dropping them a gather.</p>
-
-<p>The cache is exact &mdash; adding planes one at a time lands on the same blocks, leaves and
-piece counts as one call over all of them &mdash; and it is also, measured, not worth much:</p>
-
-<div class="tw"><table>
-<thead><tr><th colspan="2">five concentrated cuts on the orange, from scratch</th></tr></thead>
-<tbody>
-<tr><td>building the refined band</td><td><strong>0.003&nbsp;s</strong></td></tr>
-<tr><td>labelling the pieces</td><td>0.419&nbsp;s</td></tr>
-</tbody></table></div>
-
-<p>Band construction is 0.7% of a cut. Caching it cannot matter, because connected components
-over 4.4&nbsp;million leaves has to be redone whenever the plane set changes at all. The
-accumulation specification 12.2 warns about is a <em>memory</em> problem, and merge and budget
-are what address it.</p>
-
-<div class="tw"><table>
-<thead><tr><th>state</th><th>blocks</th><th>leaves</th><th>band memory</th><th>pieces</th><th>total volume</th></tr></thead>
-<tbody>
-<tr><td>after five cuts</td><td>36,430</td><td>2,331,520</td><td>91.30 MB</td><td>25</td><td>1.437070</td></tr>
-<tr><td>three of them removed</td><td>13,716</td><td>877,824</td><td>34.38 MB</td><td>4</td><td>&mdash;</td></tr>
-<tr><td class="mut">&nbsp;&nbsp;the same two, from scratch</td><td class="mut">13,716</td><td class="mut">877,824</td><td class="mut">&mdash;</td><td class="mut">4</td><td class="mut">&mdash;</td></tr>
-<tr><td>budget 1,500,000</td><td>36,430</td><td>1,499,976</td><td>58.79 MB</td><td>24</td><td>1.437070</td></tr>
-<tr><td>budget 700,000</td><td>36,430</td><td>699,960</td><td>27.51 MB</td><td>25</td><td>1.437070</td></tr>
-<tr><td>budget 200,000</td><td>25,000</td><td>200,000</td><td>7.92 MB</td><td>23</td><td>1.437070</td></tr>
-</tbody></table></div>
-
-<p>Removal is exact to the block: the band left behind is byte-for-byte the one a fresh cut with
-the surviving planes builds. The budget coarsens cheapest-first by the same misclassified volume
-the refinement criterion spends on, so eviction and refinement agree rather than fight; the total
-volume is invariant because coarser leaves still tile the same object, and the piece count is
-what degrades &mdash; which is the trade being bought, stated rather than hidden.</p>
-
-<h3 id="ext">5. The original exterior as O-Voxel too</h3>
-
-<p>Keeping the photographed outside as Gaussians and only the cut face as O-Voxel is what makes
-specification 12.2's third limitation necessary: two renderers, a depth convention to agree on,
-and a compositing step. Converting the exterior removes the seam instead of managing it. The
-occupancy grid already holds the volume, so the exterior <em>is</em> its boundary &mdash; every
-face of an occupied cell with an empty neighbour &mdash; and the same dual-grid encoder that
-handles the cut face takes the staircase off it.</p>
-
-<figure>
-  <img src="assets/exterior.png" alt="Voxel boundary, dual-contoured O-Voxel, and a cut object drawn in one pass">
-  <figcaption>Left: the raw occupancy boundary, faceted at h<sub>c</sub>. Middle: the same
-  surface after O-Voxel dual contouring &mdash; 6.65 of surface area against the boundary's 9.76,
-  a third of it removed as staircase. Right: a cut object with both halves separated &mdash; skin
-  and cut face, four patches, one z-buffered pass, no depth convention between them.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>surface</th><th>area &divide; 4&pi;R&sup2;</th><th>dual-vertex radius</th></tr></thead>
-<tbody>
-<tr><td>voxel boundary</td><td>1.485</td><td>&mdash;</td></tr>
-<tr><td>O-Voxel dual grid</td><td><strong>1.023</strong></td><td>0.4994 &plusmn; 0.0029 (true 0.5)</td></tr>
-</tbody></table></div>
-
-<p>An axis-aligned voxelisation of a sphere has exactly 3/2 the sphere's surface area, and the
-measurement lands on it. Dual contouring removes 95% of that excess. Against the
-equation&nbsp;27 path the unified render agrees to 25.1&nbsp;dB at 119&nbsp;FPS, and its
-silhouette is slightly <em>smaller</em> &mdash; 0.3981 of the frame against 0.4058 &mdash; because
-dual contouring pulls the surface off the voxel corners, which is the same shrink the area
-column measures rather than a disagreement about where the object is.</p>
-
-<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">How dense does it have to
-be</h4>
-
-<p>The skin is one coloured quad per exposed cell, so how it looks is a question about
-<em>screen pixels per cell</em>, not about the grid in the abstract. Sweeping the render
-resolution at a fixed framing varies that number while the object's angular size stays put,
-and doing it at two grid spacings answers whether the faceting is a property of the sampling
-rate or of the representation.</p>
-
-<figure>
-  <img src="assets/pxcell.png" alt="Facet visibility and LPIPS against screen pixels per cell">
-  <figcaption>Flat-facet pixels — the share sitting in a 3&times;3 block of exactly one colour,
-  which a facet larger than a pixel produces and a texture does not. The two grid spacings land
-  on the same curve, so this is a sampling rate and not a limit: facets are unmeasurable below
-  about two pixels per cell, appear at three, and reach 22% at nine. The right panel is the
-  same sweep in LPIPS, and it stops being informative below two pixels per cell because the
-  reference is a cloud of primitives whose own speckle resolves differently at every
-  resolution.</figcaption>
-</figure>
-
-<p>The reconstruction's own cameras are 923&times;840 with f&nbsp;=&nbsp;1344, and they put the
-fruit 507&nbsp;px across. That is 5.4&nbsp;pixels per cell on the interior's grid — well past
-where facets show — and holding two pixels per cell there needs h<sub>c</sub>/2.7. So the
-exterior's spacing is genuinely its own decision, and it is about three times finer than what
-the hidden interior ever needed.</p>
-
-<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">And dual contouring turns out to
-be optional</h4>
-
-<figure>
-  <img src="assets/skin_options.png" alt="The Gaussians and three skins at 1:1">
-  <figcaption>The same patch of peel at 1:1, at the reconstruction's own camera. Top left the
-  source primitives; then the dual-contoured skin at h<sub>c</sub>/2, the raw voxel boundary at
-  h<sub>c</sub>/2, and the raw voxel boundary at h<sub>c</sub>/4.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>skin</th><th>px/cell</th><th>facets</th><th>LPIPS vs the primitives</th><th>to build</th></tr></thead>
-<tbody>
-<tr><td>O-Voxel dual grid, h<sub>c</sub>/2</td><td>2.72</td><td>0.02%</td><td>0.2076</td><td>312 s</td></tr>
-<tr><td>raw voxel boundary, h<sub>c</sub>/2</td><td>2.72</td><td>2.36%</td><td>0.2006</td><td>0.4 s</td></tr>
-<tr><td>raw voxel boundary, h<sub>c</sub>/4</td><td>1.36</td><td><strong>0.00%</strong></td><td><strong>0.1554</strong></td><td><strong>0.8 s</strong></td></tr>
-</tbody></table></div>
-
-<p>Dual contouring exists to take the staircase off a voxel boundary, and at h<sub>c</sub>/2 it
-earns its keep: 2.36% facets become 0.02%. At h<sub>c</sub>/4 the staircase is already finer
-than a pixel, so there is nothing left for it to remove — the raw boundary is facet-free on its
-own and beats the contoured one on every column, in 0.8 seconds instead of 312. The expensive
-half of the pipeline is only needed while cells are large on screen, which is exactly when one
-would rather not be paying for it.</p>
-
-<div class="note">Two caveats on the finer grid. Its silhouette is 0.4% wider than the
-Gaussians' against 1.0% at h<sub>c</sub>/2 — the occupancy's outer face sits half a cell beyond
-the primitives that marked it, so the inflation halves with the spacing. And at
-h<sub>c</sub>/4 the occupancy is no longer <em>solid</em>: 1.58M cells produce 8.3M boundary
-quads where a solid of that size would produce 80k, because the primitive density cannot fill
-cells that small. Fine for a skin, whose outside is all anyone sees. Not a volume to cut.</div>
-
-<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">Cleaning the peel with the
-diffusion model</h4>
-
-<p>The cut face gets its detail from a generative pass baked into the leaves. The skin can have
-the same, and needs the multi-view version of it: a cut face is planar so one view is a
-bijection with it, while a closed surface needs several views and a bake. Render from fourteen
-directions, enhance each, scatter the enhanced pixels back onto the faces they came from
-weighted by cos&sup2; of the viewing angle, and average.</p>
-
-<figure>
-  <img src="assets/skin_sd.png" alt="The Gaussians, our skin, and the skin after a multi-view diffusion bake">
-  <figcaption>1:1 again. The source, the h<sub>c</sub>/4 skin, and the same skin after the
-  bake. The per-cell aggregate leaves scattered dark points; the bake turns them into an even
-  pitting that reads as peel. Colour is untouched, because the enhancer keeps only the model's
-  high frequencies and takes every low frequency from the surface.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>skin</th><th>PSNR</th><th>LPIPS</th><th>bake</th></tr></thead>
-<tbody>
-<tr><td>h<sub>c</sub>/2</td><td>21.02</td><td>0.2006</td><td>&mdash;</td></tr>
-<tr><td>h<sub>c</sub>/2 + diffusion bake</td><td>21.17</td><td>0.1754</td><td>37 s</td></tr>
-<tr><td>h<sub>c</sub>/4</td><td>21.97</td><td>0.1554</td><td>&mdash;</td></tr>
-<tr><td>h<sub>c</sub>/4 + diffusion bake</td><td><strong>22.04</strong></td><td><strong>0.1386</strong></td><td>39 s</td></tr>
-</tbody></table></div>
-
-<p>Consistent by construction, for the same reason the cut face is: the detail lands in the
-surface rather than in the frame, so it survives moving the camera and travels with a piece
-that is cut off and thrown. And invented, for the same reason too — the model has never seen
-this fruit's peel at that scale, and a better LPIPS means closer to the primitives' statistics,
-not closer to the fruit.</p>
-
-<p>The bake touches 1,200,505 of the mesh's 16,527,864 faces. The rest are interior walls of a
-porous grid that nothing will ever look at, which is a standing invitation to keep only the
-visible shell and spend a sixth of the memory.</p>
-
-<div class="note"><strong>The title figure is this section.</strong> Skin and cut face, four
-patches, one pass, no Gaussians. It uses a different build of the same fruit from the rest of
-the page, and the reason is worth stating: the asset the other figures use is a generated
-sphere whose outside was never photographed, so its boundary cells hold pale flesh rather than
-peel and there is nothing for an O-Voxel skin to carry. The title figure's grid is built
-straight from the reconstruction, which does have a photographed outside, and its interior was
-trained with the identical protocol &mdash; 21.38&nbsp;dB and 0.851&nbsp;SSIM held out, against
-21.49 and 0.856 for the run every other number on this page comes from.</div>
-
-<h3 id="sr">6. Cut-time generative super-resolution</h3>
-
-<p>This is the one that answers 12.2's first limitation, and the only one that adds information
-rather than arranging it better. A planar face seen down its own normal has no occlusion and no
-foreshortening, so one image is the whole face; enhance that image; then &mdash; the step that
-makes it super-resolution rather than a filter &mdash; write it back into the refined child
-features by fitting them through equation&nbsp;7's shared decoder. The detail becomes a property
-of the leaves, not of the frame.</p>
-
-<figure>
-  <img src="assets/supersr.png" alt="Cut face before, the diffusion target, and after baking">
-  <figcaption>Left: the cut face as the trained coarse volume renders it &mdash; correct in colour
-  and silhouette, flat. Middle: one depth-conditioned img2img pass at strength 0.30, from the
-  checkpoint fine-tuned on this cut's orientation, with the volume's own colour held. Right: the
-  same face after the enhanced image is baked into the band's child features and rendered again
-  through the decoder. It carries 199% of the enhancer's added detail and 3.9&times; the bare
-  volume's.</figcaption>
-</figure>
-
-<div class="note">Those membranes are <strong>invented</strong>. The diffusion model was not shown
-the inside of this orange and neither was the reconstruction; what the baking guarantees is that
-the invention is <em>consistent</em> &mdash; the same from every angle, and carried by the pieces
-when they separate &mdash; not that it is true. Read it as the specification names it: generative
-super-resolution.</div>
-
-<p>Consistency is the claim that can be checked. The face is planar, so two views of it are
-related by an exact homography and one can be warped onto the other with no depth and no
-occlusion to argue about:</p>
-
-<div class="tw"><table>
-<thead><tr><th>cut face detail comes from</th><th>cross-view agreement</th><th>detail in the view</th></tr></thead>
-<tbody>
-<tr><td>nothing &mdash; the trained volume alone</td><td>39.24 dB</td><td>0.0122</td></tr>
-<tr><td>the enhancer, run on every frame</td><td>22.57 dB</td><td>0.0188</td></tr>
-<tr><td>the enhancer, baked into the leaves</td><td><strong>35.62 dB</strong></td><td><strong>0.0267</strong></td></tr>
-</tbody></table></div>
-
-<p>Painting each frame costs 16.7&nbsp;dB of agreement between views &mdash; the detail swims,
-because it belongs to the image. Baking costs 3.6&nbsp;dB, and carries more detail than painting
-does while doing it: 0.0267 against 0.0188, because a detail written into the leaves is there at
-every angle rather than redrawn differently at each one.</p>
-
-<h4 style="font-size:17px;margin:30px 0 8px;font-weight:600">Why the cross-sections above do
-not look like this</h4>
-
-<p>The face at the top of this page is sharp and the six held-out cross-sections earlier are
-flat, and they are renders of the same object. The difference is deliberate and it is the whole
-design: super-resolution writes into the <em>refined band</em>, not into the volume. The band
-exists along one cut plane, for as long as that cut lasts, and
-<a href="#band" style="color:var(--acc)">is released</a> when the plane is dropped. The trained
-coarse volume is not touched — <code>superresolve</code> asserts that it is not, on every call.</p>
-
-<p>Three reasons, in increasing order of how much they cost to ignore.</p>
+<p>The O-Voxel patch is the visible boundary and takes no part in the physics; the cube hierarchy
+is the physical volume and answers every question about where material is. So replacing the
+interior Gaussians costs nothing the occupancy-based collision was already giving.</p>
+
+<p>Piece identity is a relabelling and not a resampling: the existing particle set stays as it is
+and each particle takes the piece of the leaf it falls in. Subdividing the cut band multiplies
+leaves, not particles &mdash; 797,838, 877,495 and 1,741,169 particles labelled with none left
+over. Collision stays a floor division and an occupancy test, with one more of each when the coarse
+cell was refined; no point-in-polyhedron query appears anywhere.</p>
+
+<p>The narrow phase at the cut face is one comparison and it is not decoration. A leaf the cut
+passes through is occupied as a whole, so the voxel test claims material up to half a leaf past
+where the cut is: two freshly separated halves report 772 penetrating particles on the orange and
+1,509 on the watermelon, and requiring the point to be on the piece's own side of the plane leaves
+zero. Pulled apart, nothing penetrates at any distance; pushed together, penetration appears at
+the first quarter cell and grows monotonically; a body rotated 35&deg; as well as translated is
+still tested correctly, because each body carries its own rigid transform and every query is asked
+in the frame of the body being tested.</p>
+
+<div class="note">Three things this took, all of them tests that passed while being wrong. The cut
+plane has to be <strong>oblique and off the grid</strong> &mdash; an axis-aligned cut through the
+centroid lands on a cell boundary and straddles nothing, so the discrepancy the narrow phase exists
+to fix cannot occur and it reads 0 against 0, which looks like a pass. The particles have to be
+<strong>off the cell centres</strong> &mdash; at cell centres a push of half a cell lands them
+exactly on cell faces and penetration reads as zero. And the ground truth has to be
+<strong>the geometry, not the labelling</strong> &mdash; asking whether a particle labelled by the
+leaf it sits in is inside some <em>other</em> leaf is circular; it never is.</div>
+
+<h2>What this does not claim</h2>
 
 <ul>
-  <li><strong>It would not fit.</strong> The band's leaves are h<sub>c</sub>/2<sup>3</sup> across
-      and the volume's cells are h<sub>c</sub> — eight times coarser per axis, 512 times fewer
-      cells for the same space. This one cut face was baked into 893,704 leaves; the entire
-      object is 465,080 cells. Writing that detail into the volume means averaging away most of
-      it, which is the leaf limit above, one level up.</li>
-  <li><strong>It would be the wrong detail everywhere else.</strong> Anatomy invented for one
-      plane is not anatomy for another. Baked into the volume it would be visible from every
-      later cut, at whatever angle, in the arrangement one particular diffusion draw happened
-      to produce.</li>
-  <li><strong>It has been measured, and it is worse.</strong> Putting generated content into the
-      volume is exactly the supervision experiment two sections down: the held-out score drops
-      from 21.49&nbsp;dB to 15.80, and the cross-sections come back saturated, speckled and
-      concentric. The flat sections are what a volume supervised by photographs of this fruit
-      actually looks like; the sharp face is what a generative model adds on top, for one cut,
-      for as long as that cut is on screen.</li>
-</ul>
-
-<div class="note">Super-resolution and subdivision are <strong>one budget</strong>. A baked detail
-can be no finer than the leaf holding it, so rendering the face finer than
-h<sub>c</sub>/2<sup>l</sup> just averages the enhancement away: at one pixel per leaf 53&ndash;115%
-of the added detail is retained, and at 3.5&ndash;14 pixels per leaf 5&ndash;10% of it is. The
-default render resolution is therefore derived from the band's depth rather than chosen.</div>
-
-<h2>Borrowing FruitNinja's fine-tuned models</h2>
-
-<p>FruitNinja does not supervise with a stock diffusion model. It DreamBooths the depth2img
-checkpoint on photographs of the fruit being reconstructed, and it does so <em>once per cut
-orientation</em> &mdash; one run on longitudinal sections, one on transverse. Those two
-checkpoints were sitting in the reference implementation's directory unused by this package,
-which was asking a stock model in words for what they were trained to produce.</p>
-
-<p>Words do not carry it reliably. Asked eight times for a longitudinal section of the same
-render, the stock model returns one five times; the other three come back transverse, radial
-segments and all &mdash; and one of the eight arrives with a stock-photo watermark that the
-negative prompt did not remove. The fine-tuned checkpoint returns a longitudinal section eight
-times out of eight, and by a wider margin each time.</p>
-
-<figure>
-  <img src="assets/orientation.png" alt="A longitudinal request answered by the stock model and by the fine-tuned one">
-  <figcaption>Left column: the render being refined, and the real longitudinal photograph
-  underneath it. Right of them, three seeds in order, top from the stock model and bottom from
-  the checkpoint fine-tuned on longitudinal sections. The first stock seed answers a
-  longitudinal request with a transverse section. Measured over eight seeds by how far the pale
-  pith runs down the disc &mdash; 0.59 on the real longitudinal photograph, 0.25 on the real
-  transverse one &mdash; the stock model clears the midpoint 5 times and the fine-tuned one 8.
-  </figcaption>
-</figure>
-
-<p>Routing a plane to the right checkpoint needs no prompt engineering, because the plane
-already knows: the angle between its normal and the object's axis <em>is</em> the cut's
-orientation. The same geometry fixes a second thing that turned out to matter as much. A model
-fine-tuned on longitudinal photographs learned them with the pith upright, so the face has to
-be rendered upright too; handed the same section rolled ninety degrees, the model spends its
-strength arguing with the layout instead of adding anatomy to it.</p>
-
-<div class="tw"><table>
-<thead><tr><th>cut-time super-resolution</th><th>stock model</th><th>fine-tuned, routed and rolled</th></tr></thead>
-<tbody>
-<tr><td>longitudinal &mdash; detail retained</td><td>2.04</td><td><strong>2.38</strong></td></tr>
-<tr><td>transverse &mdash; detail gain</td><td>1.38</td><td><strong>1.67</strong></td></tr>
-</tbody></table></div>
-
-<p>That is where borrowing pays: the generative path, where the object has no photograph of its
-own interior to be measured against and the only question is whether the invention is the right
-anatomy, consistently.</p>
-
-<h3>How hard to push it</h3>
-
-<p>Correct anatomy is not the same as a convincing one. A fine-tuned checkpoint run at the
-strength this package started with returns a section that is unmistakably an orange and
-unmistakably <em>not this one</em> &mdash; glossy, saturated, ringed with dark peel. There is a
-photograph of the real cross-section to settle it against, so the settings were measured rather
-than eyeballed. Lower is better on LPIPS against that photograph, and the render itself, before
-any refinement, scores 0.3394.</p>
-
-<figure>
-  <img src="assets/srtune.png" alt="The same cut face refined at several strengths, against the photograph">
-  <figcaption>Left to right: the rendered face; refined at strength 0.60, which is what this
-  section originally used; at 0.30; at 0.30 with the volume's own colour held; and the real
-  longitudinal photograph. The middle of the sequence is where it stops being a different
-  orange.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>setting</th><th>LPIPS to the photograph</th><th></th></tr></thead>
-<tbody>
-<tr><td>the render, unrefined</td><td>0.3394</td><td></td></tr>
-<tr><td>strength 0.10</td><td>0.3572</td><td>worse than not running it</td></tr>
-<tr><td>strength 0.20</td><td>0.3576</td><td>worse than not running it</td></tr>
-<tr><td>strength 0.60</td><td>0.3453</td><td>worse than not running it</td></tr>
-<tr><td>strength 0.30, long prompt</td><td>0.3383</td><td></td></tr>
-<tr><td>strength 0.30, short prompt</td><td>0.3207</td><td></td></tr>
-<tr><td>strength 0.30, short prompt, colour held</td><td><strong>0.3150</strong></td><td>the default now</td></tr>
-</tbody></table></div>
-
-<p>Three things fall out of that, and none was obvious. The curve is <strong>not
-monotone</strong>: 0.10 and 0.20 are worse than doing nothing, because a weak pass adds
-incoherent grain without committing to a structure, while 0.30 is the first strength that
-produces anatomy. The <strong>long descriptive prompt hurts</strong> &mdash; it exists to tell a
-stock model what a cross-section looks like, and a fine-tuned checkpoint already knows, so
-piling descriptors on pushes it off the distribution it was tuned to. And holding the colour is
-free: the blend keeps the model's high frequencies and takes every low frequency from the
-volume, so the <strong>volume decides the colour and the model only adds detail</strong>. That
-is the right division of labour anyway &mdash; the trained interior is the part that was
-measured against photographs, and the model is not.</p>
-
-<h3>Where it does not pay</h3>
-
-<p>The obvious next step is to supervise <em>training</em> with the fine-tuned models rather
-than with the two photographs, and it does not work. It is worth reporting because the reason
-is not the one the fix was aimed at.</p>
-
-<div class="tw"><table>
-<thead><tr><th>interior supervision</th><th>held-out PSNR</th><th>SSIM</th><th>best iteration</th></tr></thead>
-<tbody>
-<tr><td>the two photographs (what this page reports)</td><td><strong>21.49</strong></td><td><strong>0.856</strong></td><td>59 of 59</td></tr>
-<tr><td>stock diffusion, 200 iterations, anchor 0.30</td><td>17.57</td><td>0.775</td><td>&mdash;</td></tr>
-<tr><td>stock diffusion, 200 iterations, anchor 0.75</td><td>17.97</td><td>0.786</td><td>&mdash;</td></tr>
-<tr><td>fine-tuned per family, 60 iterations</td><td>15.80</td><td>0.745</td><td>20 of 59</td></tr>
-<tr><td>fine-tuned + phase alignment + anchor 0.50</td><td>16.94</td><td>0.753</td><td>20 of 59</td></tr>
-</tbody></table></div>
-
-<figure>
-  <img src="assets/supervision.png" alt="Two cross-sections under photograph supervision and under diffusion supervision">
-  <figcaption>The same two held-out planes, longitudinal and transverse. Top: supervised by the
-  photographs. Bottom: supervised by the fine-tuned diffusion models. The bottom row is more
-  saturated and its texture is speckle rather than membrane &mdash; and the transverse view has
-  gone <em>concentric</em>, which is what a volume does when each plane of a family is drawn
-  independently and they disagree about where the segments are. The eye and the metric say the
-  same thing here.</figcaption>
-</figure>
-
-<div class="note">The sharpest number in that table is the last column. Both diffusion runs
-score highest at <strong>iteration 20</strong> &mdash; the last iteration before the first
-reference is regenerated &mdash; and fall from there. Correct anatomy did not change that, and
-neither did aligning the segment phase across a family or anchoring halfway back to the
-photograph. It is not the model: a regenerated reference is a picture of <em>an</em> orange,
-the held-out metric asks about <em>this</em> one, and photograph supervision optimises that
-target directly. Two photographs beat a fine-tuned generative model at reconstructing the fruit
-they are photographs of, which is less a defeat for the model than a statement about what the
-metric is asking.</div>
-
-<h2>What did not work</h2>
-
-<p>The supervision concept is carried over unchanged: photographs of real cross-sections
-through a warmup, then diffusion regeneration from the model's own render under a convergence
-gate, with each new target blended back toward the photograph so the closed loop has a fixed
-point. It runs — 200 iterations in 16 minutes, the gate firing three times. It also makes the
-result worse, at both restoring-force settings tried.</p>
-
-<figure>
-  <img src="assets/refinement.png" alt="Photographs only, anchor 0.30, anchor 0.75">
-  <figcaption>Same held-out planes under three configurations. Top: photographs only. Middle:
-  diffusion refinement with the target blended 30% back toward the photograph. Bottom: the
-  same at 75%.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>Configuration</th><th>Speckle</th><th>Structure</th><th>Mean RGB</th><th>Held-out PSNR</th></tr></thead>
-<tbody>
-<tr><td>Photographs only, 60 it</td><td>5.72</td><td>3.56</td><td>(0.974, 0.735, 0.251)</td><td class="win">21.60</td></tr>
-<tr><td>+ diffusion, anchor 0.30</td><td>7.83</td><td>4.47</td><td>(0.974, 0.781, 0.227)</td><td>17.57</td></tr>
-<tr><td>+ diffusion, anchor 0.75</td><td>5.19</td><td>2.40</td><td>(0.972, 0.794, 0.306)</td><td>17.97</td></tr>
-<tr><td>the photograph itself</td><td>5.27</td><td>4.54</td><td>(0.975, 0.730, 0.235)</td><td>&mdash;</td></tr>
-</tbody></table></div>
-
-<p>At 0.30 the loop amplifies structure and noise together and the sections come out crossed
-by vertical streaks along the extrusion axis. At 0.75 the restoring force removes the speckle
-and takes the structure with it. There is no setting here that buys structure without buying
-noise, and both refined runs sit about 4 dB below the photograph-only one.</p>
-
-<div class="note"><strong>A single sharpness statistic cannot referee this.</strong> The
-Laplacian detail of the 0.30 run rises from 17.2 to 25.2, matching the photograph's 25.0
-exactly — and that number is speckle and streaks, not membranes. It was misread twice here
-before the images were looked at. Split it into pixel-scale noise and scale-2 structure, and
-look at the pictures.</div>
-
-<p>This is a property of the object and its references rather than of the method: the object
-is a generated sphere whose only real supervision is two photographs, and closing the loop on
-a diffusion prior gives it nothing the photographs did not already have. An object with
-genuinely view-varying interior structure is where the loop is supposed to pay, and that is
-not tested here.</p>
-
-<h2>What this version does not claim</h2>
-
-<p>The specification's own list of limitations is above, six sections of it, each with the
-thing it was costing measured. What is left is what none of that reached.</p>
-
-<ul>
-  <li>Cut appearance beyond the leaf is <em>generated</em>, not recovered. Baking a diffusion
-      draw into the band makes the detail consistent from every angle and carried by the pieces;
-      it does not make it true. Nothing here recovers the actual interior of the actual
-      fruit.</li>
-  <li>Under large deformation the extracted surface must follow the deformation field; this
-      version binds surface vertices to nearby particles with fixed weights.</li>
-  <li>The adaptive refinement criterion is a volume, so it cannot see topology. A floor on the
-      band's depth is the workaround, not a fix.</li>
-  <li>LPIPS is the one metric the cube interior loses on, against all three Gaussian baselines,
-      and super-resolving the cut face does not change that &mdash; it is measured on cross-section
-      renders whose detail the coarse latent never had.</li>
-  <li>One object, one machine, one protocol. The comparisons are between representations built
-      here under one budget, not reproductions of published systems.</li>
+  <li><strong>The exterior costs more, before the collapse.</strong> 442,253 dual-grid voxels
+      replace 118,142 skin Gaussians on the orange and 850,790 replace 280,672 on the doughnut.
+      The collapse takes the first of those to 90,803 at \(\tau = 0.5\), and the quantisation is
+      available to both representations, so the comparison that matters is not yet run.</li>
+  <li><strong>The surface is faceted, and a perceptual score will say so.</strong> A dual-grid
+      skin is one small planar patch per node, and CLIP or LPIPS against a photograph is exactly
+      the kind of measurement that punishes that even where the geometry is right. No perceptual
+      number is quoted here for that reason, and quoting one would need the faceting addressed
+      rather than the metric chosen.</li>
+  <li><strong>The collapse is measured geometrically, not perceptually.</strong> The error column
+      is the distance from a node's vertex to the model it came from. What that does to appearance
+      at a given screen resolution is a separate question and is not answered here.</li>
+  <li><strong>Section 11 of the specification is not done.</strong> The four-representation
+      baseline and its metric families &mdash; interior appearance, resolution stability, memory,
+      runtime &mdash; wait until the architecture is finished. Topology and collision are the two
+      that are already measured, above.</li>
+  <li><strong>Local subdivision does not invent interior texture.</strong> A child feature is its
+      parent's, so a finer cut boundary is finer geometry and the same appearance.</li>
 </ul>
 
 <h2>References</h2>
@@ -1025,16 +397,18 @@ thing it was costing measured. What is left is what none of that reached.</p>
       Splatting.</em> <a href="https://arxiv.org/abs/2411.12089">arXiv:2411.12089</a>, 2024.</li>
   <li>J. Xiang et&nbsp;al. <em>Native and Compact Structured Latents for 3D Generation.</em>
       CVPR 2026. <a href="https://github.com/microsoft/TRELLIS.2">TRELLIS.2</a>.</li>
+  <li>T. Ju, F. Losasso, S. Schaefer and J. Warren. <em>Dual Contouring of Hermite Data.</em>
+      SIGGRAPH 2002.</li>
   <li>T. Xie et&nbsp;al. <em>PhysGaussian: Physics-Integrated 3D Gaussians for Generative
       Dynamics.</em> <a href="https://arxiv.org/abs/2311.12198">arXiv:2311.12198</a>, CVPR 2024.</li>
 </ol>
 
 <footer>
-Every number on this page was measured on one machine under one protocol, and the results
-that did not work are included. Every figure is regenerated by one script,
-<code>cube_ovoxel.figures</code>, which prints the numbers its own captions quote &mdash; a
-figure whose script no longer exists cannot be checked against the code it depicts, and the
-caption drifts from the picture without either of them looking wrong. Continues
+Every number on this page was measured on the three objects the previous project reports, or on a
+synthetic shape whose answer is known in closed form, and the things that were wrong on the way are
+kept rather than tidied away. An earlier version of this page described a different implementation
+of the same specification; it was replaced rather than amended, because it did not survive the real
+objects. Continues
 <a href="https://gino6178.github.io/project2/" style="color:var(--acc)">Voxel-Lattice
 Gaussians</a>.
 </footer>
