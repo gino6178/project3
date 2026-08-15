@@ -334,30 +334,31 @@ differ by \(1/\cos\) of the angle off the axis, so the wrong one leaves an error
 the corners. By radial slope it is view \(z\): &minus;0.058 against +0.060.</p>
 
 <figure>
-  <img src="assets/compositing.png" alt="Four compositing configurations: skin, cut surface, composite">
-  <figcaption>All four configurations, each row skin Gaussians &#124; cut surface &#124; composite.
-  Whether a piece's cut face is visible is decided by the sign of the plane at the camera against
-  the side the piece's material is on, and it agrees with the composite every time: the cut takes
-  73.7% and 70.9% of the contested pixels when it faces the camera and 0.0% and 0.0% when it does
-  not, with the sign of the depth margin predicting the outcome in all four. The skin column is
-  sparse in three of the four rows and that is the lattice, not the render &mdash; see
-  below.</figcaption>
+  <img src="assets/compositing.png" alt="Four compositing configurations: exterior, cut surface, composite">
+  <figcaption>All four configurations, each row exterior Gaussians &#124; cut surface &#124;
+  composite. Whether a piece's cut face is visible is decided by the sign of the plane at the
+  camera against the side the piece's material is on, and it agrees with the composite every time:
+  the cut takes 98.0% and 74.9% of the contested pixels when it faces the camera and 0.4% and 0.0%
+  when it does not, with the sign of the depth margin predicting the outcome in all four. Rows
+  three and four are the ones worth checking &mdash; the exposed face is there in the middle
+  column and correctly absent from the composite.</figcaption>
 </figure>
 
-<div class="note"><strong>The skin is not a uniform shell on this lattice.</strong> The refined
-cells that make up the exterior are concentrated low on the object: 77% of the orange's 118,141
-of them lie in the bottom 40% of its vertical extent, and their median height is 0.20 against the
-coarse cells' 0.70. The piece labelling is not what is uneven &mdash; it agrees with which side of
-the plane each primitive is on exactly, 98,020 against 20,121 by label and the same by geometry,
-including all 80,342 that fall outside the coarse grid and take their nearest leaf. So a cut
-through the solid's centroid really does put five times as much skin on one side, and three of the
-four configurations really do have little exterior to draw.</div>
+<div class="note"><strong>The exterior is the boundary of the occupancy, not the refined cells.</strong>
+Taking it as <code>cell_level &ne; 0</code> looks right and is not: on the orange the refined
+cells run from \(r/R\) 0.808 to 1.000 while the coarse cells reach 0.936, so the shell is thick
+and uneven and much of the outer surface is made of coarse cells the level test throws away. What
+that leaves is the thick lower part of a shell &mdash; 77% of the refined cells sit in the bottom
+40% of the object &mdash; so a cut through the centroid handed one piece five times as much
+"exterior" as the other and three views of four had almost nothing to draw. A boundary cell is one
+with an empty face neighbour, which is the definition the exterior conversion already uses and
+does not care what level a cell is: 187,260 primitives, 20% to 24% of each frame, and the same
+answer from every direction.</div>
 
-<div class="note">The honest limitation of this half-and-half arrangement, and the reason the
-exterior was converted: the skin alone covers 7% to 20% of the frame at alpha above a half, so
-where it is transparent the cut face shows through from the side it should be hidden on. That is a
-semi-transparent exterior, not the depth test &mdash; where both are present the test is never
-wrong.</div>
+<div class="note">The remaining limitation of the half-and-half arrangement, and the reason the
+exterior is converted at all: a Gaussian shell is not opaque, so at the silhouette &mdash; 2.4% of
+the frame in the worst of the four &mdash; the cut face shows through where the exterior does not
+cover. Where both are present the depth test is never wrong.</div>
 
 <h2>Physics keeps what the lattice had</h2>
 
