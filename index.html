@@ -106,7 +106,7 @@ gave it, with collision a floor division and an occupancy test and no point-in-p
 anywhere. End to end on held-out cuts, generating the topology and supplying six views beats quantising
 the scan on every object that can be scored &mdash; 66.5 of FID against 86.4 on the orange &mdash;
 and the same cuts drawn entirely from the two representations, with no Gaussian anywhere in the
-picture, reach 178.5 against the Gaussian baseline's 187.4 on the watermelon. Every number here was
+picture, reach 167.5 against the Gaussian baseline's 187.4 on the watermelon. Every number here was
 measured on the three objects of the previous project, or on a synthetic shape whose answer is
 known in closed form.
 </p>
@@ -127,8 +127,10 @@ known in closed form.
 </div>
 
 <p class="mut" style="text-align:center;margin-top:-10px">Three planes, eight pieces, drawn apart
-and back &mdash; each object as a cube volume with an O&#8209;Voxel surface, with no Gaussian
-anywhere in the picture. The pieces come out of connected-component labelling on the lattice; the
+and back &mdash; each object as a cube volume, drawn as the faces of its own cells. No dual
+grid and no Gaussian anywhere in the picture: <code>multicut_gif.py</code> takes the six cube-face
+offsets and nothing else from the surface code, so what is on screen is the blocky boundary the
+lattice actually has. The pieces come out of connected-component labelling on the lattice; the
 colour on every exposed face is read from the volume that was already there, and no face is
 tinted.</p>
 
@@ -183,13 +185,14 @@ overlapping enough to hide the gaps between them.</p>
 
 <p>Three things follow from splitting them, and they are what this paper reports. <strong>The
 volume becomes solid.</strong> A cube's support is its cell, so the occupancy has to be right
-rather than the primitives fat, and making it right turns objects that label as 44, 1,561 and
-2,641 disconnected pieces into one piece each. <strong>The cut becomes exact where it shows.</strong>
+rather than the primitives fat. Two of the three objects were never fragmented at all once the
+occupancy is indexed correctly; the quantised orange labels as 561 disconnected pieces and the
+fill closes it to one. <strong>The cut becomes exact where it shows.</strong>
 Topology stays discrete on the lattice, where discreteness is cheap, and the visible face becomes
 an analytic polygon per cell, matching closed-form cut areas to 1.0% and 1.3%. <strong>The surface
 pays for curvature rather than resolution.</strong> A dual grid costs \(O(A/h^2)\); collapsing it
 by its own quadric leaves 48.7% of the nodes at a third of a cell of error, with the uniform grid
-recovered exactly at zero tolerance.</p>
+recovered exactly at the identity setting, and 95.2% of it still standing at zero tolerance.</p>
 
 <p>The specification this implements deliberately defers six things and admits five limitations.
 Four of the six are done here and measured, and three of the five close; what remains is stated in
@@ -374,9 +377,9 @@ how much it mattered is the connected-component count of the <em>uncut</em> obje
 <div class="tw"><table>
 <thead><tr><th>object</th><th>coarse cells</th><th>pieces before</th><th>pieces after</th></tr></thead>
 <tbody>
-<tr><td>doughnut</td><td>462,131 &rarr; 533,236</td><td>44</td><td><strong>1</strong></td></tr>
-<tr><td>orange</td><td>551,848 &rarr; 850,822</td><td>1,561</td><td><strong>1</strong></td></tr>
-<tr><td>watermelon</td><td>310,741 &rarr; 560,275</td><td>2,641</td><td><strong>1</strong></td></tr>
+<tr><td>doughnut</td><td>517,166 &rarr; 522,753 <span class="mut">(+1.1%)</span></td><td>1</td><td><strong>1</strong></td></tr>
+<tr><td>orange</td><td>759,353 &rarr; 848,021 <span class="mut">(+11.7%)</span></td><td>561</td><td><strong>1</strong></td></tr>
+<tr><td>watermelon</td><td>553,043 &rarr; 561,805 <span class="mut">(+1.6%)</span></td><td>1</td><td><strong>1</strong></td></tr>
 </tbody></table></div>
 
 <p>Those are holes, not fragments. A piece count means nothing until this has run, so the cutting
@@ -621,8 +624,11 @@ residual rather than hiding it.</p>
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
   <figcaption>One piece under a non-affine deformation, its surface bound to the particles, and a
-  rest-frame checkerboard shearing with the material rather than sliding over it. The animation is
-  rendered from the earlier model; the numbers below are from the current ones. The bind residual
+  the same particles driving it two ways: a per-piece rigid fit on the left, which is the honest
+  best a single transform can do, and the particle binding on the right, both coloured by how far
+  each vertex has left its material on one shared scale. The rigid panel goes red and stays
+  undeformed; the bound panel bends and stays at 0.00. The animation is rendered from an earlier
+  model; the numbers below are from the current ones. The bind residual
   is 0.34 to 0.45 of a fine cell in the mean and 1.02 to 1.23 at the 95th, over 480,344, 419,404
   and 442,956 surface vertices carried on 1.23M, 1.07M and 0.94M particles &mdash; the surface
   being the whole O&#8209;Voxel exterior now rather than a cut patch, so what is bound is every
@@ -712,13 +718,16 @@ whether every held-out transverse section still reads as an annulus.</p>
   <img src="assets/heldout_transverse.png" alt="Transverse held-out cuts of all three objects
        under four combinations of route and renderer">
   <figcaption>Transverse cuts. Columns one and two are the Gaussian rasteriser on a scanned
-  lattice and on a generated one; columns three and four draw the exterior as an O&#8209;Voxel
-  surface and the exposed face by marching into the cube volume, with no Gaussians anywhere.
+  lattice and on a generated one; columns three and four draw the exposed face by marching
+  into the cube volume until the ray enters the surviving solid, with trilinear reconstruction
+  over the eight surrounding cell centres and no Gaussians anywhere. They do not draw a
+  dual&#8209;grid layer: the baseline rasterises a slab about the plane, so what it makes is a
+  slice, and a slice's rind is the slab's own skin cells, which the march already reaches.
   </figcaption>
 </figure>
 
 <div class="tw"><table>
-<thead><tr><th>transverse</th><th></th><th>baseline (3DGS)</th><th>route 2 (3DGS)</th>
+<thead><tr><th>transverse</th><th></th><th>route 1 (3DGS) &mdash; the baseline</th><th>route 2 (3DGS)</th>
 <th>route 1 (O&#8209;Voxel)</th><th>route 2 (O&#8209;Voxel)</th></tr></thead>
 <tbody>
 <tr><td rowspan="3">orange</td><td>FID</td><td>86.4</td><td><strong>66.5</strong></td><td>130.5</td><td>107.9</td></tr>
@@ -747,7 +756,7 @@ cross-section photographs, which is what the claim was.</p>
 </figure>
 
 <div class="tw"><table>
-<thead><tr><th>longitudinal</th><th></th><th>baseline (3DGS)</th><th>route 2 (3DGS)</th>
+<thead><tr><th>longitudinal</th><th></th><th>route 1 (3DGS) &mdash; the baseline</th><th>route 2 (3DGS)</th>
 <th>route 1 (O&#8209;Voxel)</th><th>route 2 (O&#8209;Voxel)</th></tr></thead>
 <tbody>
 <tr><td rowspan="3">orange</td><td>FID</td><td><strong>147.6</strong></td><td>247.3</td><td>292.6</td><td>370.2</td></tr>
@@ -820,8 +829,8 @@ cells, but the whole object does.</p>
   those are the ones to ask.</figcaption>
 </figure>
 
-<div class="note"><strong>What a wrong number looked like, twice.</strong> Two entries in these
-tables were wrong before they were right, and neither was caught by its magnitude. The orange read
+<div class="note"><strong>What a wrong number looked like, three times.</strong> Three entries in
+these tables were wrong before they were right, and neither was caught by its magnitude. The orange read
 493 in the last transverse column while the same model read 66.5 in the second &mdash; easy to
 write up as the cost of leaving the Gaussians behind, and in fact a bug, exposed by an
 inconsistency rather than a size: the watermelon's two routes agreed with each other and the
@@ -964,6 +973,46 @@ unrelated one; exact agreement with one-at-a-time</td></tr>
 77.4% at six</td></tr>
 </tbody></table></div>
 
+<h4>All four, on both routes</h4>
+
+<p>Those numbers were measured when only quantised lattices existed, so they say nothing about
+whether the four survive a generated one &mdash; and the generated lattice differs in exactly the
+way that could matter here, since its cells sit on the grid these algorithms index into and the
+quantised one's do not. Run again on both, on the orange, with the same planes:</p>
+
+<div class="tw"><table>
+<thead><tr><th>deferred item</th><th>route 1 &mdash; quantised</th><th>route 2 &mdash; generated</th></tr></thead>
+<tbody>
+<tr><td>Several cuts at once<br><span class="mut">three planes, then folded back</span></td>
+    <td>+101,052 and +108,591 leaves for cuts 2 and 3; 8 pieces; all-at-once identical; folds back
+    to 849,153 of 1,157,328</td>
+    <td>+110,152 and +113,610; 8 pieces; all-at-once identical; folds back to 894,304 of
+    1,215,198</td></tr>
+<tr><td>Adaptive band refinement<br><span class="mut">against uniform, at four tolerances</span></td>
+    <td>33.5% / 32.4% / 27.4% / 16.3% fewer leaves</td>
+    <td>32.1% / 31.0% / 26.1% / 15.5%</td></tr>
+<tr><td>Exact polyhedral fragments<br><span class="mut">how far the split moves</span></td>
+    <td>0.004 percentage points of the object</td>
+    <td><strong>0.000</strong></td></tr>
+<tr><td>Cut-time super-resolution<br><span class="mut">detail kept, at 256 / 512 / 1536 px</span></td>
+    <td>93.4% / 77.4% / 74.6%</td>
+    <td>100.0% / <strong>62.7%</strong> / <strong>57.5%</strong></td></tr>
+</tbody></table></div>
+
+<p>Three of the four are indifferent to which route built the lattice, within a percentage point or
+two, and the piece counts and the exact-agreement checks are unchanged. Exact fragments is slightly
+<em>better</em> on the generated lattice &mdash; the split moves by 0.000 points rather than 0.004
+&mdash; which is what a lattice whose cells are exactly on their grid should give, since there is
+no quantisation of the cell positions left for the clipping to disagree with.</p>
+
+<p>Super-resolution is the one that does not transfer. At one pixel per leaf the generated lattice
+keeps everything, 100.0% against 93.4%, and from there it falls away faster: 62.7% against 77.4% at
+512, 57.5% against 74.6% at 1536. The generated skin is three fine cells deep and uniform, so it
+has less depth to bake generated detail into than a quantised skin that varies in thickness; asking
+for more detail than the band can hold is where the two diverge. That is a property of the band and
+not of the algorithm, and it says the two should be chosen together &mdash; which is the same
+conclusion the single-route measurement reached, arrived at from the other side.</p>
+
 <h2 id="conclusion">Conclusion</h2>
 
 <p>Separating the two jobs costs less than it sounds and gives back more than the rendering. The
@@ -982,7 +1031,7 @@ operations on a structured grid, not queries against arbitrary free particles.</
       comparison that matters is not yet run.</li>
   <li><strong>The surface is faceted, and a perceptual score will say so.</strong> A dual-grid skin
       is one small planar patch per node, and CLIP or LPIPS against a photograph is exactly the
-      measurement that punishes that even where the geometry is right. No perceptual number is
+      measurement that punishes that even where the geometry is right. No perceptual number for the dual-grid exterior is
       quoted here, and quoting one would need the faceting addressed rather than the metric
       chosen.</li>
   <li><strong>Cut-time detail is per cut.</strong> The write-back reaches the cells the face passed
