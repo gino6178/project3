@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supplement: Two Routes to a Cuttable Object</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+      integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+        integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<style>
+  :root{ --ink:#111; --mut:#5c5c5c; --line:#e6e6e6; --acc:#a8412a; --panel:#f7f7f7; }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:#fff;color:var(--ink);
+       font:17px/1.7 "Charter","Georgia","Times New Roman",serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  .eq{display:flex;align-items:center;gap:14px;margin:20px 0}
+  .eq .body{flex:1;overflow-x:auto;overflow-y:hidden;text-align:center}
+  .eq .num{color:var(--mut);font-size:14px;flex:none}
+  .katex{font-size:1.02em}
+  header{padding:56px 0 30px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(27px,4.4vw,40px);line-height:1.22;margin:0 0 10px;font-weight:600;
+     letter-spacing:-.01em}
+  .sub{color:var(--mut);font-size:clamp(15px,2.2vw,19px);margin:0 0 6px;font-style:italic}
+  .authors{font-size:17px;margin:14px 0 2px}
+  .venue{color:var(--mut);font-size:15px;margin:0 0 20px}
+  .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:16px}
+  .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.35);
+           padding-bottom:1px}
+  .links a:hover{border-bottom-color:var(--acc)}
+  h2{font-size:25px;margin:52px 0 10px;font-weight:600;letter-spacing:-.01em;text-align:left}
+  h3{font-size:19px;margin:34px 0 8px;font-weight:600}
+  h4{font-size:16.5px;margin:24px 0 6px;font-weight:600;color:#2a2a2a}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0}
+  .grid3 figure{margin:0}
+  .grid3 video{width:100%;display:block;border-radius:3px;background:#fff}
+  .grid3 .cap{color:var(--mut);font-size:13.5px;margin-top:5px;text-align:center}
+  @media (max-width:640px){ .grid3{grid-template-columns:1fr} }
+  .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
+  nav.toc{display:flex;flex-wrap:wrap;gap:0 18px;justify-content:center;padding:14px 0 2px;
+          border-bottom:1px solid var(--line);font-size:14.5px}
+  nav.toc a{color:var(--mut);text-decoration:none}
+  nav.toc a:hover{color:var(--acc)}
+  p{margin:0 0 16px;text-align:left}
+  .lead{font-size:17.5px}
+  figure{margin:26px 0}
+  figure video{width:100%;display:block;border-radius:3px;background:#fff}
+  figure img{width:100%;display:block;border-radius:3px;background:#fff}
+  figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
+  .tw{overflow-x:auto;margin:20px 0}
+  td.mut{color:var(--mut)}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-weight:600;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+  .win{font-weight:700}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:14px 18px;
+        border-radius:0 3px 3px 0;font-size:16px;margin:22px 0;color:#3c3c3c}
+  .note strong{color:var(--ink)}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:14px;
+      overflow-x:auto;font-size:13.5px;line-height:1.5;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+  footer{margin:60px 0 48px;padding-top:22px;border-top:1px solid var(--line);
+         color:var(--mut);font-size:14.5px}
+  ul{margin:0 0 16px;padding-left:24px} li{margin-bottom:7px}
+  ol.refs{padding-left:30px;font-size:14.5px;line-height:1.55;color:#333}
+  ol.refs li{margin-bottom:9px}
+  ol.refs a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.3)}
+  @media (max-width:640px){ body{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Supplementary material</h1>
+  <p class="sub">The sections the paper carries in full and the short version points to</p>
+  <p class="authors">Anonymous</p>
+</header>
+
+<p>The paper states every result; these are the sections whose detail did not fit a venue's length
+and which are kept here unchanged rather than summarised. Section numbers are the paper's own.</p>
+
+<h3>3.1&ensp;Preliminaries: dual grids</h3>
+
+<p>A dual grid is the surface counterpart of an occupancy grid. The occupancy answers
+inside-or-outside per cell and its boundary is a staircase; a dual grid keeps the same cells and
+puts one vertex inside each boundary cell, connected to the vertices of the cells it shares a face
+with. Connectivity is therefore fixed by the occupancy and needs no marching table; only the
+positions are free, and each is placed at the minimum of the quadric its own surface planes
+define.</p>
+
+<div class="flow">
+<svg viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="What a dual grid is: occupancy, dual vertices, the quadric that places one, and a cut">
+  <defs>
+    <style>
+      .gl { stroke:#dedede; stroke-width:1; fill:none }
+      .oc { fill:#fbe6de; stroke:#e6c3b6; stroke-width:1 }
+      .st { stroke:#a8412a; stroke-width:2.4; fill:none }
+      .du { stroke:#a8412a; stroke-width:2.2; fill:none; stroke-linejoin:round }
+      .dv { fill:#a8412a }
+      .sf { stroke:#3a3a3a; stroke-width:1.8; fill:none; stroke-dasharray:5 3 }
+      .nm { stroke:#5c5c5c; stroke-width:1.1; fill:none }
+      .cp { stroke:#1b6ca8; stroke-width:2.2; fill:none }
+      .cf { fill:#1b6ca8 }
+      .h  { font:600 13.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#111 }
+      .s  { font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#5c5c5c }
+    </style>
+  </defs>
+
+  <!-- A: occupancy -->
+  <text class="h" x="10" y="18">a &#160;the occupancy</text>
+  <text class="s" x="10" y="36">a cell is inside or it is not</text>
+  <g transform="translate(10,46)">
+    <g class="oc">
+      <rect x="80" y="40" width="40" height="40"/><rect x="120" y="40" width="40" height="40"/>
+      <rect x="40" y="80" width="40" height="40"/><rect x="80" y="80" width="40" height="40"/>
+      <rect x="120" y="80" width="40" height="40"/><rect x="160" y="80" width="40" height="40"/>
+      <rect x="40" y="120" width="40" height="40"/><rect x="80" y="120" width="40" height="40"/>
+      <rect x="120" y="120" width="40" height="40"/><rect x="160" y="120" width="40" height="40"/>
+      <rect x="80" y="160" width="40" height="40"/><rect x="120" y="160" width="40" height="40"/>
+    </g>
+    <g class="gl">
+      <path d="M0,0 H240 M0,40 H240 M0,80 H240 M0,120 H240 M0,160 H240 M0,200 H240 M0,240 H240"/>
+      <path d="M0,0 V240 M40,0 V240 M80,0 V240 M120,0 V240 M160,0 V240 M200,0 V240 M240,0 V240"/>
+    </g>
+    <path class="st" d="M80,40 H160 V80 H200 V160 H160 V200 H80 V160 H40 V80 H80 Z"/>
+    <text class="s" x="0" y="262">the boundary is a staircase at the cell size</text>
+  </g>
+
+  <!-- B: dual vertices -->
+  <text class="h" x="290" y="18">b &#160;one dual vertex per boundary cell</text>
+  <text class="s" x="290" y="36">joined across the faces the cells share</text>
+  <g transform="translate(290,46)">
+    <g class="gl">
+      <path d="M0,0 H240 M0,40 H240 M0,80 H240 M0,120 H240 M0,160 H240 M0,200 H240 M0,240 H240"/>
+      <path d="M0,0 V240 M40,0 V240 M80,0 V240 M120,0 V240 M160,0 V240 M200,0 V240 M240,0 V240"/>
+    </g>
+    <path class="du" d="M104,52 L140,52 L172,72 L182,112 L182,140 L166,176 L134,190 L104,190
+                        L70,174 L56,138 L56,100 L70,66 Z"/>
+    <g class="dv">
+      <circle cx="104" cy="52" r="3.6"/><circle cx="140" cy="52" r="3.6"/>
+      <circle cx="172" cy="72" r="3.6"/><circle cx="182" cy="112" r="3.6"/>
+      <circle cx="182" cy="140" r="3.6"/><circle cx="166" cy="176" r="3.6"/>
+      <circle cx="134" cy="190" r="3.6"/><circle cx="104" cy="190" r="3.6"/>
+      <circle cx="70" cy="174" r="3.6"/><circle cx="56" cy="138" r="3.6"/>
+      <circle cx="56" cy="100" r="3.6"/><circle cx="70" cy="66" r="3.6"/>
+    </g>
+    <text class="s" x="0" y="262">the vertex moves inside its cell; the staircase does not</text>
+  </g>
+
+  <!-- C: the quadric -->
+  <text class="h" x="570" y="18">c &#160;where the vertex goes</text>
+  <text class="s" x="570" y="36">the minimum of its own quadric</text>
+  <g transform="translate(570,46)">
+    <g class="gl"><rect x="20" y="60" width="120" height="120" fill="none"/></g>
+    <rect x="20" y="60" width="120" height="120" class="oc" fill-opacity="0.5"/>
+    <path class="sf" d="M20,150 L96,74"/>
+    <path class="sf" d="M96,74 L140,96"/>
+    <path class="nm" d="M58,112 L40,94"/><path class="nm" d="M118,85 L128,66"/>
+    <circle cx="96" cy="74" r="4.2" class="dv"/>
+    <text class="s" x="0" y="206">each plane through the cell contributes</text>
+    <text class="s" x="0" y="222">a term; the sum is one quadric, and its</text>
+    <text class="s" x="0" y="238">minimum is the vertex. Flat cells agree,</text>
+    <text class="s" x="0" y="254">so their vertices merge and the count falls.</text>
+  </g>
+
+  <!-- D: a cut -->
+  <g transform="translate(10,330)">
+    <text class="h" x="0" y="14">d &#160;and a cut</text>
+    <text class="s" x="80" y="14">the plane crosses a band of cells; each crossed cell contributes one exact planar polygon,</text>
+    <text class="s" x="80" y="32">and the pieces are the connected components of what the plane did not separate</text>
+    <g transform="translate(0,26)">
+      <g class="gl">
+        <path d="M0,0 H240 M0,30 H240 M0,60 H240 M0,90 H240"/>
+        <path d="M0,0 V90 M40,0 V90 M80,0 V90 M120,0 V90 M160,0 V90 M200,0 V90 M240,0 V90"/>
+      </g>
+      <path class="cp" d="M0,74 L240,20"/>
+      <g class="cf">
+        <rect x="0" y="60" width="40" height="14" fill-opacity="0.25"/>
+        <rect x="40" y="55" width="40" height="19" fill-opacity="0.25"/>
+        <rect x="80" y="46" width="40" height="20" fill-opacity="0.25"/>
+        <rect x="120" y="37" width="40" height="20" fill-opacity="0.25"/>
+        <rect x="160" y="28" width="40" height="20" fill-opacity="0.25"/>
+        <rect x="200" y="20" width="40" height="17" fill-opacity="0.25"/>
+      </g>
+    </g>
+  </g>
+</svg>
+</div>
+
+<div class="flow">
+<svg viewBox="0 0 1160 1348" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="The pipeline: two routes to one lattice, the two structures it carries, and the
+                 cutting, drawing and physics that read it">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5"
+            orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8a8a8a"/></marker>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5"
+            orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a8412a"/></marker>
+    <style>
+      .lane { fill:#fbfbfb; stroke:#efefef; stroke-width:1 }
+      .lanet{ font:600 10.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#a0a0a0;
+              letter-spacing:1.5px }
+      .b   { fill:#ffffff; stroke:#dcdcdc; stroke-width:1 }
+      .ba  { fill:#fdf5f2; stroke:#e0b6aa; stroke-width:1 }
+      .bb  { fill:#f3f8fc; stroke:#bcd5e7; stroke-width:1 }
+      .hub { fill:#fbe6de; stroke:#c9836c; stroke-width:1.4 }
+      .t   { font:600 13px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#111 }
+      .th  { font:600 15px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#111 }
+      .s   { font:11.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#5c5c5c }
+      .m   { font:600 11px ui-monospace,Menlo,Consolas,monospace; fill:#a8412a }
+      .eq  { font:italic 11px Georgia,serif; fill:#9a9a9a }
+      .l   { stroke:#8a8a8a; stroke-width:1.3; fill:none; marker-end:url(#ar) }
+      .la  { stroke:#a8412a; stroke-width:1.6; fill:none; marker-end:url(#arw) }
+      .gl  { stroke:#e4e4e4; stroke-width:0.8; fill:none }
+      .oc  { fill:#fbe6de; stroke:#e0b6aa; stroke-width:0.8 }
+      .sk  { fill:#e2b09a; stroke:#c9836c; stroke-width:0.8 }
+      .cut { stroke:#1b6ca8; stroke-width:1.9; fill:none }
+      .dot { fill:#c9836c }
+    </style>
+  </defs>
+  <rect class="lane" x="0" y="6" width="1160" height="186" rx="4"/>
+  <text class="lanet" x="14" y="26">A · WHAT ARRIVES</text>
+  <rect class="ba" x="34" y="34" width="520" height="146" rx="4"/>
+  <text class="t" x="52" y="58">Route 1 · a released reconstruction</text>
+  <text class="s" x="52" y="75.0">Structure and appearance are both already in the file,</text>
+  <text class="s" x="52" y="90.5">and the interior it carries is somebody else's</text>
+  <text class="s" x="52" y="106.0">generated interior.</text>
+  <text class="m" x="52" y="158.0">prefilled/trained_gs/*.ply</text>
+  <g transform="translate(400,58)"><circle cx="52" cy="50" r="46" fill="none" stroke="#eddcd5" stroke-width="1"/><g class="dot"><circle cx="98.0" cy="50.0" r="1.8"/><circle cx="94.5" cy="67.6" r="1.8"/><circle cx="84.5" cy="82.5" r="1.8"/><circle cx="69.6" cy="92.5" r="1.8"/><circle cx="52.0" cy="96.0" r="1.8"/><circle cx="34.4" cy="92.5" r="1.8"/><circle cx="19.5" cy="82.5" r="1.8"/><circle cx="9.5" cy="67.6" r="1.8"/><circle cx="6.0" cy="50.0" r="1.8"/><circle cx="9.5" cy="32.4" r="1.8"/><circle cx="19.5" cy="17.5" r="1.8"/><circle cx="34.4" cy="7.5" r="1.8"/><circle cx="52.0" cy="4.0" r="1.8"/><circle cx="69.6" cy="7.5" r="1.8"/><circle cx="84.5" cy="17.5" r="1.8"/><circle cx="94.5" cy="32.4" r="1.8"/><circle cx="52" cy="38" r="1.4"/><circle cx="63" cy="58" r="1.4"/><circle cx="40" cy="60" r="1.4"/></g><text class="s" x="-6" y="116">points on a surface</text><text class="s" x="-6" y="131">with nothing behind it</text></g>
+  <rect class="bb" x="606" y="34" width="520" height="146" rx="4"/>
+  <text class="t" x="624" y="58">Route 2 · a field and six views</text>
+  <text class="s" x="624" y="75.0">The lattice is built from a signed-distance field and</text>
+  <text class="s" x="624" y="90.5">skinned from six views. Only the doughnut had no</text>
+  <text class="s" x="624" y="106.0">reconstruction; for the other two the views are</text>
+  <text class="s" x="624" y="121.5">renders of one.</text>
+  <text class="m" x="624" y="158.0">φ(x) + six views</text>
+  <g transform="translate(972,58)"><circle cx="52" cy="50" r="33" fill="#eaf1f7" stroke="#8fb5d0" stroke-width="1.2"/><circle cx="52" cy="50" r="43" fill="none" stroke="#cfe0ec" stroke-width="0.8" stroke-dasharray="3 3"/><circle cx="52" cy="50" r="23" fill="none" stroke="#cfe0ec" stroke-width="0.8" stroke-dasharray="3 3"/><g fill="#1b6ca8"><rect x="48" y="-4" width="9" height="6" rx="1"/><rect x="48" y="98" width="9" height="6" rx="1"/><rect x="-4" y="47" width="6" height="9" rx="1"/><rect x="98" y="47" width="6" height="9" rx="1"/><rect x="12" y="12" width="8" height="6" rx="1"/><rect x="84" y="82" width="8" height="6" rx="1"/></g><text class="s" x="0" y="116">a field, and six</text><text class="s" x="0" y="131">known cameras</text></g>
+  <rect class="lane" x="0" y="200" width="1160" height="232" rx="4"/>
+  <text class="lanet" x="14" y="220">B · TO THE LATTICE</text>
+  <path class="l" d="M294,180 L294,232"/>
+  <path class="l" d="M866,180 L866,232"/>
+  <rect class="b" x="34" y="240" width="258" height="84" rx="4"/>
+  <text class="t" x="50" y="262">quantise</text>
+  <text class="s" x="50" y="279.0">One cell per primitive, floored from a</text>
+  <text class="s" x="50" y="294.5">corner and not from a centre.</text>
+  <text class="eq" x="276" y="310.5" text-anchor="end">(4)</text>
+  <rect class="b" x="296" y="240" width="258" height="84" rx="4"/>
+  <text class="t" x="312" y="262">close, then fill</text>
+  <text class="s" x="312" y="279.0">A photographed surface leaves voids</text>
+  <text class="s" x="312" y="294.5">behind it. These remove them.</text>
+  <text class="eq" x="538" y="310.5" text-anchor="end">(5)</text>
+  <rect class="b" x="606" y="240" width="258" height="84" rx="4"/>
+  <text class="t" x="622" y="262">occupancy from the field</text>
+  <text class="s" x="622" y="279.0">φ &lt; 0 is inside; the band −βhₑ &lt; φ &lt; 0</text>
+  <text class="s" x="622" y="294.5">is skin.</text>
+  <text class="eq" x="848" y="310.5" text-anchor="end">(6)</text>
+  <rect class="b" x="868" y="240" width="258" height="84" rx="4"/>
+  <text class="t" x="884" y="262">project the six views</text>
+  <text class="s" x="884" y="279.0">Every camera is known, so colour is a</text>
+  <text class="s" x="884" y="294.5">lookup weighted by incidence.</text>
+  <text class="eq" x="1110" y="310.5" text-anchor="end">(7)</text>
+  <path class="l" d="M852,282 L864,282"/>
+  <text class="s" x="34" y="348.0">Solid only after a repair step: closing adds 11.7% of the orange's cells, and the uncut</text>
+  <text class="s" x="34" y="363.5">object goes from 561 pieces to one.</text>
+  <text class="s" x="606" y="348.0">Solid by construction: closing adds 0.1%, the uncut object is one piece, and the shell</text>
+  <text class="s" x="606" y="363.5">thickness β is an argument to the builder.</text>
+  <path class="la" d="M294,392 L294,412 L556,412 L556,440"/>
+  <path class="la" d="M866,392 L866,412 L604,412 L604,440"/>
+  <rect class="lane" x="0" y="444" width="1160" height="240" rx="4"/>
+  <text class="lanet" x="14" y="464">C · ONE TWO-LEVEL LATTICE</text>
+  <rect class="hub" x="34" y="474" width="1092" height="196" rx="4"/>
+  <text class="th" x="56" y="500">The same structure, whichever route reached it</text>
+  <text class="s" x="56" y="517.0">Downstream reads three things and asks nothing else: occupancy at two</text>
+  <text class="s" x="56" y="532.5">levels, face adjacency, and one learned feature per cell. Which route</text>
+  <text class="s" x="56" y="548.0">produced them is not recoverable from here on.</text>
+  <text class="m" x="56" y="572.0">V₀ ∪ V₁  A  fₖ ∈ ℝ⁸</text>
+  <text class="eq" x="56" y="590">(1) (2) (3)</text>
+  <text class="s" x="56" y="616.0">1.74M cells quantised or 1.07M generated for the watermelon, against the</text>
+  <text class="s" x="56" y="631.5">7.96M primitives of the released model route 1 quantises.</text>
+  <g class="gl" transform="translate(560,494)">
+<path d="M0,0 H153"/>
+<path d="M0,17 H153"/>
+<path d="M0,34 H153"/>
+<path d="M0,51 H153"/>
+<path d="M0,68 H153"/>
+<path d="M0,85 H153"/>
+<path d="M0,102 H153"/>
+<path d="M0,119 H153"/>
+<path d="M0,136 H153"/>
+<path d="M0,153 H153"/>
+<path d="M0,0 V153"/>
+<path d="M17,0 V153"/>
+<path d="M34,0 V153"/>
+<path d="M51,0 V153"/>
+<path d="M68,0 V153"/>
+<path d="M85,0 V153"/>
+<path d="M102,0 V153"/>
+<path d="M119,0 V153"/>
+<path d="M136,0 V153"/>
+<path d="M153,0 V153"/>
+</g>
+  <g class="oc" transform="translate(560,494)"><rect x="34" y="17" width="17" height="17"/><rect x="51" y="17" width="17" height="17"/><rect x="17" y="34" width="17" height="17"/><rect x="34" y="34" width="17" height="17"/><rect x="51" y="34" width="17" height="17"/><rect x="68" y="34" width="17" height="17"/><rect x="17" y="51" width="17" height="17"/><rect x="34" y="51" width="17" height="17"/><rect x="51" y="51" width="17" height="17"/><rect x="68" y="51" width="17" height="17"/><rect x="85" y="51" width="17" height="17"/><rect x="17" y="68" width="17" height="17"/><rect x="34" y="68" width="17" height="17"/><rect x="51" y="68" width="17" height="17"/><rect x="68" y="68" width="17" height="17"/><rect x="85" y="68" width="17" height="17"/><rect x="34" y="85" width="17" height="17"/><rect x="51" y="85" width="17" height="17"/><rect x="68" y="85" width="17" height="17"/></g>
+  <g class="sk" transform="translate(560,494)"><rect x="34.0" y="8.5" width="8.5" height="8.5"/><rect x="42.5" y="8.5" width="8.5" height="8.5"/><rect x="51.0" y="8.5" width="8.5" height="8.5"/><rect x="59.5" y="8.5" width="8.5" height="8.5"/><rect x="17.0" y="25.5" width="8.5" height="8.5"/><rect x="25.5" y="25.5" width="8.5" height="8.5"/><rect x="68.0" y="25.5" width="8.5" height="8.5"/><rect x="76.5" y="25.5" width="8.5" height="8.5"/><rect x="8.5" y="51.0" width="8.5" height="8.5"/><rect x="8.5" y="59.5" width="8.5" height="8.5"/><rect x="85.0" y="51.0" width="8.5" height="8.5"/><rect x="85.0" y="59.5" width="8.5" height="8.5"/><rect x="17.0" y="85.0" width="8.5" height="8.5"/><rect x="25.5" y="85.0" width="8.5" height="8.5"/><rect x="68.0" y="85.0" width="8.5" height="8.5"/><rect x="76.5" y="85.0" width="8.5" height="8.5"/><rect x="34.0" y="102.0" width="8.5" height="8.5"/><rect x="42.5" y="102.0" width="8.5" height="8.5"/><rect x="51.0" y="102.0" width="8.5" height="8.5"/><rect x="59.5" y="102.0" width="8.5" height="8.5"/></g>
+  <rect class="oc" x="740" y="511" width="11" height="11"/>
+  <text class="s" x="758" y="520.0">level 0, spacing h₀, the interior</text>
+  <rect class="sk" x="740" y="539" width="11" height="11"/>
+  <text class="s" x="758" y="548.0">level 1, spacing hₑ, the skin band</text>
+  <text class="s" x="740" y="582.0">hₑ = h₀ / 2ℓ with refine = 2. Level 1 exists only in the skin</text>
+  <text class="s" x="740" y="597.5">band, so the interior is coarse and the surface is not.</text>
+  <text class="s" x="740" y="636.0">One feature vector per cell, decoded to colour on demand.</text>
+  <path class="l" d="M300,670 L300,706"/>
+  <path class="l" d="M860,670 L860,706"/>
+  <rect class="lane" x="0" y="700" width="1160" height="168" rx="4"/>
+  <text class="lanet" x="14" y="720">D · TWO STRUCTURES, ONE OCCUPANCY</text>
+  <rect class="b" x="34" y="730" width="536" height="124" rx="4"/>
+  <text class="t" x="52" y="754">The cube hierarchy · the physical volume</text>
+  <text class="s" x="52" y="771.0">Answers where material is, what is connected to what, and</text>
+  <text class="s" x="52" y="786.5">which piece a point belongs to. A cube's support is its cell,</text>
+  <text class="s" x="52" y="802.0">so a gap is a hole and not a coverage parameter.</text>
+  <text class="s" x="52" y="822.0">Never rendered by splatting.</text>
+  <g transform="translate(424,758)"><path d="M0,62 H18 V46 H36 V30 H54 V14 H72 V0" stroke="#c9836c" stroke-width="1.6" fill="none"/><text class="s" x="-14" y="82">a staircase at the cell size</text></g>
+  <rect class="b" x="590" y="730" width="536" height="124" rx="4"/>
+  <text class="t" x="608" y="754">The O‑Voxel dual grid · the visible boundary</text>
+  <text class="s" x="608" y="771.0">One dual vertex per boundary cell, joined across shared</text>
+  <text class="s" x="608" y="786.5">faces. Explicit polygons, so coverage comes from triangles</text>
+  <text class="s" x="608" y="802.0">and not from primitives dense enough to hide gaps.</text>
+  <text class="s" x="608" y="822.0">Takes no part in the physics.</text>
+  <g transform="translate(980,758)"><path d="M0,60 C18,54 34,40 50,20 C58,10 64,4 70,0" stroke="#1b6ca8" stroke-width="1.6" fill="none"/><g fill="#1b6ca8"><circle cx="0" cy="60" r="2.5"/><circle cx="18" cy="54" r="2.5"/><circle cx="36" cy="38" r="2.5"/><circle cx="52" cy="18" r="2.5"/><circle cx="68" cy="2" r="2.5"/></g><text class="s" x="0" y="82">the same boundary, placed</text></g>
+  <rect class="lane" x="0" y="872" width="1160" height="466" rx="4"/>
+  <text class="lanet" x="14" y="892">E · WHAT READS THE LATTICE</text>
+  <path class="l" d="M300,854 L300,900"/>
+  <path class="l" d="M860,854 L860,900"/>
+  <rect class="ba" x="34" y="906" width="350" height="420" rx="4"/>
+  <text class="th" x="52" y="932.0">Cutting</text>
+  <text class="s" x="52" y="950.0">discrete on the lattice, analytic on the boundary</text>
+  <g class="gl" transform="translate(52,962)">
+<path d="M0,0 H288"/>
+<path d="M0,18 H288"/>
+<path d="M0,36 H288"/>
+<path d="M0,54 H288"/>
+<path d="M0,72 H288"/>
+<path d="M0,0 V72"/>
+<path d="M18,0 V72"/>
+<path d="M36,0 V72"/>
+<path d="M54,0 V72"/>
+<path d="M72,0 V72"/>
+<path d="M90,0 V72"/>
+<path d="M108,0 V72"/>
+<path d="M126,0 V72"/>
+<path d="M144,0 V72"/>
+<path d="M162,0 V72"/>
+<path d="M180,0 V72"/>
+<path d="M198,0 V72"/>
+<path d="M216,0 V72"/>
+<path d="M234,0 V72"/>
+<path d="M252,0 V72"/>
+<path d="M270,0 V72"/>
+<path d="M288,0 V72"/>
+</g>
+  <g fill="#1b6ca8" fill-opacity="0.16" transform="translate(52,962)"><rect x="0" y="54" width="18" height="18"/><rect x="18" y="47" width="18" height="18"/><rect x="36" y="40" width="18" height="18"/><rect x="54" y="33" width="18" height="18"/><rect x="72" y="26" width="18" height="18"/><rect x="90" y="19" width="18" height="18"/><rect x="108" y="12" width="18" height="18"/><rect x="126" y="5" width="18" height="18"/></g>
+  <path class="cut" d="M52,1028 L340,964"/>
+  <text class="t" x="52" y="1080">1 · a sign per leaf</text>
+  <text class="s" x="52" y="1097.0">An adjacency survives when its two leaves agree, and a</text>
+  <text class="s" x="52" y="1112.5">piece is a connected component of what is left.</text>
+  <text class="eq" x="362" y="1128.5" text-anchor="end">(8) (9)</text>
+  <text class="t" x="52" y="1152.5">2 · refine only the band</text>
+  <text class="s" x="52" y="1169.5">O(N²ᐟ³) of the volume, and returned when the cut is not</text>
+  <text class="s" x="52" y="1185.0">live.</text>
+  <text class="t" x="52" y="1209.0">3 · the face is a polygon, not an</text>
+  <text class="t" x="52" y="1225.0">approximation</text>
+  <text class="s" x="52" y="1242.0">The plane against the cell's twelve edges, in closed</text>
+  <text class="s" x="52" y="1257.5">form. No primitive approximates the plane, so the only</text>
+  <text class="s" x="52" y="1273.0">error in a cut is the voxelised silhouette.</text>
+  <text class="eq" x="362" y="1289.0" text-anchor="end">(10)</text>
+  <rect class="b" x="400" y="906" width="316" height="420" rx="4"/>
+  <text class="th" x="418" y="932.0">Drawing</text>
+  <text class="s" x="418" y="950.0">the boundary, and the volume behind it</text>
+  <g transform="translate(418,964)"><rect x="6" y="8" width="86" height="64" class="oc" fill-opacity="0.55"/><path d="M6,64 L58,18" stroke="#3a3a3a" stroke-width="1.3" fill="none" stroke-dasharray="4 3"/><path d="M58,18 L92,36" stroke="#3a3a3a" stroke-width="1.3" fill="none" stroke-dasharray="4 3"/><path d="M30,40 L16,26" stroke="#8a8a8a" stroke-width="1" fill="none"/><path d="M78,26 L88,12" stroke="#8a8a8a" stroke-width="1" fill="none"/><circle cx="58" cy="18" r="3.4" fill="#a8412a"/><text class="s" x="106" y="30">each plane through the</text><text class="s" x="106" y="46">cell adds a term; the</text><text class="s" x="106" y="62">vertex is the minimiser</text></g>
+  <text class="t" x="418" y="1080">the dual vertex is a quadric's minimiser</text>
+  <text class="s" x="418" y="1097.0">Ten numbers per cell, additive over the planes it</text>
+  <text class="s" x="418" y="1112.5">covers, which is what makes an adaptive grid a</text>
+  <text class="s" x="418" y="1128.0">collapse.</text>
+  <text class="eq" x="698" y="1144.0" text-anchor="end">(11)</text>
+  <text class="t" x="418" y="1168.0">collapse to a tolerance</text>
+  <text class="s" x="418" y="1185.0">The error is read off the same quadric that placed</text>
+  <text class="s" x="418" y="1200.5">the vertex.</text>
+  <text class="eq" x="698" y="1216.5" text-anchor="end">(12)</text>
+  <text class="t" x="418" y="1240.5">the volume is drawn by lookup</text>
+  <text class="s" x="418" y="1257.5">The smallest cell containing a pixel, decoded</text>
+  <text class="s" x="418" y="1273.0">through the shared head, trilinear between cell</text>
+  <text class="s" x="418" y="1288.5">centres.</text>
+  <text class="eq" x="698" y="1304.5" text-anchor="end">(18)</text>
+  <rect class="bb" x="732" y="906" width="394" height="420" rx="4"/>
+  <text class="th" x="750" y="932.0">Physics</text>
+  <text class="s" x="750" y="950.0">materials, contact, and the surface that follows them</text>
+  <g class="gl" transform="translate(750,962)">
+<path d="M0,0 H144"/>
+<path d="M0,16 H144"/>
+<path d="M0,32 H144"/>
+<path d="M0,48 H144"/>
+<path d="M0,64 H144"/>
+<path d="M0,0 V64"/>
+<path d="M16,0 V64"/>
+<path d="M32,0 V64"/>
+<path d="M48,0 V64"/>
+<path d="M64,0 V64"/>
+<path d="M80,0 V64"/>
+<path d="M96,0 V64"/>
+<path d="M112,0 V64"/>
+<path d="M128,0 V64"/>
+<path d="M144,0 V64"/>
+</g>
+  <g fill="#e0b6aa" fill-opacity="0.9" transform="translate(750,962)"><rect x="0" y="48" width="16" height="16"/><rect x="16" y="42" width="16" height="16"/><rect x="32" y="36" width="16" height="16"/><rect x="48" y="30" width="16" height="16"/><rect x="64" y="24" width="16" height="16"/><rect x="80" y="18" width="16" height="16"/><rect x="96" y="12" width="16" height="16"/></g>
+  <path class="cut" d="M750,1020 L894,964"/>
+  <text class="s" x="910" y="978.0">A leaf the plane crosses is occupied</text>
+  <text class="s" x="910" y="993.5">as a whole, so occupancy alone claims</text>
+  <text class="s" x="910" y="1009.0">material on both sides of the cut.</text>
+  <text class="s" x="910" y="1040" fill="#a8412a">One sign test removes that band.</text>
+  <text class="t" x="750" y="1080">a stiffness per class, not one modulus</text>
+  <text class="s" x="750" y="1097.0">Classes come from the same learned feature. Shell fraction and</text>
+  <text class="s" x="750" y="1112.5">brightness order them, and the ordering is the claim.</text>
+  <text class="eq" x="1106" y="1128.5" text-anchor="end">(14)</text>
+  <text class="t" x="750" y="1150.5">can the solver see the shell at all?</text>
+  <text class="s" x="750" y="1167.5">τ = tₛₕₑₗₗ / Δx has to reach about two, and route 2 can build</text>
+  <text class="s" x="750" y="1183.0">for it because β is an argument. It is 0.87 to 2.00 as built.</text>
+  <text class="eq" x="1106" y="1199.0" text-anchor="end">(15)</text>
+  <text class="t" x="750" y="1221.0">contact is three integer operations</text>
+  <text class="s" x="750" y="1238.0">A floor division, a table lookup and one sign comparison. 2,698</text>
+  <text class="s" x="750" y="1253.5">false contacts at rest become 0, and the surface follows the</text>
+  <text class="s" x="750" y="1269.0">particles by weights fixed at bind time.</text>
+  <text class="eq" x="1106" y="1285.0" text-anchor="end">(13) (16) (17)</text>
+</svg>
+</div>
+
+<h3>4.1&ensp;What the lattice hides about its own origin</h3>
+
+<h4>4.1.1&ensp;Four properties of the cut</h4>
+
+
+<p>Four properties the cutting code has, established on quantised lattices in the previous
+project before generated ones existed. They are listed here for what they are; section 4.1.2 is
+the run that asks whether they survive a generated lattice, and where the two disagree numerically
+it is because they are different measurements of the same property rather than the same measurement
+twice.</p>
+
+<div class="tw"><table>
+<thead><tr><th>property</th><th>what it buys</th></tr></thead>
+<tbody>
+<tr><td>Exact polyhedral fragments</td><td>0.00392 against 0.00457 relative volume error, with no
+subdivision against ten times the leaves</td></tr>
+<tr><td>Adaptive band refinement</td><td>20.6% / 32.6% / 35.8% fewer leaves at levels 1 / 2 / 3,
+at equal error and identical piece counts</td></tr>
+<tr><td>Several cuts at once</td><td>+77 leaves for a nearby second cut against +3,983 for an
+unrelated one; exact agreement with one-at-a-time</td></tr>
+<tr><td>Cut-time super-resolution</td><td>95.2% of the generated detail kept at one pixel per leaf,
+77.4% at six</td></tr>
+</tbody></table></div>
+
+<h4>4.1.2&ensp;Both routes</h4>
+
+<p>Those numbers were measured when only quantised lattices existed, so they say nothing about
+whether the four survive a generated one. The generated lattice differs in exactly the way that could matter here, since its cells sit on the grid these algorithms index into and the
+quantised one's do not. Run again on both, on the orange, with the same planes:</p>
+
+<p>All four transfer. Exact fragments is marginally better on the generated lattice, where the split moves by 0.000 points rather than 0.004, because its cells sit exactly on the grid
+the clipping indexes into.</p>
+
+<div class="tw"><table>
+<thead><tr><th>property</th><th>route 1, quantised</th><th>route 2, generated</th></tr></thead>
+<tbody>
+<tr><td>Several cuts at once<br><span class="mut">three planes, then folded back</span></td>
+    <td>+101,052 and +108,591 leaves for cuts 2 and 3; 8 pieces; all-at-once identical; folds back
+    to 849,153 of 1,157,328</td>
+    <td>+110,152 and +113,610; 8 pieces; all-at-once identical; folds back to 894,304 of
+    1,215,198</td></tr>
+<tr><td>Adaptive band refinement<br><span class="mut">against uniform, at four tolerances</span></td>
+    <td>33.5% / 32.4% / 27.4% / 16.3% fewer leaves</td>
+    <td>32.1% / 31.0% / 26.1% / 15.5%</td></tr>
+<tr><td>Exact polyhedral fragments<br><span class="mut">how far the split moves</span></td>
+    <td>0.004 percentage points of the object</td>
+    <td><strong>0.000</strong></td></tr>
+<tr><td>Cut-time super-resolution<br><span class="mut">detail kept, at 256 / 512 / 1536 px</span></td>
+    <td>93.4% / 77.4% / 74.6%</td>
+    <td>100.0% / 76.1% / 73.2%</td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/deferred_supersr.png" alt="Super-resolution on both routes: the face as held,
+       the generated detail, the baked result, and a nearby plane">
+  <figcaption>Cut-time super-resolution, both routes, on the orange. Left to right: the face as the
+  volume holds it, the detail generated for it, that detail baked into the band and the face
+  redrawn from the cells, and a plane six degrees away drawn from the same cells.
+  The fourth panel shows the limit of the write-back: the
+  write-back reaches the cells the face passed through and no others, so the tilted plane meets
+  mostly cells that never received it: it correlates more with panel 1 than with panel 3, and it
+  has two streaks where panel 3 has thirty membranes. Baking puts the detail in the volume rather
+  than on the frame, which is what makes it survive the piece being turned over, but only within the band that was written. The two rows are the same procedure on a quantised and on a
+  generated lattice.</figcaption>
+</figure>
+
+
+
+<div class="note"><strong>One stage branches, and not on the route.</strong> The surface
+conversion colours each vertex from the nearest skin cell when skin cells are more than a fifth of
+the lattice, and from the nearest cell of any kind otherwise. Which side of that test a lattice
+falls on is a property of the object, not of how the lattice was reached: measured on the stored
+lattices, the skin fraction is 13.5% for the quantised orange, 68.2% for the quantised watermelon
+and 35.2% for the quantised doughnut, against 27.5%, 29.9% and 40.8% for the three generated ones.
+Five of the six are above the threshold and the quantised orange is the only one below it. An
+earlier version of this page said the two routes fall on opposite sides of the test; they do not.
+Cutting, the physics and the material field read only the three fields above.</div>
+
+<h4>4.3.1&ensp;Material decomposition</h4>
+
+<p>The previous project decomposed an object into material classes without being told what they
+are: cluster the learned per-cell feature, merge classes whose appearance centroids agree, and an
+orange separates into peel, flesh, a transition and pith. The same decomposition runs unchanged on
+the cube lattice, because the thing it clusters, a learned feature and a position on a lattice, is what both representations carry. On the generated topologies it finds:</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>class</th><th>cells</th><th>mean RGB</th><th>shell fraction</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">orange</td><td>deep pulp</td><td>130,608 (10.6%)</td><td>0.94, 0.61, 0.03</td><td>0.00</td></tr>
+<tr><td>bright pulp</td><td>270,913 (22.0%)</td><td>0.98, 0.69, 0.10</td><td>0.00</td></tr>
+<tr><td>peel</td><td>530,696 (43.1%)</td><td>0.93, 0.62, 0.27</td><td><strong>0.63</strong></td></tr>
+<tr><td>transition</td><td>299,095 (24.3%)</td><td>0.96, 0.69, 0.21</td><td>0.01</td></tr>
+<tr><td rowspan="4">watermelon</td><td>flesh</td><td>169,230 (15.9%)</td><td>0.81, 0.07, 0.09</td><td>0.00</td></tr>
+<tr><td>rind</td><td>244,766 (23.0%)</td><td>0.43, 0.52, 0.24</td><td><strong>1.00</strong></td></tr>
+<tr><td>lighter flesh</td><td>328,179 (30.8%)</td><td>0.92, 0.24, 0.24</td><td>0.00</td></tr>
+<tr><td>pith</td><td>323,681 (30.4%)</td><td>0.80, 0.66, 0.50</td><td>0.23</td></tr>
+<tr><td rowspan="4">doughnut</td><td>crumb</td><td>166,915 (17.7%)</td><td>0.58, 0.42, 0.23</td><td>0.00</td></tr>
+<tr><td>lighter crumb</td><td>253,479 (26.9%)</td><td>0.71, 0.57, 0.39</td><td>0.00</td></tr>
+<tr><td>icing</td><td>365,428 (38.8%)</td><td>0.86, 0.54, 0.48</td><td><strong>1.00</strong></td></tr>
+<tr><td>pale crumb</td><td>157,018 (16.7%)</td><td>0.82, 0.68, 0.52</td><td>0.12</td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/material_watermelon.png" alt="A watermelon section as it looks, by material
+       class, and by stiffness">
+  <img src="assets/material_orange.png" alt="The same three for the orange" style="margin-top:10px">
+  <img src="assets/material_doughnut.png" alt="The same three for the doughnut" style="margin-top:10px">
+  <figcaption>The same section three ways: as it looks, as material class, and as the stiffness
+  that class is given. Drawn by cube lookup rather than by splatting points, so that class membership is visible as a region rather than as a
+  scatter.
+  The labelling shown is the weak one (shell against interior, with the interior split at its own median brightness) because it is the version a learned decomposition has to beat;
+  the clustered classes are the table above. Red in the third panel is the stiff end of the range
+  and blue the soft end, so the third panel is the question the next section asks: is that red
+  band thick enough for the solver to see it?</figcaption>
+</figure>
+
+<h4>4.3.7&ensp;Piece counts on synthetic shapes</h4>
+
+<p>Piece counts are checked on synthetic shapes whose answer is known, and two cases carry the
+test: a near-surface cut and a thin bridge. They test opposite failures.
+The thin cap is a separation the coarse grid cannot see, since every coarse centre falls on one side, and refinement has to find it. The one-cell bridge is the reverse: it is a connection
+that any labelling leaning on dilation or on a distance threshold will break, reporting two pieces
+for an object that is one.</p>
+
+<div class="tw"><table>
+<thead><tr><th>case</th><th>pieces</th><th>expected</th></tr></thead>
+<tbody>
+<tr><td>ball, plane through the centre</td><td>2</td><td>2</td></tr>
+<tr><td>ball, plane clear of it</td><td>1</td><td>1</td></tr>
+<tr><td>torus, plane containing the axis</td><td>2</td><td>2</td></tr>
+<tr><td>torus, plane across the axis</td><td>2</td><td>2</td></tr>
+<tr><td>torus, plane above the tube</td><td>1</td><td>1</td></tr>
+<tr><td>dumbbell, plane through the neck</td><td>2</td><td>2</td></tr>
+<tr><td>ball, cap thinner than a coarse cell</td><td>2</td><td>2 <span class="mut">(1 without refinement)</span></td></tr>
+<tr><td><strong>thin bridge, plane clear of it</strong></td><td><strong>1</strong></td><td>1</td></tr>
+<tr><td>thin bridge, plane through it</td><td>2</td><td>2</td></tr>
+<tr><td>thin bridge, plane along it</td><td>2</td><td>2</td></tr>
+</tbody></table></div>
+
+<!--supp-->
+
+<h4>4.5.1&ensp;Cutting</h4>
+
+
+<p>The band the plane crosses is a surface through a volume, so it should scale as \(N^{2/3}\).
+Measured at one lattice resolution it is 4.0 to 10.7% of the cells, which is consistent with that
+and does not establish the rate; a resolution sweep would. Where several planes meet they
+carve slivers whose size scales with the cell; a piece below a stated threshold rejoins the
+neighbour it shares the most faces with, taking the doughnut's three cuts from 18 raw pieces to 8
+with the smallest kept at 2,287 cells.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>band leaves</th><th>total leaves</th><th>pieces, one cut</th><th>pieces, three cuts</th></tr></thead>
+<tbody>
+<tr><td>doughnut</td><td>21,760 (4.0%)</td><td>545,586</td><td>2</td><td>8 <span class="mut">(18 raw, slivers rejoined)</span></td></tr>
+<tr><td>orange</td><td>86,776 (9.4%)</td><td>924,252</td><td>2</td><td>8</td></tr>
+<tr><td>watermelon</td><td>66,408 (10.7%)</td><td>620,162</td><td>2</td><td>n/a</td></tr>
+</tbody></table></div>
+
+<h4>4.5.3&ensp;Cross-sections</h4>
+
+<p>A cut face is only as good as the volume behind it, so this is the volume drawn directly: planes
+swept through each object, every pixel resolved by cube lookup rather than by any renderer.</p>
+
+<figure>
+  <img src="assets/sections.png" alt="Three cross-sections of each of the three objects">
+  <figcaption>Six planes sweeping through each object, drawn by cube lookup from the filled
+  occupancy: the smallest cell containing each pixel, decoded through the shared head. The orange's
+  segments and pale pith, the watermelon's seeds, white pith and rind, and the doughnut's crumb are
+  what the volume holds, not what a renderer adds. The doughnut's two lobes appear and separate as the plane moves, which is the topology and not the appearance. The table below is route 1, and it is the fill
+  that makes a quantised occupancy solid: the orange and the watermelon go to 0.00 to 0.28% holes
+  inside the section, and the doughnut does not, staying at 9.5 to 10.2% against 10.6 to 11.4%
+  before. On that object the repair does essentially nothing, and the holes it reports are the ones
+  a torus's own cross-section has where the plane misses the tube.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>cells after filling</th><th>holes, before</th><th>holes, after</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>877,494 &rarr; 1,059,348</td><td>14.9% / 8.7% / 6.6%</td><td><strong>0.28% / 0.02% / 0.00%</strong></td></tr>
+<tr><td>watermelon</td><td>1,741,169 &rarr; 2,534,444</td><td>9.2% / 9.5% / 11.4%</td><td><strong>0.08% / 0.05% / 0.10%</strong></td></tr>
+<tr><td>doughnut</td><td>797,838 &rarr; 809,318</td><td>10.6% / 10.7% / 11.4%</td><td>9.5% / 8.7% / 10.2%</td></tr>
+</tbody></table></div>
+
+<p>The fraction of each section's own area the renderer leaves unpainted, before and after the
+occupancy is made solid. A cube's support is exactly its cell, so a gap is a hole in the occupancy
+and not a coverage parameter, which is why the first column exists at all. Those holes were always there, covered by sheer density (7,959,789 primitives, a million per unit volume) rather than by any primitive's support, which at \(\sigma/h = 3\times
+10^{-5}\) reaches nothing.</p>
+
+<h4>4.5.4&ensp;The exterior surface</h4>
+
+<p>The cuts measure the interior. The claim that the appearance is independent of Gaussian
+training is a claim about the outside, and a shell can be right in every section and still be wrong where two views meet, because a section never looks at a seam. These are the six directions
+the painting used, drawn from the dual-grid surface. This is also what the exterior representation
+is for: a slice does not need it, because the rind a slice shows is the slab&rsquo;s own skin
+cells, but the whole object does.</p>
+
+<figure>
+  <img src="assets/ext_ovox_orange.png" alt="The orange's O-Voxel exterior in six views">
+  <img src="assets/ext_ovox_watermelon.png" alt="The watermelon's O-Voxel exterior in six views"
+       style="margin-top:10px">
+  <img src="assets/ext_ovox_doughnut.png" alt="The doughnut's O-Voxel exterior in six views"
+       style="margin-top:10px">
+  <figcaption>Each object's exterior as an O&#8209;Voxel dual grid, from the six painting
+  directions: top row <code>up</code>, <code>front</code>, <code>right</code>, bottom row
+  <code>down</code>, <code>back</code>, <code>left</code>. The doughnut's icing is on its top and
+  its crumb underneath, which is the normal being read off the field rather than off the centroid;
+  the watermelon's stripes continue across the boundaries between views; the orange's underside is
+  dark because the object it was rendered from was photographed sitting on a surface, and that
+  baked lighting is carried rather than removed.
+  Each surface vertex takes its colour from the nearest <em>skin</em> cell: the boundary is the
+  occupancy's at any level, so 13.1% of these vertices are nearer to an interior cell than to a
+  skin one, and colouring from the nearest cell of any kind gives that 13% whatever the interior
+  holds.</figcaption>
+</figure>
+
+
+
+<p>What remains between the O&#8209;Voxel columns and the rasteriser is not capacity. The route-2
+orange stores 1,231,312 primitives against the baseline&rsquo;s 877,494, 65.8&nbsp;MiB against
+46.9. What was small was the use: a cell stores fourteen numbers and the first version of this
+renderer read the three that are colour. Of the other eleven, seven are the scale and the rotation,
+which is the primitive&rsquo;s shape, and a shape is a reconstruction filter. On these models \(\sigma/h\) has median 0.26, so the rasteriser is not blurring across cells; what it has is
+anisotropy, median 116 to 1, inside them.</p>
+
+<div class="eq"><div class="body">
+$$ \hat{c}(\mathbf{x}) = \sum_{\mathbf{\delta} \in \{0,1\}^3}
+   w_{\mathbf{\delta}}(\mathbf{x})\, c_{\mathbf{k}_0 + \mathbf{\delta}}, \qquad
+   w_{\mathbf{\delta}} = \prod_{a} \bigl[ \delta_a t_a + (1-\delta_a)(1-t_a) \bigr], \qquad
+   \mathbf{t} = \frac{\mathbf{x} - \mathbf{o}}{h_\ell} - \tfrac{1}{2} - \mathbf{k}_0 $$
+</div><div class="num">(18)</div></div>
+
+<h4>4.5.5&ensp;Runtime</h4>
+
+
+<p>Timings on the orange, 877,494 cells, median of three. Everything except the render rate is
+single-threaded NumPy on one CPU core; the render rate is one card. The collision claim holds and
+the cutting claim does not: five million occupancy queries a second is what a floor division and a
+table lookup should cost, while thirteen seconds to label the pieces is not interactive.</p>
+
+<div class="tw"><table>
+<thead><tr><th>operation</th><th>time</th><th>rate</th></tr></thead>
+<tbody>
+<tr><td>load the model from disk</td><td>22.8 ms</td><td></td></tr>
+<tr><td>occupancy: close and fill</td><td>1,696 ms</td><td>405,606 cells/s</td></tr>
+<tr><td><strong>one cut: refine the band, label the pieces</strong></td><td><strong>12,958 ms</strong></td><td></td></tr>
+<tr><td><strong>the cut face: exact polygons</strong></td><td><strong>14,246 ms</strong></td><td></td></tr>
+<tr><td>build the collision index</td><td>151 ms</td><td></td></tr>
+<tr><td>label every particle by piece</td><td>551 ms</td><td>1,593,256 particles/s</td></tr>
+<tr><td>one occupancy query over the particle set</td><td>178 ms</td><td><strong>4,929,213 queries/s</strong></td></tr>
+</tbody></table></div>
+
+<div class="tw"><table>
+<thead><tr><th>render rate</th><th>cube volume, marching the face</th><th>Gaussian rasteriser</th><th>ratio</th></tr></thead>
+<tbody>
+<tr><td>512px</td><td>6,415.6 ms &nbsp;<span class="mut">0.16 fps</span></td><td>52.7 ms &nbsp;<span class="mut">18.98 fps</span></td><td>122&times;</td></tr>
+<tr><td>1024px</td><td>28,871.6 ms &nbsp;<span class="mut">0.03 fps</span></td><td>81.7 ms &nbsp;<span class="mut">12.25 fps</span></td><td>353&times;</td></tr>
+</tbody></table></div>
+
+<p>The third representation, the dual-grid exterior, is the one the method draws a whole object
+with, and it had no number here. It has one now, and it does not rescue the runtime story. There is
+no triangle rasteriser in this work: the surface is drawn by splatting points sampled on its
+triangles, three per triangle, which for the route-2 watermelon's 859,070 triangles is 5,154,420
+samples.</p>
+
+<div class="tw"><table>
+<thead><tr><th>the dual-grid exterior, route 2 watermelon</th><th>ms/frame</th><th>fps</th></tr></thead>
+<tbody>
+<tr><td>512&nbsp;px</td><td>1,057</td><td>0.95</td></tr>
+<tr><td>1024&nbsp;px</td><td>1,070</td><td>0.93</td></tr>
+</tbody></table></div>
+
+<p>Single-threaded NumPy, median of three, and flat in resolution because the cost is the sample
+count and not the pixel count. At 512&nbsp;px it is six times faster than marching the
+volume and twenty times slower than the Gaussian rasteriser; at 1024&nbsp;px, where the march scales
+with pixels and this does not, it is twenty-seven times faster and thirteen times slower. A real triangle rasteriser would change this
+number by orders of magnitude and none is implemented, so what the table establishes is where the
+cost sits and not what the representation could cost.</p>
+<h4>4.2.5&ensp;Summary of differences</h4>
+
+<p>Everything in the table is measured here. Both prior methods release models and both were
+run: FruitNinja's in the frame our cameras already use, GaussianFluent's in its own frame with the
+camera distance matched and the upright axis chosen in its favour. FruitNinja was also reproduced
+from its own code with the stock checkpoint, which is the arm its published results do not cover.
+Its fracture and material solver are not reproduced, and GaussianFluent's own numbers for those are
+what its paper states.</p>
+
+<div class="tw"><table>
+<thead><tr><th></th><th>FruitNinja</th><th>GaussianFluent</th><th>this work</th></tr></thead>
+<tbody>
+<tr><td>what holds the hidden interior</td><td>opaque atomic Gaussians</td>
+    <td>densified Gaussians, generatively guided</td><td>a cube occupancy grid</td></tr>
+<tr><td>what draws a newly exposed face</td><td>the same Gaussians</td><td>the same Gaussians</td>
+    <td>a dual-grid surface, or a march into the volume</td></tr>
+<tr><td>primitives, watermelon</td><td><strong>7,959,789</strong></td><td>1,381,100</td>
+    <td>1,741,169 <span class="mut">route 1</span> / <strong>1,065,856</strong> <span class="mut">route 2</span></td></tr>
+<tr><td>stored, everything the method needs</td><td><strong>425.1 MiB</strong></td><td>310.8 MiB</td>
+    <td>163.5 MiB <span class="mut">route 1</span> / <strong>62.6 MiB</strong> <span class="mut">route 2</span></td></tr>
+<tr><td>\(\rho = \sigma/h\)</td><td>3.1e&#8722;5 <span class="mut">(points, not blobs)</span></td>
+    <td class="mut">its spacing is not published</td>
+    <td>0.26 for the Gaussians a cell carries; not applicable to the cube volume, which tiles</td></tr>
+<tr><td><strong>needs a fine-tuned diffusion model</strong></td>
+    <td><strong>yes</strong>, and it is not released</td><td>no</td><td><strong>no</strong></td></tr>
+<tr><td>held-out cuts through this evaluator, orange</td><td>FID 102.2 / 269.6</td>
+    <td class="mut">no orange released</td>
+    <td><strong>74.1 to 91.5 / 213.5 to 286.8</strong></td></tr>
+<tr><td>held-out cuts through this evaluator, watermelon</td><td>FID 182.0 / 211.0</td>
+    <td><strong>FID 170.2 / 177.5</strong></td><td>180.9 to 183.5 / 236.7 to 262.8</td></tr>
+<tr><td><strong>the same pipeline with a stock checkpoint</strong></td>
+    <td><strong>FID 378.7 / 511.6</strong> <span class="mut">(our reproduction)</span></td>
+    <td class="mut">needs none</td><td><strong>FID 90.1 / 213.5</strong></td></tr>
+<tr><td>breaking into pieces</td><td class="mut">not addressed</td>
+    <td>fracture by continuum damage</td>
+    <td>connected components on face adjacency, one solver per piece</td></tr>
+<tr><td>mixed materials</td><td class="mut">not addressed</td>
+    <td><strong>the paper's subject</strong></td>
+    <td>classes from the learned feature, stiffness by an ordering</td></tr>
+<tr><td>physics</td><td class="mut">not addressed</td><td>CD&#8209;MPM, brittle fracture</td>
+    <td>MPM, piece relabelling, occupancy collision, per-piece solvers</td></tr>
+<tr><td>cut geometry</td><td class="mut">not addressed</td><td class="mut">damage field</td>
+    <td>exact planar polygons, no approximation term</td></tr>
+</tbody></table></div>
+
+
+
+<h4>4.4.1&ensp;Held-out cuts</h4>
+
+<p>Twelve cuts per model at depths and azimuths training never sampled, scored against the
+photographs. Six are transverse, across the object's upright axis, and six longitudinal, through it. The O&#8209;Voxel columns register a renderer with the file that chooses
+the planes, so the planes, depths, cameras and order are identical by construction and only what
+draws the picture differs. The doughnut has one reference image per family, too few for a
+distribution, so it is asked instead whether every held-out transverse section still reads as an
+annulus.</p>
+
+<p>Each score below is computed on six renders against six to twenty-three photographs. At that
+sample size the Inception covariance is rank-deficient and FID is dominated by its own bias
+[36,&nbsp;37]; the photograph sets score 46.3 and 60.4 in FID against themselves split in half. On
+PSNR, SSIM and LPIPS the four route and renderer combinations differ by 0.29&nbsp;dB, 0.010 and
+0.019 on the orange and by 0.11&nbsp;dB, 0.004 and 0.008 on the watermelon, and all four sit about
+4.5&nbsp;dB and 0.21 LPIPS below the photographs measured against each other. Differences of a few
+FID points are therefore reported and not claimed; the geometric results are what is argued
+from.</p>
+
+<figure>
+  <img src="assets/heldout_transverse.png" alt="Transverse held-out cuts of all three objects
+       under four combinations of route and renderer">
+  <figcaption>Transverse cuts. Columns one and two are the Gaussian rasteriser on a scanned
+  lattice and on a generated one; columns three and four draw the exposed face by marching
+  into the cube volume until the ray enters the surviving solid, with trilinear reconstruction
+  over the eight surrounding cell centres and no Gaussians anywhere. They do not draw a
+  dual&#8209;grid layer: the baseline rasterises a slab about the plane, so what it makes is a
+  slice, and a slice's rind is the slab's own skin cells, which the march already reaches.
+  </figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>transverse</th><th></th><th>route 1 (3DGS), the baseline</th><th>route 2 (3DGS)</th>
+<th>route 1 (cube)</th><th>route 2 (cube)</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">orange</td><td>FID</td><td>86.4</td><td><strong>66.5</strong></td><td>130.5</td><td>107.9</td></tr>
+<tr><td>KID</td><td>125.0e-3</td><td><strong>88.7e-3</strong></td><td>208.4e-3</td><td>158.8e-3</td></tr>
+<tr><td>CLIP</td><td>31.6</td><td>31.7</td><td>30.9</td><td>32.1</td></tr>
+<tr><td rowspan="3">watermelon</td><td>FID</td><td>187.4</td><td>180.9</td><td>188.3</td><td><strong>167.5</strong></td></tr>
+<tr><td>KID</td><td>233.2e-3</td><td>226.3e-3</td><td>234.9e-3</td><td><strong>206.9e-3</strong></td></tr>
+<tr><td>CLIP</td><td>32.3</td><td>31.9</td><td>32.5</td><td>32.2</td></tr>
+<tr><td>doughnut</td><td>annulus</td><td>6/6</td><td>6/6</td><td>6/6</td><td>6/6</td></tr>
+<tr><td colspan="6" class="mut">The doughnut has no released reconstruction to quantise, so its
+&ldquo;route 1&rdquo; is a lattice built from a generated mesh by the older shell-and-fill route, a third path kept because it is what the baseline was established on.</td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/heldout_longitudinal.png" alt="Longitudinal held-out cuts of all three objects
+       under the same four combinations">
+  <figcaption>Longitudinal cuts, at azimuths off the trained grid. The doughnut is the case worth
+  looking at: a plane through the axis leaves two separate lobes, and all four columns show two.
+  </figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>longitudinal</th><th></th><th>route 1 (3DGS), the baseline</th><th>route 2 (3DGS)</th>
+<th>route 1 (cube)</th><th>route 2 (cube)</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">orange</td><td>FID</td><td><strong>147.6</strong></td><td>247.3</td><td>292.6</td><td>370.2</td></tr>
+<tr><td>KID</td><td><strong>175.3e-3</strong></td><td>303.7e-3</td><td>437.3e-3</td><td>585.4e-3</td></tr>
+<tr><td>CLIP</td><td>31.8</td><td>34.2</td><td>31.1</td><td><strong>33.8</strong></td></tr>
+<tr><td rowspan="3">watermelon</td><td>FID</td><td>266.0</td><td>244.4</td><td>314.9</td><td><strong>263.5</strong></td></tr>
+<tr><td>KID</td><td>331.9e-3</td><td>300.9e-3</td><td>413.6e-3</td><td><strong>320.1e-3</strong></td></tr>
+<tr><td>CLIP</td><td>33.4</td><td>33.7</td><td>33.6</td><td><strong>34.7</strong></td></tr>
+</tbody></table></div>
+
+<p>One statistic separates the two routes where FID does not, and it is given here for what it
+is rather than as a result: the mean blue channel over the pulp region of a section, on the orange,
+which is a proxy for how grey the flesh reads. Closer to the photographs is better, and route 2
+matches them transversally and overshoots longitudinally.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange, pulp, mean blue channel</th><th>photographs</th><th>route 1</th><th>route 2</th></tr></thead>
+<tbody>
+<tr><td>transverse</td><td>0.149</td><td>0.168</td><td><strong>0.148</strong></td></tr>
+<tr><td>longitudinal</td><td>0.179</td><td>0.221</td><td>0.234</td></tr>
+</tbody></table></div>
+
+<div class="note"><strong>The cube columns are the worst in these tables and that is not a
+contradiction of section 4.2.2.</strong> Coverage and fidelity are different questions. Measured
+against the photographs' own 13.0e&#8722;3 of fine detail, the Gaussian rasteriser carries
+13.8e&#8722;3 and the cube march 24.0e&#8722;3 and 30.8e&#8722;3, and the four FIDs order themselves
+by exactly that excess: the march resolves detail the photographs do not have, and a distribution
+metric punishes it for that. What section 4.2.2 establishes is that the cube volume paints the
+section at any resolution; what these tables establish is that at 512&nbsp;px, against six
+photographs, it does not look more like them for it.</div>
+
+<h4>4.4.2&ensp;Reference-based metrics</h4>
+
+<p>PSNR, SSIM and LPIPS on the same cuts are in section 4.2.4, computed on a hundred planes rather
+than six and against the same references. They are not repeated here: at six renders the four route
+and renderer combinations differ by 0.29&nbsp;dB, 0.010 SSIM and 0.019 LPIPS on the orange and by
+less than half that on the watermelon, and all four sit about 4.5&nbsp;dB and 0.21 LPIPS below the
+photographs measured against each other. Nothing in that spread is a result.</p>
+
+<!--/supp-->
+</div>
+</body>
+</html>
