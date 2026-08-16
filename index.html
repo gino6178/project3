@@ -107,12 +107,10 @@
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
 Cutting a reconstructed object open requires an interior, and current methods supply one by filling
-the hidden volume with the same Gaussian primitives that render the surface. We show that this
-conflates two requirements that are not compatible. A primitive small enough to avoid blending
+the hidden volume with the same Gaussian primitives that render the surface. These two roles have opposing optima. A primitive small enough to avoid blending
 across material boundaries is too small to cover the volume, so coverage must be bought with
-primitive count; and because a splatted interior has no explicit surface, the face exposed by a cut
-is whatever primitives happen to lie near the plane, about which no geometric statement can be
-made. We therefore decouple the two: the hidden volume becomes a two-level cube occupancy lattice
+primitive count; and because a splatted interior has no explicit surface, the face exposed by a cut is determined by which primitives lie near the plane, and properties
+such as its planarity, area and extent are not directly available from it. We therefore decouple the two: the hidden volume becomes a two-level cube occupancy lattice
 with one learned feature per cell, and the visible boundary is given its own dual-grid surface. A
 cut is then solved in closed form, as one convex polygon per crossed cell obtained by intersecting
 the plane with the cell's twelve edges, and the pieces are the connected components of face
@@ -155,10 +153,10 @@ lattice, and the colour on every exposed face is read from the volume that was a
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
 Cutting a reconstructed object open requires an interior, and current methods fill the hidden
-volume with the same Gaussian primitives that render the surface. That conflates two incompatible
-requirements: a primitive small enough not to blend across material boundaries is too small to
-cover the volume, and a splatted interior has no explicit surface, so nothing can be stated about
-the face a cut exposes. <strong>We decouple them.</strong> The volume becomes a two-level cube
+volume with the same Gaussian primitives that render the surface. The two roles have opposing optima: a primitive small enough not to blend
+across material boundaries is smaller than one that covers the volume, and a splatted interior
+represents its surface implicitly, so the face a cut exposes is defined by which primitives lie
+near the plane. <strong>We decouple them.</strong> The volume becomes a two-level cube
 occupancy lattice with one learned feature per cell; the boundary gets its own dual grid; and a cut
 is solved in closed form, one convex polygon per crossed cell. The interior is supervised by
 photographs of real cross-sections used directly as the target, so no generative model is trained
@@ -196,8 +194,7 @@ generating it under diffusion supervision and storing it as additional Gaussian 
 the volume [3, 23]. That supervision is itself a model. The closest method fine-tunes a
 depth-conditioned diffusion model on photographs of the object's own cross-sections and distils the
 result into the volume, so obtaining an interior costs a training run per object and the fine-tuned
-model is not released; the photographs, which are the thing anyone can actually produce by cutting
-a fruit and pointing a camera at it, are spent on the model rather than used.</p>
+model is not released; the photographs enter the pipeline as fine-tuning data rather than as the target.</p>
 
 <p><strong>Challenge.</strong> Storing a hidden volume in rendering primitives makes a single
 representation serve two requirements that pull against each other. As <em>volume</em> it must
@@ -205,9 +202,8 @@ answer whether space is occupied, which cells are connected, and what a collidin
 <em>image</em> it is splatted and composited, where a primitive's support \(\sigma\) relative to
 the spacing \(h\) governs both failure modes: \(\rho = \sigma/h\) too small leaves the volume
 unpainted, and too large blends across material boundaries. Section 4.1.2.1 measures both branches
-over four decades and finds no setting that escapes them; the released models sit four or more
-decades below the usable window and buy coverage with primitive count instead, at 7,959,789
-primitives for one fruit. A second consequence is geometric. A splatted interior has no explicit
+over four decades and finds no setting that escapes them; the released models sit four or more decades below
+that window and obtain coverage through primitive count, at 7,959,789 primitives for one fruit. A second consequence is geometric. A splatted interior has no explicit
 boundary, so the face a cut exposes is whatever primitives lie near the plane, and no property of
 that surface can be asserted: not its planarity, not its area, not where it ends.</p>
 
@@ -218,9 +214,7 @@ distilled target for an orange is a smooth disc with a single bright centre, and
 Fine-tuning the model on the object's own photographs is one way to put the structure back, and it
 is the way the closest prior method takes. It is not the only one. The photographs are already
 images of the thing being asked for, registered to nothing but themselves, and a cross-section
-plane through a lattice can be made to present exactly the geometry they show &mdash; at which
-point they can be the target, and the model between them and the volume has nothing left to
-do.</p>
+plane through a lattice can be made to present exactly the geometry they show &mdash; at which point they can serve as the target directly.</p>
 
 <p><strong>Method.</strong> We decouple the two requirements. The hidden volume becomes a two-level
 cube occupancy lattice carrying one learned feature per cell, on which occupancy, adjacency and
@@ -257,8 +251,7 @@ plane residual at machine precision.</p>
   <li><strong>A cut face that can be stated, not approximated.</strong> One convex polygon per
       crossed cell in closed form: planar to machine epsilon on an oblique off-grid plane, area
       error first order in \(h\) and reaching 0.09%, pieces labelled by connected components in
-      time linear in the crossed cells. A splatted interior has no cut face to make these
-      statements about, and at 2048&nbsp;px its section is 2.4% to 38.7% background against
+      time linear in the crossed cells. A splatted interior does not define a cut face these quantities can be measured on, and at 2048&nbsp;px its section is 2.4% to 38.7% background against
       0.07% here.</li>
   <li><strong>Photographs as the supervision, not as training data for a model that becomes the
       supervision.</strong> The closest prior method fine-tunes a diffusion model on an object's
@@ -1052,7 +1045,12 @@ residual below is a statement about bending and not about drift.</p>
 the two routes, a lattice quantised from a scan and a lattice generated from a field and skinned
 from six views, because after the second step nothing downstream can tell which was
 taken, so any result that separates them is a result about how an object is <em>reached</em>
-rather than about what happens to it afterwards. Comparisons against other work sit on the same
+rather than about what happens to it afterwards. The scope is three objects &mdash; an
+orange, a watermelon and a doughnut &mdash; chosen because they are the objects for which released
+models of the prior methods exist, and it is small. Three objects can show that a property holds on
+them and can show that a claimed property fails; they cannot establish that a margin generalises to
+fruit, to food, or to objects in general, and no result below should be read that way. Where a
+comparison comes out against this work it is reported in the same place as the ones that do not. Comparisons against other work sit on the same
 footing with one exception, stated in section 4.1: route 1 quantises a released model, and the
 released watermelon's interior came from a fine-tuned checkpoint, so that lattice inherits one.</p>
 
@@ -1248,11 +1246,9 @@ reverses the one result that had gone against this work:</p>
 
 <p>Both objects, both baselines, the same direction. On the watermelon this work is
 <strong>1.3&times;</strong> closer to the photographs than FruitNinja and <strong>2.0&times;</strong>
-closer than GaussianFluent, which is the model that took the best FID on that object. A
-distribution metric tolerated what a perceptual pairing does not: GaussianFluent's watermelon is a
-different fruit whose seeds smear along one direction and whose pith reads thicker than any
-photograph, and matching the colour statistics of a population of watermelon sections is not the
-same as looking like one.</p>
+closer than GaussianFluent, which is the model that took the best FID on that object. The two instruments rank it differently. GaussianFluent's watermelon is a different specimen whose
+seeds are elongated along one direction and whose pith reads thicker than in the photographs,
+features a distribution over sections is less sensitive to than a paired perceptual distance is.</p>
 
 <p>The doughnut gets an appearance number here for the first time. It has one reference photograph
 per family, which is why every distribution metric in this paper skips it and why its only previous
@@ -1280,8 +1276,7 @@ measure, more so.</p>
 <p>The instrument matters on the watermelon and the two disagree. On FID this work is level
 with FruitNinja at 180.9 against 182.0 and behind GaussianFluent's 170.2; on DreamSim it is
 ahead of both, 0.167 against 0.221 and 0.328. We read the perceptual pairing as the answer and
-say why in section 4.1.2 above: a distribution metric tolerated a watermelon whose seeds smear
-along one direction. The orange's photograph-supervised rows are in-sample and are not a
+give the reason in section 4.1.2 above. The orange's photograph-supervised rows are in-sample and are not a
 comparison at all.</p>
 
 <p>The rest of this section is the first claim, and the result goes first there too. <strong>A cut face drawn
@@ -1293,8 +1288,7 @@ That is a factor of 550 against one baseline and 34 against the other, and it is
 result: a cell's support is the cell, so a pixel either falls inside an occupied one or it does
 not, at any zoom, with nothing to set.</p>
 
-<p>The structural claim underneath it is stronger than the numbers. A splatted interior has no cut
-face to speak of. It has whatever primitives happen to lie near the plane, so the surface a viewer
+<p>The structural claim underneath it is stronger than the numbers. A splatted interior does not define a cut face explicitly. It has the primitives that lie near the plane, so the surface a viewer
 sees is a rendering artefact of their density and support, and no statement can be made about it:
 not that it is planar, not what its area is, not where its boundary lies. Here the face is the
 convex polygon of equation&nbsp;(10), one per crossed cell, and the statements follow by
@@ -1876,8 +1870,8 @@ whatever the solver does to them, including deformations no rigid transform can 
 
 <p>This is the paper's first claim and the one a viewer sees. Each crossed cell contributes one
 convex polygon, obtained by intersecting the plane with the cell's twelve edges in closed form. No primitive is asked to approximate a plane, so there is no error to tune away and the only departure in a cut area is the voxelisation of the silhouette.
-A method that draws a cut face from whatever primitives lie near the plane has neither property,
-and cannot state either.</p>
+A method whose cut face is determined by the primitives near the plane does not define these
+quantities, so neither can be reported for it.</p>
 
 <div class="tw"><table>
 <thead><tr><th>ball, radius in cells</th><th>plane</th><th>cut area</th><th>\(\pi r^2\)</th>
@@ -1955,19 +1949,19 @@ one trained on human judgement. Under leave-one-out over the six references, Dre
 work at 0.0979 against 0.1498 for a released model whose generator saw the held-out photograph,
 ahead on all six folds; on the watermelon it is 0.167 against 0.221 and 0.328, where photographs of
 the same fruit agree at 0.042 and 0.067. FID and KID order the orange the same way; on the
-watermelon FID favours the model DreamSim ranks last, which is the sharpest evidence here that
-matching a population's colour statistics is not the same as looking right. A forced-choice study
+watermelon FID favours the model DreamSim ranks last, which is the clearest case here of the two
+instruments measuring different properties. A forced-choice study
 would settle it and is owed.</p>
 
-<p>The second sense is not in doubt. A splatted interior cannot state a cut face: it renders
-whatever primitives lie near the plane, so planarity, area and boundary are not properties the
-method has. A cube volume states all three by construction and the statements survive checking
+<p>The second sense is not in doubt. A splatted interior does not define one explicitly: it renders
+the primitives near the plane, so planarity, area and boundary are not quantities the method
+exposes. A cube volume states all three by construction and the statements survive checking
 &mdash; machine epsilon off an oblique plane, area error first order in the cell size, and a
 section still closed at 2048&nbsp;px where a released GaussianFluent section is 38.7% background
 and this work's own splatted lattice is 3.3%. That last pair is the honest form of the coverage
 claim: it is the volume that holds, not the method's name. The 20.5% and 46.7% this page once
-reported came from drawing each primitive at radius \(\sigma/2\), a fair question about what a
-primitive covers and the wrong instrument for what a renderer draws.</p>
+reported came from drawing each primitive at radius \(\sigma/2\), which measures what a
+primitive covers rather than what a renderer draws.</p>
 
 <p>What is left between the three methods is the volume itself, and what it costs. A cube tiles
 space and a sub-pixel Gaussian does not; through one appearance-neutral codec the same object is
