@@ -107,9 +107,10 @@ blobs &mdash; support scales 47,053&times; and 5,067,762&times; smaller than a p
 nothing. Making each primitive smaller does not reduce how many are needed. We give the two jobs
 two representations instead. A coarse cube grid holds the hidden volume, where a cell's support is
 exactly its own cell and therefore tiles; a dual-grid surface holds everything visible, the
-original exterior and every newly exposed cut face alike. The same watermelon becomes 1,065,856
-cells and 39.9&nbsp;MiB, and a slab through it leaves 5.7% of its own section unpainted against
-20.5% and 46.7% for the two point clouds.
+original exterior and every newly exposed cut face alike. The same watermelon becomes 1,741,169 cells and
+56.5&nbsp;MiB quantised from the scan, or 1,065,856 and 34.6&nbsp;MiB generated, and a slab
+through it leaves 5.7% of its own section unpainted against 20.5% and 46.7% for the two point
+clouds.
 <br><br>
 Cutting is then discrete on the lattice and analytic on the boundary: connected components label
 the pieces, one solver runs per piece, and the visible face is an exact planar polygon per cell,
@@ -1524,8 +1525,8 @@ baseline was in the pipeline the whole time and was never identified.</p>
 <div class="tw"><table>
 <thead><tr><th>watermelon</th><th>FruitNinja, as released</th><th>this work, route 1</th><th></th></tr></thead>
 <tbody>
-<tr><td>primitives / cells</td><td>7,959,789</td><td>1,065,856</td><td><strong>7.5&times; fewer</strong></td></tr>
-<tr><td>as stored</td><td>425.1 MiB</td><td>39.9 MiB</td><td><strong>10.7&times; less</strong></td></tr>
+<tr><td>primitives / cells</td><td>7,959,789</td><td>1,741,169</td><td><strong>4.6&times; fewer</strong></td></tr>
+<tr><td>as stored</td><td>425.1 MiB</td><td>56.5 MiB</td><td><strong>7.5&times; less</strong></td></tr>
 <tr><td>opacity</td><td>1.0000 at the median and the 10th percentile</td><td>&mdash;</td><td>opaque by construction</td></tr>
 <tr><td>support scale \(\sigma\)</td><td>1.11e&#8722;7</td><td>&mdash;</td><td></td></tr>
 <tr><td>spacing \(h\)</td><td>0.0036</td><td>0.0172</td><td></td></tr>
@@ -1728,9 +1729,10 @@ the supervision from photographs back to the diffusion model that FruitNinja spe
 <figure>
   <img src="assets/no_finetuning.png" alt="The same held-out cuts, supervised by photographs and
        supervised by a stock diffusion model with no photographs">
-  <figcaption>The same held-out cuts, supervised two ways. Left of each pair: the reference
-  photographs of this orange. Right: a stock depth2img checkpoint and a text prompt, with no
-  photograph of this fruit anywhere in the run &mdash; which is FruitNinja's procedure without the
+  <figcaption>The same held-out cuts, supervised two ways &mdash; both panels are renders of a
+  trained model, not photographs. Left of each pair: the model supervised by the reference
+  photographs of this orange. Right: the model supervised by a stock depth2img checkpoint and a
+  text prompt, with no photograph of this fruit anywhere in the run &mdash; which is FruitNinja's procedure without the
   fine-tuning it does not release. Top row transverse, bottom longitudinal.</figcaption>
 </figure>
 
@@ -1772,8 +1774,8 @@ is what all three are, with median <em>and</em> tenth-percentile opacity of 1.00
 <div class="tw"><table>
 <thead><tr><th>watermelon</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work, route 1</th><th>route 2</th></tr></thead>
 <tbody>
-<tr><td>primitives / cells</td><td>7,959,789</td><td>1,381,100</td><td>1,065,856</td><td>1,065,856</td></tr>
-<tr><td>stored</td><td>425.1 MiB</td><td>310.8 MiB</td><td><strong>39.9 MiB</strong></td><td>39.9 MiB</td></tr>
+<tr><td>primitives / cells</td><td>7,959,789</td><td>1,381,100</td><td>1,741,169</td><td><strong>1,065,856</strong></td></tr>
+<tr><td>stored</td><td>425.1 MiB</td><td>310.8 MiB</td><td>56.5 MiB</td><td><strong>34.6 MiB</strong></td></tr>
 <tr><td>higher-band SH</td><td>0</td><td>45</td><td>0</td><td>0</td></tr>
 <tr><td>support \(\sigma\) / cell \(h\)</td><td>1.11e&#8722;7</td><td>1.35e&#8722;9</td><td>0.0172</td><td>0.0172</td></tr>
 <tr><td>that, against one pixel here</td><td>47,053&times; smaller</td><td>5,067,762&times; smaller</td>
@@ -1805,10 +1807,10 @@ does not have; ours are measured throughout this page.</p>
     <td>densified Gaussians, generatively guided</td><td>a cube occupancy grid</td></tr>
 <tr><td>what draws a newly exposed face</td><td>the same Gaussians</td><td>the same Gaussians</td>
     <td>a dual-grid surface, or a march into the volume</td></tr>
-<tr><td>primitives, watermelon</td><td><strong>7,959,789</strong></td><td class="mut">not run</td>
-    <td><strong>1,065,856</strong> cells</td></tr>
-<tr><td>stored</td><td><strong>425.1 MiB</strong></td><td class="mut">not run</td>
-    <td><strong>39.9 MiB</strong></td></tr>
+<tr><td>primitives, watermelon</td><td><strong>7,959,789</strong></td><td>1,381,100</td>
+    <td>1,741,169 <span class="mut">route 1</span> / <strong>1,065,856</strong> <span class="mut">route 2</span></td></tr>
+<tr><td>stored</td><td><strong>425.1 MiB</strong></td><td>310.8 MiB</td>
+    <td>56.5 MiB / <strong>34.6 MiB</strong></td></tr>
 <tr><td>\(\rho = \sigma/h\)</td><td>3.1e&#8722;5 <span class="mut">(points, not blobs)</span></td>
     <td class="mut">not measured</td><td>not applicable &mdash; a cell tiles</td></tr>
 <tr><td><strong>needs a fine-tuned diffusion model</strong></td>
@@ -1856,7 +1858,40 @@ where discreteness is cheap and becomes analytic exactly where a staircase would
 lattice's own advantages survive intact — connectivity, piece identity and collision are integer
 operations on a structured grid, not queries against arbitrary free particles.</p>
 
+<p>Measured against the two published methods that fill an interior with Gaussians, the cost of
+doing it their way is legible. FruitNinja spends 7,959,789 primitives and 425&nbsp;MiB on this
+watermelon and GaussianFluent 1,381,100 and 311&nbsp;MiB; the cube representation spends 1,741,169
+cells and 56.5&nbsp;MiB quantised from the same scan, or 1,065,856 and 34.6&nbsp;MiB generated, and
+its section is the least sparse of the four. That is not a rendering result &mdash; it is what
+happens when the thing holding a volume is allowed to tile. Both published models turned out to
+carry primitives five and seven orders of magnitude smaller than a pixel, which is the clearest
+evidence that the coverage question was never really about a support scale: it was about how many
+points it takes to fill a solid, and the answer is millions.</p>
+
+<p>On the axis that decides whether any of this is comparable at all &mdash; whether a fine-tuned
+generative model is required &mdash; this work sits with GaussianFluent rather than with
+FruitNinja, and the arm that shows it is the one supervised by a stock checkpoint with no
+photographs of the object anywhere in the run. It scores 90.1 against the photograph-supervised
+91.5. Two readings remain open and this page does not choose between them: either the base model
+already reaches what these metrics can distinguish, or the metrics cannot see the difference. The
+second is the more likely, and it is the honest note to end on &mdash; the geometric claims here
+are checked against closed forms and controls, and the appearance claims are checked against six
+photographs by estimators that score 46 to 70 against themselves.</p>
+
 <h3>What this does not claim</h3>
+<ul>
+  <li><strong>Route 2 is the contribution and the least reproducible thing here.</strong> It has no
+      stage in <code>run.sh</code> and no object configuration: its three steps are run by hand
+      against a lattice, and the radii that produced the orange and the watermelon are not written
+      down anywhere, so only the doughnut can be rebuilt from what is published. And for two of the
+      three objects the six views are renders of the released reconstruction, so the route that is
+      &ldquo;available always&rdquo; is demonstrated end to end only on the object that never had
+      a scan.</li>
+  <li><strong>One thing downstream does branch on the route.</strong> The surface conversion
+      colours from skin cells when they are more than a fifth of the lattice and from all cells
+      otherwise, and a generated lattice is 44&ndash;53% skin where a quantised one is 13.5%. The
+      claim that nothing downstream can tell which route was taken is true of the cut, the physics
+      and the material field, and not of that one line.</li>
 <ul>
   <li><strong>The exterior costs more, before the collapse.</strong> 442,253 dual-grid voxels
       replace 118,142 skin Gaussians on the orange. The collapse takes that to 215,304 at
@@ -1883,7 +1918,7 @@ operations on a structured grid, not queries against arbitrary free particles.</
       pieces, fourteen to build the exact face, on 877,494 cells. Where this page calls the cut
       cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
       design asked for a GPU-friendly band subdivision, which is not what was built.</li>
-  <li><strong>The experimental programme is not done.</strong> The four-representation
+  <li><strong>Part of the experimental programme is still open.</strong> The four-representation
       baseline and the interior-appearance, resolution-stability, memory and runtime families wait
       until the architecture is finished. Topology and collision are the two already measured.</li>
 </ul>
