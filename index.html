@@ -110,8 +110,9 @@ Cutting is discrete on the lattice and analytic on the boundary: connected compo
 pieces and one solver runs per piece. Generating the topology also makes the skin band a free
 parameter, which decides whether an MPM solver can resolve a stiffness contrast at all. The
 shell is 0.87 to 2.00 grid cells on the existing objects, and building it at the predicted width
-crosses the predicted threshold and the sign of the solver's response is opposite on either side
-of it, on one run per setting and with the uniform control not yet in. Collision is then three
+gives a criterion computable before the first timestep. The threshold experiment that was meant to
+confirm it does not: its \(\tau\) was formed on the interior filler's grid and not the solver's,
+and every build sits far below two on the grid actually integrated. Collision is then three
 integer operations, and the one that matters is a sign test against the cut plane: at rest it takes
 the 2,698, 2,699 and 943 particles a voxel occupancy claims are inside the other half on the three
 objects down to zero, which equation (9) makes a consequence rather than a finding, while
@@ -120,15 +121,15 @@ penetration under a real push grows monotonically.
 Route 2 needs no fine-tuned diffusion model, and route 1 needs none beyond whatever produced the
 model it quantises, which is what the comparison turns on.
 FruitNinja's published interiors come from a model fine-tuned on the object's own photographs, and
-that model is not released. Run from its own code with a stock checkpoint instead, its transverse
-FID on the orange goes from <strong>102.2</strong> to <strong>378.7</strong>, an upper bound
-since the two runs also differ in training budget; removing object-specific supervision from this
-work's own pipeline, at fixed code and budget, <em>improves</em> it by <strong>1.4</strong> points,
-from 91.5 to 90.1. Both prior methods' released models
-go through one evaluator on the same held-out planes: on the orange every arm here beats
-FruitNinja's 102.2, and on the watermelon GaussianFluent's own model takes the best FID at 170.2
-against our 180.9, from 1,381,100 primitives in 310.8&nbsp;MiB against 1,065,856 cells in
-62.6.
+that model is not released. Run from its own code with a stock checkpoint instead, its
+interiors collapse visibly, brown flesh and crusted segment walls; we put no number on that,
+because our copy of its trainer also differs in schedule. Removing object-specific supervision from
+this work's own pipeline, at fixed code and budget, moves it <strong>1.4</strong> FID. Both prior
+methods' released models go through one evaluator on the same held-out planes. On the watermelon,
+where our evaluation photographs are disjoint from our training ones, GaussianFluent's own model
+takes the best FID at 170.2 against our 180.9, from 1,381,100 primitives against 1,065,856 cells;
+on the orange the two photograph-supervised arms were fitted to the images they are scored against
+and we report that table as in-sample rather than as a comparison.
 </p>
 
 <div class="grid3">
@@ -222,16 +223,16 @@ makes the comparisons here comparisons rather than assertions.</p>
       claim still owes.</li>
   <li><strong>A shell thickness the solver can resolve.</strong> Because route 2 builds the lattice
       from a field, the skin band is an argument. The previous project could not produce a hard
-      shell; we show why (0.87 to 2.00 MPM grid cells where about two are needed),      predict the band width that fixes it, and find the sign of the solver's response opposite at
-      \(\beta = 3\) and \(\beta = 7\). That is two settings rather than a threshold located, on
-      one deterministic run each, with the weak two-rule material field rather than the clustered
-      one, at a shell-to-interior contrast of 1.33&times;, and with the uniform control still
-      running. Section 4.3.4 states all of it.</li>
-  <li><strong>No fine-tuned generative model.</strong> Supervision from a stock checkpoint with no
-      photographs of the object scores 90.1 in FID against 91.5 with them, at fixed code and
-      budget. Running the method this one is built on from its own code with a stock checkpoint
-      gives 378.7 against its released 102.2, which is an upper bound on its dependence rather than
-      a controlled measurement of it, since that run is ours and the released one is theirs.</li>
+      shell; we show why (0.87 to 2.00 MPM grid cells where about two are needed),      and give \(\tau = (t_{\text{shell}}/L)/\Delta x\) as a criterion computable before the
+      first timestep. We do <em>not</em> claim to have located or crossed the threshold: the
+      \(\tau\) values this work reported were computed on the interior filler's grid rather than
+      the solver's, and on the grid actually integrated every build sits between 0.22 and 0.65
+      against a threshold of about two. The criterion is the contribution; the threshold experiment
+      is not yet evidence. Section 4.3 states all of it.</li>
+  <li><strong>No fine-tuned generative model.</strong> Supervision from a stock checkpoint with no      photographs of the object scores 90.1 in FID against 91.5 with them, at fixed code and
+      budget. We do not put a number on the prior method's dependence: our copy of its trainer
+      differs in schedule as well as checkpoint, so the collapse we observe is qualitative
+      evidence and not an attributable measurement.</li>
 </ul>
 
 <h2 id="related">2&ensp;Related work</h2>
@@ -996,10 +997,27 @@ $$ \tau = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
 
 <p>The percentile in (15) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
 
-<p>where \(L\) is the object's own extent, because the solver normalises the object into its
-grid box and a world length only reaches \(\Delta x\) through that scaling; \(\text{grid\_lim}\)
-and \(n_{\text{grid}}\) are the solver's box size and grid resolution, both read from the
-physics configuration. The condition for a stiffness contrast to survive is \(\tau \gtrsim 2\):
+<p>where \(L\) is the object's own extent, because the solver normalises the object into its grid
+box and a world length only reaches \(\Delta x\) through that scaling.</p>
+
+<div class="note"><strong>The \(\Delta x\) this paper reported is not the grid its simulations
+run on.</strong> <code>material.py</code> reads \(n_{\text{grid}}\) from the
+<code>particle_filling</code> block of the physics configuration, which is the ray-cast interior
+filler's grid, giving \(\Delta x = 0.01\). The solver that produces section 4.3.4 derives its
+resolution from a target spacing instead, <code>ng = round(L / 0.04)</code>, so it integrates at
+\(\Delta x \approx 0.04\) and the object spans about twenty-five grid cells rather than a
+hundred. Every \(\tau\) below is therefore about four times larger than the ratio the solver
+actually sees. Recomputed on the simulated grid, the shells read <strong>0.50</strong> (orange),
+0.31 (watermelon) and 0.22 (doughnut), and the band sweep reads 0.29, 0.39, <strong>0.52</strong>
+and 0.65 at \(\beta = 3, 5, 7, 9\). <strong>Both sides of the threshold sit far below two, so no
+threshold was crossed</strong>, and the sign change reported in section 4.3.4 cannot be attributed
+to a shell becoming resolvable. What survives is \(\tau\) as a design criterion, computable
+before the first timestep; what does not survive is the claim that this work predicted a band width
+and confirmed it. The filling grid also differs per object for unrelated reasons, so the spread in
+the table below is partly a configuration artefact: the orange reads 2.00 rather than 1.25 only
+because its configuration fills at 160 cells where the other two fill at 100.</div>
+
+<p>\(\text{grid\_lim}\) and \(n_{\text{grid}}\) are the solver's box size and grid resolution. The condition for a stiffness contrast to survive is \(\tau \gtrsim 2\):
 MPM carries material through one background grid, and a feature thinner than about two of its cells
 is averaged into its surroundings by the particle-to-grid and grid-to-particle transfers. We take
 that threshold from standard MPM practice rather than deriving it, and section 4.3 tests it rather
@@ -1329,6 +1347,8 @@ cuts each, and the other two objects and the intervening sizes are not run.</p>
     <td><strong>425.1 MiB</strong></td><td><strong>310.8 MiB</strong></td><td>163.5 MiB</td>
     <td><strong>62.6 MiB</strong></td></tr>
 <tr><td>higher-band SH coefficients</td><td>0</td><td>45 <span class="mut">(76% of its bytes)</span></td><td>0</td><td>0</td></tr>
+<tr><td><strong>stored at spherical-harmonic degree 0, matched fields</strong></td>
+    <td>425.1 MiB</td><td><strong>73.8 MiB</strong></td><td>163.5 MiB</td><td>62.6 MiB</td></tr>
 <tr><td>support \(\sigma\) / cell \(h\)</td><td>1.11e&#8722;7</td><td>1.35e&#8722;9</td><td>0.0172</td><td>0.0172</td></tr>
 <tr><td>that, against one pixel in the slab figure</td><td>47,053&times; smaller</td>
     <td>5,067,762&times; smaller</td><td>3.3 pixels across</td><td>3.3 pixels</td></tr>
@@ -1435,42 +1455,71 @@ photographs of this orange anywhere in the run, scores 90.1 against route 1's 91
 and 213.5 against its 222.8 longitudinally, on a hundred cuts per family. Those are the same
 numbers, and 90.1 against 91.5 sits well inside a reference set that scores 46.3 against itself.
 <br><br>
-Route 2 with the photographs scores 74.1 on the same family, which is 16 points better than the
-no-photograph arm and outside that noise floor, so the ablation says something about route 1 and
-not about the method. The missing cell is route 2 without photographs, and it has not been run.
+Route 2 with the photographs scores 74.1 on the same family, but that is the most in-sample number
+in the table rather than the best model: route 2's photograph arm was fitted to the six images it
+is scored against, and the no-photograph arm was not. The two are not comparable and the 16-point
+gap is not evidence about supervision. The missing cell has now been run, and it closes the square:
 The claim this work makes is that it does not need a diffusion model <em>fine-tuned on the
 object</em>, which is a different and weaker statement than not needing the photographs at
 all.</div>
+
+<div class="tw"><table>
+<thead><tr><th>orange, transverse FID &darr;</th><th>with the photographs
+<span class="mut">(in-sample)</span></th><th>without them <span class="mut">(out-of-sample)</span></th></tr></thead>
+<tbody>
+<tr><td>route 1</td><td>91.5</td><td>90.1</td></tr>
+<tr><td>route 2</td><td>74.1</td><td><strong>73.2</strong></td></tr>
+<tr><td class="mut">FruitNinja, released <span class="mut">(out-of-sample)</span></td>
+    <td class="mut">n/a</td><td class="mut">102.2</td></tr>
+</tbody></table></div>
+
+<p>Removing the photographs costs route 1 nothing (91.5 to 90.1) and route 2 nothing (74.1 to
+73.2), and both no-photograph arms are scored out-of-sample where both photograph arms are not, so
+the true comparison is even flatter than the columns suggest. The best out-of-sample number on this
+object is route 2 with no photograph of the fruit anywhere in its run, at 73.2 against FruitNinja's
+102.2. Longitudinally the same arm is 225.4 against route 2's 286.8 and FruitNinja's 269.6.</p>
+
+<div class="note"><strong>What this does not establish.</strong> The orange's route-2 lattice is
+built from a field and six views derived from FruitNinja's released orange, whose interior was
+produced by the fine-tuned checkpoint. So no arm in this table is free of a fine-tuned generative
+model: what is removed is the object's photographs and any fine-tuning in <em>our</em> supervision,
+not the fine-tuned model that placed the segment structure being quantised. The only object here
+that never touched a released reconstruction is the doughnut, and the doughnut has no distribution
+metric because it has one reference image per family. Establishing the claim properly needs an
+object generated from a field and scored against real photographs, and this paper does not have
+one.</div>
 
 <p>The interesting question is whether that holds for the method being reproduced. We have the
 run: FruitNinja's own trainer, its own Gaussian representation and its own filled model, with the
 stock depth2img checkpoint in place of the fine-tuned one, 200 epochs, scored on the same hundred
 planes as every other row.</p>
 
-<p>Two things differ between that row and the released one, and only one of them is the
-fine-tuning. The released model is the authors' own training run at their own budget and settings;
-ours is a 200-epoch reproduction. The 276-point gap is therefore the sum of removing the
-fine-tuned checkpoint and whatever the reproduction gap is, and nothing here bounds the second
-term. Bounding it needs the same 200-epoch run with the fine-tuned checkpoint, which is the one
-artefact FruitNinja does not release.</p>
+<p>More than the checkpoint differs, and the difference is larger than an earlier version of this
+section said. Our copy of FruitNinja's trainer supervises sixteen transverse planes where the
+released schedule supervises fifty, smooths on a 16-cell grid where the released default is 512,
+and refines every 30 epochs where the released default is 101. So this row is a reproduction under
+<em>this work's</em> training schedule with a stock checkpoint, and the 276-point gap bounds
+nothing about FruitNinja: it is the sum of removing the fine-tuned model, the schedule change and
+whatever reproduction gap remains. <strong>We withdraw the number as a measurement of FruitNinja's
+dependence.</strong> What we still show is the qualitative failure in the figure below, which no
+budget difference explains: the flesh goes brown and the segment walls become a crust.</p>
 
 <div class="tw"><table>
 <thead><tr><th>orange, the effect of removing the fine-tuned model</th><th>transverse FID &darr;</th>
 <th>longitudinal FID &darr;</th></tr></thead>
 <tbody>
 <tr><td>FruitNinja, released model <span class="mut">(with its fine-tuning)</span></td><td>102.2</td><td>269.6</td></tr>
-<tr><td><strong>FruitNinja's pipeline, reproduced with a stock checkpoint</strong></td>
+<tr><td><strong>FruitNinja's pipeline, our schedule, stock checkpoint</strong>
+    <span class="mut">(not attributable to FruitNinja)</span></td>
     <td><strong>378.7</strong></td><td><strong>511.6</strong></td></tr>
 <tr><td>this work, route 1 <span class="mut">(photographs)</span></td><td>91.5</td><td>222.8</td></tr>
 <tr><td><strong>this work, no fine-tuning and no photographs</strong></td><td><strong>90.1</strong></td><td><strong>213.5</strong></td></tr>
 <tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td><td class="mut">70.2</td></tr>
 </tbody></table></div>
 
-<p>What the row does support without that caveat is the comparison inside each column. This work's
-two arms, with and without object-specific supervision, are the same code at the same budget and
-differ by 1.4 FID. FruitNinja's two arms are not the same run, so the 276 points are an upper bound
-on what removing its fine-tuning costs rather than a measurement of it. Even as an upper bound the
-difference is visible before any metric is computed: the reproduction's flesh goes brown and its
+<p>What the row does support is the comparison inside our own column: this work's two arms, with
+and without object-specific supervision, are the same code at the same budget. Across columns
+nothing is bounded. The difference is still visible before any metric is computed: the reproduction's flesh goes brown and its
 segment walls turn into a crust, because the stock checkpoint has no idea what this particular
 fruit looks like inside and the Gaussian supervision has nothing else to lean on.</p>
 
@@ -1506,6 +1555,18 @@ fine-tuned checkpoint. The route-1 watermelon rows therefore inherit the artefac
 this paper's comparison axis, which is part of why they land on top of FruitNinja's own numbers.
 The claim of independence from a fine-tuned model belongs to route 2, and to route 1 only when
 what it quantises did not come from one.</p>
+
+<div class="note"><strong>The orange's evaluation photographs are the orange's training
+targets.</strong> <code>objects/orange.conf</code> sets <code>REF_H=secref_orraw_hsep</code> and
+<code>EVAL_REF=secref_orraw_hsep</code>, the same directory, so the two photograph-supervised arms
+were fitted to the six images they are then scored against. The no-photograph arm, FruitNinja's
+released model and the stock-checkpoint reproduction were not. The 46.3 reference-against-itself
+floor is computed on those same targets. Every orange number below is therefore in-sample for two
+of five rows and out-of-sample for three, and the ordering must not be read as a comparison. The
+watermelon does not have this problem: its training reference is <code>secref_wm_h1</code> and its
+evaluation set is <code>data_finetune_images/watermelon/</code>, which are disjoint. That asymmetry
+is the mechanism behind a result the earlier text called a puzzle, that every arm here beats
+FruitNinja on the orange and does not on the watermelon.</div>
 
 <p>FruitNinja's models are in the frame our cameras already use, so they need no alignment.
 GaussianFluent's watermelon is its own capture in its own frame, and neither its upright axis nor a
@@ -1545,9 +1606,10 @@ it compares distributions, and which no per-pixel score really does.</p>
 </tbody></table></div>
 
 <p>On the orange every arm of this work is ahead of FruitNinja's released model on every column,
-though on an instrument whose own noise floor is 46.3, and the arm ahead by the most on the
-longitudinal family is the one with no photographs of the fruit in the run at all. Its own pipeline
-with a stock checkpoint is four times worse than either.</p>
+and two of those arms were fitted to the photographs they are scored against, so that ordering is
+not a comparison. The two rows that can be compared with FruitNinja's are the no-photograph arm at
+90.1 and the stock-checkpoint reproduction at 378.7, both out-of-sample like FruitNinja's 102.2.
+That narrower comparison is the one we would defend on this object.</p>
 
 <p>On the watermelon the answer goes the other way and should be stated plainly:
 <strong>GaussianFluent's released model scores best</strong>, 170.2 and 177.5 against our 180.9 and
@@ -1555,10 +1617,15 @@ with a stock checkpoint is four times worse than either.</p>
 its cameras were chosen by us, and its upright axis is the best of three we tried while every other
 row is a single draw, so it is a minimum over configurations against single draws and not a
 like-for-like win. It is still the best FID in the table and nothing here is served by hiding
-that. What the table does not change is the cost: that model
-is 1,381,100 primitives in 310.8&nbsp;MiB against 1,065,856 cells in 62.6&nbsp;MiB counting
-everything this method needs, and at 2048&nbsp;px its own rasteriser leaves 38.7% of its section
-unpainted where the same lattice drawn as a cube volume leaves 0.07%. The claim this
+that. On cost the honest reading is narrower than this
+paper first claimed. GaussianFluent's file is 310.8&nbsp;MiB, but 76% of that is degree-1-to-3
+spherical harmonics, a view-dependent capability this representation does not have at all. Charged
+the same fields, at degree 0, its 1,381,100 primitives cost <strong>73.8&nbsp;MiB</strong> against
+this work's 62.6 and route 1's 163.5. So against GaussianFluent the storage advantage is
+1.18&times; for route 2 and a 2.6&times; <em>disadvantage</em> for route 1, and the five-fold
+figure was an accounting of somebody else's spherical harmonics. What does not change is that at
+2048&nbsp;px its own rasteriser leaves 38.7% of its section unpainted where the same lattice drawn
+as a cube volume leaves 0.07%. The claim this
 work makes is about what a representation can state about a cut face and what it costs to hold a
 volume, not about winning a distribution metric at 100 samples against a reference set that scores
 60.4 against itself.</p>
@@ -1986,11 +2053,28 @@ A method that draws a cut face from whatever primitives lie near the plane has n
 and cannot state either.</p>
 
 <div class="tw"><table>
-<thead><tr><th>shape</th><th>cut area, mesh</th><th>closed form</th><th>error</th></tr></thead>
+<thead><tr><th>ball, radius in cells</th><th>plane</th><th>cut area</th><th>\(\pi r^2\)</th>
+<th>area error</th><th>worst vertex off the plane</th></tr></thead>
 <tbody>
-<tr><td>ball through its centre</td><td>448.0</td><td>\(\pi r^2\) = 452.4</td><td>1.0%</td></tr>
-<tr><td>torus across its axis</td><td>868.0</td><td>\(4\pi R r\) = 879.6</td><td>1.3%</td></tr>
+<tr><td>6</td><td>axis-aligned, \(d=0\)</td><td>112.0</td><td>113.1</td><td>0.97%</td><td>0.00e+00</td></tr>
+<tr><td>12</td><td>axis-aligned, \(d=0\)</td><td>448.0</td><td>452.4</td><td>0.97%</td><td>0.00e+00</td></tr>
+<tr><td>24</td><td>axis-aligned, \(d=0\)</td><td>1804.0</td><td>1809.6</td><td>0.31%</td><td>0.00e+00</td></tr>
+<tr><td><strong>48</strong></td><td>axis-aligned, \(d=0\)</td><td>7232.0</td><td>7238.2</td><td><strong>0.09%</strong></td><td>0.00e+00</td></tr>
+<tr><td>6</td><td>oblique, off-grid</td><td>115.6</td><td>112.7</td><td>2.58%</td><td>4.44e&#8722;16</td></tr>
+<tr><td>12</td><td>oblique, off-grid</td><td>451.0</td><td>452.0</td><td>0.22%</td><td>6.66e&#8722;16</td></tr>
+<tr><td>24</td><td>oblique, off-grid</td><td>1803.4</td><td>1809.1</td><td>0.32%</td><td>1.78e&#8722;15</td></tr>
+<tr><td><strong>48</strong></td><td>oblique, off-grid</td><td>7233.7</td><td>7237.8</td><td><strong>0.06%</strong></td><td>3.55e&#8722;15</td></tr>
+<tr><td class="mut">torus, \(R=14, r=5\)</td><td class="mut">across the axis</td><td class="mut">868.0</td>
+    <td class="mut">\(4\pi Rr\) = 879.6</td><td class="mut">1.3%</td><td class="mut">0.00e+00</td></tr>
 </tbody></table></div>
+
+<p>This is the decomposition demonstrated rather than asserted. The area error falls roughly as
+\(h\) with resolution, from about 1% at six cells to 0.06 to 0.09% at forty-eight, which is what
+a voxelised silhouette should do and what a plane approximated by primitives would not. The
+residual of the plane itself does not fall and does not need to: it is 0.00e+00 for an
+axis-aligned plane through the origin, where the intersection lands on a coordinate exactly, and a
+few multiples of the machine epsilon for an oblique off-grid plane at every resolution. The cut
+face carries no error term that resolution has to chase; the silhouette does.</p>
 
 <h4>4.5.3&ensp;Cross-sections</h4>
 
