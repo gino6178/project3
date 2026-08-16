@@ -359,6 +359,17 @@ dual-grid boundary for what is seen.</p>
 
 <h3>2.3&ensp;Virtual cutting and physical simulation</h3>
 
+<p><strong>What is old here, and what is not.</strong> The machinery of the cut is classical and we
+would not claim otherwise: clipping a cube by a plane into a three-to-six-sided polygon is
+textbook, connected components on a grid is textbook, and dual contouring is two decades old. Every
+one of those was worked out on volumetric data that already existed &mdash; a segmented scan, a
+tetrahedral mesh, a modelled field. What has not existed is that data for an object reconstructed
+from photographs, and it is the absence rather than the algorithms that has kept these operations
+away from radiance-field assets. This paper's claim is about supplying it: an occupancy with an
+interior that a dozen unregistered photographs can specify, on which the classical operations then
+apply unchanged and exactly. The contribution we would defend is the supervision and what the
+volume does to it, not a new way to intersect a plane with a cube.</p>
+
 <p><strong>Cutting in medical simulation.</strong> Interactive cutting was posed as a problem by
 surgical simulation long before it was posed for reconstructed assets, and the constraints there are
 the ones that shaped every later formulation: the cut is arbitrary, it must be resolved at
@@ -992,6 +1003,18 @@ along their intersection cost <strong>0.012 DreamSim</strong> against an otherwi
 control, forty times the spread between two runs of one configuration. A seed averaged with no seed
 is a smudge. That the lattice's reconciliation does not behave this way is evidence that it is not
 performing the same operation.</p>
+
+<p><em>Whether the result is a texture of revolution.</em> A related objection is that
+supervising from cross-sections without poses can only produce a field that is a function of radius
+and height &mdash; radial infilling rather than an object. That is testable on the trained model
+alone. Bin its cells by \((r, z)\) about the object's axis and compare each cell against its bin's
+mean: a texture of revolution is reconstructed by the bin means and leaves nothing behind. A
+synthetic control that really is a function of \((r, z)\) leaves a residual of 5% of its own
+spread under this binning, which is the floor of the statistic. The trained orange leaves
+<strong>79%</strong>. Four fifths of its variation is structure that radius and height cannot
+account for. The direction is also informative: the source lattice leaves 53%, so training did not
+make the interior more symmetric but less &mdash; the part \((r, z)\) cannot explain is preserved
+in absolute terms, 0.0625 to 0.0635, while the part it can explain shrinks.</p>
 
 <p><em>Whether the lattice is simply under-fitting.</em> If the capacity were too low to hold what
 twelve images ask for, the cells the planes touch would absorb the supervision and the rest would
