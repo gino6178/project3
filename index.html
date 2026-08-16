@@ -111,12 +111,12 @@ face is an exact planar polygon per cell, matching closed-form cut areas to 1.0%
 surface pays for curvature rather than resolution — collapsing the dual grid by its own quadric
 leaves 48.7% of the nodes at a third of a cell of error — and the physics keeps what the lattice
 gave it, with collision a floor division and an occupancy test and no point-in-polyhedron query
-anywhere. End to end on held-out cuts, generating the topology and supplying six views beats quantising
-the scan on every object that can be scored &mdash; 66.5 of FID against 86.4 on the orange &mdash;
-and the same cuts drawn entirely from the two representations, with no Gaussian anywhere in the
-picture, reach 167.5 against the Gaussian baseline's 187.4 on the watermelon. Every number here was
-measured on the three objects of the previous project, or on a synthetic shape whose answer is
-known in closed form.
+anywhere. Every number here was measured on the three objects of the previous project, or on a synthetic
+shape whose answer is known in closed form. The appearance results are reported and are not a
+claim: on PSNR, SSIM and LPIPS the four combinations of route and renderer differ by 0.29 dB,
+0.010 and 0.019, which is indistinguishable, while FID over the same renders reports a factor of
+two &mdash; and the photograph sets score 46 to 70 in FID against themselves split in half, so
+that factor is the estimator rather than the model. What this work shows is geometric.
 </p>
 
 <div class="grid3">
@@ -284,7 +284,7 @@ surface, can be detected and left alone rather than guessed at.</p>
   </defs>
 
   <!-- A: occupancy -->
-  <text class="h" x="10" y="18">a &nbsp;the occupancy</text>
+  <text class="h" x="10" y="18">a &#160;the occupancy</text>
   <text class="s" x="10" y="36">a cell is inside or it is not</text>
   <g transform="translate(10,46)">
     <g class="oc">
@@ -304,7 +304,7 @@ surface, can be detected and left alone rather than guessed at.</p>
   </g>
 
   <!-- B: dual vertices -->
-  <text class="h" x="290" y="18">b &nbsp;one dual vertex per boundary cell</text>
+  <text class="h" x="290" y="18">b &#160;one dual vertex per boundary cell</text>
   <text class="s" x="290" y="36">joined across the faces the cells share</text>
   <g transform="translate(290,46)">
     <g class="gl">
@@ -325,7 +325,7 @@ surface, can be detected and left alone rather than guessed at.</p>
   </g>
 
   <!-- C: the quadric -->
-  <text class="h" x="570" y="18">c &nbsp;where the vertex goes</text>
+  <text class="h" x="570" y="18">c &#160;where the vertex goes</text>
   <text class="s" x="570" y="36">the minimum of its own quadric</text>
   <g transform="translate(570,46)">
     <g class="gl"><rect x="20" y="60" width="120" height="120" fill="none"/></g>
@@ -342,7 +342,7 @@ surface, can be detected and left alone rather than guessed at.</p>
 
   <!-- D: a cut -->
   <g transform="translate(10,330)">
-    <text class="h" x="0" y="14">d &nbsp;and a cut</text>
+    <text class="h" x="0" y="14">d &#160;and a cut</text>
     <text class="s" x="80" y="14">the plane crosses a band of cells; each crossed cell contributes one exact planar polygon,</text>
     <text class="s" x="80" y="32">and the pieces are the connected components of what the plane did not separate</text>
     <g transform="translate(0,26)">
@@ -424,38 +424,38 @@ reconstruction.</li>
     </style>
   </defs>
 
-  <text class="s" x="10" y="16">step 0 &mdash; what arrives</text>
+  <text class="s" x="10" y="16">step 0 &#8212; what arrives</text>
   <rect class="b" x="10" y="26" width="380" height="52" rx="3"/>
   <text class="t" x="24" y="47">a scanned model</text>
   <text class="s" x="24" y="66">a reconstruction exists: structure and appearance are both in it</text>
   <rect class="b" x="430" y="26" width="380" height="52" rx="3"/>
   <text class="t" x="444" y="47">nothing but a description</text>
-  <text class="s" x="444" y="66">no model was ever made &mdash; the doughnut</text>
+  <text class="s" x="444" y="66">no model was ever made &#8212; the doughnut</text>
 
   <path class="l" d="M200,78 L200,112"/>
   <path class="l" d="M620,78 L620,112"/>
 
-  <text class="s" x="10" y="132">step 1 &mdash; the two-level lattice, solid by construction</text>
+  <text class="s" x="10" y="132">step 1 &#8212; the two-level lattice, solid by construction</text>
   <rect class="ba" x="10" y="142" width="380" height="76" rx="3"/>
-  <text class="t" x="24" y="163">route 1 &nbsp;quantise the reconstruction</text>
+  <text class="t" x="24" y="163">route 1 &#160;quantise the reconstruction</text>
   <text class="s" x="24" y="182">occupancy is whatever the scan put there, so holes are repaired</text>
   <text class="n" x="24" y="201">voxelize.py</text>
   <rect class="ba" x="430" y="142" width="380" height="76" rx="3"/>
-  <text class="t" x="444" y="163">route 2 &nbsp;generate the topology</text>
+  <text class="t" x="444" y="163">route 2 &#160;generate the topology</text>
   <text class="s" x="444" y="182">a cell is inside when the signed-distance field says so</text>
-  <text class="n" x="444" y="201">make_shape.py &rarr; sphere / torus / ellipsoid</text>
+  <text class="n" x="444" y="201">make_shape.py &#8594; sphere / torus / ellipsoid</text>
 
   <path class="l" d="M200,218 L200,252"/>
   <path class="l" d="M620,218 L620,252"/>
   <text class="lb" x="636" y="240">six views, projected</text>
 
-  <text class="s" x="10" y="272">step 2 &mdash; the skin takes the appearance</text>
+  <text class="s" x="10" y="272">step 2 &#8212; the skin takes the appearance</text>
   <rect class="b" x="10" y="282" width="380" height="58" rx="3"/>
   <text class="t" x="24" y="303">already carried by the quantised cells</text>
   <text class="s" x="24" y="322">nothing to project: the scan's colour is on the cells</text>
   <rect class="b" x="430" y="282" width="380" height="58" rx="3"/>
   <text class="t" x="444" y="303">project through the camera that made each view</text>
-  <text class="n" x="444" y="322">ply_six_refs.py &rarr; skin_project.py</text>
+  <text class="n" x="444" y="322">ply_six_refs.py &#8594; skin_project.py</text>
 
   <path class="l" d="M200,340 L200,372 L400,372 L400,392"/>
   <path class="l" d="M620,340 L620,372 L420,372 L420,392"/>
@@ -468,7 +468,7 @@ reconstruction.</li>
   <path class="l" d="M410,458 L410,492"/>
 
   <rect class="b" x="150" y="496" width="520" height="66" rx="3"/>
-  <text class="t" x="170" y="518">step 3 &mdash; train the interior only</text>
+  <text class="t" x="170" y="518">step 3 &#8212; train the interior only</text>
   <text class="s" x="170" y="537">cross-sections supervise the volume; the skin is pinned to what the views wrote,</text>
   <text class="s" x="170" y="553">so the exterior owes nothing to this run</text>
   <text class="n" x="600" y="553">train_voxel.py</text>
@@ -476,15 +476,15 @@ reconstruction.</li>
   <path class="l" d="M410,562 L410,596"/>
 
   <rect class="b" x="150" y="600" width="520" height="66" rx="3"/>
-  <text class="t" x="170" y="622">step 4 &mdash; convert the whole boundary to O&#8209;Voxel</text>
+  <text class="t" x="170" y="622">step 4 &#8212; convert the whole boundary to O&#8209;Voxel</text>
   <text class="s" x="170" y="641">the occupancy boundary at any level becomes a dual grid, each node placed by its</text>
-  <text class="s" x="170" y="657">own quadric &mdash; the surface pays for curvature, not for resolution</text>
+  <text class="s" x="170" y="657">own quadric &#8212; the surface pays for curvature, not for resolution</text>
   <text class="n" x="600" y="657">globalovox.py</text>
 
   <path class="l" d="M410,666 L410,700"/>
 
   <rect class="b" x="150" y="704" width="520" height="66" rx="3"/>
-  <text class="t" x="170" y="726">step 5 &mdash; cut: discrete topology, analytic boundary</text>
+  <text class="t" x="170" y="726">step 5 &#8212; cut: discrete topology, analytic boundary</text>
   <text class="s" x="170" y="745">refine the band, drop the edges the plane separates, label components;</text>
   <text class="s" x="170" y="761">each cut cell contributes an exact planar polygon</text>
   <text class="n" x="560" y="761">subdivide.py, cutmesh.py</text>
@@ -493,13 +493,13 @@ reconstruction.</li>
   <path class="l" d="M540,770 L540,806"/>
 
   <rect class="b" x="10" y="810" width="390" height="76" rx="3"/>
-  <text class="t" x="24" y="832">step 6a &mdash; draw it</text>
+  <text class="t" x="24" y="832">step 6a &#8212; draw it</text>
   <text class="s" x="24" y="851">the dual grid for the whole object; a march into the</text>
   <text class="s" x="24" y="867">cube volume for a slice, since a slice is a slab</text>
   <text class="n" x="24" y="882">exterior_views.py, ovox_cuts.py</text>
 
   <rect class="b" x="420" y="810" width="390" height="76" rx="3"/>
-  <text class="t" x="434" y="832">step 6b &mdash; simulate it</text>
+  <text class="t" x="434" y="832">step 6b &#8212; simulate it</text>
   <text class="s" x="434" y="851">particles are relabelled, not resampled; collision is a floor</text>
   <text class="s" x="434" y="867">division, an occupancy test and one plane comparison</text>
   <text class="n" x="434" y="882">physics.py, binding.py</text>
@@ -1158,6 +1158,161 @@ route&nbsp;1 model is the 30-iteration run the baseline was established with; ev
 these tables was trained for 200.</div>
 
 
+<h3>The experiments the specification asked for</h3>
+
+<p>The design this implements names four baselines and seven families of metric before it names
+any feature, on the argument that a representation paper should first answer whether the
+representation is reasonable. Four of the deferred features were built and measured; most of that
+evaluation was not. What follows is it, and it does not go the way the sections above do.</p>
+
+<h4>Does enlarging the Gaussians suffice?</h4>
+
+<p>This is the second required baseline and the one Equation&nbsp;(1) stands on. If the interior's
+problem is a trade governed by \(\rho = \sigma/h\), then no setting of \(\rho\) should avoid
+both failures &mdash; small leaves holes, large blends across material boundaries. Both are
+measured against the same reference, which the cube representation supplies for free: the
+piecewise-constant cell lookup, which has no scale parameter at all. Holes are pixels inside the
+section the Gaussian render left as background. Blending is how much more the render disagrees
+with that lookup <em>at</em> a material boundary than away from one &mdash; the subtraction
+matters, because a large Gaussian disagrees with a piecewise-constant reference everywhere simply
+by being smooth.</p>
+
+<div class="flow">
+<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Holes and material blending against the Gaussian support ratio">
+<defs><style>
+  .ax{stroke:#c9c9c9;stroke-width:1;fill:none}
+  .lb{font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#5c5c5c}
+  .hd{font:600 13px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#111}
+</style></defs>
+<text class="hd" x="60" y="20">holes inside the section (%)</text>
+<path class="ax" d="M60,40 V190 H400"/>
+<path class="ax" d="M56,190 H60"/><text class="lb" x="10" y="194">0</text>
+<path class="ax" d="M56,115 H60"/><text class="lb" x="10" y="119">0.125</text>
+<path class="ax" d="M56,40 H60"/><text class="lb" x="10" y="44">0.25</text>
+<path d="M70.0,148.6 L153.7,190.0 L202.6,190.0 L237.4,190.0 L286.3,190.0 L321.0,190.0 L370.0,190.0" stroke="#cbcbcb" stroke-width="2.2" fill="none"/>
+<text class="lb" x="405" y="46" fill="#cbcbcb">512px</text>
+<path d="M70.0,82.6 L153.7,188.8 L202.6,190.0 L237.4,190.0 L286.3,190.0 L321.0,190.0 L370.0,190.0" stroke="#8a8a8a" stroke-width="2.2" fill="none"/>
+<text class="lb" x="405" y="62" fill="#8a8a8a">1024px</text>
+<path d="M70.0,41.2 L153.7,188.2 L202.6,190.0 L237.4,190.0 L286.3,190.0 L321.0,190.0 L370.0,190.0" stroke="#a8412a" stroke-width="2.2" fill="none"/>
+<text class="lb" x="405" y="78" fill="#a8412a">2048px</text>
+<text class="hd" x="500" y="20">blending excess at material boundaries</text>
+<path class="ax" d="M500,40 V190 H800"/>
+<path class="ax" d="M496,190 H500"/><text class="lb" x="455" y="194">0.02</text>
+<path class="ax" d="M496,130 H500"/><text class="lb" x="455" y="134">0.03</text>
+<path class="ax" d="M496,40 H500"/><text class="lb" x="455" y="44">0.045</text>
+<path d="M510.0,125.8 L588.1,116.8 L633.8,119.8 L666.2,113.2 L711.9,98.8 L744.3,92.2 L790.0,114.4" stroke="#cbcbcb" stroke-width="2.2" fill="none"/>
+<path d="M510.0,157.0 L588.1,107.2 L633.8,112.0 L666.2,118.6 L711.9,125.2 L744.3,126.4 L790.0,148.0" stroke="#8a8a8a" stroke-width="2.2" fill="none"/>
+<path d="M510.0,152.2 L588.1,74.2 L633.8,76.0 L666.2,77.8 L711.9,71.2 L744.3,58.6 L790.0,51.4" stroke="#a8412a" stroke-width="2.2" fill="none"/>
+<text class="lb" x="62" y="208">0.25</text>
+<text class="lb" x="502" y="208">0.25</text>
+<text class="lb" x="146" y="208">0.5</text>
+<text class="lb" x="580" y="208">0.5</text>
+<text class="lb" x="195" y="208">0.75</text>
+<text class="lb" x="626" y="208">0.75</text>
+<text class="lb" x="229" y="208">1</text>
+<text class="lb" x="658" y="208">1</text>
+<text class="lb" x="278" y="208">1.5</text>
+<text class="lb" x="704" y="208">1.5</text>
+<text class="lb" x="313" y="208">2</text>
+<text class="lb" x="736" y="208">2</text>
+<text class="lb" x="362" y="208">3</text>
+<text class="lb" x="782" y="208">3</text>
+<text class="lb" x="200" y="232">ρ = σ / h</text>
+<text class="lb" x="640" y="232">ρ = σ / h</text>
+<text class="lb" x="60" y="262">Equation (1) predicts the left curve rising to the left and the right curve rising to the right,</text>
+<text class="lb" x="60" y="280">with no setting where both are low. Only the left one behaves as predicted.</text>
+</svg></div>
+
+<div class="tw"><table>
+<thead><tr><th>\(\rho\)</th><th>holes, 512px</th><th>holes, 1024px</th><th>holes, 2048px</th>
+<th>blending excess, 2048px</th></tr></thead>
+<tbody>
+<tr><td>0.25</td><td>0.069%</td><td>0.179%</td><td>0.248%</td><td>+0.0263</td></tr>
+<tr><td>0.50</td><td>0.000%</td><td>0.002%</td><td>0.003%</td><td>+0.0393</td></tr>
+<tr><td>1.00</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>+0.0387</td></tr>
+<tr><td>2.00</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>+0.0419</td></tr>
+<tr><td>3.00</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>+0.0431</td></tr>
+</tbody></table></div>
+
+<div class="note"><strong>This does not support Equation&nbsp;(1) as stated.</strong> The holes
+behave as predicted &mdash; they exist only at \(\rho = 0.25\), and they grow with resolution,
+0.069% to 0.248%, which is the sub-pixel argument the equation makes. The blending does not. It
+moves from 0.026 to 0.043 across a twelve-fold change in \(\rho\), and at
+\(\rho = 0.5\) there are effectively no holes and the blending is already near its lowest. On
+this measurement a setting exists that avoids both, which is what the equation says cannot happen.
+<br><br>
+The measurement has a limit worth stating, because it changes what can be concluded. It re-renders
+a model that was <em>trained</em> at one \(\sigma\) with different \(\sigma\), so it asks
+whether large Gaussians can <em>display</em> a sharp interior. It does not ask whether they can
+<em>learn</em> one &mdash; blending during optimisation would pull neighbouring materials together
+in the parameters themselves, and no re-render can show that. Answering the specification's
+question in full needs one training run per \(\rho\), which is not done here.</div>
+
+<h4>What the operations cost</h4>
+
+<p>The runtime line of the metrics list, which had no number anywhere in this project while the
+text claimed cheapness repeatedly. On the orange, 877,494 cells, one card, median of three:</p>
+
+<div class="tw"><table>
+<thead><tr><th>operation</th><th>time</th><th>rate</th></tr></thead>
+<tbody>
+<tr><td>load the model from disk</td><td>22.8 ms</td><td></td></tr>
+<tr><td>occupancy: close and fill</td><td>1,696 ms</td><td>405,606 cells/s</td></tr>
+<tr><td><strong>one cut: refine the band, label the pieces</strong></td><td><strong>12,958 ms</strong></td><td></td></tr>
+<tr><td><strong>the cut face: exact polygons</strong></td><td><strong>14,246 ms</strong></td><td></td></tr>
+<tr><td>build the collision index</td><td>151 ms</td><td></td></tr>
+<tr><td>label every particle by piece</td><td>551 ms</td><td>1,593,256 particles/s</td></tr>
+<tr><td>one occupancy query over the particle set</td><td>178 ms</td><td><strong>4,929,213 queries/s</strong></td></tr>
+</tbody></table></div>
+
+<p>The collision claim holds and now has a number: five million occupancy queries a second, which
+is what a floor division and a table lookup should cost. The cutting claim does not. Thirteen
+seconds to label the pieces and fourteen to build the face is not interactive, and every place
+this page calls the cut cheap means cheap in operations rather than in time. Both are single-
+threaded NumPy on the CPU; nothing here has been moved to the GPU, and the specification asked for
+a GPU-friendly band subdivision. That is where the number should be attacked, and it has not
+been.</p>
+
+<h4>PSNR, SSIM and LPIPS</h4>
+
+<p>The first metric line the specification names, on the same held-out transverse cuts the FID
+table scores. Each render against its nearest reference &mdash; an upper bound on agreement rather
+than a paired score, since a cut at an arbitrary depth is not a photograph of any particular
+slice, but one measured identically for every column.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange, transverse</th><th>PSNR &uarr;</th><th>SSIM &uarr;</th><th>LPIPS &darr;</th><th>FID &darr;</th></tr></thead>
+<tbody>
+<tr><td>route 1 (3DGS) &mdash; the baseline</td><td>16.71</td><td>0.7626</td><td>0.3908</td><td>86.4</td></tr>
+<tr><td>route 2 (3DGS)</td><td>16.90</td><td>0.7551</td><td>0.3931</td><td>66.5</td></tr>
+<tr><td>route 1 (cube)</td><td>16.64</td><td>0.7654</td><td>0.4000</td><td>130.5</td></tr>
+<tr><td>route 2 (cube)</td><td>16.61</td><td>0.7621</td><td>0.4096</td><td>107.9</td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">21.24</td><td class="mut">0.8047</td><td class="mut">0.1815</td><td class="mut">46.3</td></tr>
+</tbody></table></div>
+
+<div class="tw"><table>
+<thead><tr><th>watermelon, transverse</th><th>PSNR &uarr;</th><th>SSIM &uarr;</th><th>LPIPS &darr;</th><th>FID &darr;</th></tr></thead>
+<tbody>
+<tr><td>route 1 (3DGS) &mdash; the baseline</td><td>11.49</td><td>0.7299</td><td>0.4618</td><td>187.4</td></tr>
+<tr><td>route 2 (3DGS)</td><td>11.57</td><td>0.7294</td><td>0.4573</td><td>180.9</td></tr>
+<tr><td>route 1 (cube)</td><td>11.46</td><td>0.7338</td><td>0.4588</td><td>188.3</td></tr>
+<tr><td>route 2 (cube)</td><td>11.56</td><td>0.7319</td><td>0.4537</td><td>167.5</td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">17.59</td><td class="mut">0.6290</td><td class="mut">0.2927</td><td class="mut">60.4</td></tr>
+</tbody></table></div>
+
+<div class="note"><strong>On these three metrics the four methods are indistinguishable, and they
+contradict the FID column.</strong> The spread across four methods is 0.29&nbsp;dB of PSNR, 0.010
+of SSIM and 0.019 of LPIPS on the orange, and 0.11&nbsp;dB, 0.004 and 0.008 on the watermelon.
+FID over the same renders reports 66.5 against 130.5 &mdash; a factor of two &mdash; and this page
+earlier argued that separations of that size were the ones the table could carry. They are not.
+<br><br>
+The last row is what a perfect model would score: the photographs measured against each other the
+same way. Every method sits about 4.5&nbsp;dB and 0.21 of LPIPS below it, and they sit there
+together. The honest reading of all four columns is that the distance from any of these interiors
+to a photograph is large, and the distance between them is not measurable with six renders by any
+of the four metrics tried.</div>
+
 <h3>Storage against accuracy</h3>
 
 <div class="tw"><table>
@@ -1348,6 +1503,16 @@ operations on a structured grid, not queries against arbitrary free particles.</
       the ones the Gaussian run learned; refitting them for the cube renderer flattened the
       orange's segment walls twice, and the criterion for "the walls survived" — the angular
       oscillation of a section over its middle radii — is in place but the fit is not.</li>
+  <li><strong>Equation (1) is not confirmed by its own experiment.</strong> Sweeping
+      \(\rho\) finds holes only at 0.25 and no setting where both failures are present: at
+      \(\rho = 0.5\) the holes are 0.003% and the blending is near its lowest. The measurement
+      re-renders a model trained at one \(\sigma\), so it cannot see blending that happens
+      during optimisation, and answering the question properly needs one training run per
+      \(\rho\). Until that exists, the premise is argued rather than shown.</li>
+  <li><strong>Cutting is not fast.</strong> Thirteen seconds to refine the band and label the
+      pieces, fourteen to build the exact face, on 877,494 cells. Where this page calls the cut
+      cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
+      design asked for a GPU-friendly band subdivision, which is not what was built.</li>
   <li><strong>The experimental programme is not done.</strong> The four-representation
       baseline and the interior-appearance, resolution-stability, memory and runtime families wait
       until the architecture is finished. Topology and collision are the two already measured.</li>
