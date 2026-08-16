@@ -1108,6 +1108,16 @@ radial structure at an angle the others do not share, which is why the transvers
 aligned, and an ablation that injects rotations deliberately is the way to find where that
 breaks.</p>
 
+<p><strong>Choosing the phases rather than inheriting them.</strong> The phase each transverse
+reference is given is a free parameter, and the pipeline sets it by cross-correlating that
+photograph against the first of its family. That makes one family internally coherent and says
+nothing about the other. Since the two families meet in lines that are known before training, the
+phases can instead be chosen against the disagreement they produce there, which is a mixed
+discrete&ndash;continuous problem over a permutation and a set of angles, solved exactly in seconds.
+Section 4.1.4 gives the formulation and what it measures: it lowers cross-family disagreement, most
+visibly on cuts at orientations neither family supervised, and does not change similarity to the
+photographs.</p>
+
 <p><strong>What absorbs the misalignment.</strong> A reference is not a picture of this object at
 this plane, so three things stand between it and a pixel loss. \(\Phi\) fits it to the silhouette
 the plane actually renders, so the object's own geometry supplies the registration and none is
@@ -2128,7 +2138,57 @@ what alignment leaves. What the table measures is the system's tolerance, not th
 and an object whose sections have no shared angular phase to align to would not get the first
 mechanism.</p>
 
-<h4>4.1.4&ensp;Both methods through the same evaluator</h4>
+<h4>4.1.4&ensp;Choosing the references' phases against the geometry they share</h4>
+
+<p>The transverse and longitudinal families meet in known lines, so the disagreement between them
+is a function of the phases alone and can be minimised before training. Where a transverse section
+at height \(z\), rotated by \(\delta\), is met by a longitudinal plane at azimuth \(a\), the
+shared line is that section's diameter at angle \(a + \delta\) and that longitudinal section's row
+at height \(z\). Both are one-dimensional signals of one physical line, so</p>
+
+<div class="eq">\[ \min_{\pi,\;\{\delta_k\}} \;\sum_{j,\,j'} \bigl\lVert\,
+\mathbf{T}_{\pi(j)}^{\delta} - \mathbf{T}_{\pi(j')}^{\delta} \,\bigr\rVert_{\,\Pi_j \cap
+\Pi_{j'}} \]</div>
+
+<p>is a mixed discrete&ndash;continuous problem small enough to solve exactly: the phases by
+coordinate descent over 72 candidate angles, which is exhaustive per coordinate and therefore
+monotone, converging in two sweeps; the assignment by enumerating all \(6!\) permutations. Seconds,
+once, before any gradient. Against the pipeline's own alignment &mdash; each photograph
+cross-correlated with the first of its family &mdash; this lowers chordal disagreement from 0.11775
+to 0.11190. The existing alignment is worth 1.2% against no alignment at all on this objective,
+which is unsurprising: it was built to make one family internally coherent and never consulted the
+other.</p>
+
+<p>What that buys, and what it does not, has to be measured on planes the families did not
+supervise, because a held-out transverse cut sits among six transverse photographs and is close to
+interpolation. Comparing the colour distributions of the two families' held-out renders &mdash; a
+reference-free quantity, since it asks whether the two agree about what the interior is made
+of:</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange</th><th>gap between the families &darr;</th><th>disagreement on the shared
+axis &darr;</th><th>DreamSim &darr;</th></tr></thead>
+<tbody>
+<tr><td>phases from the existing alignment</td><td>0.2667</td><td><strong>0.0520</strong></td>
+    <td><strong>0.0738</strong></td></tr>
+<tr><td><strong>phases solved on the chords</strong></td><td><strong>0.2362</strong></td>
+    <td>0.0617</td><td>0.0759</td></tr>
+<tr><td class="mut">the same, on 45&deg; cuts neither family supervised</td>
+    <td class="mut">0.1955 &rarr; <strong>0.1844</strong></td><td class="mut">&mdash;</td>
+    <td class="mut">&mdash;</td></tr>
+</tbody></table></div>
+
+<p>The solve improves the quantity it targets, by 11% on held-out cuts of the two families and 6%
+on cuts at forty-five degrees, which is the orientation a reader of this paper's claim about
+arbitrary planes would care about most and the one no photograph constrains. It does not improve
+similarity to the photographs: DreamSim moves by 0.0021 in the wrong direction, which is small
+against the spread between folds and is reported as no gain. And it makes the longitudinal family
+slightly less self-consistent on the axis, 0.0520 to 0.0617, which follows from what was solved
+&mdash; the transverse phases were free and the axis is where longitudinal sections meet each other,
+not where they meet the transverse family. The honest summary is that cross-family coherence and
+photographic similarity are separable, and this addresses the first.</p>
+
+<h4>4.1.5&ensp;Both methods through the same evaluator</h4>
 
 
 
@@ -2225,7 +2285,7 @@ hundred; the two tables are internally consistent and should not be read across.
   statistics of a slice, not whether the slice is a plane.</figcaption>
 </figure>
 
-<h4>4.1.5&ensp;The comparison in one table</h4>
+<h4>4.1.6&ensp;The comparison in one table</h4>
 
 <p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
 or marked where the quantity does not exist for that representation. A cut-face residual and a cut-area error need a cut-face
