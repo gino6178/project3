@@ -90,6 +90,18 @@ first thing below.</p>
 
 <h2 id="limits">Limitations</h2>
 <ul>
+  <li><strong>The physics is a capability, not a validated solver.</strong> What is
+      measured here is that the lattice answers the questions a solver asks: contact resolves to
+      integer queries and closes 2,698 of 610,723 penetrations to zero on the contact slab, a
+      material field is decomposed from the same per-cell feature, and \(\tau_s\) predicts before
+      the first timestep whether a transfer grid can resolve the skin. What is <em>not</em> measured
+      is any of the quantities a physics paper would be judged on: deformation accuracy against a
+      reference solver, stress or stiffness transfer against an analytic solution, contact response
+      timing, or energy behaviour over a long rollout. No comparison against an established engine
+      is made. The simulation figures in this paper show that a cut object can be driven and that
+      the pieces behave as separate bodies; they do not establish that the dynamics are correct, and
+      the paper's claims about physics should be read as claims about representation
+      compatibility.</li>
   <li><strong>Cuts are unbounded planes.</strong> A piece is a global sign-code class, so a bounded
       incision has no expression and a curved cut approximated by \(Q\) planes shatters into up to
       \(2^Q\) regions rather than cutting along a curve. Peeling, tearing and freehand cutting are

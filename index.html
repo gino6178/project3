@@ -631,7 +631,17 @@ freehand surgical cutting are therefore outside this formulation. The constructi
 them is known and fits this lattice almost unchanged: duplicate the crossed cell rather than the
 geometry and let each copy carry one side of an analytic cut surface [48], which is the virtual
 node algorithm, with the MPM counterpart carrying the discontinuity as two velocity fields either
-side of a crack.</p>
+side of a crack. It is worth separating which half of the construction a curved cut
+breaks, because they are not equally hard. The <em>face</em> survives: a smooth cut surface is
+planar to first order over a cell, so at cell scale the same twelve-edge intersection applies to
+the local tangent plane, and the band refinement of section 3.8 is already the mechanism for making
+the cell small relative to the local radius of curvature &mdash; the cost is more leaves in the
+band, not a different algorithm, and no mesh-versus-mesh intersection appears. What breaks is the
+<em>labelling</em>: piece identity here is a global sign code over the whole cut, and a surface that
+is not a single separating manifold has no such code. Extending to curved and terminating cuts is
+therefore a question about how a cell records that it is severed, not about how a face is computed,
+which is why the virtual-node construction is the one to reach for. We have not implemented it and
+report no numbers for it.</p>
 
 <p>Two degeneracies have to be handled for the closed-form face to be stable, and both are handled
 by construction rather than by a tolerance. When the plane passes exactly through a cell vertex, the
@@ -879,7 +889,7 @@ four voxels to the nodes that survived, and with nothing merged that reproduces 
 15.22346 against 15.22352, and the same 12,606 boundary and
 41,947 non-manifold edges its mesh already has.</p>
 
-<h3>3.10&ensp;What a volume does to inconsistent supervision</h3>
+<h3>3.10&ensp;Why the references need not agree with each other</h3>
 
 <p>The supervision is one reference image per training plane, and the reference is a photograph:
 the transverse family draws from six photographs of transverse cuts, the longitudinal family from
@@ -889,12 +899,17 @@ diffusion model fine-tuned on those same photographs, and the margin in section 
 attributable to the target as much as to the lattice &mdash; which is why that section compares
 against released models and does not present the substitution as controlled.</p>
 
-<p>What the photographs cannot do is agree with each other in three dimensions, and that is the
-problem this section is about. Each was taken of a different specimen at a different depth, and
+<p>What the photographs do not do is agree with each other in three dimensions, and this section is
+about why that is acceptable. It is the property that decides what a user has to supply. A pipeline
+whose supervision must be mutually consistent needs registered views of one specimen; this one asks
+only for images of what the inside of such an object looks like, and the twelve used here are of
+different fruits, cut at different depths, photographed on different days, none of them taken with
+any of the others in mind. Each was taken of a different specimen at a different depth, and
 none was taken with any of the others in mind. Ten vertical training planes all contain the
 object's axis, so that axis is <em>the same line</em>
-in all ten references, and the diffusion model drew each one without knowing about the other nine.
-Whatever it drew there, it drew ten times independently.</p>
+in all ten references, and each photograph was taken without reference to the other nine.
+Whatever each shows there, it shows independently of the other nine, so the
+references make ten different claims about one line.</p>
 
 <p>That inconsistency is measurable and it is not small. Taking the axis column of each reference,
 restricted to rows where every section has material, and comparing the references pairwise:</p>
@@ -923,6 +938,24 @@ where an orange's is segmented and there is little for independent samples to di
 the volume adds a small amount of disagreement rather than removing it, 0.001 to 0.004 in absolute
 terms. We report both directions: the reconciliation is worth what there was to reconcile.</p>
 
+<p>The reconciliation is not paid for with structure, which is the check that decides whether it is
+worth anything. Taking the same axis band and measuring how much each image varies <em>along</em>
+the line &mdash; the row-to-row change that a membrane or a seed is &mdash; the model retains
+<strong>96.5%</strong> of what the references carry there. It is not agreeing by flattening; it is
+agreeing on one answer and keeping the detail that answer has.</p>
+
+<p>What this buys is a weaker requirement on the input than a reconstruction pipeline usually
+imposes. The twelve images are not views of one scene: nothing registers them, no camera pose is
+known or recovered, no two of them show the same fruit, and any consistency they have is
+coincidence. They are asked only to be plausible pictures of what such an interior looks like. The
+volume is what makes that sufficient, because every plane reads the same cells and a cell has one
+value, so ten contradictory claims about a line resolve to one before anything is rendered. In
+practice the input is: cut a few of the fruit, photograph the faces, and supply them.</p>
+
+<p class="mut">Stated as a limitation, the same property says the interior this produces is a
+plausible interior of that kind of object rather than the interior of the particular specimen
+scanned, and nothing here recovers the latter.</p>
+
 <p>This is a property of holding the interior as a volume at all, and it is measured here rather
 than assumed. It also locates where a better supervision would act. The volume currently resolves
 the conflict <em>after</em> the fact, by averaging ten answers into one field; the conflict itself
@@ -932,6 +965,12 @@ drawn would remove the conflict at its source instead. That is not what this pap
 measurement above is what says it is worth doing.</p>
 
 <h3 id="physics">3.11&ensp;Physics on the lattice: pieces, materials, collision</h3>
+
+<p class="mut">What this section establishes is that the lattice answers the questions a solver
+asks, in the form it asks them. It does not establish that the resulting dynamics are accurate: no
+comparison against a reference solver, no deformation or stress error, and no contact timing is
+reported here or anywhere in this paper. The <a href="supplement.html#limits">limitations</a> state
+that plainly, and the claims below should be read as claims about representation compatibility.</p>
 
 <p>The O-Voxel patch is the visible boundary and takes no part in the physics; the cube hierarchy
 is the physical volume and answers every question about where material is. Piece identity is a relabelling and not a resampling. The existing particle set stays as it is, and each particle takes the piece of the leaf it falls in, so subdividing a cut band multiplies leaves and not particles.
