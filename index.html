@@ -1347,6 +1347,21 @@ lattice &mdash; is what both representations carry. On the generated topologies 
 <tr><td>pale crumb</td><td>157,018 (16.7%)</td><td>0.82, 0.68, 0.52</td><td>0.12</td></tr>
 </tbody></table></div>
 
+<figure>
+  <img src="assets/material_watermelon.png" alt="A watermelon section as it looks, by material
+       class, and by stiffness">
+  <img src="assets/material_orange.png" alt="The same three for the orange" style="margin-top:10px">
+  <img src="assets/material_doughnut.png" alt="The same three for the doughnut" style="margin-top:10px">
+  <figcaption>The same section three ways: as it looks, as material class, and as the stiffness
+  that class is given. Drawn by cube lookup rather than by splatting points, because a scatter of
+  one dot per cell reads as a haze and the claim here is that the classes are <em>regions</em>.
+  The labelling shown is the weak one &mdash; shell against interior, with the interior split at
+  its own median brightness &mdash; because it is the version a learned decomposition has to beat;
+  the clustered classes are the table above. Red in the third panel is the stiff end of the range
+  and blue the soft end, so the third panel is the question the next section asks: is that red
+  band thick enough for the solver to see it?</figcaption>
+</figure>
+
 <p>The watermelon is the clearest: a green class at shell fraction 1.00, a red class at 0.00, and
 a pale class between them at 0.23. Nothing was told that a watermelon has a white layer under its
 rind. Class becomes stiffness by the previous project's rule &mdash; \(u_j = 0.65\beta_j +
