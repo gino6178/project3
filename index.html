@@ -95,8 +95,6 @@
   <div class="links">
     <a href="supplement.html">Supplementary material</a>
     <a href="supplement.html#limits">Limitations</a>
-    <a href="#">Code (coming soon)</a>
-    <a href="#">arXiv (coming soon)</a>
   </div>
 </header>
 
@@ -141,7 +139,7 @@ carry no explicit surface, the face a cut exposes is whichever primitives lie ne
 <p class="lead">
 We present a decoupled representation that builds an explicit interior directly from
 <strong>sparse, unaligned cross-section photographs</strong>, without training or querying any
-generative model. Volumetric occupancy becomes a compact two-level lattice with one learned feature
+generative model. Volumetric occupancy becomes a two-level lattice with one learned feature
 per cell; the visible exterior is given its own dual-grid surface. Planar cuts are then resolved
 analytically, as one convex polygon per crossed cell from the plane's intersection with the cell's
 twelve edges, with topological pieces recovered by connected-component labelling on the lattice's own
@@ -215,7 +213,7 @@ it differently.</p>
 </ol>
 
 <p><strong>Our approach: a decoupled volume, supervised by loose references.</strong> Building an
-accurate interior need not require training a generative model, and it need not require a
+interior need not require training a generative model, and it need not require a
 destructive scan of the specimen either. A handful of cross-section photographs is enough &mdash;
 and they may be rough exemplars of <em>related</em> specimens rather than of the object itself. We
 decouple the hidden volume from surface rendering: the interior becomes a compact two-level
@@ -235,8 +233,8 @@ more than any one of them varies internally, and the volume removes 57 to 61% of
 undefined slice through particles into a closed-form construction. A <em>planar</em> cut is solved
 as one convex polygon per crossed cell, obtained by intersecting the plane with the cell's twelve
 edges: planar to machine epsilon on an oblique off-grid plane, with a cut-area error first order in
-the cell size reaching 0.09%, and with no edge of the resulting triangulation used by only one
-triangle, so the face has no gaps. Because occupancy, adjacency and piece identity are integer
+the cell size reaching 0.09%, and with no edge of the resulting triangulation shared by more than two triangles and the
+rim exactly the silhouette. Because occupancy, adjacency and piece identity are integer
 operations on the lattice, separated fragments are labelled by connected components on adjacency the addresses already
 give, and the same integers answer collision, so the grid is handed to a material
 point method without an intervening mesh extraction. Section 3.3.1 states the scope of the planar
@@ -595,7 +593,7 @@ partitions \(\mathcal{V}\) by the sign of \(\mathbf{n}\cdot\mathbf{x_k} + d\), w
 connected components of face adjacency; and it meets each crossed cell \(c\) in a convex polygon
 \(\Pi_c\), so Q3 is answered by \(\mathcal{P} = \bigcup_{c} \Pi_c\) with every vertex satisfying the
 plane equation by construction. The set of crossed cells has size \(K = O(N^{2/3})\) for \(N\)
-cells, and section 3.3.1 shows the cut costs \(O(K)\) after one preprocess.</p>
+cells, and section 3.3.1 gives the construction and section 4.3.3 the measured cost.</p>
 
 <p><strong>Why the labelling is the cheap part here and is not elsewhere.</strong> Face adjacency
 on a lattice is a property of the addresses: two leaves are neighbours when their integer
@@ -629,6 +627,16 @@ geometry exactly where the discretisation cannot. The numbers in parentheses are
 that define each step.</p>
 
 <h4>3.1.3&ensp;The two-level lattice</h4>
+
+<p class="mut"><strong>Settings, in one place.</strong> Two levels, refinement factor 2, so
+\(h_f = h_c/2\). Coarse spacing \(h_c\) is the object's longest extent over 125: 0.01180 orange,
+0.01722 watermelon, 0.01230 apple, 0.02070 pomegranate, 0.01310 bread, 0.01616 cake. Feature
+dimension \(F = 8\), one Gaussian decoded per cell. Two hundred outer iterations, feature learning
+rate \(10^{-3}\). Twenty-four transverse and \(N_v = 10\) longitudinal planes per iteration,
+drawn with \(J = 0.5\); six 128-pixel crops per plane and a band weight of 0.3; the skin held
+fixed and the outer 10% by radius left to the exterior views. Peak device memory 5.2 to
+5.9&nbsp;GB on one card. Every value here is read from the configuration the reported runs used,
+not from a default.</p>
 
 <p><strong>Explicit where a query needs an answer, implicit where appearance needs one.</strong>
 The representation is not a voxel grid of colours and the distinction matters for what it can do.
@@ -714,18 +722,15 @@ the same solid:</p>
 
 <div class="eq"><div class="body">
 $$ v^{*} \;=\; \arg\min_{v}\; \sum_{p \in \mathcal{H}(c)} \bigl( \mathbf{n}_p^\top v - d_p \bigr)^2
-   \quad \text{s.t.}\quad \chi(\mathcal{M}) = \chi(\mathcal{M}_0),\;\;
+   \quad \text{s.t.}\quad \;\;
    \partial \mathcal{M} = \partial \mathcal{M}_0 $$
 </div><div class="num">(13)</div></div>
 
 <p>The objective is the quadric of equation&nbsp;(12), additive over the planes a block covers, so
 the sum is ten numbers added per child and the minimiser is one \(3\times3\) solve. The constraint
-is what keeps a collapse changing the resolution rather than the object: the Euler characteristic
-and the boundary curve set are held at their uncollapsed values. That is enforced structurally, not
-by a penalty. A dual grid's connectivity comes from the occupancy and not from where its vertices
+is what keeps a collapse changing the resolution rather than the object: the boundary curve set is held at its uncollapsed value and no merge removes an edge or a face, because connectivity is the occupancy's and a collapse moves a node without changing which cells are adjacent. That is enforced structurally, not by a penalty. No Euler characteristic is computed anywhere in this work and none is claimed. A dual grid's connectivity comes from the occupancy and not from where its vertices
 sit, so a collapse merges vertices and never edges or faces, and a merge is refused when it would
-identify two vertices the occupancy does not make adjacent, which is the only move that could
-change \(\chi\). The same fact gives manifoldness where a cut face meets the exterior: both are
+identify two vertices the occupancy does not make adjacent, which is the only move that could change the surface's topology. The same fact gives manifoldness where a cut face meets the exterior: both are
 indexed by the same cells, and the seam is exactly the boundary cells the plane crosses.</p>
 
 
@@ -986,6 +991,20 @@ a resize and a paste, and because the warp has two degrees of freedom fixed by m
 by fitting, there is no configuration of it that the optimiser could exploit to lower the loss
 without changing the volume.</p>
 
+<p><strong>The planes are drawn, not fixed.</strong> \(\Pi_j\) is sampled afresh each
+iteration from a distribution centred on a fixed schedule. The transverse family takes a depth
+uniformly about its slot, the longitudinal family an azimuth uniformly about its own,</p>
+
+<div class="eq">\[ d_j \sim \mathcal{U}\bigl(c_i - J\Delta,\; c_i + J\Delta\bigr), \qquad
+a_j \sim \mathcal{U}\Bigl(\tfrac{180^\circ}{N_v}(i - J),\; \tfrac{180^\circ}{N_v}(i + J)\Bigr)
+\]</div>
+
+<p>with \(\Delta\) the spacing between slots, \(J = 0.5\) and \(N_v = 10\) in every run reported
+here. At \(J = 0.5\) the slots tile the interval exactly: no depth is sampled twice and none is
+unreachable. This is the reason the 66% of cells no fixed plane would touch are not a hole to be
+filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.6 reports what
+happens at \(J = 0\), \(0.25\) and \(1\).</p>
+
 <p><strong>What is optimised and what is not.</strong> The objection to supervising from
 photographs with no camera is that the slice pose is unknown, so it must either be recovered or the
 gradient cannot be formed. Neither happens here, and it is worth writing down which symbols are
@@ -1096,7 +1115,7 @@ misregistered reference is therefore not a geometric error to be corrected but a
 about what the interior looks like there, which is the quantity section 3.2.4's table measures and
 the volume resolves.</p>
 
-<p>Two consequences follow. Deformation between specimens cannot produce ghosting in the usual
+<p>Two consequences follow. Over the range measured, deformation between specimens does not produce ghosting in the usual
 sense, because nothing is being superimposed: each plane has one target, the target is fitted to
 that plane, and doubled structure would require two references to be applied to one plane. What
 misalignment does produce is <em>disagreement between planes</em> about the cells they share, which
@@ -1284,7 +1303,7 @@ through a vertex or along a face never touches.</p>
 \(K = |\{c : c \cap \Pi \neq \emptyset\}|\) the number of crossed cells:</p>
 
 <div class="algo">
-<div class="algo-h">Algorithm 1 &nbsp; Cut, in \(O(K)\) after one \(O(N)\) preprocess</div>
+<div class="algo-h">Algorithm 1 &nbsp; Cut: face geometry \(O(K)\), labelling \(\Theta(N)\) as implemented</div>
 <pre>  precompute once per object      E<sub>0</sub> &larr; adjacency(C)                              O(N log N)
 
   cut(C, E<sub>0</sub>, &Pi;, h<sub>target</sub>)
@@ -1405,7 +1424,7 @@ the band-local result matches the full pass in piece count and edge count exactl
 <p>Equation (9) is the standard box-plane separating-axis test [39], and it is used twice. A cell of side \(h\) centred at
 \(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
 extent along \(\mathbf{n}\), which is the right-hand side; that decides which cells are refined.
-It also bounds how far a point inside a cell can be from the plane, which is what section 4.2.4
+It also bounds how far a point inside a cell can be from the plane, which is what section 4.2.5
 uses to explain why occupancy alone claims material on both sides of a cut and why one sign test
 removes exactly that band and nothing else.</p>
 
@@ -2374,7 +2393,7 @@ behalf.</p>
     <td>180.9</td><td>4.2.4</td></tr>
 <tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.2.1</td></tr>
 <tr><td>slicing and piece labelling</td><td class="mut">not addressed</td><td class="mut">damage field</td>
-    <td>\(O(K)\) in crossed cells, 2.9&nbsp;s</td><td>4.5.1</td></tr>
+    <td>face \(O(K)\); labelling \(\Theta(N)\), 2.9&nbsp;s</td><td>4.5.1</td></tr>
 </tbody></table></div>
 
 <p>The view-dependence row is a bound rather than a measurement, and it is the one honest way to
@@ -2512,7 +2531,7 @@ is handed to one side and only one and no material is created or destroyed at th
 the one physical quantity the representation rather than the solver is responsible for, and it is
 the extent of the quantitative physics in this paper.</p>
 
-<h4>4.2.4&ensp;Collision</h4>
+<h4>4.2.5&ensp;Collision</h4>
 
 <p>Equation (15) is two tests, and the second is the one that earns its place. At rest, with the
 two halves exactly as the cut left them, occupancy alone reports 2,698 particles of the orange
@@ -2555,7 +2574,7 @@ grow with separation and nothing in the construction forces it to.</p>
 piece into the other by one, two and four coarse cells has to report more penetration each time,
 and it does, on every object. </p>
 
-<h4>4.2.5&ensp;Surface binding</h4>
+<h4>4.2.6&ensp;Surface binding</h4>
 
 <p>Collision moves pieces; binding is what carries the visible surface with them. Equation (18)
 fixes each surface vertex to its own piece's nearest particles at bind time, so the surface follows
@@ -2686,8 +2705,8 @@ no primitive asked to do both. The tension that separation removes is real and w
 four decades of support scale, with both published methods sitting far outside the window where
 neither branch of it bites.</p>
 
-<p>The result we would put first is about supervision rather than representation. A high-fidelity
-interior can be built from a sparse set of <em>unaligned</em> cross-section photographs used
+<p>The result we would put first is about supervision rather than representation. An interior reaching 0.0979 DreamSim under leave-one-out can be built from a sparse set of
+<em>unaligned</em> cross-section photographs used
 directly as the target, with no per-object diffusion fine-tuning and no score distillation. Under
 leave-one-out over six references, scored against the photograph its own run never saw, this is
 0.0979 DreamSim against 0.1498 for a released model whose generator was fine-tuned on that
@@ -2700,8 +2719,7 @@ carry to another problem.</p>
 
 <p>On geometry the claim is narrower and firmer. A planar cut is one convex polygon per crossed
 cell in closed form &mdash; planar to machine epsilon on an oblique off-grid plane, cut-area error
-first order in the cell size and reaching 0.09%, no edge of the triangulation used by a single
-triangle &mdash; and a splatted interior does not define these quantities at all, so the comparison
+first order in the cell size and reaching 0.09%, no edge of the triangulation shared by more than two triangles &mdash; and a splatted interior does not define these quantities at all, so the comparison
 is between having them and not. Through one appearance-neutral codec the same object is 7.0&nbsp;MiB
 against 26.5 and 58.3, and the cut face drawn as a cube volume holds 0.07% unpainted at
 2048&nbsp;px where our own splatted lattice reaches 3.3%: the property belongs to the volume, not to
@@ -2709,12 +2727,13 @@ the method's name.</p>
 
 <h3>5.2&ensp;Limitations and future work</h3>
 
-<p>The <a href="supplement.html#limits">limitations</a> list fourteen items in full. Six decide how
+<p>The <a href="supplement.html#limits">limitations</a> list nineteen items in full. Six decide how
 far the results should be carried.</p>
 
 <ol>
-  <li><strong>Three objects.</strong> An orange, a watermelon and a doughnut, chosen because they
-      are the ones with released baselines. That is enough to show a property holds or that a
+  <li><strong>Six objects, and they are one group's release.</strong> Every object FruitNinja
+      released is evaluated here, which is what makes each comparison a comparison against a
+      published result. That is enough to show a property holds or that a
       claimed one fails; it is not enough to say a margin generalises to fruit, to food, or to
       objects at large.</li>
   <li><strong>Cutting is not interactive.</strong> A cut is about eleven seconds at the resolution

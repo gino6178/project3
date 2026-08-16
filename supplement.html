@@ -104,10 +104,22 @@ first thing below.</p>
       the harness fails to produce it. Neither absence is evidence either way about the cost of
       those operations.</li>
   <li><strong>The two levers on cutting cost are unbenchmarked.</strong> A cut is about eleven
-      seconds at the resolution used, and the complexity is linear in the crossed cells with a large
-      constant. The adaptive refinement criterion of section 3.3.2 and a GPU formulation of the same
+      seconds at the resolution used, and the face geometry is linear in the crossed cells; the labelling as implemented is not,
+      and section 4.3.3 measures the cost as flat per total cell. The adaptive refinement criterion of section 3.3.2 and a GPU formulation of the same
       passes are the two ways to reduce it; the first is measured for leaf count but not for time,
       and the second exists in the repository without a timing.</li>
+  <li><strong>No modulus here is measured.</strong> \(E_{\min}\) and \(E_{\max}\) are the ends
+      of a range that an ordering of material classes is mapped onto. No absolute Young's modulus,
+      Poisson ratio or yield stress is claimed for any material in this paper, and the stiffness
+      figures quoted anywhere are the ends of that mapping rather than measurements of fruit.</li>
+  <li><strong>The tolerance to distorted references is measured only for rotation.</strong> Section
+      4.1.4 injects rotations up to &plusmn;30&deg; and finds a 15% cost in DreamSim, so no break
+      point was reached within that range and none is claimed beyond it. Specimen-to-specimen
+      <em>shape</em> distortion &mdash; a section that is elliptical where the reference is round, or
+      whose radial proportions differ &mdash; is untested. The failure mode such a reference would
+      produce is disagreement between planes about the cells they share, resolved to one value per
+      cell; the paper measures that quantity at 2.9% of cells and does not measure where resolving
+      it stops working.</li>
   <li><strong>The physics is a capability, not a validated solver.</strong> What is
       measured here is that the lattice answers the questions a solver asks: contact resolves to
       integer queries and closes 2,698 of 610,723 penetrations to zero on the contact slab, a
