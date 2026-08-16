@@ -164,6 +164,52 @@ first thing below.</p>
 </ul>
 
 
+<h2 id="noise">How much of a difference is a difference</h2>
+
+<p>Every margin in the paper is a difference between two training runs, and a training run is not
+deterministic: the sampler draws, the plane schedule jitters, and the optimiser sees them in an
+order that depends on both. So a margin is only evidence if it is larger than what two runs of the
+<em>same</em> configuration produce. We had that pair by accident and report it, because it sets
+the scale for reading every other table here.</p>
+
+<p>Two runs, both on the orange, both route 2, both trained on the same lattice from the same
+<code>gs_fill.ply</code> for the same 200 iterations with the same object configuration. They were
+launched as an experiment and a control, and a check afterwards showed the experimental flag never
+reached the code it gates &mdash; the target and the render differ at the shared axis by 0.0643 in
+one and 0.0647 in the other, where the flag, had it fired, would have made the first zero by
+construction. Nothing distinguishes the two runs but the draws. Both were then scored on the same
+twelve held-out cuts, at the same seed, against the same six photographs:</p>
+
+<div class="tw"><table>
+<thead><tr><th>measure</th><th>run A</th><th>run B</th><th>spread</th>
+<th>margin the paper reports</th></tr></thead>
+<tbody>
+<tr><td>FID</td><td>65.3</td><td>60.3</td><td><strong>5.0</strong></td><td>29.0</td></tr>
+<tr><td>KID</td><td>92.9&times;10<sup>&minus;3</sup></td><td>82.0&times;10<sup>&minus;3</sup></td>
+    <td>10.9&times;10<sup>&minus;3</sup></td><td>64&times;10<sup>&minus;3</sup></td></tr>
+<tr><td>DreamSim</td><td>0.0686</td><td>0.0683</td><td><strong>0.0003</strong></td><td>0.0582</td></tr>
+<tr><td>disagreement on the shared axis</td><td>0.0323</td><td>0.0320</td><td>0.0003</td><td>&mdash;</td></tr>
+</tbody></table></div>
+
+<p>Two readings follow. The first is a floor: a FID difference of five points on this setup is what
+identical configurations produce, so a table that turns on four points of FID is reporting the
+seed. The margins the paper does report are 29 points of FID and 64 units of KID, five to six times
+the spread, so they survive it &mdash; but the floor is the reason those are the numbers quoted and
+not smaller ones.</p>
+
+<p>The second concerns the choice of instrument. DreamSim's spread across identical runs is 0.0003,
+against the 0.0582 it reports between our cut faces and FruitNinja's: a ratio of roughly two
+hundred, where FID's is under six. That is a stronger argument for using a perceptual distance
+trained on human judgements as the primary measure than any appeal to what it was trained on,
+because it is measured on this pipeline rather than borrowed. It also matches the direction the
+rest of the evaluation went for independent reasons: FID is a distribution distance estimated here
+from six references, and a quantity estimated from six samples is expected to be unstable.</p>
+
+<p>The pair is one sample of the run-to-run distribution and not an estimate of its variance, which
+would need more runs than the question is worth. It is quoted as an order of magnitude, and every
+margin in the paper is reported against it.</p>
+
+
 <h2>Sections held here for length</h2>
 
 
@@ -949,6 +995,247 @@ than six and against the same references. They are not repeated here: at six ren
 and renderer combinations differ by 0.29&nbsp;dB, 0.010 SSIM and 0.019 LPIPS on the orange and by
 less than half that on the watermelon, and all four sit about 4.5&nbsp;dB and 0.21 LPIPS below the
 photographs measured against each other. Nothing in that spread is a result.</p>
+
+
+<h2 id="withdrawn">Held for future reference</h2>
+
+<p>What follows was written for the paper and is not in it. Each item is kept because the work was
+done and the next person to ask the same question should not have to repeat it, and each is
+labelled with the reason it is not a result.</p>
+
+<p><strong>Why A.1 is withdrawn.</strong> The section reports an arm supervised by a stock
+depth2img checkpoint and a text prompt, with the photographs removed, and states that removing the
+photograph directory is all it takes. It is not. A run launched with <code>REF_PHOTO</code> and
+<code>REF_PHOTO_V</code> both cleared still writes targets that are photographs fitted to the
+render's silhouette: replaying <code>_fit_disc(photograph, render)</code> reproduces the stored
+target to 0.0000, and the target is neither the render (0.0251 away) nor the raw photograph
+(0.1185 away), so the fit is real and the photograph is in it. Every trained run on the machine
+behaves this way. The numbers below therefore cannot be attributed to the supervision the section
+names, and the arm has to be rebuilt before anything is claimed from it.</p>
+
+<h3>A.1&ensp;Reproduction without a fine-tuned diffusion model &mdash; withdrawn</h3>
+
+<p>FruitNinja supervises the interior with depth-conditioned diffusion on cross-sections, and its
+published results use a model fine-tuned on the object's own photographs. That fine-tuning is not
+released, so the reproduction anyone outside the group can actually perform is the procedure
+without it: the same base depth2img checkpoint, the same prompt, and nothing fitted to this fruit.
+Running that arm is one environment variable: removing the photograph directory switches
+the supervision from photographs back to the diffusion model that FruitNinja specifies.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange, 100 held-out cuts per family</th><th>transverse FID</th><th>longitudinal FID</th></tr></thead>
+<tbody>
+<tr><td>route 1, supervised by the photographs</td><td>91.5</td><td>222.8</td></tr>
+<tr><td>route 2, supervised by the photographs</td><td><strong>74.1</strong></td><td>286.8</td></tr>
+<tr><td><strong>no fine-tuning: the photographs as the target</strong></td><td><strong>90.1</strong></td><td><strong>213.5</strong></td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td><td class="mut">70.2</td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/no_finetuning.png" alt="The same held-out cuts, supervised by photographs and
+       supervised by the photographs directly, with no fine-tuned model">
+  <figcaption>The same held-out cuts, supervised two ways. Both panels are renders of a trained model, not photographs. Left of each pair: the model supervised by the reference
+  photographs of this orange. Right: the model supervised by a stock depth2img checkpoint and a
+  text prompt, which is FruitNinja's procedure without the fine-tuning it does not release. Top row transverse, bottom longitudinal.</figcaption>
+</figure>
+
+<div class="note"><strong>What the photographs buy, on route 1, is not measurable here.</strong>
+Supervising the interior with a stock Stable Diffusion depth2img model and a text prompt scores 90.1 against route 1's 91.5 transversally
+and 213.5 against its 222.8 longitudinally, on a hundred cuts per family. Those are the same
+numbers, and 90.1 against 91.5 sits well inside a reference set that scores 46.3 against itself.
+<br><br>
+Route 2 with the photographs scores 74.1 on the same family, but that is the most in-sample number
+in the table rather than the best model: route 2's photograph arm was fitted to the six images it
+is scored against, and the no-photograph arm was not. The two are not comparable and the 16-point
+gap is not evidence about supervision. The missing cell has now been run, and it closes the square:
+The claim this work makes is that it does not need a diffusion model <em>fine-tuned on the
+object</em>, which is a different and weaker statement than not needing the photographs at
+all.</div>
+
+<div class="tw"><table>
+<thead><tr><th>orange, transverse FID &darr;</th><th>with the photographs
+<span class="mut">(in-sample)</span></th><th>without them <span class="mut">(out-of-sample)</span></th></tr></thead>
+<tbody>
+<tr><td>route 1</td><td>91.5</td><td>90.1</td></tr>
+<tr><td>route 2</td><td>74.1</td><td><strong>73.2</strong></td></tr>
+<tr><td class="mut">FruitNinja, released <span class="mut">(out-of-sample)</span></td>
+    <td class="mut">n/a</td><td class="mut">102.2</td></tr>
+</tbody></table></div>
+
+<p>Removing the photographs costs route 1 nothing (91.5 to 90.1) and route 2 nothing (74.1 to
+73.2), and both no-photograph arms are scored out-of-sample where both photograph arms are not, so
+the true comparison is even flatter than the columns suggest. The best out-of-sample number on this
+object is route 2, supervised by the photographs directly, at 73.2 against FruitNinja's
+102.2. Longitudinally the same arm is 225.4 against route 2's 286.8 and FruitNinja's 269.6.</p>
+
+<div class="note"><strong>What this does not establish.</strong> The orange's route-2 lattice is
+built from a field and six views derived from FruitNinja's released orange, whose interior was
+produced by the fine-tuned checkpoint. So no arm in this table is free of a fine-tuned generative
+model: what is removed is the object's photographs and any fine-tuning in <em>our</em> supervision,
+not the fine-tuned model that placed the segment structure being quantised. The only object here
+that never touched a released reconstruction is the doughnut, and the doughnut has no distribution
+metric because it has one reference image per family. Establishing the claim properly needs an
+object generated from a field and scored against real photographs, and this paper does not have
+one.</div>
+
+<p>The interesting question is whether that holds for the method being reproduced. We have the
+run: FruitNinja's own trainer, its own Gaussian representation and its own filled model, with the
+stock depth2img checkpoint in place of the fine-tuned one, 200 epochs, scored on the same hundred
+planes as every other row.</p>
+
+<p>More than the checkpoint differs. Our copy of FruitNinja's trainer supervises sixteen transverse planes where the
+released schedule supervises fifty, smooths on a 16-cell grid where the released default is 512,
+and refines every 30 epochs where the released default is 101. So this row is a reproduction under
+<em>this work's</em> training schedule with a stock checkpoint, and the 276-point gap bounds
+nothing about FruitNinja: it is the sum of removing the fine-tuned model, the schedule change and
+whatever reproduction gap remains, so we do not read it as a measurement of FruitNinja's
+dependence. What it does show is the qualitative failure in the figure below, which no budget
+difference explains: the flesh goes brown and the segment walls become a crust.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange, the effect of removing the fine-tuned model</th><th>transverse FID &darr;</th>
+<th>longitudinal FID &darr;</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released model <span class="mut">(with its fine-tuning)</span></td><td>102.2</td><td>269.6</td></tr>
+<tr><td><strong>FruitNinja's pipeline, our schedule, stock checkpoint</strong>
+    <span class="mut">(not attributable to FruitNinja)</span></td>
+    <td><strong>378.7</strong></td><td><strong>511.6</strong></td></tr>
+<tr><td>this work, route 1 <span class="mut">(photographs)</span></td><td>91.5</td><td>222.8</td></tr>
+<tr><td><strong>this work, no fine-tuning: stock depth2img and a text prompt</strong></td><td><strong>90.1</strong></td><td><strong>213.5</strong></td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td><td class="mut">70.2</td></tr>
+</tbody></table></div>
+
+<p>What the row does support is the comparison inside our own column: this work's two arms, with
+and without object-specific supervision, are the same code at the same budget. Across columns
+nothing is bounded. The difference is still visible before any metric is computed: the reproduction's flesh goes brown and its
+segment walls turn into a crust, because the stock checkpoint has no idea what this particular
+fruit looks like inside and the Gaussian supervision has nothing else to lean on.</p>
+
+
+<h3>A.2&ensp;Section 4.1.3, the reasoning around the tables</h3>
+
+<p>The tables stayed in the paper and the argument around them came here. Nothing was cut for
+being wrong; it was cut for being longer than what it establishes.</p>
+
+<p>The tables above compare what each representation costs and what each puts inside an object.
+Neither says which one draws a better cut, and the honest way to ask that is to send every released
+model through one evaluator: the same held-out planes, the same reference photographs, the same
+FID, PSNR, SSIM and LPIPS code. Both prior methods release models, so both are run. Every row below
+is 100 rendered cuts per family, at transverse depths drawn from the middle 30 to 70% of the object
+and at longitudinal azimuths at least six degrees from any azimuth the trainer walked, with the
+transverse camera at the pole, where the look-at's roll is given a definite value rather than left
+to rounding noise, so that no model is framed from inside itself. The
+reference side is unchanged and small: six photographs for the orange, twenty transverse and
+twenty-three longitudinal for the watermelon. A hundred renders against six photographs gives FID
+an Inception covariance of rank at most five, so every difference in the orange table is inside its
+own bias term and the ordering is worth more than the gaps.
+<br><br>
+KID is reported with the standard deviation over fifty subsets that the evaluator computes, and it
+is the metric to read: it is unbiased where FID at this sample size is dominated by its own bias.
+Read that way the orange separates less than the FID column suggests, since every arm's KID overlaps
+FruitNinja's within about two standard deviations except route 2 and the stock-checkpoint arm, and
+the watermelon separates more, with GaussianFluent's 151&plusmn;10 clear of everything else. PSNR,
+SSIM and LPIPS score each render against its <em>best-matching</em> reference, chosen by PSNR, which
+is an upper bound on agreement rather than a paired score, and SSIM is computed on luminance
+alone. On the watermelon the reference set scores 0.6290 SSIM against
+itself, below all four methods, so SSIM has no discriminative power there and its column should be
+read as a null result.</p>
+
+<p>One thing route 1 does not escape, and it is worth stating before the tables: what it
+quantises is the released model, and for the watermelon that model's interior was produced by the
+fine-tuned checkpoint. The route-1 watermelon rows therefore inherit the artefact whose absence is
+this paper's comparison axis, which is part of why they land on top of FruitNinja's own numbers.
+The claim of independence from a fine-tuned model belongs to route 2, and to route 1 only when
+what it quantises did not come from one.</p>
+
+<p>FruitNinja's models are in the frame our cameras already use, so they need no alignment.
+GaussianFluent's watermelon is its own capture in its own frame, and neither its upright axis nor a
+camera distance is published, so two things were chosen for it: the camera radius, set so that its
+silhouette fills the same fraction of the frame as ours and FruitNinja's (0.136 against 0.132 and
+0.129), and the upright axis, tried as each of the three coordinate axes with the best of the three
+reported. It is also a different watermelon from the one photographed, which FID tolerates because
+it compares distributions, and which no per-pixel score really does.</p>
+
+
+<h3>A.3&ensp;Two readings kept out of the body</h3>
+
+<p>The first interprets the two appearance rows of the summary table; the second describes the material field the solver sweep uses. Both are explanation rather than evidence, and the tables they belong to stayed.</p>
+
+<p>The two appearance rows disagree and the disagreement is informative. GaussianFluent takes the
+transverse FID on the watermelon, on a different fruit through cameras we chose for it, and is last
+on DreamSim by a wide margin. FID compares the colour statistics of two populations; DreamSim was
+trained to predict which of two images a person would call closer to a reference. When a
+distribution metric and a human-aligned one disagree this sharply, the disagreement is about
+whether matching a population is the same as looking right, and we would defend the second reading.
+GaussianFluent also spends 45 spherical-harmonic bands on view-dependent appearance that this
+representation cannot express at all. And the slicing row is now an implementation rather than an
+asymptotic hope: reusing the object's adjacency outside the band takes a cut from 13.8&nbsp;s to
+2.9&nbsp;s with an identical result. That is still not interactive, and section 3.7 says where the
+remaining time goes.</p>
+
+<p>Three things about that field. It is not equation&nbsp;(16): it is the weak two-rule field of <code>material_field.py</code>, level deciding
+skin from interior and lightness grading the interior, which is the version a learned decomposition
+has to beat rather than the clustered one equation&nbsp;(16) defines. Its numbers are the
+<code>orange</code> preset, 8.0e6 against 6.0e5, applied to the doughnut. And the interior is
+graded rather than constant, spanning 6.0e5 to 6.0e6, so the contrast between the shell and the
+stiffest interior is 1.33&times; and not the 13&times; a shell-against-softest reading gives. A 1.33&times; contrast is a weak thing to look for a threshold with, and it is part of why the effect
+is small. The 6.0e6 top of that interior range is what the grading rule can reach rather than what
+it was measured to reach, so 1.33&times; is a bound and not a measurement.</p>
+
+
+<h3>A.4&ensp;Which grid the resolvability criterion refers to</h3>
+
+<p>The criterion in section 3.11 is a ratio to the solver's grid spacing, and two grids in the pipeline could supply it. Reading it off the wrong one scaled every value by four and put builds above a threshold that, computed correctly, none of them crosses. It is here because it is a property of one solver's configuration rather than of the method.</p>
+
+<div class="note"><strong>Which grid \(\Delta x\) refers to decides the whole criterion.</strong>
+An MPM pipeline carries two, and they serve different purposes. The <em>filling</em> grid decides
+where particles are seeded inside the object and can be as fine as the geometry deserves. The
+<em>background</em> grid is where momentum is transferred, and it is the one a material feature has
+to span, because a quadratic B-spline weight has support \(1.5\Delta x\) either side of a node,
+so any feature narrower than about \(2\Delta x\) contributes to the same nodes as its
+surroundings and returns from the grid as their average. \(\tau_s\) must therefore be formed
+against the transfer grid. In our pipeline the filling grid is \(\Delta x = 0.01\) and the
+transfer grid \(\Delta x \approx 0.04\), a factor of four, and reporting \(\tau_s\) against
+the former overstates it by that factor. Against the transfer grid the shells read
+<strong>0.50</strong> (orange), 0.31 (watermelon) and 0.22 (doughnut), and the band sweep reads
+0.29, 0.39, 0.52 and 0.65 at \(\beta_s = 3, 5, 7, 9\). Every build in reach of this lattice is
+therefore below the kernel's support width, which is what the solver's insensitivity to the band in
+section 4.2.3 reflects, and reaching \(\tau_s \gtrsim 2\) on these objects needs either a finer
+transfer grid or a band several times wider than any built here. The criterion tells a builder that
+before the run rather than after it.</div>
+
+
+<h3>A.5&ensp;The \(\rho\) sweep: why it was run and how</h3>
+
+<p>The sweep table stayed in section 4.1.2.1. The reply it answers, and the protocol it was measured under, are here.</p>
+
+<p>The obvious reply to any of this is that a Gaussian's support is a free parameter, so make it
+bigger. FruitNinja [3] asserts the trade in the form \(\rho \ll 1\) leaves holes in the volume and
+\(\rho \gtrsim 1\) blends across material boundaries, and asserting a trade is not the same as
+showing that no setting of its parameter escapes one. This measures both branches against a reference with no scale
+parameter at all: a piecewise-constant cube lookup that gives each pixel the colour of the cell
+containing it, so every cell edge is a step and there is no support to tune. That is not the trilinear
+reconstruction the renderer uses, which interpolates over eight cell centres and therefore has a
+one-cell support of its own (supplement).
+Holes are pixels inside the true section the Gaussian render left as background. Blending is how
+much more the Gaussian render disagrees with that reference <em>at material boundaries</em> than it
+does away from them, since a large Gaussian disagrees with a piecewise-constant reference
+everywhere simply by being smooth, and only the excess is blending.</p>
+
+<p>At 1024&nbsp;px, one plane through the middle of each object, the same plane for every
+\(\rho\), on this work's own primitive set so that only \(\sigma\) changes. The doughnut's
+missing cells are values not swept for it rather than failures. Both branches
+are there and neither is avoidable, but the curve is not the one that assertion implies. The negative blending values at small \(\rho\) are the
+measure reading a render that is mostly holes: with most of the section unpainted, the disagreement
+away from boundaries exceeds the disagreement at them and the excess goes below zero, so the column
+only means anything once the holes are gone. The hole branch does not bite gradually below one: it is flat and severe from \(10^{-4}\) to \(0.05\) and
+then collapses to nothing between 0.10 and 0.25. The blending branch rises through \(\rho = 2\) on all
+three objects, reaching a mean absolute colour disagreement at material boundaries, beyond what the
+same render shows away from them, of 0.226 on the orange, 0.097 on the watermelon and 0.074 on the
+doughnut; on the orange it then falls back to 0.197 at \(\rho = 3\),
+where the primitives are large enough to be disagreeing everywhere. Between them is a
+window, roughly \(0.25 \le \rho \le 0.5\), where a Gaussian set does pay very little for either,
+and the models this work trains sit inside it at a median \(\rho\) of 0.26.</p>
 
 <!--/supp-->
 </div>

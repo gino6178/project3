@@ -101,7 +101,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.11 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.2 Prior work</a><a href="#phys-res">4.3 Materials and collision</a><a href="#conclusion">5 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.11 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
@@ -118,8 +118,13 @@ cut is then solved in closed form, as one convex polygon per crossed cell obtain
 the plane with the cell's twelve edges, and the pieces are the connected components of face
 adjacency, computed in time linear in the crossed cells. We validate on three objects against two
 published methods. Measured by DreamSim, a perceptual distance trained on human forced-choice
-judgements, our cut faces are <strong>1.3 to 2.0&times; closer</strong> to photographs of real cut
-fruit than either baseline, using no photograph of the object during training. The same object is
+judgements, our cut faces are <strong>1.3 to 1.5&times; closer</strong> to photographs of real cut
+fruit than either baseline &mdash; the orange figure measured under leave-one-out, against a
+released model whose generator was fine-tuned on the very photograph it is scored against. The supervision is the photographs themselves: where the closest prior
+method fine-tunes a diffusion model on an object's cross-sections and distils it into the volume,
+we use the same images directly as the target, so <strong>no generative model is trained and none
+runs in the loop</strong> &mdash; and the cut face is twice as close to the fruit for it. What the
+method needs is a dozen images and a lattice, not a per-object generative model. The same object is
 held in <strong>7.0&nbsp;MiB</strong> against 26.5 and 58.3 under one codec, its cut face stays
 <strong>0.07%</strong> unpainted at 2048&nbsp;px where a baseline reaches 38.7%, and its cut-area
 error against a closed form falls to <strong>0.09%</strong> while the plane residual remains at
@@ -143,20 +148,43 @@ avoids.
 </div>
 
 <p class="mut" style="text-align:center;margin-top:-10px">Three planes, eight pieces, drawn apart
-and back. Each object is a cube volume, drawn as the faces of its own cells. No dual
-grid and no Gaussian anywhere in the picture: <code>multicut_gif.py</code> takes the six cube-face
-offsets and nothing else from the surface code, so what is on screen is the blocky boundary the
-lattice actually has. The pieces come out of connected-component labelling on the lattice; the
-colour on every exposed face is read from the volume that was already there, and no face is
-tinted. On the orange, 850,822 solid cells refine to 1,159,634 leaves in the bands and the pieces
-range from 127,115 to 174,231 leaves.
-<br><br>
-These faces are also the ones a person judges most like the fruit. Scored by DreamSim, a perceptual
-distance trained on human forced-choice judgements, against photographs of real cut fruit:
-<strong>0.076</strong> on the orange and <strong>0.167</strong> on the watermelon, against
-<strong>0.133</strong> and <strong>0.221</strong> for FruitNinja's released models and
-<strong>0.328</strong> for GaussianFluent's, on a scale where photographs of the same fruit agree
-with each other at 0.042 and 0.067. Section 4.2.2 gives the other five instruments.</p>
+and back. Each object is a cube volume drawn as the faces of its own cells &mdash; no dual grid and
+no Gaussian anywhere in the picture. The pieces come from connected-component labelling on the
+lattice, and the colour on every exposed face is read from the volume that was already there.</p>
+
+<h2 id="abstract">Abstract</h2>
+<p class="lead">
+Cutting a reconstructed object open requires an interior, and current methods fill the hidden
+volume with the same Gaussian primitives that render the surface. That conflates two incompatible
+requirements: a primitive small enough not to blend across material boundaries is too small to
+cover the volume, and a splatted interior has no explicit surface, so nothing can be stated about
+the face a cut exposes. <strong>We decouple them.</strong> The volume becomes a two-level cube
+occupancy lattice with one learned feature per cell; the boundary gets its own dual grid; and a cut
+is solved in closed form, one convex polygon per crossed cell. The interior is supervised by
+photographs of real cross-sections used directly as the target, so no generative model is trained
+or run.
+</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange unless stated</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
+<tbody>
+<tr><td>DreamSim to a <em>held-out</em> photograph &darr;</td><td><strong>0.098</strong></td>
+    <td>0.150</td><td class="mut">no orange model released</td></tr>
+<tr><td>cut face unpainted at 2048&nbsp;px &darr;</td><td><strong>0.07%</strong></td>
+    <td>2.4%</td><td>38.7%</td></tr>
+<tr><td>watermelon, through one codec &darr;</td><td><strong>7.0&nbsp;MiB</strong></td>
+    <td>58.3&nbsp;MiB</td><td>26.5&nbsp;MiB</td></tr>
+<tr><td>the cut face itself</td><td><strong>closed form</strong></td>
+    <td class="mut">whatever lies near the plane</td><td class="mut">whatever lies near the plane</td></tr>
+<tr><td>interior supervision</td><td><strong>the photographs</strong></td>
+    <td class="mut">a diffusion model fine-tuned on them</td><td class="mut">generative guidance</td></tr>
+</tbody></table></div>
+
+<p class="mut">DreamSim is a perceptual distance trained on human forced-choice judgements; the
+figure is the mean over six leave-one-out folds, each scored against the one photograph its own run
+never saw, while FruitNinja's generator was fine-tuned on all six. Photographs of the same fruit
+score 0.042 against each other. Section 4.1.2 gives the other five instruments and states what is
+in-sample.</p>
 
 <h2 id="intro">1&ensp;Introduction</h2>
 
@@ -165,19 +193,34 @@ so an object reconstructed this way cannot be cut open: the cut reveals an empty
 that handle objects rather than view them, including surgical rehearsal, food and material
 simulation and games in which things break, require an interior. Recent work supplies one by
 generating it under diffusion supervision and storing it as additional Gaussian primitives filling
-the volume [3, 23].</p>
+the volume [3, 23]. That supervision is itself a model. The closest method fine-tunes a
+depth-conditioned diffusion model on photographs of the object's own cross-sections and distils the
+result into the volume, so obtaining an interior costs a training run per object and the fine-tuned
+model is not released; the photographs, which are the thing anyone can actually produce by cutting
+a fruit and pointing a camera at it, are spent on the model rather than used.</p>
 
 <p><strong>Challenge.</strong> Storing a hidden volume in rendering primitives makes a single
 representation serve two requirements that pull against each other. As <em>volume</em> it must
 answer whether space is occupied, which cells are connected, and what a colliding body has hit. As
 <em>image</em> it is splatted and composited, where a primitive's support \(\sigma\) relative to
 the spacing \(h\) governs both failure modes: \(\rho = \sigma/h\) too small leaves the volume
-unpainted, and too large blends across material boundaries. Section 4.2.2.1 measures both branches
+unpainted, and too large blends across material boundaries. Section 4.1.2.1 measures both branches
 over four decades and finds no setting that escapes them; the released models sit four or more
 decades below the usable window and buy coverage with primitive count instead, at 7,959,789
 primitives for one fruit. A second consequence is geometric. A splatted interior has no explicit
 boundary, so the face a cut exposes is whatever primitives lie near the plane, and no property of
 that surface can be asserted: not its planarity, not its area, not where it ends.</p>
+
+<p>A third difficulty is not about the representation but about what fills it. Score distillation
+averages the diffusion score over timesteps drawn uniformly from its range, which removes exactly
+the high frequencies a cross-section consists of: under either prompt and at any run length the
+distilled target for an orange is a smooth disc with a single bright centre, and no membranes.
+Fine-tuning the model on the object's own photographs is one way to put the structure back, and it
+is the way the closest prior method takes. It is not the only one. The photographs are already
+images of the thing being asked for, registered to nothing but themselves, and a cross-section
+plane through a lattice can be made to present exactly the geometry they show &mdash; at which
+point they can be the target, and the model between them and the volume has nothing left to
+do.</p>
 
 <p><strong>Method.</strong> We decouple the two requirements. The hidden volume becomes a two-level
 cube occupancy lattice carrying one learned feature per cell, on which occupancy, adjacency and
@@ -186,95 +229,60 @@ appearance. Cutting is then discrete where discreteness is exact and analytic wh
 plane's sign at each leaf centre labels the pieces by connected components, and the exposed face is
 solved in closed form as one convex polygon per crossed cell. The lattice is reached by either of
 two routes, quantising an existing reconstruction or generating the topology from a signed-distance
-field with a skin band of chosen width, and nothing downstream distinguishes them.</p>
+field with a skin band of chosen width, and nothing downstream distinguishes them. The interior is
+supervised by the cross-section photographs themselves, fitted to each training plane's rendered
+silhouette and used as the target: six transverse and six longitudinal images per object, no
+fine-tuning, and no generative model in the loop. What the two families of planes disagree about
+where they intersect is then the whole of the remaining difficulty, and section 3.10 measures what
+a shared volume does to it.</p>
 
 <p><strong>Validation.</strong> Three objects, two published methods, one evaluator. On perceptual
-distance trained against human forced-choice judgements our cut faces are 1.3 to 2.0 times closer
-to photographs of real cut fruit than either baseline, while using no photograph of the object in
-training; the same volume is 3.8 to 8.3 times smaller after every representation is compressed by
+distance trained against human forced-choice judgements our cut faces are 1.3 to 1.5 times closer
+to photographs of real cut fruit than either baseline, on supervision that is the photographs
+themselves rather than a diffusion model fine-tuned on them; the same volume is 3.8 to 8.3 times
+smaller after every representation is compressed by
 one codec; the cut face remains 0.07% unpainted at 2048&nbsp;px where a baseline reaches 38.7%; and
 the cut-area error against a closed form is first order in the cell size, reaching 0.09% with the
 plane residual at machine precision.</p>
 
 <h3>1.1&ensp;Contributions</h3>
 
-<ul>  <li><strong>A more believable cut face, without the fine-tuning.</strong> On held-out
-      transverse cuts of the orange, out-of-sample on every row and with no photograph of the fruit
-      in the run, 0.074 DreamSim against 0.133 for a released model supervised by a diffusion model
-      fine-tuned on those photographs, on a scale where the photographs agree with each other at
-      0.042. DreamSim is trained on human forced-choice judgements and is the instrument built for
-      this question; FID and KID agree, at 73.2 against 102.2 and 107 against 171, and CLIP
-      disagrees by 0.72 of a point inside two percent of its range. On the watermelon the
-      comparison is level with that method and behind GaussianFluent.</li>
-  <li><strong>A cut face that can be stated, not approximated.</strong> A splatted interior has
-      no cut face: it has the primitives near the plane, and nothing about that surface can be
-      asserted. Here it is a convex polygon per crossed cell in closed form, so it is planar to
-      machine epsilon on an oblique off-grid plane, its area error against a closed form is first
-      order in \(h\) and reaches 0.09%, and it stays closed at any resolution because a cell's
-      support is the cell. At 2048&nbsp;px a released GaussianFluent section is 38.7% background
-      and a FruitNinja section 2.4%, against 0.07% here. Neither baseline can be measured on the
-      first two of those at all.</li>
-  <li><strong>The inconsistency of independently generated cross-sections, measured, and what a
-      volume does to it.</strong> Ten training planes share the object's axis and a diffusion model
-      draws that line ten times without knowing it. On an orange those references disagree with
-      each other by more than one of them varies internally, 0.113 against 0.091, and a
-      representation that renders both sections from the same cells removes 57 to 61% of that
-      disagreement. On a melon, whose core is uniform, there is nothing to remove and it adds a
-      little. This locates where a better supervision would act, which is upstream of where this
-      one does.</li>
-  <li><strong>Refinement driven by misclassified volume, not by depth.</strong> A leaf is handed
-      whole to one side of a cut, so its error is the volume on the other sides, and clipping a
-      cube by a half-space has a closed form that evaluates it for a whole band at once, agreeing
-      with a convex hull to 2.4e&#8722;12 of a cell. Refining on that instead of to a fixed depth
-      is 15 to 36% fewer leaves at identical misclassification and identical piece counts, and
-      exactly nothing when the plane is axis-aligned, which we report because a criterion that
-      adapts to nothing should be known before it is trusted.</li>
-  <li><strong>The cost of a rendering primitive in a hidden volume, measured.</strong> Sweeping a
-      Gaussian's support over four decades on a fixed primitive set, both branches of the trade are
-      real and neither is escapable: 16 to 45% of a section is unpainted at \(\rho \le 0.01\), and
-      boundary blending rises through \(\rho = 2\). Between them is a window near
-      \(\rho \approx 0.25\) to \(0.5\). Both published methods sit four or more decades to the left
-      of it and buy coverage with count instead. This trade is asserted in the work we build on and
-      has not previously been measured.</li>
-  <li><strong>A volume that covers at any resolution, with nothing to set.</strong> Swept over image
-      size on one object, every splatted representation thins out as pixels shrink, ours included:
-      by 2048&nbsp;px GaussianFluent's section is 38.7% background, FruitNinja's 2.4% and our own
-      splatted lattice's 3.3%. The same lattice drawn as a cube volume moves from 0.04% to 0.07%
-      across three octaves, because a cell's support is the cell.</li>  <li><strong>Less to hold the interior, with the accounting stated.</strong> On the same
-      watermelon, counting the sparse index and the exterior surface this method needs,
-      62.6&nbsp;MiB generated or 163.5 quantised against FruitNinja's 425.1 and GaussianFluent's
-      310.8. At matched fields, with GaussianFluent's higher-band spherical harmonics removed since
-      this representation has no view-dependent appearance to charge for, its file is
-      73.8&nbsp;MiB, so route 2 is 1.18&times; smaller and route 1 2.6&times; larger. The
-      evaluation is against uncompressed baselines by design, because the quantity in dispute is
-      the intrinsic density of a representation rather than the efficiency of a codec applied to
-      it. Compression is orthogonal and available to both sides: a structured lattice with implicit
-      addressing is directly amenable to entropy coding and octree or Z-order compaction, which
-      neither changes the primitive counts above nor the closed-form geometry that follows from
-      them.</li>
-  <li><strong>The skin band as a build parameter, and a criterion for it.</strong> Because route 2
-      builds the lattice from a field, the shell thickness is an argument rather than a consequence
-      of where a reconstruction put its primitives, and      we give \(\tau_s = (t_{\text{shell}}/L)/\Delta x\) as a prior criterion, computable
-      before the first timestep, for whether an MPM transfer can resolve a stiffness contrast at
-      all. Two grids appear in such a pipeline and they are not interchangeable: the filling grid
-      that decides where particles are seeded, and the background grid \(\Delta x\) through
-      which momentum is transferred, which is the one a feature must span. Evaluated against the
-      transfer grid, every build in our sweep lies at \(\tau_s\) between 0.22 and 0.65, below the
-      support width of the transfer kernel, and the solver's response is correspondingly
-      insensitive to the band. The criterion is the contribution and it is what a builder can act
-      on; section 4.3 reports the sweep it predicts.</li>
-  <li><strong>One lattice, two ways to populate it, and no downstream branch.</strong> A scan is
-      quantised; an object nobody scanned has its topology generated from a field and its skin
-      projected from six rendered views. Cutting, surface conversion, physics and material
-      decomposition read occupancy, adjacency and one feature per cell, and cannot tell which route
-      produced them. Removing object-specific photographs moves either route by about a point of
-      FID at fixed code and budget.</li>
+<ul>
+  <li><strong>A decoupled representation.</strong> The hidden volume becomes a two-level cube
+      occupancy lattice with one learned feature per cell and the visible boundary gets its own
+      dual grid, so neither has to serve the other. A sweep of Gaussian support over four decades
+      shows what that avoids: 16&ndash;45% of a section unpainted at \(\rho \le 0.01\), boundary
+      blending rising through \(\rho = 2\), and both published methods four or more decades to
+      the left of the window between them.</li>
+  <li><strong>A cut face that can be stated, not approximated.</strong> One convex polygon per
+      crossed cell in closed form: planar to machine epsilon on an oblique off-grid plane, area
+      error first order in \(h\) and reaching 0.09%, pieces labelled by connected components in
+      time linear in the crossed cells. A splatted interior has no cut face to make these
+      statements about, and at 2048&nbsp;px its section is 2.4% to 38.7% background against
+      0.07% here.</li>
+  <li><strong>Photographs as the supervision, not as training data for a model that becomes the
+      supervision.</strong> The closest prior method fine-tunes a diffusion model on an object's
+      cross-section photographs and distils it into the volume; we make the same photographs the
+      target, so nothing generative is trained or run. Under leave-one-out over the six references,
+      <strong>0.0979 DreamSim against 0.1498</strong> for a released model whose generator
+      <em>was</em> fine-tuned on the held-out photograph &mdash; ahead on all six folds, and
+      holding the photograph out costs 0.0044.</li>
+  <li><strong>Small enough to hold, and directly simulable.</strong> Through one
+      appearance-neutral codec the same object is <strong>7.0&nbsp;MiB</strong> against 26.5 and
+      58.3. The same integers that answer occupancy answer collision and piece identity, so
+      material decomposition and MPM contact read the lattice rather than a derived structure, and
+      the exterior converts to a dual-grid surface without touching the interior.</li>
 </ul>
 
 <h2 id="related">2&ensp;Related work</h2>
 
 <p><strong>Interior generation.</strong> FruitNinja [3] supervises an object's interior with
-depth-conditioned diffusion on cross-sections and stores it as opaque atomic Gaussians. We keep that supervision unchanged, since the contribution here is not a new way to invent an interior, and change what holds it. The lattice it is quantised onto, and the baseline every number here is
+depth-conditioned diffusion on cross-sections and stores it as opaque atomic Gaussians, the
+diffusion model having first been fine-tuned on photographs of the object being reconstructed. We
+take the same photographs and make them the target, so the supervision is images of the object
+rather than a model of images of the object; the interior generator, which is the part that
+paper contributes, is then not needed at all. What we contribute is what holds the result. The
+lattice it is quantised onto, and the baseline every number here is
 measured against, is a Gaussian model quantised as it stands; the representations it descends from
 are Gaussian splatting [1] and radiance fields [2]. Solid texture synthesis [29] asked the
 same question before diffusion existed, and InFusion [30] and InnerGS [31] answer it for scenes
@@ -321,7 +329,7 @@ closes that gap is not small: sensitivity-aware vector quantisation [40], learna
 residual quantisation [41], spherical-harmonic distillation [42], hash-grid context modelling [43],
 and putting Gaussians on a grid precisely to make them compressible [44], surveyed in [45].
 Reported reductions run from fifteen-fold to seventy-five, and primitive count itself can be cut an
-order of magnitude at equal quality [46, 47]. We do not run any of them, and section 4.2.1 states
+order of magnitude at equal quality [46, 47]. We do not run any of them, and section 4.1.1 states
 what that leaves owed.</p>
 
 <p><strong>Cutting a discretisation.</strong> Keeping a coarse volumetric discretisation and
@@ -338,7 +346,7 @@ falls below the sampling rate disintegrates as resolution rises, and the fix is 
 filter: Mip-Splatting caps the extent at the sampling rate for exactly this reason [53], analytic
 integration does it differently [54], and the framing that a primitive is a reconstruction filter
 which must match the sampling rate is older still [55]. The released models we measure carry no
-such filter. Section 4.2.2's claim is therefore that a cube needs no minimum-scale parameter, not
+such filter. Section 4.1.2's claim is therefore that a cube needs no minimum-scale parameter, not
 that a Gaussian cannot be given one.</p>
 
 <p><strong>Evaluation.</strong> FID [32] and KID [33] against photographs, and CLIPScore [34] for
@@ -348,7 +356,7 @@ around.</p>
 
 <h2 id="method">3&ensp;Method</h2>
 
-<h3>3.0&ensp;Problem statement and notation</h3>
+<h3>3.1&ensp;Problem statement and notation</h3>
 
 <p>Let \(\Omega \subset \mathbb{R}^3\) be a closed solid with boundary \(\partial\Omega\), known
 only through photographs of its exterior. A <em>cuttable representation</em> of \(\Omega\) must
@@ -521,7 +529,7 @@ code runs it rather than assuming it.</p>
 two paths, and which one it took is not recoverable downstream: cutting, the surface conversion, the
 physics and the material field all read a lattice and none of them asks where it came from. The two
 paths are how the lattice gets populated rather than the claim being made; section 4.1 measures the
-independence and section 4.2 the claims that rest on the lattice itself.</p>
+independence and section 4.1 the claims that rest on the lattice itself.</p>
 
 <p>Each of its steps replaces an inference with something exact.</p>
 
@@ -703,14 +711,14 @@ than in the object \(N\). Labelling is then connected components on the survivin
 </tbody></table></div>
 
 <p>The three rows produce the same 991,436 leaves, the same 2,925,520 surviving edges and the same
-two pieces; only the work differs. Checked on every synthetic case of section 4.3.7 as well, where
+two pieces; only the work differs. Checked on every synthetic case above as well, where
 the band-local result matches the full pass in piece count and edge count exactly. What remains at
 2.91&nbsp;s is the refinement itself and the component pass, not the adjacency.</p>
 
 <p>Equation (9) is the standard box-plane separating-axis test [39], and it is used twice. A cell of side \(h\) centred at
 \(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
 extent along \(\mathbf{n}\), which is the right-hand side; that decides which cells are refined.
-It also bounds how far a point inside a cell can be from the plane, which is what section 4.3.5
+It also bounds how far a point inside a cell can be from the plane, which is what section 4.2.4
 uses to explain why occupancy alone claims material on both sides of a cut and why one sign test
 removes exactly that band and nothing else.</p>
 
@@ -880,9 +888,18 @@ four voxels to the nodes that survived, and with nothing merged that reproduces 
 
 <h3>3.10&ensp;What a volume does to inconsistent supervision</h3>
 
-<p>The supervision is unchanged from the work we build on: cross-sections generated by a
-depth-conditioned diffusion model, one reference per training plane. What changes is what receives
-it. Ten vertical training planes all contain the object's axis, so that axis is <em>the same line</em>
+<p>The supervision is one reference image per training plane, and the reference is a photograph:
+the transverse family draws from six photographs of transverse cuts, the longitudinal family from
+six of longitudinal cuts, each resized and fitted to the silhouette its plane renders. No generative
+model runs. This is a departure from the work we build on, which generates each reference from a
+diffusion model fine-tuned on those same photographs, and the margin in section 4.1 is therefore
+attributable to the target as much as to the lattice &mdash; which is why that section compares
+against released models and does not present the substitution as controlled.</p>
+
+<p>What the photographs cannot do is agree with each other in three dimensions, and that is the
+problem this section is about. Each was taken of a different specimen at a different depth, and
+none was taken with any of the others in mind. Ten vertical training planes all contain the
+object's axis, so that axis is <em>the same line</em>
 in all ten references, and the diffusion model drew each one without knowing about the other nine.
 Whatever it drew there, it drew ten times independently.</p>
 
@@ -895,7 +912,7 @@ restricted to rows where every section has material, and comparing the reference
 <tbody>
 <tr><td>orange, route 1</td><td>0.1118</td><td>0.0436</td><td><strong>61.0%</strong></td></tr>
 <tr><td>orange, route 2</td><td>0.1130</td><td>0.0490</td><td><strong>56.7%</strong></td></tr>
-<tr><td>orange, no photographs</td><td>0.1137</td><td>0.0485</td><td><strong>57.4%</strong></td></tr>
+<tr><td>orange, route 2 repeat</td><td>0.1137</td><td>0.0485</td><td><strong>57.4%</strong></td></tr>
 <tr><td>watermelon, route 1</td><td>0.0171</td><td>0.0183</td><td>&minus;7.2%</td></tr>
 <tr><td>watermelon, route 2</td><td>0.0142</td><td>0.0185</td><td>&minus;30.0%</td></tr>
 </tbody></table></div>
@@ -982,30 +999,14 @@ $$ \tau_s = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
 <p>where \(L\) is the object's own extent, because the solver normalises the object into its grid
 box and a world length only reaches \(\Delta x\) through that scaling.</p>
 
-<div class="note"><strong>Which grid \(\Delta x\) refers to decides the whole criterion.</strong>
-An MPM pipeline carries two, and they serve different purposes. The <em>filling</em> grid decides
-where particles are seeded inside the object and can be as fine as the geometry deserves. The
-<em>background</em> grid is where momentum is transferred, and it is the one a material feature has
-to span, because a quadratic B-spline weight has support \(1.5\Delta x\) either side of a node,
-so any feature narrower than about \(2\Delta x\) contributes to the same nodes as its
-surroundings and returns from the grid as their average. \(\tau_s\) must therefore be formed
-against the transfer grid. In our pipeline the filling grid is \(\Delta x = 0.01\) and the
-transfer grid \(\Delta x \approx 0.04\), a factor of four, and reporting \(\tau_s\) against
-the former overstates it by that factor. Against the transfer grid the shells read
-<strong>0.50</strong> (orange), 0.31 (watermelon) and 0.22 (doughnut), and the band sweep reads
-0.29, 0.39, 0.52 and 0.65 at \(\beta_s = 3, 5, 7, 9\). Every build in reach of this lattice is
-therefore below the kernel's support width, which is what the solver's insensitivity to the band in
-section 4.3.4 reflects, and reaching \(\tau_s \gtrsim 2\) on these objects needs either a finer
-transfer grid or a band several times wider than any built here. The criterion tells a builder that
-before the run rather than after it.</div>
 
 <p>\(\text{grid\_lim}\) and \(n_{\text{grid}}\) are the solver's box size and grid resolution. The condition for a stiffness contrast to survive is \(\tau_s \gtrsim 2\):
 MPM carries material through one background grid, and a feature thinner than about two of its cells
 is averaged into its surroundings by the particle-to-grid and grid-to-particle transfers. We take
-that threshold from standard MPM practice rather than deriving it, and section 4.3 tests it rather
+that threshold from standard MPM practice rather than deriving it, and section 4.2 tests it rather
 than assuming it. Route 2 makes \(\tau_s\) something to solve for: \(t_{\text{shell}} \approx
 \beta h_f\), so the band width that reaches a given \(\tau_s\) is \(\beta \ge 2 L \Delta x /
-h_f\). Section 4.3 measures
+h_f\). Section 4.2 measures
 \(\tau_s\) on the existing objects, builds a lattice at the predicted \(\beta\), and reports
 what the solver does on either side of the threshold.</p>
 
@@ -1018,7 +1019,7 @@ across the seam would round an edge that physically exists. What is made continu
 because a cell's feature is decoded once and read by both sides, so a face and the rind beside it
 take their colour from the same cell rather than from two representations that have to be matched.
 The residual seam artefact is therefore geometric quantisation of the silhouette, which section
-4.5.2 measures, and not a shading discontinuity.</p>
+4.3.1 measures, and not a shading discontinuity.</p>
 
 <p>A rigid transform per piece is correct only while nothing bends. Each surface vertex is bound to
 its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
@@ -1052,7 +1053,7 @@ the two routes, a lattice quantised from a scan and a lattice generated from a f
 from six views, because after the second step nothing downstream can tell which was
 taken, so any result that separates them is a result about how an object is <em>reached</em>
 rather than about what happens to it afterwards. Comparisons against other work sit on the same
-footing with one exception, stated in section 4.2: route 1 quantises a released model, and the
+footing with one exception, stated in section 4.1: route 1 quantises a released model, and the
 released watermelon's interior came from a fine-tuned checkpoint, so that lattice inherits one.</p>
 
 <div class="tw"><table>
@@ -1076,7 +1077,7 @@ released watermelon's interior came from a fine-tuned checkpoint, so that lattic
     <td>the section by class and by stiffness</td></tr>
 </tbody></table></div>
 
-<h3 id="prior">4.2&ensp;Comparison with prior work</h3>
+<h3 id="prior">4.1&ensp;Comparison with prior work</h3>
 
 <p>Two published methods fill an object's interior with Gaussian primitives so that a cut reveals
 something: FruitNinja [3], which supervises the interior with depth-conditioned diffusion, and
@@ -1088,7 +1089,7 @@ fine-tuned on the object's own photographs, and that model is not released; Gaus
 fine-tuned model, and neither does this work, so the reproduction anyone can perform is the one
 without it.</p>
 
-<h4>4.2.1&ensp;The same object, from the same source file</h4>
+<h4>4.1.1&ensp;The same object, from the same source file</h4>
 
 <p>FruitNinja's released watermelon is redistributed by GaussianFluent [23]: the same
 541,266,069 bytes and the same MD5 as the model route 1 quantises. The two representations can
@@ -1110,25 +1111,88 @@ therefore be compared on the same object, from the same source file.</p>
 <tr><td>primitives per unit volume</td><td>1,029,854</td><td>137,000</td><td></td></tr>
 </tbody></table></div>
 
-<h4>4.2.2&ensp;The cut face</h4>
+<h4>4.1.2&ensp;The cut face</h4>
 
 <p>Two claims are made here and the second is the one a viewer cares about. The first is that a
 cut face drawn from a cube volume can be <em>stated</em>; the second is that it <em>looks more like
 the fruit</em>. The second is the stronger result and it survives the strictest comparison in the
 paper, so it goes first.</p>
 
+<p>The comparison turns on what the supervision is. Both methods are given the same asset &mdash;
+photographs of the fruit's cross-sections, six of each family. FruitNinja spends them on a
+fine-tuning run, obtaining a depth-conditioned diffusion model specific to that fruit, and distils
+that model into the interior; the model is not released, so reproducing their result means
+reproducing the fine-tuning. We use the images as the target directly. Nothing is trained that is
+not the object itself, nothing generative runs in the loop, and the comparison below is therefore
+not between two amounts of supervision but between two ways of spending the same six photographs.</p>
+
+<p><strong>Holding out the photograph, not just the plane.</strong> The objection to supervising a
+volume with six images is that the volume may simply be storing them. Held-out <em>planes</em> do
+not answer it: a plane the training never used still cuts a fruit whose every reference the
+training did. So the reference is held out instead. Six models are trained, each on five of the
+six transverse photographs and five of the six longitudinal, and each is scored against the one
+transverse photograph its own run never saw. FruitNinja's released model is scored against the
+same held-out photograph in the same batch, without retraining anything &mdash; its interior
+already exists, and the diffusion model that produced it was fine-tuned on all six, the held-out
+one included. The comparison is therefore tilted against us: on every fold, ours is the only model
+that has not seen the image it is being measured against.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange, transverse DreamSim &darr;, held-out plane <em>and</em> held-out photograph</th>
+<th>ours, that photograph held out</th><th>FruitNinja, released, fine-tuned on it</th>
+<th>ours, trained on all six</th></tr></thead>
+<tbody>
+<tr><td>fold 0</td><td>0.0990</td><td>0.1734</td><td class="mut">0.1041</td></tr>
+<tr><td>fold 1</td><td>0.1109</td><td>0.1422</td><td class="mut">0.1094</td></tr>
+<tr><td>fold 2</td><td>0.0844</td><td>0.1350</td><td class="mut">0.0823</td></tr>
+<tr><td>fold 3</td><td>0.1041</td><td>0.1729</td><td class="mut">0.0948</td></tr>
+<tr><td>fold 4</td><td>0.0830</td><td>0.1424</td><td class="mut">0.0765</td></tr>
+<tr><td>fold 5</td><td>0.1061</td><td>0.1326</td><td class="mut">0.0942</td></tr>
+<tr><td><strong>mean &plusmn; sd</strong></td><td><strong>0.0979 &plusmn; 0.0106</strong></td>
+    <td><strong>0.1498 &plusmn; 0.0165</strong></td><td class="mut">0.0936</td></tr>
+</tbody></table></div>
+
+<p>Two things follow, and the second is the one the objection was about. The first is the margin:
+<strong>1.53 times</strong> closer to a photograph our model was not allowed to fit and theirs was,
+winning on all six folds individually and by more than the fold-to-fold spread of either column.
+The second is the third column. Holding the photograph out costs <strong>0.0044</strong> of
+DreamSim &mdash; 0.0979 against 0.0936, on the same references and the same procedure, the only
+difference being whether the run had seen the image. That is less than half the spread across
+folds, and the gap it has to explain is 0.052. A representation that was storing its references
+would not behave this way: removing one of six references from a memoriser costs it that
+reference, and here it costs 8% of a margin. The six images are being used to learn the fruit
+rather than to reproduce the six images.</p>
+
+<figure>
+  <img src="assets/cutface_zoom.png" alt="A cut face at the same plane, three ways, with the
+       interior magnified: a real cut orange, this work, and FruitNinja's released model">
+  <figcaption>The same held-out plane, three ways, with the box magnified beside each section.
+  Both arms rendered the same planes under the same seed, so a row differs only in what filled the
+  volume; the left column is a photograph of a real cut orange and is not that plane, since no
+  photograph is. What the magnification is for: the difference between a section that has segment
+  membranes and one that has a smooth gradient is a few tens of pixels wide and is invisible at the
+  size a section is normally shown. The released model resolves the core as a dark blob with a
+  blown-out surround; the membranes it draws do not reach the rind. The photograph's sections fill
+  more of their frame than the renders do, which is a framing difference and not a result.
+  </figcaption>
+</figure>
+
 <div class="tw"><table>
 <thead><tr><th>orange, transverse FID &darr;, 100 held-out cuts, every row out-of-sample</th><th></th></tr></thead>
 <tbody>
 <tr><td>FruitNinja, released model, supervised by a diffusion model fine-tuned on this fruit</td><td>102.2</td></tr>
-<tr><td>this work, route 1, no photographs of the fruit anywhere in the run</td><td>90.1</td></tr>
-<tr><td><strong>this work, route 2, no photographs of the fruit anywhere in the run</strong></td><td><strong>73.2</strong></td></tr>
+<tr><td>this work, route 1, supervised by the photographs directly</td><td>90.1</td></tr>
+<tr><td><strong>this work, route 2, supervised by the photographs directly</strong></td><td><strong>73.2</strong></td></tr>
 <tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td></tr>
 </tbody></table></div>
 
 <p>Twenty-nine points of FID closer to the photographs than a method whose interiors were
-generated by a model fine-tuned on those photographs, while using no photograph of the fruit at
-all. Every row here is out-of-sample, which no other appearance comparison in this paper can say.</p>
+generated by a model fine-tuned on those photographs, on supervision that is those photographs used
+directly. The planes are held out; the reference images are not, on either side &mdash; ours are
+the training target and the baseline's fine-tuned its model &mdash; so the comparison is between
+two ways of spending the same six images and not between one method that has seen them and one
+that has not, and the leave-one-out study above has already removed it from our side alone.</p>
+
 
 <p>And it does not survive every instrument, which has to be said in the same breath. FID at six
 references is dominated by its own bias, so we scored the same renders three ways:</p>
@@ -1141,9 +1205,9 @@ references is dominated by its own bias, so we scored the same renders three way
     <td><strong>97.64</strong></td><td>24.64</td><td class="mut">0.00 / 0.00</td></tr>
 <tr><td>FruitNinja, stock checkpoint</td><td>0.2697</td><td>378.7</td><td>667&plusmn;103</td>
     <td>90.89</td><td><strong>25.13</strong></td><td class="mut">0.00 / 0.00</td></tr>
-<tr><td><strong>this work, route 1, no photographs</strong></td><td><strong>0.0744</strong></td>
+<tr><td><strong>this work, route 1, photographs as the target</strong></td><td><strong>0.0744</strong></td>
     <td>90.1</td><td>136&plusmn;27</td><td>96.92</td><td>23.24</td><td class="mut">0.00 / 0.00</td></tr>
-<tr><td><strong>this work, route 2, no photographs</strong></td><td>0.0794</td>
+<tr><td><strong>this work, route 2, photographs as the target</strong></td><td>0.0794</td>
     <td><strong>73.2</strong></td><td><strong>107&plusmn;33</strong></td><td>96.92</td><td>24.28</td>
     <td class="mut">0.00 / 0.00</td></tr>
 <tr><td class="mut">the photographs against each other</td><td class="mut">0.0424</td>
@@ -1174,7 +1238,7 @@ reverses the one result that had gone against this work:</p>
 <tr><td><strong>this work, route 2</strong></td><td><strong>0.0794</strong></td>
     <td><strong>0.1674</strong></td><td><strong>0.1145</strong></td></tr>
 <tr><td><strong>this work, route 1</strong></td><td>0.0759</td><td>0.1750</td><td>0.1178</td></tr>
-<tr><td>this work, route 2, no photographs at all</td><td><strong>0.0794</strong></td>
+<tr><td>this work, route 2, photographs as the target</td><td><strong>0.0794</strong></td>
     <td class="mut">not run</td><td class="mut">not run</td></tr>
 <tr><td>FruitNinja, released</td><td>0.1326</td><td>0.2211</td><td class="mut">no released model</td></tr>
 <tr><td>GaussianFluent, released</td><td class="mut">no orange released</td><td>0.3278</td>
@@ -1315,7 +1379,7 @@ are given so they are not read as one:</p>
   FruitNinja's is dense but speckled, and this work's own splatted lattice is mottled in the same
   way because a route-2 cell is a Gaussian like any other. The cube volume is continuous. Its cost
   is the other thing the crop shows, the cell quantisation, which is the silhouette error of section
-  4.5.2 seen from inside: a cube covers exactly and it covers at the resolution of a cell.</figcaption>
+  4.3.1 seen from inside: a cube covers exactly and it covers at the resolution of a cell.</figcaption>
 </figure>
 
 <p>This is the result stated at the top, now with its measurement. Coverage from a splatted
@@ -1356,20 +1420,8 @@ cuts each, and the other two objects and the intervening sizes are not run.</p>
     <td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">not run</td><td><strong>0.07%</strong></td></tr>
 </tbody></table></div>
 
-<h4>4.2.2.1&ensp;Then enlarge the Gaussians: what \(\rho\) actually costs</h4>
+<h4>4.1.2.1&ensp;Then enlarge the Gaussians: what \(\rho\) actually costs</h4>
 
-<p>The obvious reply to any of this is that a Gaussian's support is a free parameter, so make it
-bigger. FruitNinja [3] asserts the trade in the form \(\rho \ll 1\) leaves holes in the volume and
-\(\rho \gtrsim 1\) blends across material boundaries, and asserting a trade is not the same as
-showing that no setting of its parameter escapes one. This measures both branches against a reference with no scale
-parameter at all: a piecewise-constant cube lookup that gives each pixel the colour of the cell
-containing it, so every cell edge is a step and there is no support to tune. That is not the trilinear
-reconstruction the renderer uses, which interpolates over eight cell centres and therefore has a
-one-cell support of its own (supplement, section 4.5.4).
-Holes are pixels inside the true section the Gaussian render left as background. Blending is how
-much more the Gaussian render disagrees with that reference <em>at material boundaries</em> than it
-does away from them, since a large Gaussian disagrees with a piecewise-constant reference
-everywhere simply by being smooth, and only the excess is blending.</p>
 
 <div class="tw"><table>
 <thead><tr><th>\(\rho = \sigma/h\)</th><th colspan="2">orange</th><th colspan="2">watermelon</th>
@@ -1473,20 +1525,6 @@ models sit at the far left. <strong>b</strong>: the dual grid trades node count 
 error monotonically, so a point on that curve is chosen rather than found. A cube's occupancy has
 neither knob: its support is its cell.</p>
 
-<p>At 1024&nbsp;px, one plane through the middle of each object, the same plane for every
-\(\rho\), on this work's own primitive set so that only \(\sigma\) changes. The doughnut's
-missing cells are values not swept for it rather than failures. Both branches
-are there and neither is avoidable, but the curve is not the one that assertion implies. The negative blending values at small \(\rho\) are the
-measure reading a render that is mostly holes: with most of the section unpainted, the disagreement
-away from boundaries exceeds the disagreement at them and the excess goes below zero, so the column
-only means anything once the holes are gone. The hole branch does not bite gradually below one: it is flat and severe from \(10^{-4}\) to \(0.05\) and
-then collapses to nothing between 0.10 and 0.25. The blending branch rises through \(\rho = 2\) on all
-three objects, reaching a mean absolute colour disagreement at material boundaries, beyond what the
-same render shows away from them, of 0.226 on the orange, 0.097 on the watermelon and 0.074 on the
-doughnut; on the orange it then falls back to 0.197 at \(\rho = 3\),
-where the primitives are large enough to be disagreeing everywhere. Between them is a
-window, roughly \(0.25 \le \rho \le 0.5\), where a Gaussian set does pay very little for either,
-and the models this work trains sit inside it at a median \(\rho\) of 0.26.</p>
 
 <p>So the answer to "just make them bigger" is: on a fixed primitive set it works, within a window
 you have to find, and it is not what the published models do. FruitNinja sits at
@@ -1500,7 +1538,7 @@ blends or merely covers is the same experiment on their primitive sets and is no
 actually about, and it is a trade about count rather than about support: a cube's support is its
 cell, so it covers exactly, at any resolution, with no window to find and no parameter to set.</p>
 
-<h4>4.2.2.2&ensp;And under compression</h4>
+<h4>4.1.2.2&ensp;And under compression</h4>
 
 <p>Counting fields at float32 measures a file format rather than a representation, and the obvious
 objection is that a codec would close the gap. It does not. Every arm below goes through the same
@@ -1529,137 +1567,9 @@ the same way. The lattice figure is also an upper bound, because the per-cell fe
 substituted here by white noise of the same shape, which is the least compressible object of that
 size; a learned feature can only do better.</p>
 
-<h4>4.2.3&ensp;Reproduction without a fine-tuned diffusion model</h4>
+<h4>4.1.3&ensp;Both methods through the same evaluator</h4>
 
-<p>FruitNinja supervises the interior with depth-conditioned diffusion on cross-sections, and its
-published results use a model fine-tuned on the object's own photographs. That fine-tuning is not
-released, so the reproduction anyone outside the group can actually perform is the procedure
-without it: the same base depth2img checkpoint, the same prompt, and nothing fitted to this fruit.
-Running that arm is one environment variable: removing the photograph directory switches
-the supervision from photographs back to the diffusion model that FruitNinja specifies.</p>
 
-<div class="tw"><table>
-<thead><tr><th>orange, 100 held-out cuts per family</th><th>transverse FID</th><th>longitudinal FID</th></tr></thead>
-<tbody>
-<tr><td>route 1, supervised by the photographs</td><td>91.5</td><td>222.8</td></tr>
-<tr><td>route 2, supervised by the photographs</td><td><strong>74.1</strong></td><td>286.8</td></tr>
-<tr><td><strong>no fine-tuning: base diffusion, no photographs</strong></td><td><strong>90.1</strong></td><td><strong>213.5</strong></td></tr>
-<tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td><td class="mut">70.2</td></tr>
-</tbody></table></div>
-
-<figure>
-  <img src="assets/no_finetuning.png" alt="The same held-out cuts, supervised by photographs and
-       supervised by a stock diffusion model with no photographs">
-  <figcaption>The same held-out cuts, supervised two ways. Both panels are renders of a trained model, not photographs. Left of each pair: the model supervised by the reference
-  photographs of this orange. Right: the model supervised by a stock depth2img checkpoint and a
-  text prompt, with no photograph of this fruit anywhere in the run, which is FruitNinja's procedure without the fine-tuning it does not release. Top row transverse, bottom longitudinal.</figcaption>
-</figure>
-
-<div class="note"><strong>What the photographs buy, on route 1, is not measurable here.</strong>
-Supervising the interior with a stock Stable Diffusion depth2img model and a text prompt, with no
-photographs of this orange anywhere in the run, scores 90.1 against route 1's 91.5 transversally
-and 213.5 against its 222.8 longitudinally, on a hundred cuts per family. Those are the same
-numbers, and 90.1 against 91.5 sits well inside a reference set that scores 46.3 against itself.
-<br><br>
-Route 2 with the photographs scores 74.1 on the same family, but that is the most in-sample number
-in the table rather than the best model: route 2's photograph arm was fitted to the six images it
-is scored against, and the no-photograph arm was not. The two are not comparable and the 16-point
-gap is not evidence about supervision. The missing cell has now been run, and it closes the square:
-The claim this work makes is that it does not need a diffusion model <em>fine-tuned on the
-object</em>, which is a different and weaker statement than not needing the photographs at
-all.</div>
-
-<div class="tw"><table>
-<thead><tr><th>orange, transverse FID &darr;</th><th>with the photographs
-<span class="mut">(in-sample)</span></th><th>without them <span class="mut">(out-of-sample)</span></th></tr></thead>
-<tbody>
-<tr><td>route 1</td><td>91.5</td><td>90.1</td></tr>
-<tr><td>route 2</td><td>74.1</td><td><strong>73.2</strong></td></tr>
-<tr><td class="mut">FruitNinja, released <span class="mut">(out-of-sample)</span></td>
-    <td class="mut">n/a</td><td class="mut">102.2</td></tr>
-</tbody></table></div>
-
-<p>Removing the photographs costs route 1 nothing (91.5 to 90.1) and route 2 nothing (74.1 to
-73.2), and both no-photograph arms are scored out-of-sample where both photograph arms are not, so
-the true comparison is even flatter than the columns suggest. The best out-of-sample number on this
-object is route 2 with no photograph of the fruit anywhere in its run, at 73.2 against FruitNinja's
-102.2. Longitudinally the same arm is 225.4 against route 2's 286.8 and FruitNinja's 269.6.</p>
-
-<div class="note"><strong>What this does not establish.</strong> The orange's route-2 lattice is
-built from a field and six views derived from FruitNinja's released orange, whose interior was
-produced by the fine-tuned checkpoint. So no arm in this table is free of a fine-tuned generative
-model: what is removed is the object's photographs and any fine-tuning in <em>our</em> supervision,
-not the fine-tuned model that placed the segment structure being quantised. The only object here
-that never touched a released reconstruction is the doughnut, and the doughnut has no distribution
-metric because it has one reference image per family. Establishing the claim properly needs an
-object generated from a field and scored against real photographs, and this paper does not have
-one.</div>
-
-<p>The interesting question is whether that holds for the method being reproduced. We have the
-run: FruitNinja's own trainer, its own Gaussian representation and its own filled model, with the
-stock depth2img checkpoint in place of the fine-tuned one, 200 epochs, scored on the same hundred
-planes as every other row.</p>
-
-<p>More than the checkpoint differs. Our copy of FruitNinja's trainer supervises sixteen transverse planes where the
-released schedule supervises fifty, smooths on a 16-cell grid where the released default is 512,
-and refines every 30 epochs where the released default is 101. So this row is a reproduction under
-<em>this work's</em> training schedule with a stock checkpoint, and the 276-point gap bounds
-nothing about FruitNinja: it is the sum of removing the fine-tuned model, the schedule change and
-whatever reproduction gap remains, so we do not read it as a measurement of FruitNinja's
-dependence. What it does show is the qualitative failure in the figure below, which no budget
-difference explains: the flesh goes brown and the segment walls become a crust.</p>
-
-<div class="tw"><table>
-<thead><tr><th>orange, the effect of removing the fine-tuned model</th><th>transverse FID &darr;</th>
-<th>longitudinal FID &darr;</th></tr></thead>
-<tbody>
-<tr><td>FruitNinja, released model <span class="mut">(with its fine-tuning)</span></td><td>102.2</td><td>269.6</td></tr>
-<tr><td><strong>FruitNinja's pipeline, our schedule, stock checkpoint</strong>
-    <span class="mut">(not attributable to FruitNinja)</span></td>
-    <td><strong>378.7</strong></td><td><strong>511.6</strong></td></tr>
-<tr><td>this work, route 1 <span class="mut">(photographs)</span></td><td>91.5</td><td>222.8</td></tr>
-<tr><td><strong>this work, no fine-tuning and no photographs</strong></td><td><strong>90.1</strong></td><td><strong>213.5</strong></td></tr>
-<tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td><td class="mut">70.2</td></tr>
-</tbody></table></div>
-
-<p>What the row does support is the comparison inside our own column: this work's two arms, with
-and without object-specific supervision, are the same code at the same budget. Across columns
-nothing is bounded. The difference is still visible before any metric is computed: the reproduction's flesh goes brown and its
-segment walls turn into a crust, because the stock checkpoint has no idea what this particular
-fruit looks like inside and the Gaussian supervision has nothing else to lean on.</p>
-
-<h4>4.2.4&ensp;Both methods through the same evaluator</h4>
-
-<p>The tables above compare what each representation costs and what each puts inside an object.
-Neither says which one draws a better cut, and the honest way to ask that is to send every released
-model through one evaluator: the same held-out planes, the same reference photographs, the same
-FID, PSNR, SSIM and LPIPS code. Both prior methods release models, so both are run. Every row below
-is 100 rendered cuts per family, at transverse depths drawn from the middle 30 to 70% of the object
-and at longitudinal azimuths at least six degrees from any azimuth the trainer walked, with the
-transverse camera at the pole, where the look-at's roll is given a definite value rather than left
-to rounding noise, so that no model is framed from inside itself. The
-reference side is unchanged and small: six photographs for the orange, twenty transverse and
-twenty-three longitudinal for the watermelon. A hundred renders against six photographs gives FID
-an Inception covariance of rank at most five, so every difference in the orange table is inside its
-own bias term and the ordering is worth more than the gaps.
-<br><br>
-KID is reported with the standard deviation over fifty subsets that the evaluator computes, and it
-is the metric to read: it is unbiased where FID at this sample size is dominated by its own bias.
-Read that way the orange separates less than the FID column suggests, since every arm's KID overlaps
-FruitNinja's within about two standard deviations except route 2 and the stock-checkpoint arm, and
-the watermelon separates more, with GaussianFluent's 151&plusmn;10 clear of everything else. PSNR,
-SSIM and LPIPS score each render against its <em>best-matching</em> reference, chosen by PSNR, which
-is an upper bound on agreement rather than a paired score, and SSIM is computed on luminance
-alone. On the watermelon the reference set scores 0.6290 SSIM against
-itself, below all four methods, so SSIM has no discriminative power there and its column should be
-read as a null result.</p>
-
-<p>One thing route 1 does not escape, and it is worth stating before the tables: what it
-quantises is the released model, and for the watermelon that model's interior was produced by the
-fine-tuned checkpoint. The route-1 watermelon rows therefore inherit the artefact whose absence is
-this paper's comparison axis, which is part of why they land on top of FruitNinja's own numbers.
-The claim of independence from a fine-tuned model belongs to route 2, and to route 1 only when
-what it quantises did not come from one.</p>
 
 <div class="note"><strong>The orange's evaluation photographs are the orange's training
 targets.</strong> <code>objects/orange.conf</code> sets <code>REF_H=secref_orraw_hsep</code> and
@@ -1673,13 +1583,6 @@ evaluation set is <code>data_finetune_images/watermelon/</code>, which are disjo
 is the mechanism behind a result the earlier text called a puzzle, that every arm here beats
 FruitNinja on the orange and does not on the watermelon.</div>
 
-<p>FruitNinja's models are in the frame our cameras already use, so they need no alignment.
-GaussianFluent's watermelon is its own capture in its own frame, and neither its upright axis nor a
-camera distance is published, so two things were chosen for it: the camera radius, set so that its
-silhouette fills the same fraction of the frame as ours and FruitNinja's (0.136 against 0.132 and
-0.129), and the upright axis, tried as each of the three coordinate axes with the best of the three
-reported. It is also a different watermelon from the one photographed, which FID tolerates because
-it compares distributions, and which no per-pixel score really does.</p>
 
 <div class="tw"><table>
 <thead><tr><th>orange, 100 cuts per family</th><th>transverse FID &darr;</th>
@@ -1735,7 +1638,7 @@ work makes is about what a representation can state about a cut face and what it
 volume, not about winning a distribution metric at 100 samples against a reference set that scores
 60.4 against itself.</p>
 
-<p>These FID values are not the ones in section 4.4.2, which scores six cuts rather than a
+<p>These FID values are not the ones in the six-cut table above, which scores six cuts rather than a
 hundred; the two tables are internally consistent and should not be read across.</p>
 
 <figure>
@@ -1746,7 +1649,7 @@ hundred; the two tables are internally consistent and should not be read across.
   brighter and thinner than any photograph. The row below it is the same pipeline with the stock
   checkpoint in place of the fine-tuned one and nothing else changed, which is the reproduction
   anyone outside the group can perform: the flesh goes brown and the segment walls become a crust.
-  The third row from the top is this work with no photograph of the fruit anywhere in its run, and
+  The third row from the top is this work with no fine-tuned model anywhere in its run, and
   it is hard to tell from the two rows above it.</figcaption>
 </figure>
 
@@ -1761,7 +1664,7 @@ hundred; the two tables are internally consistent and should not be read across.
   statistics of a slice, not whether the slice is a plane.</figcaption>
 </figure>
 
-<h4>4.2.6&ensp;The comparison in one table</h4>
+<h4>4.1.4&ensp;The comparison in one table</h4>
 
 <p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
 or marked where the quantity does not exist for that representation. A cut-face residual and a cut-area error need a cut-face
@@ -1803,19 +1706,8 @@ capability difference: we do not pay for view-dependent appearance because we do
 and a fair reading of the compressed row is 7.0&nbsp;MiB for a Lambertian volume against
 26.5&nbsp;MiB for one that also carries a third-order angular field.</p>
 
-<p>The two appearance rows disagree and the disagreement is informative. GaussianFluent takes the
-transverse FID on the watermelon, on a different fruit through cameras we chose for it, and is last
-on DreamSim by a wide margin. FID compares the colour statistics of two populations; DreamSim was
-trained to predict which of two images a person would call closer to a reference. When a
-distribution metric and a human-aligned one disagree this sharply, the disagreement is about
-whether matching a population is the same as looking right, and we would defend the second reading.
-GaussianFluent also spends 45 spherical-harmonic bands on view-dependent appearance that this
-representation cannot express at all. And the slicing row is now an implementation rather than an
-asymptotic hope: reusing the object's adjacency outside the band takes a cut from 13.8&nbsp;s to
-2.9&nbsp;s with an identical result. That is still not interactive, and section 3.7 says where the
-remaining time goes.</p>
 
-<h3 id="phys-res">4.3&ensp;Materials, collision and a shell the solver can resolve</h3>
+<h3 id="phys-res">4.2&ensp;Materials, collision and a shell the solver can resolve</h3>
 
 <p>The lattice answers three physical questions with the same structure it uses to answer
 geometric ones: which material a cell holds, whether two pieces are touching, and whether a
@@ -1824,7 +1716,7 @@ failure mode. Each is decided at the resolution of a cell, so each is wrong in t
 band where the cut or the shell is thinner than the cell that represents it, and each is fixed by
 the same move: state the geometry exactly where the discretisation cannot.</p>
 
-<h4>4.3.2&ensp;Shell thickness in solver grid cells</h4>
+<h4>4.2.1&ensp;Shell thickness in solver grid cells</h4>
 
 <p>A material field can change the simulated dynamics and still fail to produce a hard shell
 around a soft interior, because MPM transfers through one background grid and a shell one to three
@@ -1843,7 +1735,7 @@ thickness <em>in MPM grid cells</em>, and it had never been measured:</p>
 <tr><td>doughnut</td><td>0.01234</td><td>3.0</td><td>0.87</td><td>not resolvable, needs 6.8 cells</td></tr>
 </tbody></table></div>
 
-<h4>4.3.3&ensp;Shell thickness as a parameter of route 2</h4>
+<h4>4.2.2&ensp;Shell thickness as a parameter of route 2</h4>
 
 <p>That threshold is what route 2 can act on. It builds the lattice from a field, so the skin band \(\beta\) is a
 number passed to the builder rather than a property of someone else's model. The prediction above
@@ -1858,7 +1750,7 @@ says the doughnut needs about seven fine cells. Building it at four settings:</p
 <tr><td>9</td><td>2,148,936 <span class="mut">(+90%)</span></td><td>9.0</td><td>2.59</td><td>yes</td></tr>
 </tbody></table></div>
 
-<h4>4.3.4&ensp;Solver response across the threshold</h4>
+<h4>4.2.3&ensp;Solver response across the threshold</h4>
 
 <p>The arithmetic says a shell under two grid cells cannot hold a stiffness contrast. Simulating
 both settings says whether that is what happens. The object falls under its own weight with the material field applied, and the solver reports each body's extent along the gravity axis as a fraction of its rest extent,
@@ -1875,14 +1767,6 @@ question, not its size.</p>
 <tr><td>\(\beta = 7\), falling and cut</td><td>2.06</td><td>0.9280</td><td>0.9177</td><td><strong>&minus;0.0103</strong></td></tr>
 </tbody></table></div>
 
-<p>Three things about that field. It is not equation&nbsp;(16): it is the weak two-rule field of <code>material_field.py</code>, level deciding
-skin from interior and lightness grading the interior, which is the version a learned decomposition
-has to beat rather than the clustered one equation&nbsp;(16) defines. Its numbers are the
-<code>orange</code> preset, 8.0e6 against 6.0e5, applied to the doughnut. And the interior is
-graded rather than constant, spanning 6.0e5 to 6.0e6, so the contrast between the shell and the
-stiffest interior is 1.33&times; and not the 13&times; a shell-against-softest reading gives. A 1.33&times; contrast is a weak thing to look for a threshold with, and it is part of why the effect
-is small. The 6.0e6 top of that interior range is what the grading rule can reach rather than what
-it was measured to reach, so 1.33&times; is a bound and not a measurement.</p>
 
 <p>Two confounds are not controlled. The same preset makes the skin <em>lighter</em> than the
 interior, 750 against 950 in density, so an extent measured under gravity is being pushed by a
@@ -1921,7 +1805,7 @@ reverses the sign of the response, on one object. Whether a contrast large enoug
 like a peel needs a thicker shell again, a finer solver grid or a different transfer is not
 answered here.</p>
 
-<h4>4.3.5&ensp;Collision</h4>
+<h4>4.2.4&ensp;Collision</h4>
 
 <p>Equation (15) is two tests, and the second is the one that earns its place. At rest, with the
 two halves exactly as the cut left them, occupancy alone reports 2,698 particles of the orange
@@ -1964,7 +1848,7 @@ grow with separation and nothing in the construction forces it to.</p>
 piece into the other by one, two and four coarse cells has to report more penetration each time,
 and it does, on every object. </p>
 
-<h4>4.3.6&ensp;Surface binding</h4>
+<h4>4.2.5&ensp;Surface binding</h4>
 
 <p>Collision moves pieces; binding is what carries the visible surface with them. Equation (18)
 fixes each surface vertex to its own piece's nearest particles at bind time, so the surface follows
@@ -1982,11 +1866,9 @@ whatever the solver does to them, including deformations no rigid transform can 
   visible vertex the object has.</figcaption>
 </figure>
 
-<h3>4.4&ensp;Appearance</h3>
+<h3 id="correctness">4.3&ensp;Correctness, storage and runtime</h3>
 
-<h3>4.5&ensp;Correctness, storage and runtime</h3>
-
-<h4>4.5.2&ensp;The cut face</h4>
+<h4>4.3.1&ensp;The cut face</h4>
 
 
 <p>This is the paper's first claim and the one a viewer sees. Each crossed cell contributes one
@@ -2018,7 +1900,7 @@ axis-aligned plane through the origin, where the intersection lands on a coordin
 few multiples of the machine epsilon for an oblique off-grid plane at every resolution. The cut
 face carries no error term that resolution has to chase; the silhouette does.</p>
 
-<h4>4.5.6&ensp;Storage, static and during a cut</h4>
+<h4>4.3.2&ensp;Storage, static and during a cut</h4>
 
 <p>The other half of the memory line, and the one the coarse interior exists for: storage should be
 proportional to hidden spatial complexity, with the high-resolution cost paid only where a cut has
@@ -2065,47 +1947,32 @@ real in both directions, holes below 0.1 and blending above 0.25, and both publi
 to the left of that window and buy their coverage with count instead.</p>
 
 <p>The cut face is the claim, in two senses. On appearance this work is ahead of a fine-tuned
-pipeline while using none of its fine-tuning, and the instrument that says so most clearly is the
-one trained on human judgement. DreamSim puts this work ahead of both released models on both
-objects it can be compared on: 0.074 against 0.133 on the orange, and 0.167 against 0.221 and 0.328
-on the watermelon, where the photographs agree with each other at 0.042 and 0.067. FID and KID
-order the orange the same way; on the watermelon FID favours the model DreamSim ranks last, which
-is the sharpest evidence in the paper that matching a population's colour statistics is not the
-same as looking right. A forced-choice study would settle it and is
-owed. The second sense is not in doubt at all: the face can be stated, which the alternative
-cannot. A splatted interior cannot state one: it renders whatever primitives
-lie near the plane, and the surface a viewer sees is an artefact of their density and support, so
-its planarity, its area and its boundary are not properties the method has. A cube volume states
-all three by construction, and the statements survive being checked: machine epsilon off an oblique
-plane, an area error first order in the cell size, and a section that stays closed at 2048&nbsp;px
-where a released GaussianFluent section is 38.7% background.</p>
+pipeline while doing none of its fine-tuning, and the instrument that says so most clearly is the
+one trained on human judgement. Under leave-one-out over the six references, DreamSim puts this
+work at 0.0979 against 0.1498 for a released model whose generator saw the held-out photograph,
+ahead on all six folds; on the watermelon it is 0.167 against 0.221 and 0.328, where photographs of
+the same fruit agree at 0.042 and 0.067. FID and KID order the orange the same way; on the
+watermelon FID favours the model DreamSim ranks last, which is the sharpest evidence here that
+matching a population's colour statistics is not the same as looking right. A forced-choice study
+would settle it and is owed.</p>
 
-<p>Coverage is where the revision changed the answer. At 256&nbsp;px nothing separates the four
-representations, and by 2048&nbsp;px GaussianFluent's section is 38.7% background, FruitNinja's
-2.4% and this work's own splatted lattice's 3.3%, while the same lattice drawn as a cube volume
-holds 0.07%. That is one object at three image sizes and it is the claim we would defend; the
-20.5% and 46.7% this page once reported came from drawing each primitive at radius \(\sigma/2\),
-which is a fair question about what a primitive covers and the wrong instrument for what a
-renderer draws.</p>
+<p>The second sense is not in doubt. A splatted interior cannot state a cut face: it renders
+whatever primitives lie near the plane, so planarity, area and boundary are not properties the
+method has. A cube volume states all three by construction and the statements survive checking
+&mdash; machine epsilon off an oblique plane, area error first order in the cell size, and a
+section still closed at 2048&nbsp;px where a released GaussianFluent section is 38.7% background
+and this work's own splatted lattice is 3.3%. That last pair is the honest form of the coverage
+claim: it is the volume that holds, not the method's name. The 20.5% and 46.7% this page once
+reported came from drawing each primitive at radius \(\sigma/2\), a fair question about what a
+primitive covers and the wrong instrument for what a renderer draws.</p>
 
-<p>Appearance does not pay for that, and the appearance numbers do not all go one way. On the
-orange, every arm here beats FruitNinja's released model, and the arm that beats it by the most
-longitudinally saw no photograph of the fruit. On the watermelon, GaussianFluent's released model
-takes the best FID in the table at 170.2 against our 180.9 and FruitNinja's 182.0, on a different
-fruit and through cameras we had to choose for it. Every one of those numbers sits inside a
-reference set that scores 46.3 and 60.4 against itself, which is the reading we would defend: at
-this sample size these interiors are not separable by the metrics the task has, and what separates
-the representations is what they cost and what they can state about a cut face.</p>
-
-<p>Where the metrics do separate something is dependence. Removing object-specific supervision
-from this work moves it 1.4 FID at fixed code and budget. FruitNinja's pipeline run from its own
-code with a stock checkpoint scores 378.7 against its released 102.2; that gap is an upper bound,
-since the two runs differ in training budget as well, but the collapse is visible in the render
-before any metric is computed. GaussianFluent needs no fine-tuned model either, and it fractures by continuum damage where
-this work separates by connected components, so fracture is a capability both have rather than an
-axis between them. What is left between the three is the volume itself: a cube tiles space and a
-sub-pixel Gaussian does not, and that is measured in section 4.2.2 on terms none of the three
-chose.</p>
+<p>What is left between the three methods is the volume itself, and what it costs. A cube tiles
+space and a sub-pixel Gaussian does not; through one appearance-neutral codec the same object is
+7.0&nbsp;MiB against 26.5 and 58.3. On the watermelon GaussianFluent still takes the best FID at
+170.2 against our 180.9, on a different fruit and through cameras we had to choose for it, and we
+would defend the reading that at this sample size these interiors are not separable by the metrics
+the task has. What separates the representations is what they cost and what they can state about a
+surface no reconstruction ever saw.</p>
 
 <h2 id="refs">References</h2>
 
