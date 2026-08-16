@@ -101,7 +101,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.11 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.6 Simulation interface</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
 <div class="grid3">
@@ -238,7 +238,7 @@ the cell size reaching 0.09%, and with no edge of the resulting triangulation us
 triangle, so the face has no gaps. Because occupancy, adjacency and piece identity are integer
 operations on the lattice, separated fragments are labelled by connected components in time linear
 in the crossed cells, and the same integers answer collision, so the grid is handed to a material
-point method without an intervening mesh extraction. Section 3.7 states the scope of the planar
+point method without an intervening mesh extraction. Section 3.3.1 states the scope of the planar
 formulation against mesh, tetrahedral and implicit alternatives, and section 5.2 collects what the
 scope leaves out.</p>
 
@@ -300,6 +300,17 @@ rather than for objects that are cut.</p>
 
 <h3>2.2&ensp;Volumetric representations and solid textures</h3>
 
+<p><strong>Volumes before primitives.</strong> Representing an object by what fills it rather than
+by what bounds it is older than any of the work above. Direct volume rendering displayed surfaces
+from sampled volumes without extracting one [56, 57], and volume graphics argued the position
+explicitly: a voxel model carries interior structure that a boundary model does not have and cannot
+acquire [58]. The cost was always resolution, and the structures that answered it are the ones this
+lattice is built from &mdash; adaptively sampled distance fields refine only where shape demands
+it [59], sparse voxel octrees make an empty majority free to store and to traverse [60], and VDB
+gives a sparse volume dynamic topology and \(O(1)\) random access [61]. What has changed is the
+supervision available for the contents, not the container: none of that literature had a way to
+say what the inside of a particular orange looks like, and a photograph of a cut one now does.</p>
+
 <p><strong>Structured Gaussians.</strong> Attaching primitives to a structure rather than
 letting them float is the line this work sits in: anchors on a sparse voxel grid [12], a dense
 structured cube [13], an octree with level of detail [14], and before them the octree and voxel
@@ -347,6 +358,15 @@ dual-grid boundary for what is seen.</p>
 
 <h3>2.3&ensp;Virtual cutting and physical simulation</h3>
 
+<p><strong>Cutting in medical simulation.</strong> Interactive cutting was posed as a problem by
+surgical simulation long before it was posed for reconstructed assets, and the constraints there are
+the ones that shaped every later formulation: the cut is arbitrary, it must be resolved at
+interactive rates, and the object has to remain simulable afterwards [62]. That line is where
+progressive cutting, element subdivision and the state machines for cutting tetrahedra come from,
+and it is also where the assumption this work departs from is clearest &mdash; those methods begin
+from a volumetric mesh that a modeller or a scan produced, and a radiance-field asset does not have
+one.</p>
+
 <p><strong>Cutting a discretisation.</strong> Keeping a coarse volumetric discretisation and
 representing the cut surface analytically inside the cells it crosses is two decades old in
 graphics: the virtual node algorithm duplicates a cut element so each copy carries one side [48],
@@ -389,7 +409,9 @@ around.</p>
 
 <h2 id="method">3&ensp;Method</h2>
 
-<h3>3.1&ensp;Problem statement and notation</h3>
+<h3>3.1&ensp;Overview and representation</h3>
+
+<h4>3.1.1&ensp;Problem statement and notation</h4>
 
 <p>Let \(\Omega \subset \mathbb{R}^3\) be a closed solid with boundary \(\partial\Omega\), known
 only through photographs of its exterior. A <em>cuttable representation</em> of \(\Omega\) must
@@ -431,13 +453,26 @@ partitions \(\mathcal{V}\) by the sign of \(\mathbf{n}\cdot\mathbf{x_k} + d\), w
 connected components of face adjacency; and it meets each crossed cell \(c\) in a convex polygon
 \(\Pi_c\), so Q3 is answered by \(\mathcal{P} = \bigcup_{c} \Pi_c\) with every vertex satisfying the
 plane equation by construction. The set of crossed cells has size \(K = O(N^{2/3})\) for \(N\)
-cells, and section 3.7 shows the cut costs \(O(K)\) after one preprocess.</p>
+cells, and section 3.3.1 shows the cut costs \(O(K)\) after one preprocess.</p>
 
-<p>Sections 3.1 to 3.6 build \(\mathcal{V}\), section 3.7 answers Q2 and Q3, section 3.9 builds
-\(\mathcal{M}\), and section 3.9 uses \(\mathbf{f_k}\) for material and contact.</p>
+<p><strong>Why the labelling is the cheap part here and is not elsewhere.</strong> Face adjacency
+on a lattice is a property of the addresses: two leaves are neighbours when their integer
+coordinates differ by one in one axis at a common level, which is a table lookup and never a search.
+Labelling is then a traversal of that graph, linear in the leaves the cut touches, and the answer is
+exact &mdash; a piece is a set of cells and its volume and mass are sums over that set. A splatted
+representation has no adjacency to traverse. Separating the fragments of a cut point set means
+clustering it, by a density criterion or by nearest neighbours, at a cost that is superlinear
+without an index and approximate with one: the parameter that decides how close is connected also
+decides whether two pieces resting against each other are read as one. The difference is not that
+our traversal is faster than their clustering. It is that connectivity is <em>given</em> by the
+representation on one side and <em>inferred</em> from geometry on the other, so on the lattice
+there is no threshold whose setting could change how many pieces the cut produced.</p>
+
+<p>Sections 3.1 to 3.6 build \(\mathcal{V}\), section 3.3.1 answers Q2 and Q3, section 3.4 builds
+\(\mathcal{M}\), and section 3.4 uses \(\mathbf{f_k}\) for material and contact.</p>
 
 
-<h3>3.2&ensp;Overview</h3>
+<h4>3.1.2&ensp;Overview</h4>
 
 <p>Everything below is one path, and every object takes it. What differs between two objects is a
 parameter file, never a branch in the code. The figure reads top to bottom in five bands. An object
@@ -451,7 +486,7 @@ resolution of a cell, so each is wrong in the same place, and each is corrected 
 geometry exactly where the discretisation cannot. The numbers in parentheses are the equations
 that define each step.</p>
 
-<h3>3.3&ensp;Which route an object takes</h3>
+<h4>3.1.3&ensp;Which route an object takes</h4>
 
 <p>The two routes are not alternatives to be chosen on preference; each answers a different
 question about what exists before the pipeline starts.</p>
@@ -480,7 +515,7 @@ begin with, and for the other two the field and the views are derived from the r
 those two demonstrate that the route reaches the same lattice rather than that it can do without a
 scan.</p>
 
-<h3>3.4&ensp;The two-level lattice</h3>
+<h4>3.1.4&ensp;The two-level lattice</h4>
 
 <p>One definition serves the whole page. A cell is an axis-aligned cube; its index at level
 \(\ell\) is a floor division and its spacing halves with the level,</p>
@@ -505,7 +540,9 @@ $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
    \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \mathbf{k}_1 \gg 1 \bigr\} $$
 </div><div class="num">(3)</div></div>
 
-<h3>3.5&ensp;Solidity of a quantised occupancy</h3>
+<h3>3.2&ensp;Building the lattice</h3>
+
+<h4>3.2.1&ensp;Solidity of a quantised occupancy</h4>
 
 <p>Route 1 reaches the lattice by quantisation. Every primitive of the source model is sent to the
 cell that contains it, and the set of cells that received at least one is the occupancy,</p>
@@ -558,7 +595,7 @@ a direct read-out of whether the occupancy is solid, and it says these are holes
 fragments. A piece count means nothing until this has run, so the cutting
 code runs it rather than assuming it.</p>
 
-<h3>3.6&ensp;Populating the lattice</h3>
+<h4>3.2.2&ensp;Populating the lattice</h4>
 
 <p>Everything after this section is shared. An object reaches the same two-level lattice by one of
 two paths, and which one it took is not recoverable downstream: cutting, the surface conversion, the
@@ -642,7 +679,9 @@ rather than 561.</p>
   two extremes on a quantised lattice.</figcaption>
 </figure>
 
-<h3>3.7&ensp;Cutting: discrete topology, analytic boundary</h3>
+<h3>3.3&ensp;Closed-form cutting and fragment labelling</h3>
+
+<h4>3.3.1&ensp;Cutting: discrete topology, analytic boundary</h4>
 
 <p>A cut arrives as a plane. Cells it crosses are subdivided until \(h_\ell \le h_{\text{target}}\),
 leaves are joined to their face neighbours, edges the plane separates are dropped, and connected
@@ -676,7 +715,7 @@ node algorithm, with the MPM counterpart carrying the discontinuity as two veloc
 side of a crack. It is worth separating which half of the construction a curved cut
 breaks, because they are not equally hard. The <em>face</em> survives: a smooth cut surface is
 planar to first order over a cell, so at cell scale the same twelve-edge intersection applies to
-the local tangent plane, and the band refinement of section 3.8 is already the mechanism for making
+the local tangent plane, and the band refinement of section 3.3.2 is already the mechanism for making
 the cell small relative to the local radius of curvature &mdash; the cost is more leaves in the
 band, not a different algorithm, and no mesh-versus-mesh intersection appears. What breaks is the
 <em>labelling</em>: piece identity here is a global sign code over the whole cut, and a surface that
@@ -814,7 +853,7 @@ asked to approximate the plane, so the only departure in a cut is the voxelisati
 silhouette. Every crossed cell is
 refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
 them.</p>
-<h3>3.8&ensp;Adaptive refinement of the cut band</h3>
+<h4>3.3.2&ensp;Adaptive refinement of the cut band</h4>
 
 <p>Refining every crossed cell to a fixed depth spends the deepest level any cell needed on all of
 them, and what varies across a band is not depth but how badly a leaf is <em>misclassified</em>.
@@ -862,7 +901,7 @@ of them, and there is no variation for a tolerance to exploit. We measured 0.0% 
 ball and on a dumbbell, and report it because a criterion that adapts to nothing is worth knowing
 about before it is trusted.</p>
 
-<h3>3.9&ensp;The boundary as a dual grid</h3>
+<h3>3.4&ensp;The boundary as a dual grid</h3>
 
 <p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
 between it and the first; converting the whole boundary removes both. It is also necessary rather
@@ -875,7 +914,7 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 
 
 
-<h4>3.9.1&ensp;Adaptive collapse</h4>
+<h4>3.4.1&ensp;Adaptive collapse</h4>
 
 <p>What follows is Ju et al.'s adaptive dual contouring [5] applied to the Flexible Dual Grid:
 summing children's quadrics bottom-up and collapsing where the residual is small is their
@@ -935,7 +974,7 @@ $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
   steps visibly at the end, which is what a coarser node is.</figcaption>
 </figure>
 
-<h4>3.9.2&ensp;Collapse tolerance against surface error</h4>
+<h4>3.4.2&ensp;Collapse tolerance against surface error</h4>
 
 <p>The collapse has one parameter, \(\tau_c\) in equation (14), and what it buys has to be read
 against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
@@ -962,7 +1001,7 @@ four voxels to the nodes that survived, and with nothing merged that reproduces 
 15.22346 against 15.22352, and the same 12,606 boundary and
 41,947 non-manifold edges its mesh already has.</p>
 
-<h3>3.10&ensp;Why the references need not agree with each other</h3>
+<h3>3.5&ensp;Interior supervision from unaligned references</h3>
 
 <p>The supervision is one reference image per training plane, and the reference is a photograph:
 the transverse family draws from six photographs of transverse cuts, the longitudinal family from
@@ -999,7 +1038,7 @@ silhouette \(\alpha_j\) is a known quantity. The photograph is then warped onto 
 \(\Phi\). At no point does anything estimate where a photograph was taken, and no photograph
 contributes geometry &mdash; it contributes the appearance the plane's own geometry will carry. A
 misregistered reference is therefore not a geometric error to be corrected but a different claim
-about what the interior looks like there, which is the quantity section 3.10's table measures and
+about what the interior looks like there, which is the quantity section 3.5's table measures and
 the volume resolves.</p>
 
 <p>Two consequences follow. Deformation between specimens cannot produce ghosting in the usual
@@ -1088,7 +1127,7 @@ each new section on what the volume already holds along its intersections with t
 drawn would remove the conflict at its source instead. That is not what this paper does, and the
 measurement above is what says it is worth doing.</p>
 
-<h3 id="physics">3.11&ensp;Physics on the lattice: pieces, materials, collision</h3>
+<h3 id="physics">3.6&ensp;Direct grid interfacing for simulation</h3>
 
 <p class="mut">What this section establishes is that the lattice answers the questions a solver
 asks, in the form it asks them. It does not establish that the resulting dynamics are accurate: no
@@ -1691,7 +1730,7 @@ cuts each, and the other two objects and the intervening sizes are not run.</p>
 </div>
 
 <p class="mut" style="text-align:center;margin-top:-6px">Both trade-offs this work avoids by
-construction, drawn from the tables above and in section 3.9.2. <strong>a</strong>: on a fixed
+construction, drawn from the tables above and in section 3.4.2. <strong>a</strong>: on a fixed
 primitive set, support below \(\rho \approx 0.1\) leaves the section unpainted and support
 above 0.25 blends across material boundaries, with a narrow window between them; both published
 models sit at the far left. <strong>b</strong>: the dual grid trades node count against surface
@@ -2127,7 +2166,7 @@ particle set, which is what makes physics on this representation practical. <str
 not interactive.</strong> A cut costs about eleven seconds end to end at this resolution, dominated
 by refining the band and by emitting one polygon per crossed cell, and nothing in this paper should
 be read as a claim of real-time dissection. The complexity is linear in the crossed cells and the
-constant is large; section 3.8's adaptive criterion and the GPU formulation of the same passes are
+constant is large; section 3.3.2's adaptive criterion and the GPU formulation of the same passes are
 the two levers on it, and neither is benchmarked here. Two of the specification's four runtime
 figures are missing: the O&#8209;Voxel conversion, because the extension is not built on the machine
 these were taken on, and the interactive render rate, which the harness fails to produce.</p>
@@ -2357,6 +2396,17 @@ observers is what would actually settle cut-face realism.</p>
       Integration.</em> ECCV 2024.</li>
   <li>J. T. Barron et&nbsp;al. <em>Mip-NeRF: A Multiscale Representation for Anti-Aliasing Neural
       Radiance Fields.</em> ICCV 2021.</li>
+<li>M. Levoy. <em>Display of Surfaces from Volume Data.</em> IEEE Computer Graphics and
+Applications 8(3), 1988.</li>
+<li>R. A. Drebin, L. Carpenter and P. Hanrahan. <em>Volume Rendering.</em> SIGGRAPH 1988.</li>
+<li>A. Kaufman, D. Cohen and R. Yagel. <em>Volume Graphics.</em> IEEE Computer 26(7), 1993.</li>
+<li>S. F. Frisken, R. N. Perry, A. P. Rockwood and T. R. Jones. <em>Adaptively Sampled Distance
+Fields: A General Representation of Shape for Computer Graphics.</em> SIGGRAPH 2000.</li>
+<li>K. Museth. <em>VDB: High-Resolution Sparse Volumes with Dynamic Topology.</em> ACM TOG 32(3),
+2013.</li>
+<li>S. Laine and T. Karras. <em>Efficient Sparse Voxel Octrees.</em> I3D 2010.</li>
+<li>D. Bielser and M. H. Gross. <em>Interactive Simulation of Surgical Cuts.</em> Pacific Graphics
+2000.</li>
 </ol>
 
 <p class="mut">The two references that carry the most weight here are [5] and [10]: dual contouring
