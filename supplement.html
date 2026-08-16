@@ -146,9 +146,13 @@ first thing below.</p>
       compresses every candidate and the references themselves into the top two percent of its
       range, and CLIP against a text prompt is at its ceiling and ranks the visibly broken arm
       highest. The three do not agree: two put this work ahead of a fine-tuned pipeline and one
-      puts it behind by 0.72 of a point. A two-alternative forced choice against the photographs
-      would settle in an afternoon what none of these can, and it is the single most valuable
-      experiment this paper still owes.</li>
+      puts it behind by 0.72 of a point, while DreamSim, trained on human forced-choice
+      judgements, puts this work 1.7 times closer to the photographs than the baseline. Improved
+      precision and recall cannot be estimated at six references at all: the manifold radii are
+      smaller than the gap between any render and any photograph, so every arm reads 0.00. A
+      two-alternative forced choice against the photographs would settle directly what six
+      automatic instruments only triangulate, and it is the single most valuable experiment this
+      paper still owes.</li>
   <li><strong>Coverage is a property of a renderer as much as of a representation.</strong>
       Drawing each primitive at its own footprint and drawing it through its own rasteriser give
       different answers, and only the second is what a viewer sees. Our coverage claim is made at
