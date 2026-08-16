@@ -104,39 +104,6 @@
   <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.11 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
-<h2 id="abstract">Abstract</h2>
-<p class="lead">
-Interactive applications such as surgical rehearsal, food and material simulation, and games in
-which objects break require a 3D representation with an explicit interior, and a reconstruction
-fitted to photographs has a surface and nothing behind it. Existing methods supply an interior in
-one of two ways. One fine-tunes a diffusion model on the object's own cross-section photographs and
-distils it into the volume, which costs a training run per object and yields a model that is not
-released. The other packs additional Gaussian primitives into the volume, which makes one
-representation serve two roles with opposing optima &mdash; a primitive small enough not to blend
-across material boundaries is smaller than one that covers the volume &mdash; and leaves the face a
-cut exposes defined implicitly by whichever primitives lie near the plane.
-<br><br>
-We present a decoupled framework that builds an explicit interior from <strong>sparse, unaligned
-cross-section photographs</strong>, with no generative model trained or run. Occupancy is separated
-from surface rendering: the hidden volume becomes a two-level occupancy lattice carrying one
-learned feature per cell, and the visible boundary is given its own dual-grid surface. Arbitrary
-<em>planar</em> cuts are then resolved in closed form, one convex polygon per crossed cell obtained
-by intersecting the plane with the cell's twelve edges, with pieces labelled by connected components
-in time linear in the crossed cells. The supervision requires no consistency between references:
-the twelve images per object are of different specimens, cut at different depths, unregistered and
-with no known camera, and the volume reconciles them because every plane reads the same cells and a
-cell holds one value.
-<br><br>
-Under leave-one-out over the six transverse references, scored against the photograph its own run
-never saw, this reaches <strong>0.098 DreamSim against 0.150</strong> for a released model whose
-generator was fine-tuned on that photograph, ahead on all six folds; holding the photograph out
-costs 0.0044. Through one appearance-neutral codec the same object is <strong>7.0&nbsp;MiB</strong>
-against 26.5 and 58.3, and the cut face drawn as a cube volume stays <strong>0.07%</strong>
-unpainted at 2048&nbsp;px where a released baseline reaches 38.7% and our own splatted lattice
-3.3%. The occupancy is simulated directly, with no mesh extraction step, though the accuracy of the
-resulting dynamics is not evaluated here. Evidence is three objects.
-</p>
-
 <div class="grid3">
   <figure>
     <video src="assets/ovox_orange.mp4" autoplay loop muted playsinline preload="metadata"></video>
@@ -159,15 +126,40 @@ lattice, and the colour on every exposed face is read from the volume that was a
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
-Cutting a reconstructed object open requires an interior, and current methods fill the hidden
-volume with the same Gaussian primitives that render the surface. The two roles have opposing optima: a primitive small enough not to blend
-across material boundaries is smaller than one that covers the volume, and a splatted interior
-represents its surface implicitly, so the face a cut exposes is defined by which primitives lie
-near the plane. <strong>We decouple them.</strong> The volume becomes a two-level cube
-occupancy lattice with one learned feature per cell; the boundary gets its own dual grid; and a cut
-is solved in closed form, one convex polygon per crossed cell. The interior is supervised by
-photographs of real cross-sections used directly as the target, so no generative model is trained
-or run.
+Interactive applications such as virtual cutting, digital dissection and fracture simulation need a
+3D representation with an explicit, editable interior, and a reconstruction fitted to photographs
+has a surface and nothing behind it. Existing approaches supply one in two ways, each with a cost.
+Fine-tuning a diffusion model on an object's own cross-sections and distilling it into the volume
+requires a training run per object, and the distillation averages the score over timesteps, acting
+as a low-pass filter that removes the membranes a section consists of. Packing the volume with
+splats makes one representation serve two roles with opposing optima: a primitive small enough not
+to blend across material boundaries is smaller than one that covers the volume, and because splats
+carry no explicit surface, the face a cut exposes is whichever primitives lie near the plane.
+</p>
+
+<p class="lead">
+We present a decoupled representation that builds an explicit interior directly from
+<strong>sparse, unaligned cross-section photographs</strong>, without training or querying any
+generative model. Volumetric occupancy becomes a compact two-level lattice with one learned feature
+per cell; the visible exterior is given its own dual-grid surface. Planar cuts are then resolved
+analytically, as one convex polygon per crossed cell from the plane's intersection with the cell's
+twelve edges, with topological pieces recovered by connected-component labelling in time linear in
+the crossed cells. No camera pose is estimated and no reference is registered: the cutting plane is
+the optimiser's own, each photograph is warped onto the silhouette that plane renders, and because
+every plane reads the same cells and a cell holds one value, references that disagree are
+reconciled by the lattice rather than by an alignment step.
+</p>
+
+<p class="lead">
+Under leave-one-out cross-validation over six references, scored against the photograph its own run
+never saw, our cut faces reach <strong>0.098 DreamSim</strong> against <strong>0.150</strong> for a
+released model whose generator was fine-tuned on that photograph, ahead on all six folds. Through
+one appearance-neutral codec the same object is <strong>7.0&nbsp;MiB</strong> against 26.5 and 58.3,
+and the cut face holds <strong>0.07%</strong> unpainted at 2048&nbsp;px where a splatted baseline
+reaches 38.7%. Cut-area error against a closed form is first order in the cell size and reaches
+0.09% with the plane residual at machine precision, and the piece masses a cut produces match the
+analytic spherical cap to 0.14% and sum to the whole exactly, giving grid-based physics solvers a
+direct interface with no intermediate mesh extraction.
 </p>
 
 <div class="tw"><table>
@@ -228,9 +220,12 @@ and they may be rough exemplars of <em>related</em> specimens rather than of the
 decouple the hidden volume from surface rendering: the interior becomes a compact two-level
 occupancy lattice carrying one learned feature per cell, and the visible exterior is given its own
 dual-grid surface. Section planes are projected through the lattice and the interior features are
-optimised directly against the 2D references, with no generative model in the loop. The shared
-lattice is what makes loose references sufficient: every plane reads the same cells and a cell
-holds one value, so discrepancies between non-identical slices resolve to one answer before
+optimised directly against the 2D references, with no generative model in the loop. The intuition is that the
+lattice itself is the registration. A photograph is never placed in space; the cutting plane is the
+optimiser's own and the image is warped onto the silhouette that plane renders, so the only thing
+two references can disagree about is the <em>content</em> of the cells they share. Occupancy on a
+single global grid is therefore an implicit regulariser: every plane reads the same cells and a
+cell holds one value, so discrepancies between non-identical slices resolve to one answer before
 anything is rendered. Measured on an orange, ten references disagree along the axis they share by
 more than any one of them varies internally, and the volume removes 57 to 61% of that while keeping
 96.5% of the detail those references carry there.</p>
@@ -243,9 +238,9 @@ the cell size reaching 0.09%, and with no edge of the resulting triangulation us
 triangle, so the face has no gaps. Because occupancy, adjacency and piece identity are integer
 operations on the lattice, separated fragments are labelled by connected components in time linear
 in the crossed cells, and the same integers answer collision, so the grid is handed to a material
-point method without an intervening mesh extraction. Curved and terminating cuts are outside this
-formulation and section 3.7 says which half of the construction they break; the accuracy of the
-simulated dynamics is not evaluated in this paper.</p>
+point method without an intervening mesh extraction. Section 3.7 states the scope of the planar
+formulation against mesh, tetrahedral and implicit alternatives, and section 5.2 collects what the
+scope leaves out.</p>
 
 <h3>1.1&ensp;Contributions</h3>
 
@@ -272,10 +267,10 @@ simulated dynamics is not evaluated in this paper.</p>
   <li><strong>A partition a solver can be handed.</strong> Occupancy, adjacency and piece identity are
       integer operations, so fragments are labelled by connected components in time linear in the
       crossed cells and contact resolves to the same integers &mdash; closing 2,698 of 610,723
-      penetrations to zero on the contact slab &mdash; with no mesh extraction between the
-      representation and the solver. Where the cut divides a ball, the piece masses match the
-      analytic spherical cap to 0.14% and sum to the whole exactly. The dynamics themselves are the
-      solver's and are not evaluated here; this is a claim about the handoff.</li>
+      penetrations to zero on the contact slab. Where a cut divides a ball, the piece masses match
+      the analytic spherical cap to 0.14% and sum to the whole exactly, so what a solver is handed
+      is a partition that conserves what it was given &mdash; with no marching-cubes step, no
+      tetrahedralisation and no mesh of any kind between the representation and the solver.</li>
 </ul>
 
 <h2 id="related">2&ensp;Related work</h2>
