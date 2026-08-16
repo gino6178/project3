@@ -1526,6 +1526,29 @@ that has not seen the image it is being measured against.</p>
     <td><strong>0.1498 &plusmn; 0.0165</strong></td><td class="mut">0.0936</td></tr>
 </tbody></table></div>
 
+<p><strong>The paired metrics on the same folds.</strong> A specification asks for PSNR, SSIM and
+LPIPS before it asks for anything else, so they are here, computed on the same six folds against the
+same held-out photograph.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange, mean over six leave-one-out folds</th><th>PSNR &uarr;</th><th>SSIM &uarr;</th>
+<th>LPIPS &darr;</th><th>DreamSim &darr;</th></tr></thead>
+<tbody>
+<tr><td><strong>this work</strong></td><td><strong>14.11 dB</strong></td><td><strong>0.7498</strong></td>
+    <td><strong>0.4525</strong></td><td><strong>0.0979</strong></td></tr>
+<tr><td>FruitNinja, released</td><td>13.60 dB</td><td>0.7472</td><td>0.4919</td><td>0.1498</td></tr>
+</tbody></table></div>
+
+<p>They agree in direction and say much less than DreamSim does, and the reason is worth stating
+rather than leaving for a reader to find. PSNR and SSIM are pixel-aligned comparisons, and a
+held-out cutting plane is not a photograph of any particular slice: there is no correspondence
+between a plane at an arbitrary depth and an image of a different fruit cut somewhere else, so what
+these measure is largely that both models produce an orange disc of about the right size and colour.
+Fourteen decibels is not a good PSNR; it is the PSNR of two different oranges. The SSIM gap of
+0.003 is inside what two runs of one configuration produce. LPIPS, which compares features rather
+than pixels, separates them by more, and DreamSim, which was trained on human choices between
+image pairs, separates them by most. We report all four and read the last.</p>
+
 <p>Two things follow, and the second is the one the objection was about. The first is the margin:
 <strong>1.53 times</strong> closer to a photograph our model was not allowed to fit and theirs was,
 winning on all six folds individually and by more than the fold-to-fold spread of either column.
@@ -2300,7 +2323,22 @@ axis-aligned plane through the origin, where the intersection lands on a coordin
 few multiples of the machine epsilon for an oblique off-grid plane at every resolution. The cut
 face carries no error term that resolution has to chase; the silhouette does.</p>
 
-<h4>4.3.2&ensp;What the operations cost</h4>
+<h4>4.3.2&ensp;Geometry and topology of the cut face</h4>
+
+<p>Three properties are claimed for the face and each has a number. Planarity: every vertex is an
+edge&ndash;plane intersection solved from the plane equation, so the residual
+\(|\mathbf{n}\cdot\mathbf{v}+d|\) is at machine precision on an oblique off-grid plane rather
+than at a tolerance. Area: the error against the closed form is first order in the cell size and
+reaches 0.09%. Gaps: on the orange, cut axis-aligned and obliquely, the triangulation of the face
+has <strong>no edge used by exactly one triangle</strong> &mdash; 171,920 and 225,506 triangles
+respectively &mdash; which is the absence of a free boundary and therefore of holes. We do not
+claim manifoldness: a full manifold test was not run, and the edge count is the property that was
+measured.</p>
+
+<p>Peak device memory during training is 5.2 to 5.9&nbsp;GB at the settings used here, on one
+card.</p>
+
+<h4>4.3.3&ensp;What the operations cost</h4>
 
 <p>The paper repeatedly calls the lattice's operations cheap &mdash; connectivity, piece identity
 and collision are integer queries &mdash; and a claim of cheapness with no wall-clock number is an
@@ -2332,7 +2370,7 @@ the two levers on it, and neither is benchmarked here. Two of the specification'
 figures are missing: the O&#8209;Voxel conversion, because the extension is not built on the machine
 these were taken on, and the interactive render rate, which the harness fails to produce.</p>
 
-<h4>4.3.3&ensp;Storage, static and during a cut</h4>
+<h4>4.3.4&ensp;Storage, static and during a cut</h4>
 
 <p>The other half of the memory line, and the one the coarse interior exists for: storage should be
 proportional to hidden spatial complexity, with the high-resolution cost paid only where a cut has
