@@ -118,7 +118,7 @@ cut is then solved in closed form, as one convex polygon per crossed cell obtain
 the plane with the cell's twelve edges, and the pieces are the connected components of face
 adjacency, computed in time linear in the crossed cells. We validate on three objects against two
 published methods. Measured by DreamSim, a perceptual distance trained on human forced-choice
-judgements, our cut faces are <strong>1.3 to 1.5&times; closer</strong> to photographs of real cut
+judgements, our cut faces are <strong>1.3 to 2.0&times; closer</strong> to photographs of real cut
 fruit than either baseline &mdash; the orange figure measured under leave-one-out, against a
 released model whose generator was fine-tuned on the very photograph it is scored against. The supervision is the photographs themselves: where the closest prior
 method fine-tunes a diffusion model on an object's cross-sections and distils it into the volume,
@@ -237,7 +237,7 @@ where they intersect is then the whole of the remaining difficulty, and section 
 a shared volume does to it.</p>
 
 <p><strong>Validation.</strong> Three objects, two published methods, one evaluator. On perceptual
-distance trained against human forced-choice judgements our cut faces are 1.3 to 1.5 times closer
+distance trained against human forced-choice judgements our cut faces are 1.3 to 2.0 times closer
 to photographs of real cut fruit than either baseline, on supervision that is the photographs
 themselves rather than a diffusion model fine-tuned on them; the same volume is 3.8 to 8.3 times
 smaller after every representation is compressed by
@@ -1277,8 +1277,11 @@ photograph of the object produces a cut face at least as believable as a pipelin
 came from a diffusion model fine-tuned on exactly those photographs, and by the human-aligned
 measure, more so.</p>
 
-<p>On the watermelon this work is level with FruitNinja at 180.9 against 182.0 and behind
-GaussianFluent's 170.2, and the orange's photograph-supervised rows are in-sample and are not a
+<p>The instrument matters on the watermelon and the two disagree. On FID this work is level
+with FruitNinja at 180.9 against 182.0 and behind GaussianFluent's 170.2; on DreamSim it is
+ahead of both, 0.167 against 0.221 and 0.328. We read the perceptual pairing as the answer and
+say why in section 4.1.2 above: a distribution metric tolerated a watermelon whose seeds smear
+along one direction. The orange's photograph-supervised rows are in-sample and are not a
 comparison at all.</p>
 
 <p>The rest of this section is the first claim, and the result goes first there too. <strong>A cut face drawn
