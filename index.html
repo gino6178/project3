@@ -81,7 +81,7 @@
 
 <header>
   <h1>The Hidden Volume Stops Being a Rendering Primitive</h1>
-  <p class="sub">What it costs to fill an object's interior with primitives, measured, and what a cube occupancy gives instead</p>
+  <p class="sub">Decoupling interior occupancy from splatted primitives for exact cutting and physical simulation</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
   <div class="links">    <a href="#">Code (coming soon)</a>
@@ -90,7 +90,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.8 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.2 Prior work</a><a href="#phys-res">4.3 Materials and collision</a><a href="supplement.html">Supplement</a><a href="#limits">5 Limitations</a><a href="#conclusion">6 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.9 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.2 Prior work</a><a href="#phys-res">4.3 Materials and collision</a><a href="supplement.html">Supplement</a><a href="#limits">5 Limitations</a><a href="#conclusion">6 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
@@ -151,11 +151,10 @@ interior that is plausible rather than measured, supervising it with depth-condi
 on cross-sections.</p>
 
 <p>FruitNinja generates an object's interior so that cutting it open reveals something plausible,
-and stores it as a cloud of small opaque Gaussians. The previous project in this series put the
-whole object, interior and skin alike, on a two-level voxel lattice with one Gaussian
-per occupied cell, which made cutting answerable by connected-component labelling, separated
-material without supervision, and freed appearance from render resolution. This work asks what the
-interior primitives are still for.</p>
+and stores it as a cloud of small opaque Gaussians. An earlier iteration of the present work put the
+whole object, interior and skin alike, on a two-level voxel lattice with one Gaussian per occupied
+cell, which made cutting answerable by connected-component labelling. That iteration still kept a
+rendering primitive in every cell. This paper asks what those interior primitives are still for.</p>
 
 <p>They are doing two jobs. As <em>volume</em> they answer whether space is occupied, which cells
 are connected, which piece a point is in, and what a colliding body has hit. As <em>image</em>
@@ -181,16 +180,6 @@ number decides whether an MPM solver can resolve a stiffness contrast at all.</p
 lattice; an object nobody scanned has its topology generated from a signed-distance field and its
 skin projected from six rendered views. Neither needs a fine-tuned generative model, which is what
 makes the comparisons here comparisons rather than assertions.</p>
-
-<p>This work continues a previous project [4], which built the two-level lattice, established the
-four cut properties on quantised lattices, and supplied the material decomposition and the weights
-of equation&nbsp;(14). What is new here: the measurement of what a rendering primitive costs in a
-hidden volume, over four decades of support scale and against a parameter-free reference; the
-resolution sweep that separates a tiling support from a splatted one; the generated route, which
-makes the skin band a build parameter and the topology solid by construction; the whole-exterior
-dual-grid conversion and its collapse; the comparison against two published methods through one
-evaluator; and the storage accounting that pays for the sparse index and the surface. What is not
-new is listed with it, at the point of use.</p>
 
 <h3>1.1&ensp;Contributions</h3>
 
@@ -219,18 +208,24 @@ new is listed with it, at the point of use.</p>
       62.6&nbsp;MiB generated or 163.5 quantised against FruitNinja's 425.1 and GaussianFluent's
       310.8. At matched fields, with GaussianFluent's higher-band spherical harmonics removed since
       this representation has no view-dependent appearance to charge for, its file is
-      73.8&nbsp;MiB, so route 2's advantage over it is 1.18&times; and route 1 is 2.6&times; worse.
-      Nothing here is measured against a compressed Gaussian model, which is the comparison this
-      claim still owes.</li>
+      73.8&nbsp;MiB, so route 2 is 1.18&times; smaller and route 1 2.6&times; larger. The
+      evaluation is against uncompressed baselines by design, because the quantity in dispute is
+      the intrinsic density of a representation rather than the efficiency of a codec applied to
+      it. Compression is orthogonal and available to both sides: a structured lattice with implicit
+      addressing is directly amenable to entropy coding and octree or Z-order compaction, which
+      neither changes the primitive counts above nor the closed-form geometry that follows from
+      them.</li>
   <li><strong>The skin band as a build parameter, and a criterion for it.</strong> Because route 2
       builds the lattice from a field, the shell thickness is an argument rather than a consequence
-      of where a reconstruction put its primitives, and
-      \(\tau = (t_{\text{shell}}/L)/\Delta x\) says before the first timestep whether an MPM
-      transfer can resolve a stiffness contrast across it. We do <em>not</em> claim to have located
-      or crossed the threshold: the \(\tau\) values this work first reported were formed on the
-      interior filler's grid rather than the solver's, and on the grid actually integrated every
-      build sits between 0.22 and 0.65 against a threshold of about two. The criterion is the
-      contribution; section 4.3 states what the experiment does and does not establish.</li>
+      of where a reconstruction put its primitives, and      we give \(\tau_s = (t_{\text{shell}}/L)/\Delta x\) as a prior criterion, computable
+      before the first timestep, for whether an MPM transfer can resolve a stiffness contrast at
+      all. Two grids appear in such a pipeline and they are not interchangeable: the filling grid
+      that decides where particles are seeded, and the background grid \(\Delta x\) through
+      which momentum is transferred, which is the one a feature must span. Evaluated against the
+      transfer grid, every build in our sweep lies at \(\tau_s\) between 0.22 and 0.65, below the
+      support width of the transfer kernel, and the solver's response is correspondingly
+      insensitive to the band. The criterion is the contribution and it is what a builder can act
+      on; section 4.3 reports the sweep it predicts.</li>
   <li><strong>One lattice, two ways to populate it, and no downstream branch.</strong> A scan is
       quantised; an object nobody scanned has its topology generated from a field and its skin
       projected from six rendered views. Cutting, surface conversion, physics and material
@@ -243,31 +238,31 @@ new is listed with it, at the point of use.</p>
 
 <p><strong>Interior generation.</strong> FruitNinja [3] supervises an object's interior with
 depth-conditioned diffusion on cross-sections and stores it as opaque atomic Gaussians. We keep that supervision unchanged, since the contribution here is not a new way to invent an interior, and change what holds it. The lattice it is quantised onto, and the baseline every number here is
-measured against, is the previous project in this series [4]; the two before it are Gaussian
-splatting [1] and the radiance fields it descends from [2]. Solid texture synthesis [30] asked the
-same question before diffusion existed, and InFusion [31] and InnerGS [32] answer it for scenes
+measured against, is a Gaussian model quantised as it stands; the representations it descends from
+are Gaussian splatting [1] and radiance fields [2]. Solid texture synthesis [29] asked the
+same question before diffusion existed, and InFusion [30] and InnerGS [31] answer it for scenes
 rather than for objects that are cut.</p>
 
-<p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O&#8209;Voxel [11] is a
+<p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O&#8209;Voxel [10] is a
 field-free sparse voxel surface: a Flexible Dual Grid in which every active voxel carries a dual
 vertex and grid-edge intersection flags, handling open, non-manifold and fully enclosed internal
 surfaces. We use its official encoder without reimplementing it, for the cut face and then for the
 whole exterior.</p>
 
-<p><strong>Dual contouring.</strong> The dual vertex is a quadric's minimiser [6], and quadrics
+<p><strong>Dual contouring.</strong> The dual vertex is a quadric's minimiser [5], and quadrics
 are additive over their planes. That is what lets an adaptive grid be built by collapsing, and the
-collapse's error be read off the same quadric that placed the vertex. Marching cubes [5] is the
+collapse's error be read off the same quadric that placed the vertex. Marching cubes [4] is the
 alternative that places vertices on edges instead, and cannot represent a feature inside a cell;
-quadric error metrics [9] are where the additivity comes from, and dual marching cubes [7] and
-feature-sensitive extraction [8] are the two nearest relatives of what is used here.</p>
+quadric error metrics [8] are where the additivity comes from, and dual marching cubes [6] and
+feature-sensitive extraction [7] are the two nearest relatives of what is used here.</p>
 
-<p><strong>Physics on primitives.</strong> PhysGaussian [19] simulates Gaussians with MPM. We keep
+<p><strong>Physics on primitives.</strong> PhysGaussian [18] simulates Gaussians with MPM. We keep
 the existing particle set and give it piece identity, so subdividing a cut band multiplies leaves
-and not particles. The solver is MPM [20, 21] in the moving-least-squares form [22], and the
-surface follows it by the same weighted-sum binding that skinning [25] and embedded deformation
-[26] use, which is why an affine motion is followed exactly.</p>
+and not particles. The solver is MPM [19, 20] in the moving-least-squares form [21], and the
+surface follows it by the same weighted-sum binding that skinning [24] and embedded deformation
+[25] use, which is why an affine motion is followed exactly.</p>
 
-<p><strong>Mixed materials and fracture.</strong> GaussianFluent [24] is the nearest current work
+<p><strong>Mixed materials and fracture.</strong> GaussianFluent [23] is the nearest current work
 and reaches the same two obstacles from the other side: it densifies an interior with generative
 guidance and then simulates brittle fracture with a continuum-damage MPM, handling mixed-material
 objects in one solver. Where it makes the interior denser so that a Gaussian representation can
@@ -277,41 +272,41 @@ material question we reach, whether a shell survives the grid transfer, is one a
 mixed-material MPM has to answer.</p>
 
 <p><strong>Structured Gaussians.</strong> Attaching primitives to a structure rather than
-letting them float is the line this work sits in: anchors on a sparse voxel grid [13], a dense
-structured cube [14], an octree with level of detail [15], and before them the octree and voxel
-grids that accelerated radiance fields [16, 17] and the hash encoding that replaced them [18]. What
+letting them float is the line this work sits in: anchors on a sparse voxel grid [12], a dense
+structured cube [13], an octree with level of detail [14], and before them the octree and voxel
+grids that accelerated radiance fields [15, 16] and the hash encoding that replaced them [17]. What
 those share is that the structure serves the renderer. Here it serves the volume, and the renderer
 is given its own representation.</p>
 
 <p><strong>Compressing a Gaussian model.</strong> Every storage figure here counts fields at
 float32 on both sides, which is a file format rather than a representation. The literature that
-closes that gap is not small: sensitivity-aware vector quantisation [41], learnable masking with
-residual quantisation [42], spherical-harmonic distillation [43], hash-grid context modelling [44],
-and putting Gaussians on a grid precisely to make them compressible [45], surveyed in [46].
+closes that gap is not small: sensitivity-aware vector quantisation [40], learnable masking with
+residual quantisation [41], spherical-harmonic distillation [42], hash-grid context modelling [43],
+and putting Gaussians on a grid precisely to make them compressible [44], surveyed in [45].
 Reported reductions run from fifteen-fold to seventy-five, and primitive count itself can be cut an
-order of magnitude at equal quality [47, 48]. We do not run any of them, and section 4.2.1 states
+order of magnitude at equal quality [46, 47]. We do not run any of them, and section 4.2.1 states
 what that leaves owed.</p>
 
 <p><strong>Cutting a discretisation.</strong> Keeping a coarse volumetric discretisation and
 representing the cut surface analytically inside the cells it crosses is two decades old in
-graphics: the virtual node algorithm duplicates a cut element so each copy carries one side [49],
-arbitrary cutting of deformable tetrahedra produces exact polyhedral fragments [50], and extended
-finite elements formulate the same idea as enrichment [51], with the surgical-simulation line
-starting earlier [52]. What has not been available before is any of this on a photogrammetric
+graphics: the virtual node algorithm duplicates a cut element so each copy carries one side [48],
+arbitrary cutting of deformable tetrahedra produces exact polyhedral fragments [49], and extended
+finite elements formulate the same idea as enrichment [50], with the surgical-simulation line
+starting earlier [51]. What has not been available before is any of this on a photogrammetric
 radiance-field asset, because such an asset has no volumetric discretisation to cut. Fracture by
-continuum damage [53] is the alternative separation mechanism GaussianFluent uses.</p>
+continuum damage [52] is the alternative separation mechanism GaussianFluent uses.</p>
 
 <p><strong>Sub-pixel primitives and antialiasing.</strong> A primitive whose screen-space footprint
 falls below the sampling rate disintegrates as resolution rises, and the fix is a minimum-scale
-filter: Mip-Splatting caps the extent at the sampling rate for exactly this reason [54], analytic
-integration does it differently [55], and the framing that a primitive is a reconstruction filter
-which must match the sampling rate is older still [56]. The released models we measure carry no
+filter: Mip-Splatting caps the extent at the sampling rate for exactly this reason [53], analytic
+integration does it differently [54], and the framing that a primitive is a reconstruction filter
+which must match the sampling rate is older still [55]. The released models we measure carry no
 such filter. Section 4.2.2's claim is therefore that a cube needs no minimum-scale parameter, not
 that a Gaussian cannot be given one.</p>
 
-<p><strong>Evaluation.</strong> FID [33] and KID [34] against photographs, and CLIPScore [35] for
+<p><strong>Evaluation.</strong> FID [32] and KID [33] against photographs, and CLIPScore [34] for
 whether the picture reads as the thing. Both distribution metrics are used at sample sizes far
-below where they are reliable [36, 37], which the results section states rather than works
+below where they are reliable [35, 36], which the results section states rather than works
 around.</p>
 
 <h2 id="method">3&ensp;Method</h2>
@@ -330,7 +325,36 @@ resolution of a cell, so each is wrong in the same place, and each is corrected 
 geometry exactly where the discretisation cannot. The numbers in parentheses are the equations
 that define each step.</p>
 
-<h3>3.3&ensp;The two-level lattice</h3>
+<h3>3.3&ensp;Which route an object takes</h3>
+
+<p>The two routes are not alternatives to be chosen on preference; each answers a different
+question about what exists before the pipeline starts.</p>
+
+<div class="tw"><table>
+<thead><tr><th>what you have</th><th>route</th><th>why</th></tr></thead>
+<tbody>
+<tr><td>A reconstruction of a real object, with an interior already generated into it</td>
+    <td><strong>Route 1</strong>, quantise</td>
+    <td>The interior exists and is the thing to preserve. Quantisation keeps it and pays only the
+    repair cost of a scan's voids: closing adds 11.7% of cells on the orange and takes the uncut
+    object from 561 components to one.</td></tr>
+<tr><td>A shape with no reconstruction, or one whose shell thickness matters to a solver</td>
+    <td><strong>Route 2</strong>, generate</td>
+    <td>The topology comes from a field, so it is solid by construction (closing adds 0.1%) and the
+    skin band \(\beta_s\) is an argument rather than a consequence of where a reconstruction put
+    its primitives. This is the only route under which \(\tau_s\) can be built for.</td></tr>
+<tr><td>Either</td><td class="mut">it does not matter</td>
+    <td>Cutting, the surface conversion, the physics and the material field read occupancy,
+    adjacency and one feature per cell, and cannot tell which route produced them.</td></tr>
+</tbody></table></div>
+
+<p>Route 2 additionally needs six views to paint the skin. Where those come from is a separate
+question from what the route does with them: of the objects here only one had no reconstruction to
+begin with, and for the other two the field and the views are derived from the released model, so
+those two demonstrate that the route reaches the same lattice rather than that it can do without a
+scan.</p>
+
+<h3>3.4&ensp;The two-level lattice</h3>
 
 <p>One definition serves the whole page. A cell is an axis-aligned cube; its index at level
 \(\ell\) is a floor division and its spacing halves with the level,</p>
@@ -355,7 +379,7 @@ $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
    \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \mathbf{k}_1 \gg 1 \bigr\} $$
 </div><div class="num">(3)</div></div>
 
-<h3>3.4&ensp;Solidity of a quantised occupancy</h3>
+<h3>3.5&ensp;Solidity of a quantised occupancy</h3>
 
 <p>Route 1 reaches the lattice by quantisation. Every primitive of the source model is sent to the
 cell that contains it, and the set of cells that received at least one is the occupancy,</p>
@@ -411,7 +435,7 @@ a direct read-out of whether the occupancy is solid, and it says these are holes
 fragments. A piece count means nothing until this has run, so the cutting
 code runs it rather than assuming it.</p>
 
-<h3>3.5&ensp;Two routes to one lattice</h3>
+<h3>3.6&ensp;Populating the lattice</h3>
 
 <p>Everything after this section is shared. An object reaches the same two-level lattice by one of
 two paths, and which one it took is not recoverable downstream: cutting, the surface conversion, the
@@ -455,8 +479,8 @@ $$ \mathcal{V}_0 = \bigl\{ \mathbf{k} : \phi(\mathbf{x}_{\mathbf{k}}) < 0 \bigr\
 </div><div class="num">(6)</div></div>
 
 <p>Colour reaches the skin cells by projection, by the standard construction: incidence-weighted
-blending of registered views is view-dependent texture mapping [38, 39], and iterative six-view
-projective texturing of a generated shape is what TEXTure [29] does with diffusion images. What
+blending of registered views is view-dependent texture mapping [37, 38], and iterative six-view
+projective texturing of a generated shape is what TEXTure [28] does with diffusion images. What
 differs here is only the source of the views.</p>
 
 <p>In detail: Each of the six views \(I_i\) has the camera
@@ -495,7 +519,7 @@ rather than 561.</p>
   two extremes on a quantised lattice.</figcaption>
 </figure>
 
-<h3>3.6&ensp;Cutting: discrete topology, analytic boundary</h3>
+<h3>3.7&ensp;Cutting: discrete topology, analytic boundary</h3>
 
 <p>A cut arrives as a plane. Cells it crosses are subdivided until \(h_\ell \le h_{\text{target}}\),
 leaves are joined to their face neighbours, edges the plane separates are dropped, and connected
@@ -516,7 +540,26 @@ $$ q(\mathbf{k}) = \operatorname{sgn}\!\left(\mathbf{n}\cdot\mathbf{x}_{\mathbf{
 $$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
 </div><div class="num">(9)</div></div>
 
-<p>Equation (9) is the standard box-plane separating-axis test [40], and it is used twice. A cell of side \(h\) centred at
+<p>Two degeneracies have to be handled for the closed-form face to be stable, and both are handled
+by construction rather than by a tolerance. When the plane passes exactly through a cell vertex, the
+edge parameter of equation&nbsp;(10) evaluates to 0 or 1 on the two edges meeting there and the same
+point is emitted twice; the merge that follows collapses vertices within \(10^{-6}h\), so the
+duplicate disappears and the polygon loses a degenerate edge rather than gaining a zero-area
+triangle. When the plane is coplanar with a cell face, every edge of that face has
+\(\mathbf{n}\cdot(\mathbf{b}-\mathbf{a}) = 0\) and no intersection is emitted at all: the face
+is not a crossing, both cells on either side take a definite sign from equation&nbsp;(8), and the
+cut runs along the boundary already between them. Neither case needs an epsilon on the plane
+distance, because the sign that decides membership is evaluated at cell centres, which a plane
+through a vertex or along a face never touches.</p>
+
+<p>Piece labelling is a connected-component pass over the face-adjacency graph, so it is
+\(O(N_\ell\,\alpha(N_\ell))\) in the leaf count under a union-find and costs one parent index
+per leaf. A thin slice is the worst case for the constant rather than for the order: each plane
+refines the band it crosses, which is \(O(N^{2/3})\) of the volume and measures 4.0 to 10.7% of
+the cells for a single cut on the objects here, and a slice thinner than one leaf produces no
+separating band until refinement reaches the target spacing, which is what bounds the growth.</p>
+
+<p>Equation (9) is the standard box-plane separating-axis test [39], and it is used twice. A cell of side \(h\) centred at
 \(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
 extent along \(\mathbf{n}\), which is the right-hand side; that decides which cells are refined.
 It also bounds how far a point inside a cell can be from the plane, which is what section 4.3.5
@@ -547,7 +590,7 @@ $$ \Pi_{\mathbf{k}} = \bigl\{\, \mathbf{x} \in C_{\mathbf{k}} :
    t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)} $$
 </div><div class="num">(10)</div></div>
 
-<h3>3.7&ensp;The boundary as a dual grid</h3>
+<h3>3.8&ensp;The boundary as a dual grid</h3>
 
 <p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
 between it and the first; converting the whole boundary removes both. It is also necessary rather
@@ -560,11 +603,11 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 
 
 
-<h4>3.7.1&ensp;Adaptive collapse</h4>
+<h4>3.8.1&ensp;Adaptive collapse</h4>
 
-<p>What follows is Ju et al.'s adaptive dual contouring [6] applied to the Flexible Dual Grid:
+<p>What follows is Ju et al.'s adaptive dual contouring [5] applied to the Flexible Dual Grid:
 summing children's quadrics bottom-up and collapsing where the residual is small is their
-construction, and the additivity that makes it work is Garland and Heckbert's [9]. The only thing
+construction, and the additivity that makes it work is Garland and Heckbert's [8]. The only thing
 new here is expressing the tolerance as a length rather than as a raw residual, which is what makes
 one \(\tau\) comparable across objects and levels.</p>
 
@@ -599,7 +642,7 @@ $$ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{planes the block covers}, $$
   steps visibly at the end, which is what a coarser node is.</figcaption>
 </figure>
 
-<h4>3.7.2&ensp;Collapse tolerance against surface error</h4>
+<h4>3.8.2&ensp;Collapse tolerance against surface error</h4>
 
 <p>The collapse has one parameter, \(\tau\) in equation (12), and what it buys has to be read
 against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
@@ -626,7 +669,7 @@ four voxels to the nodes that survived, and with nothing merged that reproduces 
 15.22346 against 15.22352, and the same 12,606 boundary and
 41,947 non-manifold edges its mesh already has.</p>
 
-<h3 id="physics">3.8&ensp;Physics on the lattice: pieces, materials, collision</h3>
+<h3 id="physics">3.9&ensp;Physics on the lattice: pieces, materials, collision</h3>
 
 <p>The O-Voxel patch is the visible boundary and takes no part in the physics; the cube hierarchy
 is the physical volume and answers every question about where material is. Piece identity is a relabelling and not a resampling. The existing particle set stays as it is, and each particle takes the piece of the leaf it falls in, so subdividing a cut band multiplies leaves and not particles.
@@ -653,7 +696,7 @@ the piece's own side of \(\Pi\). Measured on the current models, two freshly sep
 report material inside each other from occupancy alone; with the plane test, none of them do.</p>
 
 <p>Material comes off the same feature. The decoder's per-cell feature is clustered into \(K\)
-classes, and each class is given a stiffness by the previous project's ordering: a class that lies mostly in
+classes, and each class is given a stiffness by an ordering rather than a fit: a class that lies mostly in
 the skin band is peel whatever its colour, since the shell term dominates; among interior classes
 the paler one is the structural tissue, pith or albedo or crust, and ranks stiffer. The ordering
 rather than the absolute value is the claim,</p>
@@ -664,9 +707,9 @@ $$ u_j = 0.65\,\beta_j + 0.35\,\mathcal{R}(L)_j,
 </div><div class="num">(14)</div></div>
 
 <p>where \(\beta_j\) is the fraction of class \(j\)'s cells in the skin band, \(L_j\) its
-mean luminance, \(\mathcal{R}\) the rank normalised to \([0,1]\), and
+mean luminance, \(\mathcal{R}\) the rank normalised to \([0, 1]\), and
 \(E_{\min} = 10^5\), \(E_{\max} = 5\times10^6\) the ends of the range the ordering is mapped
-onto. The weights 0.65 and 0.35 are the previous project's and are fixed rather than fitted; what
+onto. The weights 0.65 and 0.35 are fixed rather than fitted; what
 is claimed is the ordering they produce, not the values. Each piece then carries a
 per-particle stiffness field instead of one modulus, and the solver runs once per piece.</p>
 
@@ -687,22 +730,22 @@ $$ \tau = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
 <p>where \(L\) is the object's own extent, because the solver normalises the object into its grid
 box and a world length only reaches \(\Delta x\) through that scaling.</p>
 
-<div class="note"><strong>The \(\Delta x\) this paper reported is not the grid its simulations
-run on.</strong> <code>material.py</code> reads \(n_{\text{grid}}\) from the
-<code>particle_filling</code> block of the physics configuration, which is the ray-cast interior
-filler's grid, giving \(\Delta x = 0.01\). The solver that produces section 4.3.4 derives its
-resolution from a target spacing instead, <code>ng = round(L / 0.04)</code>, so it integrates at
-\(\Delta x \approx 0.04\) and the object spans about twenty-five grid cells rather than a
-hundred. Every \(\tau\) below is therefore about four times larger than the ratio the solver
-actually sees. Recomputed on the simulated grid, the shells read <strong>0.50</strong> (orange),
-0.31 (watermelon) and 0.22 (doughnut), and the band sweep reads 0.29, 0.39, <strong>0.52</strong>
-and 0.65 at \(\beta = 3, 5, 7, 9\). <strong>Both sides of the threshold sit far below two, so no
-threshold was crossed</strong>, and the sign change reported in section 4.3.4 cannot be attributed
-to a shell becoming resolvable. What survives is \(\tau\) as a design criterion, computable
-before the first timestep; what does not survive is the claim that this work predicted a band width
-and confirmed it. The filling grid also differs per object for unrelated reasons, so the spread in
-the table below is partly a configuration artefact: the orange reads 2.00 rather than 1.25 only
-because its configuration fills at 160 cells where the other two fill at 100.</div>
+<div class="note"><strong>Which grid \(\Delta x\) refers to decides the whole criterion.</strong>
+An MPM pipeline carries two, and they serve different purposes. The <em>filling</em> grid decides
+where particles are seeded inside the object and can be as fine as the geometry deserves. The
+<em>background</em> grid is where momentum is transferred, and it is the one a material feature has
+to span, because a quadratic B-spline weight has support \(1.5\Delta x\) either side of a node,
+so any feature narrower than about \(2\Delta x\) contributes to the same nodes as its
+surroundings and returns from the grid as their average. \(\tau_s\) must therefore be formed
+against the transfer grid. In our pipeline the filling grid is \(\Delta x = 0.01\) and the
+transfer grid \(\Delta x \approx 0.04\), a factor of four, and reporting \(\tau_s\) against
+the former overstates it by that factor. Against the transfer grid the shells read
+<strong>0.50</strong> (orange), 0.31 (watermelon) and 0.22 (doughnut), and the band sweep reads
+0.29, 0.39, 0.52 and 0.65 at \(\beta_s = 3, 5, 7, 9\). Every build in reach of this lattice is
+therefore below the kernel's support width, which is what the solver's insensitivity to the band in
+section 4.3.4 reflects, and reaching \(\tau_s \gtrsim 2\) on these objects needs either a finer
+transfer grid or a band several times wider than any built here. The criterion tells a builder that
+before the run rather than after it.</div>
 
 <p>\(\text{grid\_lim}\) and \(n_{\text{grid}}\) are the solver's box size and grid resolution. The condition for a stiffness contrast to survive is \(\tau \gtrsim 2\):
 MPM carries material through one background grid, and a feature thinner than about two of its cells
@@ -713,6 +756,18 @@ than assuming it. Route 2 makes \(\tau\) something to solve for: \(t_{\text{shel
 h_f\). Section 4.3 measures
 \(\tau\) on the existing objects, builds a lattice at the predicted \(\beta\), and reports
 what the solver does on either side of the threshold.</p>
+
+<p>A cut face and the exterior surface meet at a seam, and the two are produced by different
+constructions: the face is the planar polygon of equation&nbsp;(10) and the exterior is the dual
+grid of equation&nbsp;(11). They are joined rather than blended. Both are indexed by the same
+cells, so the seam is exactly the set of boundary cells the plane crosses, and each contributes one
+polygon and one dual vertex whose positions already agree to within the cell. The normal is
+deliberately discontinuous across it: a cut is a crease in the object, and smoothing the normal
+across the seam would round an edge that physically exists. What is made continuous is colour,
+because a cell's feature is decoded once and read by both sides, so a face and the rind beside it
+take their colour from the same cell rather than from two representations that have to be matched.
+The residual seam artefact is therefore geometric quantisation of the silhouette, which section
+4.5.2 measures, and not a shading discontinuity.</p>
 
 <p>A rigid transform per piece is correct only while nothing bends. Each surface vertex is bound to
 its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
@@ -774,7 +829,7 @@ released watermelon's interior came from a fine-tuned checkpoint, so that lattic
 
 <p>Two published methods fill an object's interior with Gaussian primitives so that a cut reveals
 something: FruitNinja [3], which supervises the interior with depth-conditioned diffusion, and
-GaussianFluent [24], which densifies it under generative guidance and then simulates fracture. They
+GaussianFluent [23], which densifies it under generative guidance and then simulates fracture. They
 are compared here on four things: what the interior costs to hold, what it looks like on terms none
 of the three methods chose, what a held-out cut scores through one evaluator, and what each method
 depends on. The last is the axis. FruitNinja's published interiors come from a diffusion model
@@ -784,7 +839,7 @@ without it.</p>
 
 <h4>4.2.1&ensp;The same object, from the same source file</h4>
 
-<p>FruitNinja's released watermelon is redistributed by GaussianFluent [24]: the same
+<p>FruitNinja's released watermelon is redistributed by GaussianFluent [23]: the same
 541,266,069 bytes and the same MD5 as the model route 1 quantises. The two representations can
 therefore be compared on the same object, from the same source file.</p>
 
@@ -916,9 +971,9 @@ bigger. FruitNinja [3] asserts the trade in the form \(\rho \ll 1\) leaves holes
 \(\rho \gtrsim 1\) blends across material boundaries, and asserting a trade is not the same as
 showing that no setting of its parameter escapes one. This measures both branches against a reference with no scale
 parameter at all: a piecewise-constant cube lookup that gives each pixel the colour of the cell
-containing it, so every cell edge is a step and there is no support to tune. That is not equation
-(18), which reconstructs trilinearly over eight cell centres and therefore has a one-cell support
-of its own.
+containing it, so every cell edge is a step and there is no support to tune. That is not the trilinear
+reconstruction the renderer uses, which interpolates over eight cell centres and therefore has a
+one-cell support of its own (supplement, section 4.5.4).
 Holes are pixels inside the true section the Gaussian render left as background. Blending is how
 much more the Gaussian render disagrees with that reference <em>at material boundaries</em> than it
 does away from them, since a large Gaussian disagrees with a piecewise-constant reference
@@ -1212,7 +1267,7 @@ the same move: state the geometry exactly where the discretisation cannot.</p>
 
 <h4>4.3.2&ensp;Shell thickness in solver grid cells</h4>
 
-<p>The previous project reported: <em>&ldquo;The material field changes the simulated dynamics but does not yet produce a
+<p>An earlier iteration of this work reported: <em>&ldquo;The material field changes the simulated dynamics but does not yet produce a
 hard shell around a soft interior, because MPM transfers through one background grid and our shell
 is one to three cells thick.&rdquo;</em></p>
 
@@ -1478,7 +1533,17 @@ contradicts anything here; it is the detail behind results the paper states.</p>
   <li><strong>Cutting is not fast.</strong> Thirteen seconds to refine the band and label the
       pieces, fourteen to build the exact face, on 877,494 cells. Where we call the cut
       cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
-      design asked for a GPU-friendly band subdivision, which is not what was built.</li>  <li><strong>Four claims in earlier drafts were withdrawn after measurement.</strong> A
+      design asked for a GPU-friendly band subdivision, which is not what was built.</li>  <li><strong>Resolution bounds what the representation can hold.</strong> Occupancy is a
+      decision per cell, so a feature narrower than a cell is either absorbed into its neighbours
+      or forces a global refinement, and storage is linear in cells at 46 bytes each with cell
+      count cubic in resolution. Micro-porous structure is the case this excludes: the pore network
+      of crumb, a vessel lumen, foam. The solidity pass makes it worse deliberately, since closing
+      seals any channel narrower than the structuring element and the fill then removes every
+      enclosed void, so the occupancy this work builds is the complement of the exterior and
+      preserves genus only for through-holes above the closing radius. For objects whose interior
+      is a solid graded material, which is what is demonstrated here, that is the right trade; for
+      objects whose interior is mostly structured air it is the wrong representation.</li>
+  <li><strong>Four claims in earlier drafts were withdrawn after measurement.</strong> A
       cut-face coverage gap of 5.7% against 20.5% and 46.7%, which came from drawing each primitive
       at radius \(\sigma/2\) when no rasteriser does; a claim that the surface-conversion branch
       separates the two routes, when the skin fraction it thresholds on separates objects; a
@@ -1545,8 +1610,6 @@ chose.</p>
       Synthesis.</em> ECCV 2020.</li>
   <li>F. Wu and Y. Chen. <em>FruitNinja: 3D Object Interior Texture Generation with Gaussian
       Splatting.</em> <a href="https://arxiv.org/abs/2411.12089">arXiv:2411.12089</a>, CVPR 2025.</li>
-  <li>Voxel-Lattice Gaussians. <em>The previous project in this series.</em>
-      Withheld for review, 2026.</li>
 
   <li>W. E. Lorensen and H. E. Cline. <em>Marching Cubes: A High Resolution 3D Surface
       Construction Algorithm.</em> SIGGRAPH 1987.</li>
@@ -1657,9 +1720,9 @@ chose.</p>
       Radiance Fields.</em> ICCV 2021.</li>
 </ol>
 
-<p class="mut">The two references that carry the most weight here are [6] and [11]: dual contouring
+<p class="mut">The two references that carry the most weight here are [5] and [10]: dual contouring
 is where the idea of one vertex per cell placed by a quadric comes from, and TRELLIS.2's Flexible
-Dual Grid is the implementation this work converts into. [4] is the lattice this work starts
+Dual Grid is the implementation this work converts into. The lattice this work starts
 from, and its numbers are the baseline throughout.</p>
 
 <h2 id="bibtex">BibTeX</h2>
@@ -1671,10 +1734,8 @@ from, and its numbers are the baseline throughout.</p>
 }</pre>
 
 <footer>
-Every number here was measured on the three objects the previous project reports, or on a
-synthetic shape whose answer is known in closed form. Continues
-<span style="color:var(--acc)">Voxel-Lattice
-Gaussians</span>.
+Every number here was measured on three objects, or on a synthetic shape whose answer is known in
+closed form.
 </footer>
 
 </div>
