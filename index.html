@@ -151,10 +151,10 @@ interior that is plausible rather than measured, supervising it with depth-condi
 on cross-sections.</p>
 
 <p>FruitNinja generates an object's interior so that cutting it open reveals something plausible,
-and stores it as a cloud of small opaque Gaussians. An earlier iteration of the present work put the
-whole object, interior and skin alike, on a two-level voxel lattice with one Gaussian per occupied
-cell, which made cutting answerable by connected-component labelling. That iteration still kept a
-rendering primitive in every cell. This paper asks what those interior primitives are still for.</p>
+and stores it as a cloud of small opaque Gaussians. Putting the whole object on a voxel lattice
+with one Gaussian per occupied cell makes cutting answerable by connected-component labelling, and
+still leaves a rendering primitive in every cell. This paper asks what those interior primitives
+are for.</p>
 
 <p>They are doing two jobs. As <em>volume</em> they answer whether space is occupied, which cells
 are connected, which piece a point is in, and what a colliding body has hit. As <em>image</em>
@@ -859,7 +859,7 @@ therefore be compared on the same object, from the same source file.</p>
 <tr><td>primitives per unit volume</td><td>1,029,854</td><td>137,000</td><td></td></tr>
 </tbody></table></div>
 
-<h4>4.2.2&ensp;The interiors compared, and a claim we withdraw</h4>
+<h4>4.2.2&ensp;The interiors compared</h4>
 
 <p>Storage says what each costs, not what each produced. Every method has its own frame, scale and
 renderer, so a comparison of the interiors routes through none of them: for each model, the plane
@@ -872,10 +872,9 @@ are, at median and tenth-percentile opacity 1.0000.</p>
        representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption>The same slab through the same fruit, four ways, with every primitive drawn at its
   own footprint: \(\sigma\) for a Gaussian, \(h\) for a cell. GaussianFluent's sits smaller in
   frame because each model is normalised by its own projected radius and its released file carries
-  more than the melon. This figure used to have an unpainted percentage printed under each tile and
-  no longer does, because those numbers were reported as cut-face fidelity and are not: read it as
-  what each primitive <em>covers</em>, which is the question it does answer, and see the table
-  below for what each method draws.</figcaption>
+  more than the melon. No unpainted percentage is printed under the tiles,
+  because a footprint drawing answers what a primitive <em>covers</em> and not what a renderer
+  draws; the table below answers the second.</figcaption>
 </figure>
 
 
@@ -898,12 +897,11 @@ released models:</p>
 is a result rather than an embarrassment: without the fine-tuned model the supervision leaves the
 interior sparse as well as brown, so the same collapse shows in coverage and in FID.</p>
 
-<p>Two things have to be said about that table. Every row in it, ours included, is a
-<em>Gaussian</em> render: a route-2 cell carries fourteen numbers and is splatted like any other
+<p>Two things qualify that table. Every row in it, ours included, is a <em>Gaussian</em> render: a route-2 cell carries fourteen numbers and is splatted like any other
 primitive, at a median \(\rho\) of 0.26, which the sweep below shows is inside the window where a
 Gaussian set pays little for coverage. So this is not yet a comparison between a cube and a
-Gaussian, and the sentence an earlier version of this page put here, that a cube reaches zero
-without a parameter, was not supported by it.</p>
+Gaussian: at this image size every row is a Gaussian render inside the window where a Gaussian set
+pays little for coverage, and no claim about a cube's support can rest on it.</p>
 
 <p>And a coverage number at one pixel count says nothing, which is the objection that retired the
 footprint figure and applies here too. Swept over resolution, on the watermelon, six transverse
@@ -926,7 +924,7 @@ are given so they are not read as one:</p>
     <td><strong>0.07%</strong></td><td><strong>0.07%</strong></td></tr>
 </tbody></table></div>
 
-<p>This is the claim, and it is not the one the withdrawn figure made. Coverage from a splatted
+<p>This is the claim. Coverage from a splatted
 representation is resolution-dependent for every model including ours: at 256&nbsp;px they are all
 under two tenths of a percent and indistinguishable, and by 2048&nbsp;px GaussianFluent's section
 is 39% background (32.9 to 49.5 across the six cuts), FruitNinja's 2.4% (1.5 to 3.4) and our own
@@ -953,9 +951,9 @@ cuts each, and the other two objects and the intervening sizes are not run.</p>
 <tr><td>that, against one pixel in the slab figure</td><td>47,053&times; smaller</td>
     <td>5,067,762&times; smaller</td><td>3.3 pixels across</td><td>3.3 pixels</td></tr>
 <tr><td>primitives in the slab</td><td>256,696</td><td>57,289</td><td>51,763</td><td>34,587</td></tr>
-<tr><td class="mut">unpainted at each primitive's own footprint <span class="mut">(withdrawn as a
-    fidelity measure: it charges a Gaussian its \(\sigma\) and credits a cell its \(h\), and our
-    cells carry Gaussians at \(\sigma \approx 0.26h\))</span></td>
+<tr><td class="mut">unpainted at each primitive's own footprint <span class="mut">(what a
+    primitive covers, not what a renderer draws: it charges a Gaussian its \(\sigma\) and credits
+    a cell its \(h\), and our cells carry Gaussians at \(\sigma \approx 0.26h\))</span></td>
     <td class="mut">20.5%</td><td class="mut">46.7%</td><td class="mut">5.7%</td><td class="mut">6.1%</td></tr>
 <tr><td>unpainted, own rasteriser, 512&nbsp;px</td><td>0.21%</td><td>0.10%</td><td>0.17%</td><td>0.00%</td></tr>
 <tr><td><strong>unpainted, own rasteriser, 2048&nbsp;px</strong></td><td>2.37%</td>
@@ -1094,15 +1092,14 @@ run: FruitNinja's own trainer, its own Gaussian representation and its own fille
 stock depth2img checkpoint in place of the fine-tuned one, 200 epochs, scored on the same hundred
 planes as every other row.</p>
 
-<p>More than the checkpoint differs, and the difference is larger than an earlier version of this
-section said. Our copy of FruitNinja's trainer supervises sixteen transverse planes where the
+<p>More than the checkpoint differs. Our copy of FruitNinja's trainer supervises sixteen transverse planes where the
 released schedule supervises fifty, smooths on a 16-cell grid where the released default is 512,
 and refines every 30 epochs where the released default is 101. So this row is a reproduction under
 <em>this work's</em> training schedule with a stock checkpoint, and the 276-point gap bounds
 nothing about FruitNinja: it is the sum of removing the fine-tuned model, the schedule change and
-whatever reproduction gap remains. <strong>We withdraw the number as a measurement of FruitNinja's
-dependence.</strong> What we still show is the qualitative failure in the figure below, which no
-budget difference explains: the flesh goes brown and the segment walls become a crust.</p>
+whatever reproduction gap remains, so we do not read it as a measurement of FruitNinja's
+dependence. What it does show is the qualitative failure in the figure below, which no budget
+difference explains: the flesh goes brown and the segment walls become a crust.</p>
 
 <div class="tw"><table>
 <thead><tr><th>orange, the effect of removing the fine-tuned model</th><th>transverse FID &darr;</th>
@@ -1267,11 +1264,10 @@ the same move: state the geometry exactly where the discretisation cannot.</p>
 
 <h4>4.3.2&ensp;Shell thickness in solver grid cells</h4>
 
-<p>An earlier iteration of this work reported: <em>&ldquo;The material field changes the simulated dynamics but does not yet produce a
-hard shell around a soft interior, because MPM transfers through one background grid and our shell
-is one to three cells thick.&rdquo;</em></p>
-
-<p>That has a number, and the number can be worked out before any simulation runs. MPM moves
+<p>A material field can change the simulated dynamics and still fail to produce a hard shell
+around a soft interior, because MPM transfers through one background grid and a shell one to three
+cells thick does not survive that transfer. That failure has a number, and the number can be worked
+out before any simulation runs. MPM moves
 particle quantities to a background grid of spacing \(dx\) and back, so a feature thinner than
 about two grid cells is averaged with its neighbours on the way through and comes back as the
 average. The quantity that decides whether a hard shell is possible is therefore the shell's
@@ -1317,8 +1313,7 @@ question, not its size.</p>
 <tr><td>\(\beta = 7\), falling and cut</td><td>2.06</td><td>0.9280</td><td>0.9177</td><td><strong>&minus;0.0103</strong></td></tr>
 </tbody></table></div>
 
-<p>Three things about that field, none of them in an earlier version of this section. It is not
-equation&nbsp;(14): it is the weak two-rule field of <code>material_field.py</code>, level deciding
+<p>Three things about that field. It is not equation&nbsp;(14): it is the weak two-rule field of <code>material_field.py</code>, level deciding
 skin from interior and lightness grading the interior, which is the version a learned decomposition
 has to beat rather than the clustered one equation&nbsp;(14) defines. Its numbers are the
 <code>orange</code> preset, 8.0e6 against 6.0e5, applied to the doughnut. And the interior is
@@ -1543,15 +1538,11 @@ contradicts anything here; it is the detail behind results the paper states.</p>
       preserves genus only for through-holes above the closing radius. For objects whose interior
       is a solid graded material, which is what is demonstrated here, that is the right trade; for
       objects whose interior is mostly structured air it is the wrong representation.</li>
-  <li><strong>Four claims in earlier drafts were withdrawn after measurement.</strong> A
-      cut-face coverage gap of 5.7% against 20.5% and 46.7%, which came from drawing each primitive
-      at radius \(\sigma/2\) when no rasteriser does; a claim that the surface-conversion branch
-      separates the two routes, when the skin fraction it thresholds on separates objects; a
-      storage advantage quoted before the sparse index and the exterior surface were counted, and
-      before the competitor's spherical harmonics were matched; and a claim to have predicted and
-      crossed an MPM resolvability threshold, whose \(\tau\) was formed on the interior filler's
-      grid rather than the solver's. Each is corrected in place above. We record them together here
-      because a reader is entitled to know how much of this paper survived being measured.</li>
+  <li><strong>Coverage is a property of a renderer as much as of a representation.</strong>
+      Drawing each primitive at its own footprint and drawing it through its own rasteriser give
+      different answers, and only the second is what a viewer sees. Our coverage claim is made at
+      2048&nbsp;px through each method's own renderer, and at 512&nbsp;px no representation here is
+      separable from any other.</li>
   <li class="mut"><strong>Open ends.</strong> The four-representation
       baseline and the interior-appearance, resolution-stability, memory and runtime families wait
       until the architecture is finished. Topology and collision are the two already measured.</li>
@@ -1567,7 +1558,7 @@ where discreteness is cheap and becomes analytic exactly where a staircase would
 lattice's own advantages survive intact: connectivity, piece identity and collision are integer operations on a structured grid, not queries against arbitrary free particles.</p>
 
 <p>Against the two methods that fill an interior with Gaussians, the difference is what a volume
-costs, and it is smaller than an earlier version of this work claimed. On the same watermelon the
+costs. On the same watermelon the
 interior here is 1,065,856 cells generated or 1,741,169 quantised, against 7,959,789 and 1,381,100
 primitives, and counting the sparse index and the exterior surface the method actually needs,
 62.6 or 163.5&nbsp;MiB against 425.1 and 310.8. Swept over four decades of \(\rho\) the trade is

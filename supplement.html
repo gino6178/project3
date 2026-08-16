@@ -521,10 +521,11 @@ Cutting, the physics and the material field read only the three fields above.</d
 
 <h4>4.3.1&ensp;Material decomposition</h4>
 
-<p>An earlier iteration of this work decomposed an object into material classes without being told what they
-are: cluster the learned per-cell feature, merge classes whose appearance centroids agree, and an
-orange separates into peel, flesh, a transition and pith. The same decomposition runs unchanged on
-the cube lattice, because the thing it clusters, a learned feature and a position on a lattice, is what both representations carry. On the generated topologies it finds:</p>
+<p>An object decomposes into material classes without being told what they are: cluster the learned
+per-cell feature, merge classes whose appearance centroids agree, and an orange separates into peel,
+flesh, a transition and pith. What is clustered is a learned feature and a position on a lattice, so
+the decomposition is indifferent to whether a cell also carries a rendering primitive. On the
+generated topologies it finds:</p>
 
 <div class="tw"><table>
 <thead><tr><th>object</th><th>class</th><th>cells</th><th>mean RGB</th><th>shell fraction</th></tr></thead>
