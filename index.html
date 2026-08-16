@@ -215,6 +215,15 @@ recovered exactly at the identity setting, and 95.2% of it still standing at zer
 Five of the six are done here and measured, and three of the five close; what remains is stated in
 the conclusion rather than left for a reader to notice.</p>
 
+<p>The two routes are how that separation is reached in practice, and they are the claim.
+A scanned object is quantised onto the lattice; an object nobody scanned has its topology generated
+from a signed-distance field and its skin projected from six rendered views. The first is
+available whenever a reconstruction exists and inherits whatever that reconstruction contains,
+holes included. The second is available always, is solid by construction, and &mdash; because the
+shell is built rather than found &mdash; lets its thickness be chosen, which turns out to decide
+whether a physics solver can see a material contrast at all. Neither needs a fine-tuned generative
+model, which is what makes the comparisons in this paper comparisons rather than assertions.</p>
+
 <h2 id="related">Related Work</h2>
 
 <p><strong>Interior generation.</strong> FruitNinja [3] supervises an object's interior with
@@ -600,7 +609,13 @@ a direct read-out of whether the occupancy is solid &mdash; and it says these ar
 fragments. A piece count means nothing until this has run, so the cutting
 code runs it rather than assuming it.</p>
 
-<h3>Two routes to an exterior</h3>
+<h3>The two routes</h3>
+
+<p>These are the contribution, and everything after them is shared. An object reaches the same
+two-level lattice by one of two paths, and which one it took is not recoverable downstream: cutting,
+the surface conversion, the physics and the material field all read a lattice and none of them asks
+where it came from. So the two routes are what this work has to be judged on, and the results
+section is organised as comparisons between them and against the alternatives.</p>
 
 <p>An object arrives one of two ways, and the representation has to be reachable from both. If it
 was scanned there is a reconstruction, and the structure and the appearance are both in it: the
@@ -737,14 +752,7 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 exterior <em>is</em> its boundary — every face of an occupied cell whose neighbour is empty — and
 the same dual-grid encoder that handles the cut face takes the staircase off it.</p>
 
-<figure>
-  <img src="assets/exterior_ovoxel.png" alt="The whole exterior as an O-Voxel surface, beside the Gaussian exterior">
-  <figcaption>Left: the orange's entire exterior as a dual-grid surface, 442,253 active voxels
-  drawn as the 934,520 triangles they encode. Right: the Gaussian exterior it replaces. Upper row
-  up / front / right. The peel, the calyx and the shaded underside survive the conversion; the
-  extent matches the model to 0.00% on the doughnut and 2.32% on the orange, the latter because
-  the boundary runs along cell corners and so sits half a cell proud.</figcaption>
-</figure>
+
 
 <h3>Paying for curvature instead of resolution</h3>
 
@@ -790,48 +798,15 @@ plane.</p>
 
 <h3>Why the exterior was converted too</h3>
 
-<p>Before it was, there were two renderers and a per-pixel choice between them,
-\(C(u) = C_G(u)\) if \(D_G(u) < D_O(u)\) and \(C_O(u)\) otherwise. The cut surface is planar
-by construction, so its rasterisation is a ray-plane intersection in closed form and a pixel is
-covered exactly when the hit lies in a cut leaf. The depth convention had to be measured and the
-obvious measurement cannot decide it: the Gaussian renderer returns an alpha-weighted depth along
-the ray rather than the nearest surface, so both candidates sit 0.08 to 0.10 behind a minimum over
-primitive centres. What separates them is where the error lives — Euclidean distance and
-view-space \(z\) differ by \(1/\cos\) of the angle off the axis — and by radial slope it is
-view \(z\), &minus;0.058 against +0.060.</p>
-
-<figure style="max-width:430px">
-  <img src="assets/compositing.png" alt="Four compositing configurations: exterior, cut surface, composite">
-  <figcaption><strong>This is the design being argued against, not the one that shipped.</strong>
-  Two renderers and a per-pixel choice between them: each row is the exterior Gaussians, then the
-  cut surface drawn on its own, then the two composited. What the figure establishes is that the
-  choice is decidable &mdash; whether a piece's cut face should be visible follows from the sign
-  of the plane at the camera against the side the piece's material is on, and that prediction
-  agrees with the composite in all four configurations: the cut takes 98.0% and 74.9% of the
-  contested pixels when it faces the camera, 0.4% and 0.0% when it does not. Rows one and two are
-  the visible cases; in rows three and four the face is present in the middle column and correctly
-  absent from the composite, which is the whole content of those two rows and is meant to be a
-  difference you cannot see. What this arrangement could not fix is opacity, which is the next
-  paragraph and the reason the exterior was converted.</figcaption>
-</figure>
-
-<p>The exterior here is the boundary of the occupancy at whatever level, not the refined cells.
-Taking it as <code>cell_level &ne; 0</code> looks right and is not: the orange's refined cells run
-from \(r/R\) &mdash; distance from the centroid over the maximum such distance &mdash; 0.808 to 1.000 while its coarse cells reach 0.936, so much of the outer surface is
-coarse cells the level test discards, and 77% of what remains sits in the bottom 40% of the object.
-Even correct, a Gaussian shell is not opaque &mdash; it covers 20% to 24% of the frame &mdash; so
-at the silhouette the cut face shows through from the side it should be hidden on. That, and not
-the depth test, is what converting the exterior removes.</p>
-
-<p>Two buffers and a comparison is the whole of the compositing rule, and it is worth stating
-because the paper's claim is that after the conversion there is only one of them:</p>
-
-<div class="eq"><div class="body">
-$$ C(u) = \begin{cases}
-     C_{O}(u), & D_{O}(u) < D_{G}(u) \\[2pt]
-     C_{G}(u), & \text{otherwise}
-   \end{cases} $$
-</div><div class="num">(10)</div></div>
+<p>An earlier version converted only the cut face, which left two renderers and a per-pixel choice
+between them. That arrangement was measured and it worked &mdash; whether a piece's cut face should
+be visible follows from the sign of the plane at the camera against the side the piece's material
+is on, and the prediction agreed with the composite in all four configurations. It was replaced
+anyway, and not because of the depth test. A Gaussian shell is not opaque: it covers 20% to 24% of
+the frame at alpha above a half, so at the silhouette the cut face shows through from the side it
+should be hidden on. Converting the whole boundary removes the second renderer, the depth
+convention and the compositing rule together, and it is the reason the exterior is a dual grid
+rather than a patch.</p>
 
 <h3>Physics keeps what the lattice had</h3>
 
@@ -916,6 +891,30 @@ residual rather than hiding it.</p>
 </figure>
 
 <h2 id="results">Results</h2>
+
+<p>Everything below is a comparison, and every comparison has a picture. The organising axis is
+the two routes &mdash; a lattice quantised from a scan, and a lattice generated from a field and
+skinned from six views &mdash; because after the second step nothing downstream can tell which was
+taken, so any result that separates them is a result about how an object is <em>reached</em>
+rather than about what happens to it afterwards. Comparisons against other work sit on the same
+footing: none of what follows uses a fine-tuned generative model.</p>
+
+<div class="tw"><table>
+<thead><tr><th>the comparison</th><th>what it answers</th><th>its figure</th></tr></thead>
+<tbody>
+<tr><td>route 1 against route 2</td><td>does a generated topology cost anything</td>
+    <td>held-out cuts, transverse and longitudinal</td></tr>
+<tr><td>the six views against the shell they made</td><td>did the projection land where it should</td>
+    <td>three per-object sheets</td></tr>
+<tr><td>this work against FruitNinja and GaussianFluent</td><td>what a hidden volume costs to hold</td>
+    <td>the same slab, four ways</td></tr>
+<tr><td>with photographs against without</td><td>does the supervision need the object</td>
+    <td>the same cuts, both ways</td></tr>
+<tr><td>the cube renderer against the rasteriser</td><td>is the representation or the renderer the limit</td>
+    <td>the same cuts, four columns</td></tr>
+<tr><td>uniform material against a field</td><td>can a solver see a shell</td>
+    <td>the section by class and by stiffness</td></tr>
+</tbody></table></div>
 
 <h3>Cutting</h3>
 
@@ -1119,24 +1118,7 @@ cells, but the whole object does.</p>
   those are the ones to ask.</figcaption>
 </figure>
 
-<div class="note"><strong>What a wrong number looked like, three times.</strong> Three entries in
-these tables were wrong before they were right, and none of them was caught by its magnitude. The orange read
-493 in the last transverse column while the same model read 66.5 in the second &mdash; easy to
-write up as the cost of leaving the Gaussians behind, and in fact a bug, exposed by an
-inconsistency rather than a size: the watermelon's two routes agreed with each other and the
-orange's did not. Drawing the two layers apart located it in one step, 982 dark pixels in 8 blobs
-from the exterior alone against 26 from the face, because the face was a slab of chosen thickness
-tested against a band of chosen width, covered 95% of the section, and through the missing 5% the
-far half's own peel showed from behind. The second was visible only in the longitudinal figure: the
-doughnut's two lobes were joined by a slab of icing, because the baseline rasterises a band about
-the plane &mdash; it draws a slice &mdash; while this renderer was drawing the whole surviving
-half, whose inner surface projects straight into the hole. Defining the face as the first material
-the ray meets past the plane leaves nothing to tune. The third followed from the second: once the
-exterior was restricted to the baseline&rsquo;s slab it was drawing the same rind the face march
-already reaches, and drawing the layers apart showed the face alone was the baseline&rsquo;s
-picture while the exterior alone was that ring and nothing else. It is off for slices now and
-kept for whole-object rendering, which is a different question. Two renderers that disagree about
-which model is better are reporting a defect in one of them, not a property of either model.</div>
+
 
 <p>What remains between the O&#8209;Voxel columns and the rasteriser is not capacity. The route-2
 orange stores 1,231,312 primitives against the baseline&rsquo;s 877,494, 65.8&nbsp;MiB against
@@ -1599,14 +1581,11 @@ standing in for a large patch scores perfectly as long as it sits on it. Read th
 rises to 0.112 at \(\tau = 0.75\) and then <em>falls</em> to 0.093 at 1.00 while the node count
 keeps dropping. The reverse direction is five to eight times larger and monotone throughout.</div>
 
-<h3>Four of the six deferred items, done and measured</h3>
+<h3>Four ablations on the cut</h3>
 
-<p>Six things were left out of the first version on purpose, each because doing it early would
-have tangled a hard question with an easy one. A fifth &mdash; converting the original exterior to
-a dual grid &mdash; is done and has its own section above. The sixth, deriving a child cell's
-feature by interpolating its parent and neighbours, is not done and is not implemented. The four
-below are, and what follows is what each is, why it was worth deferring, and what it turned out to
-be worth.</p>
+<p>Four questions about the cut that the routes share, each measured on its own
+terms: how the band is refined, what an exact fragment would buy over refining it, whether several
+cuts compose, and how much generated detail a band of a given thickness can hold.</p>
 
 <h4>Exact polyhedral fragments</h4>
 
@@ -1726,15 +1705,7 @@ cell positions left for the clipping to disagree with.</p>
   generated lattice.</figcaption>
 </figure>
 
-<div class="note"><strong>The first version of this measurement was of nothing.</strong> Run on the
-generated lattice, every panel came out uniform grey and the retention read 100.0% / 62.7% / 57.5%
-&mdash; which we wrote up as the generated skin having less depth to bake into. It has nothing to
-do with depth. <code>supersr.py</code> read colour from the lattice, and a lattice built by
-<code>make_shape</code> carries flat grey in its interior on purpose, so the measurement was asking
-how much of a constant survived being resampled. Reading colour from the trained model instead
-gives the row above, and the conclusion reverses: super-resolution transfers. The same
-wrong-colour-source defect had already been found and fixed in three other files, which is what
-made it recognisable in a fourth.</div>
+
 
 <h3>FruitNinja without its fine-tuning</h3>
 
@@ -1753,6 +1724,15 @@ the supervision from photographs back to the diffusion model that FruitNinja spe
 <tr><td><strong>no fine-tuning: base diffusion, no photographs</strong></td><td><strong>90.1</strong></td><td><strong>213.5</strong></td></tr>
 <tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td><td class="mut">70.2</td></tr>
 </tbody></table></div>
+
+<figure>
+  <img src="assets/no_finetuning.png" alt="The same held-out cuts, supervised by photographs and
+       supervised by a stock diffusion model with no photographs">
+  <figcaption>The same held-out cuts, supervised two ways. Left of each pair: the reference
+  photographs of this orange. Right: a stock depth2img checkpoint and a text prompt, with no
+  photograph of this fruit anywhere in the run &mdash; which is FruitNinja's procedure without the
+  fine-tuning it does not release. Top row transverse, bottom longitudinal.</figcaption>
+</figure>
 
 <div class="note"><strong>The photographs are not doing measurable work.</strong> Supervising the
 interior with a stock Stable Diffusion depth2img model and a text prompt &mdash; no photographs of
