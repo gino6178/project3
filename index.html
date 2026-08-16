@@ -127,7 +127,8 @@ lattice, and the colour on every exposed face is read from the volume that was a
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
 Interactive applications such as virtual cutting, digital dissection and fracture simulation need a
-3D representation with an explicit, editable interior, and a reconstruction fitted to photographs
+3D representation with an explicit, editable interior &mdash; this paper addresses the planar case of
+that family and states where the formulation stops, and a reconstruction fitted to photographs
 has a surface and nothing behind it. Existing approaches supply one in two ways, each with a cost.
 Fine-tuning a diffusion model on an object's own cross-sections and distilling it into the volume
 requires a training run per object, and the distillation averages the score over timesteps, acting
@@ -964,6 +965,43 @@ photometric term over \(N_c\) random crops of side \(w\), with a per-crop band s
 reported here. Three things are absent and their absence is the point: no score, no diffusion model
 and no term that measures a rendered plane against another rendered plane. DreamSim appears nowhere
 in the objective, because it is the instrument the results are read with.</p>
+
+<p><strong>Is this averaging, and does it cost the texture?</strong> The objection to
+reconciling unaligned references on a shared lattice is that a cell receiving two demands must
+resolve them by averaging, and that averaging is a low-pass filter which destroys the very
+structure the references were supplying. It is the right question and it has four measurable
+parts.</p>
+
+<p><em>How much of the volume is actually in conflict.</em> The objection assumes the references
+overlap. Two planes of one family are parallel and share nothing; two planes of different families
+meet in a line, so what they share is one-dimensional inside a three-dimensional volume. On the
+orange's 877,494 cells, with 24 transverse and 10 longitudinal training planes, 33.8% of cells are
+touched by at least one plane and <strong>2.9% by two or more</strong>. Averaging, where it happens
+at all, happens on three per cent of the volume, and on that three per cent the two references
+genuinely describe the same material, so a single answer is the correct output and not a
+compromise.</p>
+
+<p><em>Whether what survives is structure or its mean.</em> Measured on the axis the ten
+longitudinal references share, the model removes 57 to 61% of their disagreement while retaining
+<strong>96.5%</strong> of the variation they carry along that line. A low-pass filter cannot do
+both. The disagreement between references falls and the detail within them does not.</p>
+
+<p><em>What explicit averaging does, for contrast.</em> We implemented the averaging version and
+report it because it failed: reconciling each pair of targets by replacing both with their mean
+along their intersection cost <strong>0.012 DreamSim</strong> against an otherwise identical
+control, forty times the spread between two runs of one configuration. A seed averaged with no seed
+is a smudge. That the lattice's reconciliation does not behave this way is evidence that it is not
+performing the same operation.</p>
+
+<p><em>Whether the lattice is simply under-fitting.</em> If the capacity were too low to hold what
+twelve images ask for, the cells the planes touch would absorb the supervision and the rest would
+keep whatever initialisation gave them. They do not. Comparing the trained model against the
+lattice it started from, the mean colour change is <strong>0.0905</strong> on cells a plane touches
+and <strong>0.0915</strong> on the 580,510 cells no plane ever touches &mdash; indistinguishable. The
+supervision reaches the whole volume, and it reaches it through the shared decoder rather than
+through per-cell fitting, which is what makes twelve images enough for eight hundred thousand
+cells. The per-cell feature carries where a cell sits in that decoded space; the decoder carries
+what the object is made of.</p>
 
 <p><strong>There is no pose to recover.</strong> The obvious objection to supervising from
 photographs with no camera and no known depth is that the slice projection cannot be aligned. It
