@@ -193,85 +193,88 @@ in-sample.</p>
 
 <h2 id="intro">1&ensp;Introduction</h2>
 
-<p><strong>Motivation.</strong> A model fitted to photographs has a surface and nothing behind it,
-so an object reconstructed this way cannot be cut open: the cut reveals an empty shell. Applications
-that handle objects rather than view them, including surgical rehearsal, food and material
-simulation and games in which things break, require an interior. Recent work supplies one by
-generating it under diffusion supervision and storing it as additional Gaussian primitives filling
-the volume [3, 23]. That supervision is itself a model. The closest method fine-tunes a
-depth-conditioned diffusion model on photographs of the object's own cross-sections and distils the
-result into the volume, so obtaining an interior costs a training run per object and the fine-tuned
-model is not released; the photographs enter the pipeline as fine-tuning data rather than as the target.</p>
+<p><strong>Motivation.</strong> Reconstructing an object from photographs yields a hollow shell.
+Applications that manipulate objects rather than view them &mdash; cutting, fracture simulation,
+surgical rehearsal, digital fabrication &mdash; require an explicit interior instead: when a virtual
+knife passes through an object, what it exposes has to be a coherent internal structure and not
+empty space.</p>
 
-<p><strong>Challenge.</strong> Storing a hidden volume in rendering primitives makes a single
-representation serve two requirements that pull against each other. As <em>volume</em> it must
-answer whether space is occupied, which cells are connected, and what a colliding body has hit. As
-<em>image</em> it is splatted and composited, where a primitive's support \(\sigma\) relative to
-the spacing \(h\) governs both failure modes: \(\rho = \sigma/h\) too small leaves the volume
-unpainted, and too large blends across material boundaries. Section 4.1.2.1 measures both branches
-over four decades and finds no setting that escapes them; the released models sit four or more decades below
-that window and obtain coverage through primitive count, at 7,959,789 primitives for one fruit. A second consequence is geometric. A splatted interior has no explicit
-boundary, so the face a cut exposes is whatever primitives lie near the plane, and no property of
-that surface can be asserted: not its planarity, not its area, not where it ends.</p>
+<p><strong>Limitations of prior work.</strong> Two families supply that interior, and each pays for
+it differently.</p>
 
-<p>A third difficulty is not about the representation but about what fills it. Score distillation
-averages the diffusion score over timesteps drawn uniformly from its range, which removes exactly
-the high frequencies a cross-section consists of: under either prompt and at any run length the
-distilled target for an orange is a smooth disc with a single bright centre, and no membranes.
-Fine-tuning the model on the object's own photographs is one way to put the structure back, and it
-is the way the closest prior method takes. It is not the only one. The photographs are already
-images of the thing being asked for, registered to nothing but themselves, and a cross-section
-plane through a lattice can be made to present exactly the geometry they show &mdash; at which point they can serve as the target directly.</p>
+<ol>
+  <li><strong>Generative overhead, and a target with no high frequencies.</strong> Score
+      distillation averages the diffusion score over timesteps drawn uniformly from its range,
+      which removes exactly the frequencies a cross-section consists of: under either prompt and at
+      any run length the distilled target for an orange is a smooth disc with a single bright
+      centre and no membranes. Prior work restores the structure by fine-tuning the diffusion model
+      on the object's own cross-section photographs [3], which costs a training run per object and
+      produces a model that is not released, so the result cannot be reproduced without repeating
+      the fine-tuning.</li>
+  <li><strong>One representation, two roles.</strong> Using splatted Gaussians for both a
+      continuous volume and a sharp surface sets the primitive's support \(\sigma\) against the
+      spacing \(h\) in two directions at once. Small \(\rho = \sigma/h\) leaves the volume
+      unpainted &mdash; at 2048&nbsp;px a released section is 38.7% background &mdash; and large
+      \(\rho\) blends across material boundaries; we measure both branches over four decades and
+      find no setting that escapes them. And because splats carry no explicit surface, the face a
+      cut exposes is whichever primitives lie near the plane, so its planarity, area and extent are
+      not quantities the method defines.</li>
+</ol>
 
-<p><strong>Method.</strong> We decouple the two requirements. The hidden volume becomes a two-level
-cube occupancy lattice carrying one learned feature per cell, on which occupancy, adjacency and
-piece identity are integer queries; the visible boundary is converted to a dual grid and carries the
-appearance. Cutting is then discrete where discreteness is exact and analytic where it is not: a
-plane's sign at each leaf centre labels the pieces by connected components, and the exposed face is
-solved in closed form as one convex polygon per crossed cell. The lattice is reached by either of
-two routes, quantising an existing reconstruction or generating the topology from a signed-distance
-field with a skin band of chosen width, and nothing downstream distinguishes them. The interior is
-supervised by the cross-section photographs themselves, fitted to each training plane's rendered
-silhouette and used as the target: six transverse and six longitudinal images per object, no
-fine-tuning, and no generative model in the loop. What the two families of planes disagree about
-where they intersect is then the whole of the remaining difficulty, and section 3.10 measures what
-a shared volume does to it.</p>
+<p><strong>Our approach: a decoupled volume, supervised by loose references.</strong> Building an
+accurate interior need not require training a generative model, and it need not require a
+destructive scan of the specimen either. A handful of cross-section photographs is enough &mdash;
+and they may be rough exemplars of <em>related</em> specimens rather than of the object itself. We
+decouple the hidden volume from surface rendering: the interior becomes a compact two-level
+occupancy lattice carrying one learned feature per cell, and the visible exterior is given its own
+dual-grid surface. Section planes are projected through the lattice and the interior features are
+optimised directly against the 2D references, with no generative model in the loop. The shared
+lattice is what makes loose references sufficient: every plane reads the same cells and a cell
+holds one value, so discrepancies between non-identical slices resolve to one answer before
+anything is rendered. Measured on an orange, ten references disagree along the axis they share by
+more than any one of them varies internally, and the volume removes 57 to 61% of that while keeping
+96.5% of the detail those references carry there.</p>
 
-<p><strong>Validation.</strong> Three objects, two published methods, one evaluator. On perceptual
-distance trained against human forced-choice judgements our cut faces are 1.3 to 2.0 times closer
-to photographs of real cut fruit than either baseline, on supervision that is the photographs
-themselves rather than a diffusion model fine-tuned on them; the same volume is 3.8 to 8.3 times
-smaller after every representation is compressed by
-one codec; the cut face remains 0.07% unpainted at 2048&nbsp;px where a baseline reaches 38.7%; and
-the cut-area error against a closed form is first order in the cell size, reaching 0.09% with the
-plane residual at machine precision.</p>
+<p><strong>Exact geometry, and a grid a solver can read.</strong> Decoupling turns cutting from an
+undefined slice through particles into a closed-form construction. A <em>planar</em> cut is solved
+as one convex polygon per crossed cell, obtained by intersecting the plane with the cell's twelve
+edges: planar to machine epsilon on an oblique off-grid plane, with a cut-area error first order in
+the cell size reaching 0.09%, and with no edge of the resulting triangulation used by only one
+triangle, so the face has no gaps. Because occupancy, adjacency and piece identity are integer
+operations on the lattice, separated fragments are labelled by connected components in time linear
+in the crossed cells, and the same integers answer collision, so the grid is handed to a material
+point method without an intervening mesh extraction. Curved and terminating cuts are outside this
+formulation and section 3.7 says which half of the construction they break; the accuracy of the
+simulated dynamics is not evaluated in this paper.</p>
 
 <h3>1.1&ensp;Contributions</h3>
 
 <ul>
-  <li><strong>A decoupled representation.</strong> The hidden volume becomes a two-level cube
-      occupancy lattice with one learned feature per cell and the visible boundary gets its own
-      dual grid, so neither has to serve the other. A sweep of Gaussian support over four decades
-      shows what that avoids: 16&ndash;45% of a section unpainted at \(\rho \le 0.01\), boundary
-      blending rising through \(\rho = 2\), and both published methods four or more decades to
-      the left of the window between them.</li>
-  <li><strong>A cut face that can be stated, not approximated.</strong> One convex polygon per
-      crossed cell in closed form: planar to machine epsilon on an oblique off-grid plane, area
-      error first order in \(h\) and reaching 0.09%, pieces labelled by connected components in
-      time linear in the crossed cells. A splatted interior does not define a cut face these quantities can be measured on, and at 2048&nbsp;px its section is 2.4% to 38.7% background against
-      0.07% here.</li>
-  <li><strong>Photographs as the supervision, not as training data for a model that becomes the
-      supervision.</strong> The closest prior method fine-tunes a diffusion model on an object's
-      cross-section photographs and distils it into the volume; we make the same photographs the
-      target, so nothing generative is trained or run. Under leave-one-out over the six references,
-      <strong>0.0979 DreamSim against 0.1498</strong> for a released model whose generator
-      <em>was</em> fine-tuned on the held-out photograph &mdash; ahead on all six folds, and
-      holding the photograph out costs 0.0044.</li>
-  <li><strong>Small enough to hold, and directly simulable.</strong> Through one
-      appearance-neutral codec the same object is <strong>7.0&nbsp;MiB</strong> against 26.5 and
-      58.3. The same integers that answer occupancy answer collision and piece identity, so
-      material decomposition and MPM contact read the lattice rather than a derived structure, and
-      the exterior converts to a dual-grid surface without touching the interior.</li>
+  <li><strong>A decoupled volumetric representation.</strong> Volumetric occupancy (a two-level
+      cube lattice) is separated from exterior appearance (a dual grid), so neither has to serve
+      the other and the coverage-versus-blending trade of volumetric splatting does not have to be
+      positioned on. Through one appearance-neutral codec the same object is
+      <strong>7.0&nbsp;MiB</strong> against 26.5 and 58.3.</li>
+  <li><strong>Supervision from loose, unaligned references.</strong> An explicit interior is built
+      from sparse 2D cross-section photographs used directly as the target, with no per-object
+      fine-tuning and no score distillation. The references need not agree with each other: the
+      twelve per object are of different specimens at different depths, unregistered, with no known
+      camera. Under leave-one-out over the six transverse references, scored against the photograph
+      its own run never saw, <strong>0.0979 DreamSim against 0.1498</strong> for a released model
+      whose generator <em>was</em> fine-tuned on that photograph &mdash; ahead on all six folds,
+      and holding the photograph out costs 0.0044.</li>
+  <li><strong>Closed-form planar cutting.</strong> A planar cut is computed analytically as
+      edge-plane intersections per cell: planar to machine epsilon on an oblique off-grid plane,
+      cut-area error first order in \(h\) and reaching 0.09%, no edge of the triangulation used by
+      only one triangle, and 0.07% of the face unpainted at 2048&nbsp;px where a released baseline
+      reaches 38.7%. A splatted interior does not define these quantities, so they cannot be
+      reported for it.</li>
+  <li><strong>A grid a solver reads directly.</strong> Occupancy, adjacency and piece identity are
+      integer operations, so fragments are labelled by connected components in time linear in the
+      crossed cells and contact resolves to the same integers &mdash; closing 2,698 of 610,723
+      penetrations to zero on the contact slab &mdash; with no mesh extraction between the
+      representation and the solver. The accuracy of the resulting dynamics is not evaluated
+      here.</li>
 </ul>
 
 <h2 id="related">2&ensp;Related work</h2>
