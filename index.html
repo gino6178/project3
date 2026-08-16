@@ -1275,6 +1275,21 @@ text claimed cheapness repeatedly. On the orange, 877,494 cells, one card, media
 <tr><td>one occupancy query over the particle set</td><td>178 ms</td><td><strong>4,929,213 queries/s</strong></td></tr>
 </tbody></table></div>
 
+<div class="tw"><table>
+<thead><tr><th>render rate</th><th>cube volume, marching the face</th><th>Gaussian rasteriser</th><th>ratio</th></tr></thead>
+<tbody>
+<tr><td>512px</td><td>6,415.6 ms &nbsp;<span class="mut">0.16 fps</span></td><td>52.7 ms &nbsp;<span class="mut">18.98 fps</span></td><td>122&times;</td></tr>
+<tr><td>1024px</td><td>28,871.6 ms &nbsp;<span class="mut">0.03 fps</span></td><td>81.7 ms &nbsp;<span class="mut">12.25 fps</span></td><td>353&times;</td></tr>
+</tbody></table></div>
+
+<p>The renderer used for every O&#8209;Voxel column in the tables above is two to three orders of
+magnitude slower than the one it is compared against, and it scales worse: four times the pixels
+costs it 4.5&times; where the rasteriser pays 1.55&times;. It is single-threaded NumPy with a
+binary search per ray step and it was built to answer whether the representation carries the
+interior, not to draw anything at interactive rates. Read the appearance tables as a
+representation measurement and this does not matter; read them as a rendering result and it is the
+first thing to fix.</p>
+
 <p>The collision claim holds and now has a number: five million occupancy queries a second, which
 is what a floor division and a table lookup should cost. The cutting claim does not. Thirteen
 seconds to label the pieces and fourteen to build the face is not interactive, and every place
@@ -1282,6 +1297,56 @@ this page calls the cut cheap means cheap in operations rather than in time. Bot
 threaded NumPy on the CPU; nothing here has been moved to the GPU, and the specification asked for
 a GPU-friendly band subdivision. That is where the number should be attacked, and it has not
 been.</p>
+
+<h4>What it costs to hold, and what a cut costs while it is live</h4>
+
+<p>The other half of the memory line, and the one the coarse interior exists for: storage should be
+proportional to hidden spatial complexity, with the high-resolution cost paid only where a cut has
+made something visible and returned when it has not. Counted as fields rather than as process
+memory &mdash; a Gaussian stores position, scale, rotation, opacity and colour; a cube cell stores
+a feature, a level and its membership, with the position implicit in the address.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange</th><th>as Gaussians</th><th>as cube cells</th><th>a cut, while live</th><th>folded back</th></tr></thead>
+<tbody>
+<tr><td>route 1, 877,494 cells</td><td>46.9 MiB</td><td><strong>28.5 MiB</strong> <span class="mut">(1.6&times; less)</span></td>
+    <td>+98,623 leaves, 1.6 MiB <span class="mut">(5.6%)</span></td><td>exactly returned</td></tr>
+<tr><td>route 2, 1,231,312 cells</td><td>65.8 MiB</td><td><strong>39.9 MiB</strong> <span class="mut">(1.6&times; less)</span></td>
+    <td>+97,601 leaves, 1.6 MiB <span class="mut">(4.0%)</span></td><td>exactly returned</td></tr>
+</tbody></table></div>
+
+<p>Both halves of the claim hold. The permanent interior is 1.6&times; smaller than the same cells
+as Gaussians, and a live cut costs 4% to 6% of it, returned exactly when no cut is live &mdash;
+the same leaf count as the uncut lattice, not approximately.</p>
+
+<h4>Topology on shapes whose answer is known</h4>
+
+<p>The last line of the metrics list asks for piece-count correctness on synthetic objects and
+names two cases in particular: a near-surface cut and a thin bridge. They test opposite failures.
+The thin cap is a separation the coarse grid cannot see &mdash; every coarse centre falls on one
+side &mdash; and refinement has to find it. The one-cell bridge is the reverse: it is a connection
+that any labelling leaning on dilation or on a distance threshold will break, reporting two pieces
+for an object that is one.</p>
+
+<div class="tw"><table>
+<thead><tr><th>case</th><th>pieces</th><th>expected</th></tr></thead>
+<tbody>
+<tr><td>ball, plane through the centre</td><td>2</td><td>2</td></tr>
+<tr><td>ball, plane clear of it</td><td>1</td><td>1</td></tr>
+<tr><td>torus, plane containing the axis</td><td>2</td><td>2</td></tr>
+<tr><td>torus, plane across the axis</td><td>2</td><td>2</td></tr>
+<tr><td>torus, plane above the tube</td><td>1</td><td>1</td></tr>
+<tr><td>dumbbell, plane through the neck</td><td>2</td><td>2</td></tr>
+<tr><td>ball, cap thinner than a coarse cell</td><td>2</td><td>2 <span class="mut">(1 without refinement)</span></td></tr>
+<tr><td><strong>thin bridge, plane clear of it</strong></td><td><strong>1</strong></td><td>1</td></tr>
+<tr><td>thin bridge, plane through it</td><td>2</td><td>2</td></tr>
+<tr><td>thin bridge, plane along it</td><td>2</td><td>2</td></tr>
+</tbody></table></div>
+
+<p>All ten, and the bridge row that matters is the first of its three: a plane nowhere near a
+one-cell connection leaves one piece. Component labelling on face adjacency has no threshold to
+get wrong, which is the reason, and it is why the same table would be hard to produce from a
+k-nearest-neighbour graph over free primitives.</p>
 
 <h4>PSNR, SSIM and LPIPS</h4>
 
