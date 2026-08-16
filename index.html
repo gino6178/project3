@@ -1723,6 +1723,39 @@ gives the row above, and the conclusion reverses: super-resolution transfers. Th
 wrong-colour-source defect had already been found and fixed in three other files, which is what
 made it recognisable in a fourth.</div>
 
+<h3>FruitNinja without its fine-tuning</h3>
+
+<p>FruitNinja supervises the interior with depth-conditioned diffusion on cross-sections, and its
+published results use a model fine-tuned on the object's own photographs. That fine-tuning is not
+released, so the reproduction anyone outside the group can actually perform is the procedure
+without it: the same base depth2img checkpoint, the same prompt, and nothing fitted to this fruit.
+Running that arm is one environment variable &mdash; removing the photograph directory switches
+the supervision from photographs back to the diffusion model that FruitNinja specifies.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange, 100 held-out cuts per family</th><th>transverse FID</th><th>longitudinal FID</th></tr></thead>
+<tbody>
+<tr><td>route 1, supervised by the photographs</td><td>91.5</td><td>222.8</td></tr>
+<tr><td>route 2, supervised by the photographs</td><td><strong>74.1</strong></td><td>286.8</td></tr>
+<tr><td><strong>no fine-tuning: base diffusion, no photographs</strong></td><td><strong>90.1</strong></td><td><strong>213.5</strong></td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td><td class="mut">70.2</td></tr>
+</tbody></table></div>
+
+<div class="note"><strong>The photographs are not doing measurable work.</strong> Supervising the
+interior with a stock Stable Diffusion depth2img model and a text prompt &mdash; no photographs of
+this orange anywhere in the run &mdash; scores 90.1 against route 1's 91.5 transversally and 213.5
+against its 222.8 longitudinally, on a hundred cuts per family. Those are the same numbers. It is
+also better than route 2 on the longitudinal family, which is the family route 2 is worst on.
+<br><br>
+Two readings, and the page is not in a position to choose between them. Either the interiors these
+metrics can distinguish are reached by the base model already, and the reference photographs earn
+their place somewhere these metrics do not look; or the metrics cannot see the difference, which
+the floors above make entirely plausible &mdash; 90.1 against 91.5 is well inside a reference set
+that scores 46.3 against itself. What can be said without choosing is narrower and still worth
+saying: <em>a reproduction of this pipeline that lacks the fine-tuning is not visibly worse by any
+measurement this page makes</em>, and anyone attempting to build on FruitNinja without its
+released fine-tuning should expect to reach the same place.</div>
+
 <h3>The three works side by side</h3>
 
 <p>Two of these are measured here on the same object and the third is not run, which the table
