@@ -1756,6 +1756,48 @@ saying: <em>a reproduction of this pipeline that lacks the fine-tuning is not vi
 measurement this page makes</em>, and anyone attempting to build on FruitNinja without its
 released fine-tuning should expect to reach the same place.</div>
 
+<h4>The interiors themselves</h4>
+
+<p>Storage says what each costs; it does not say what each produced. Comparing the interiors is
+awkward because every method has its own frame, scale and renderer, and routing the comparison
+through any one of them flatters that one. So this routes through none: for each model, the plane
+through its own centroid, the primitives within a slab 1% of its own extent, projected
+orthographically, normalised by its own projected radius, opaque and nearest-first &mdash; which
+is what all three are, with median <em>and</em> tenth-percentile opacity of 1.0000.</p>
+
+<figure>
+  <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
+       representations: FruitNinja, GaussianFluent, and this work's two routes">
+  <figcaption>The same slab through the same fruit, four ways. GaussianFluent's sits smaller in
+  frame because its released model's bounding box carries more than the melon and the
+  normalisation is per model; the interior is what to look at, not the size. Every primitive is
+  drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for a cell &mdash; which
+  is the only setting under which the four are comparable at all, and is where the difference
+  turns out to be.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>watermelon</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work, route 1</th><th>route 2</th></tr></thead>
+<tbody>
+<tr><td>primitives / cells</td><td>7,959,789</td><td>1,381,100</td><td>1,065,856</td><td>1,065,856</td></tr>
+<tr><td>stored</td><td>425.1 MiB</td><td>310.8 MiB</td><td><strong>39.9 MiB</strong></td><td>39.9 MiB</td></tr>
+<tr><td>higher-band SH</td><td>0</td><td>45</td><td>0</td><td>0</td></tr>
+<tr><td>support \(\sigma\) / cell \(h\)</td><td>1.11e&#8722;7</td><td>1.35e&#8722;9</td><td>0.0172</td><td>0.0172</td></tr>
+<tr><td>that, against one pixel here</td><td>47,053&times; smaller</td><td>5,067,762&times; smaller</td>
+    <td><strong>3.3 pixels across</strong></td><td>3.3 pixels</td></tr>
+<tr><td>in the slab</td><td>256,696</td><td>57,289</td><td>51,763</td><td>34,587</td></tr>
+<tr><td><strong>unpainted, inside the section</strong></td><td>20.5%</td><td>46.7%</td>
+    <td><strong>5.7%</strong></td><td><strong>6.1%</strong></td></tr>
+</tbody></table></div>
+
+<p>Neither published interior can be given a footprint, because neither has one: their primitives
+are five and seven orders of magnitude smaller than a pixel at this resolution, so what appears on
+screen is whatever minimum radius the rasteriser enforces. That is the coverage tuning the design
+document says a cube interior removes, and it is visible here rather than argued &mdash; the two
+point clouds leave 20.5% and 46.7% of their own section unpainted while a cell representation with
+five times fewer primitives in the slab leaves 5.7%, because a cell covers \(h^3\) and a point
+covers nothing.</p>
+
 <h3>The three works side by side</h3>
 
 <p>Two of these are measured here on the same object and the third is not run, which the table
@@ -1776,25 +1818,40 @@ does not have; ours are measured throughout this page.</p>
     <td><strong>39.9 MiB</strong></td></tr>
 <tr><td>\(\rho = \sigma/h\)</td><td>3.1e&#8722;5 <span class="mut">(points, not blobs)</span></td>
     <td class="mut">not measured</td><td>not applicable &mdash; a cell tiles</td></tr>
-<tr><td>piece identity after a cut</td><td class="mut">not addressed</td>
-    <td>fracture by continuum damage</td><td>connected components on face adjacency</td></tr>
+<tr><td><strong>needs a fine-tuned diffusion model</strong></td>
+    <td><strong>yes</strong>, and it is not released</td><td>no</td><td><strong>no</strong></td></tr>
+<tr><td>breaking into pieces</td><td class="mut">not addressed</td>
+    <td>fracture by continuum damage</td>
+    <td>connected components on face adjacency, one solver per piece</td></tr>
 <tr><td>mixed materials</td><td class="mut">not addressed</td>
     <td><strong>the paper's subject</strong></td>
     <td>classes from the learned feature, stiffness by an ordering</td></tr>
 <tr><td>physics</td><td class="mut">not addressed</td><td>CD&#8209;MPM, brittle fracture</td>
-    <td>MPM, piece relabelling, occupancy collision</td></tr>
+    <td>MPM, piece relabelling, occupancy collision, per-piece solvers</td></tr>
 <tr><td>cut geometry</td><td class="mut">not addressed</td><td class="mut">damage field</td>
     <td>exact planar polygons, 0.00e+00 off the plane</td></tr>
 </tbody></table></div>
 
-<p>The three are not competing on one axis. FruitNinja asked how to invent an interior at all and
-answered it; this work keeps that supervision unchanged and asks what should hold the answer.
-GaussianFluent keeps the Gaussian and asks it to fracture, densifying the interior so it can &mdash;
-which is the opposite move to this one, and the honest way to read the storage row is that
-whatever a Gaussian interior costs, GaussianFluent pays more of it and this work pays less. Where
-the three do meet is the question this page ends on: a mixed-material object needs a shell the
-solver can resolve, and that is a property of the volume representation rather than of the
-solver.</p>
+<p><strong>The row that separates them is the first one.</strong> FruitNinja's published
+interiors come from a diffusion model fine-tuned on the object's own photographs, and that
+checkpoint is not released &mdash; so a reproduction is a reproduction of the procedure, not of the
+result, which is what the section above measures. GaussianFluent does not need one, and neither
+does this work: both reach their interiors from a stock checkpoint. On that footing the three are
+comparable, and the comparison above is a fair one.</p>
+
+<p>Breaking into pieces is not a point of difference either, which an earlier draft of this table
+got wrong. GaussianFluent fractures by a continuum damage field; this work labels connected
+components on face adjacency and builds one solver per piece, cuts again while running, and
+carries each piece's particles and velocities across &mdash; the multi-cut, piece-count and
+collision measurements above are all of that machinery. The two answer the same requirement by
+different means, and the difference is in what holds the volume while they do it: GaussianFluent
+densifies the Gaussians so they can carry a fracturing interior, and this work removes the
+rendering primitive from the interior so nothing has to be densified. The storage row is the
+consequence.</p>
+
+<p>Where the three meet is the question this page ends on: a mixed-material object needs a shell
+the solver can resolve, and how thick that shell is turns out to be a property of the volume
+representation rather than of the solver.</p>
 
 <h2 id="conclusion">Conclusion</h2>
 
