@@ -80,13 +80,11 @@
 <div class="wrap">
 
 <header>
-  <h1>Two Routes to a Cuttable Object</h1>
-  <p class="sub">A cube volume and a dual-grid surface, reached from a scan or from a field</p>
+  <h1>The Hidden Volume Stops Being a Rendering Primitive</h1>
+  <p class="sub">What it costs to fill an object's interior with primitives, measured, and what a cube occupancy gives instead</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
-  <div class="links">
-    <a href="https://gino6178.github.io/project2/">Previous: Voxel-Lattice Gaussians</a>
-    <a href="#">Code (coming soon)</a>
+  <div class="links">    <a href="#">Code (coming soon)</a>
     <a href="#">arXiv (coming soon)</a>
   </div>
 </header>
@@ -206,33 +204,48 @@ makes the comparisons here comparisons rather than assertions.</p>
 <h3>1.1&ensp;Contributions</h3>
 
 <ul>
-  <li><strong>An exact cut face.</strong> The visible face of a cut is a convex polygon per crossed
-      cell, intersected with the cell's twelve edges in closed form, not a plane approximated
-      by primitives that happen to lie near it. The cut face therefore carries no approximation
-      error at all, only the voxelised silhouette, and cut areas match closed forms to 1.0% and
-      1.3%.</li>
-  <li><strong>Two routes to one lattice, one of which needs no reconstruction.</strong> Quantising a
-      scan, or generating the topology from a signed-distance field and projecting six rendered
-      views. Cutting, surface conversion, physics and material decomposition read the lattice and
-      not the route.</li>
-  <li><strong>Less to hold the interior.</strong> On the same watermelon, counting the sparse
-      index and the exterior surface the method needs, 62.6&nbsp;MiB generated or 163.5 quantised
-      against FruitNinja's 425.1 and GaussianFluent's 310.8, from 1,065,856 cells against 7,959,789
-      and 1,381,100 primitives. Route 1's primitive count is 26% worse than GaussianFluent's, and
-      nothing here is measured against a compressed Gaussian model, which is the comparison this
+  <li><strong>The cost of a rendering primitive in a hidden volume, measured.</strong> Sweeping a
+      Gaussian's support over four decades on a fixed primitive set, both branches of the trade are
+      real and neither is escapable: 16 to 45% of a section is unpainted at \(\rho \le 0.01\), and
+      boundary blending rises through \(\rho = 2\). Between them is a window near
+      \(\rho \approx 0.25\) to \(0.5\). Both published methods sit four or more decades to the left
+      of it and buy coverage with count instead. This trade is asserted in the work we build on and
+      has not previously been measured.</li>
+  <li><strong>A volume that covers at any resolution, with nothing to set.</strong> Swept over image
+      size on one object, every splatted representation thins out as pixels shrink, ours included:
+      by 2048&nbsp;px GaussianFluent's section is 38.7% background, FruitNinja's 2.4% and our own
+      splatted lattice's 3.3%. The same lattice drawn as a cube volume moves from 0.04% to 0.07%
+      across three octaves, because a cell's support is the cell.</li>
+  <li><strong>A cut face with no approximation term.</strong> The visible face of a cut is a convex
+      polygon per crossed cell, intersected with the cell's twelve edges in closed form. The
+      construction is standard; what is new is that it becomes available to a photogrammetric asset
+      at all, since a splatted interior has no volumetric discretisation to cut. Demonstrated rather
+      than asserted: the area error falls from 0.97% to 0.09% as the lattice refines while the
+      plane residual stays at machine epsilon on an oblique off-grid plane, so the only error is the
+      silhouette.</li>
+  <li><strong>Less to hold the interior, with the accounting stated.</strong> On the same
+      watermelon, counting the sparse index and the exterior surface this method needs,
+      62.6&nbsp;MiB generated or 163.5 quantised against FruitNinja's 425.1 and GaussianFluent's
+      310.8. At matched fields, with GaussianFluent's higher-band spherical harmonics removed since
+      this representation has no view-dependent appearance to charge for, its file is
+      73.8&nbsp;MiB, so route 2's advantage over it is 1.18&times; and route 1 is 2.6&times; worse.
+      Nothing here is measured against a compressed Gaussian model, which is the comparison this
       claim still owes.</li>
-  <li><strong>A shell thickness the solver can resolve.</strong> Because route 2 builds the lattice
-      from a field, the skin band is an argument. The previous project could not produce a hard
-      shell; we show why (0.87 to 2.00 MPM grid cells where about two are needed),      and give \(\tau = (t_{\text{shell}}/L)/\Delta x\) as a criterion computable before the
-      first timestep. We do <em>not</em> claim to have located or crossed the threshold: the
-      \(\tau\) values this work reported were computed on the interior filler's grid rather than
-      the solver's, and on the grid actually integrated every build sits between 0.22 and 0.65
-      against a threshold of about two. The criterion is the contribution; the threshold experiment
-      is not yet evidence. Section 4.3 states all of it.</li>
-  <li><strong>No fine-tuned generative model.</strong> Supervision from a stock checkpoint with no      photographs of the object scores 90.1 in FID against 91.5 with them, at fixed code and
-      budget. We do not put a number on the prior method's dependence: our copy of its trainer
-      differs in schedule as well as checkpoint, so the collapse we observe is qualitative
-      evidence and not an attributable measurement.</li>
+  <li><strong>The skin band as a build parameter, and a criterion for it.</strong> Because route 2
+      builds the lattice from a field, the shell thickness is an argument rather than a consequence
+      of where a reconstruction put its primitives, and
+      \(\tau = (t_{\text{shell}}/L)/\Delta x\) says before the first timestep whether an MPM
+      transfer can resolve a stiffness contrast across it. We do <em>not</em> claim to have located
+      or crossed the threshold: the \(\tau\) values this work first reported were formed on the
+      interior filler's grid rather than the solver's, and on the grid actually integrated every
+      build sits between 0.22 and 0.65 against a threshold of about two. The criterion is the
+      contribution; section 4.3 states what the experiment does and does not establish.</li>
+  <li><strong>One lattice, two ways to populate it, and no downstream branch.</strong> A scan is
+      quantised; an object nobody scanned has its topology generated from a field and its skin
+      projected from six rendered views. Cutting, surface conversion, physics and material
+      decomposition read occupancy, adjacency and one feature per cell, and cannot tell which route
+      produced them. Removing object-specific photographs moves either route by about a point of
+      FID at fixed code and budget.</li>
 </ul>
 
 <h2 id="related">2&ensp;Related work</h2>
@@ -278,6 +291,32 @@ structured cube [14], an octree with level of detail [15], and before them the o
 grids that accelerated radiance fields [16, 17] and the hash encoding that replaced them [18]. What
 those share is that the structure serves the renderer. Here it serves the volume, and the renderer
 is given its own representation.</p>
+
+<p><strong>Compressing a Gaussian model.</strong> Every storage figure here counts fields at
+float32 on both sides, which is a file format rather than a representation. The literature that
+closes that gap is not small: sensitivity-aware vector quantisation [41], learnable masking with
+residual quantisation [42], spherical-harmonic distillation [43], hash-grid context modelling [44],
+and putting Gaussians on a grid precisely to make them compressible [45], surveyed in [46].
+Reported reductions run from fifteen-fold to seventy-five, and primitive count itself can be cut an
+order of magnitude at equal quality [47, 48]. We do not run any of them, and section 4.2.1 states
+what that leaves owed.</p>
+
+<p><strong>Cutting a discretisation.</strong> Keeping a coarse volumetric discretisation and
+representing the cut surface analytically inside the cells it crosses is two decades old in
+graphics: the virtual node algorithm duplicates a cut element so each copy carries one side [49],
+arbitrary cutting of deformable tetrahedra produces exact polyhedral fragments [50], and extended
+finite elements formulate the same idea as enrichment [51], with the surgical-simulation line
+starting earlier [52]. What has not been available before is any of this on a photogrammetric
+radiance-field asset, because such an asset has no volumetric discretisation to cut. Fracture by
+continuum damage [53] is the alternative separation mechanism GaussianFluent uses.</p>
+
+<p><strong>Sub-pixel primitives and antialiasing.</strong> A primitive whose screen-space footprint
+falls below the sampling rate disintegrates as resolution rises, and the fix is a minimum-scale
+filter: Mip-Splatting caps the extent at the sampling rate for exactly this reason [54], analytic
+integration does it differently [55], and the framing that a primitive is a reconstruction filter
+which must match the sampling rate is older still [56]. The released models we measure carry no
+such filter. Section 4.2.2's claim is therefore that a cube needs no minimum-scale parameter, not
+that a Gaussian cannot be given one.</p>
 
 <p><strong>Evaluation.</strong> FID [33] and KID [34] against photographs, and CLIPScore [35] for
 whether the picture reads as the thing. Both distribution metrics are used at sample sizes far
@@ -778,7 +817,12 @@ $$ \mathcal{V}_0 = \bigl\{ \mathbf{k} : \phi(\mathbf{x}_{\mathbf{k}}) < 0 \bigr\
                                   {\lVert \nabla \phi(\mathbf{x}_{\mathbf{k}}) \rVert} $$
 </div><div class="num">(6)</div></div>
 
-<p>Colour reaches the skin cells by projection. Each of the six views \(I_i\) has the camera
+<p>Colour reaches the skin cells by projection, by the standard construction: incidence-weighted
+blending of registered views is view-dependent texture mapping [38, 39], and iterative six-view
+projective texturing of a generated shape is what TEXTure [29] does with diffusion images. What
+differs here is only the source of the views.</p>
+
+<p>In detail: Each of the six views \(I_i\) has the camera
 \(\pi_i\) that rendered it and a direction \(\mathbf{d}_i\), so a skin cell is looked up in
 every view that sees it and the views are averaged by how squarely each faces the cell,</p>
 
@@ -835,7 +879,7 @@ $$ q(\mathbf{k}) = \operatorname{sgn}\!\left(\mathbf{n}\cdot\mathbf{x}_{\mathbf{
 $$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
 </div><div class="num">(9)</div></div>
 
-<p>Equation (9) is the crossing test, and it is used twice. A cell of side \(h\) centred at
+<p>Equation (9) is the standard box-plane separating-axis test [40], and it is used twice. A cell of side \(h\) centred at
 \(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
 extent along \(\mathbf{n}\), which is the right-hand side; that decides which cells are refined.
 It also bounds how far a point inside a cell can be from the plane, which is what section 4.3.5
@@ -880,6 +924,12 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 
 
 <h4>3.7.1&ensp;Adaptive collapse</h4>
+
+<p>What follows is Ju et al.'s adaptive dual contouring [6] applied to the Flexible Dual Grid:
+summing children's quadrics bottom-up and collapsing where the residual is small is their
+construction, and the additivity that makes it work is Garland and Heckbert's [9]. The only thing
+new here is expressing the tolerance as a length rather than as a raw residual, which is what makes
+one \(\tau\) comparable across objects and levels.</p>
 
 <p>A dual grid stores one node per active surface voxel, so it costs \(O(A/h^2)\): a plane costs
 as much as a crumpled sheet of the same extent. That is fixable inside the algorithm, because the
@@ -1816,8 +1866,29 @@ density contrast in the opposite direction to the stiffness one and the paper ca
 And the \(\beta = 7\) build is not the \(\beta = 3\) build with a thicker skin: it has 62% more
 cells and a much larger skin fraction, so at 8.0e6 in the shell the whole body is stiffer, and both
 extents rise between the two settings, which is the signature of a stiffer object rather than of a
-resolved shell. The control that separates these is the uniform preset at both \(\beta\), which
-the material code ships for exactly this purpose and which is running as this is written.</p>
+resolved shell. The control that separates these is the uniform preset at both \(\beta\), which the material
+code ships for exactly this purpose. It has now been run, with the level labels present so that the
+same per-level extent is recorded, and only the stiffness made uniform.</p>
+
+<div class="tw"><table>
+<thead><tr><th>doughnut, extent gap (interior &minus; skin) at the last frame</th>
+<th>\(\beta = 3\)</th><th>\(\beta = 7\)</th></tr></thead>
+<tbody>
+<tr><td><strong>uniform stiffness, labels present</strong></td><td><strong>+0.0630</strong></td><td><strong>+0.0628</strong></td></tr>
+<tr><td>the material field applied</td><td>+0.0288</td><td>+0.0515</td></tr>
+<tr><td>difference the field makes</td><td>&minus;0.0342</td><td>&minus;0.0113</td></tr>
+</tbody></table></div>
+
+<p>The control does what a control should: it shows that the geometry alone produces a gap, that
+the gap is the same at both band widths to within a thousandth, and therefore that a raw gap is not
+evidence about a shell. Against that baseline the material field does move the result, so the field
+is reaching the solver. But it moves it <em>more</em> at \(\beta = 3\) than at \(\beta = 7\),
+which is the opposite ordering to the one a shell becoming resolvable would produce, and it is
+consistent with the \(\tau\) correction above: on the grid the solver integrates, neither build
+is near the threshold, so there is no reason to expect the thicker band to behave differently in
+kind. <strong>We report this as a negative result.</strong> The band width is a parameter route 2
+can set, the criterion for choosing it is stated and computable, and the experiment intended to
+confirm the criterion does not confirm it.</p>
 
 <p>The four gaps are 0.16%, 0.40%, 0.70% and 1.03% of the object's extent, so the effect is a
 fraction of a percent at three of the four settings and reaches 1% at one. Each cell is a single
@@ -2258,8 +2329,7 @@ figures is measured against a compressed Gaussian model, which would move them a
   <li><strong>Cutting is not fast.</strong> Thirteen seconds to refine the band and label the
       pieces, fourteen to build the exact face, on 877,494 cells. Where we call the cut
       cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
-      design asked for a GPU-friendly band subdivision, which is not what was built.</li>
-  <li><strong>Part of the experimental programme is still open.</strong> The four-representation
+      design asked for a GPU-friendly band subdivision, which is not what was built.</li>  <li class="mut"><strong>Open ends.</strong> The four-representation
       baseline and the interior-appearance, resolution-stability, memory and runtime families wait
       until the architecture is finished. Topology and collision are the two already measured.</li>
 </ul>
@@ -2318,7 +2388,7 @@ chose.</p>
   <li>F. Wu and Y. Chen. <em>FruitNinja: 3D Object Interior Texture Generation with Gaussian
       Splatting.</em> <a href="https://arxiv.org/abs/2411.12089">arXiv:2411.12089</a>, CVPR 2025.</li>
   <li>Voxel-Lattice Gaussians. <em>The previous project in this series.</em>
-      <a href="https://gino6178.github.io/project2/">gino6178.github.io/project2</a>, 2026.</li>
+      Withheld for review, 2026.</li>
 
   <li>W. E. Lorensen and H. E. Cline. <em>Marching Cubes: A High Resolution 3D Surface
       Construction Algorithm.</em> SIGGRAPH 1987.</li>
@@ -2390,6 +2460,43 @@ chose.</p>
       Find Them.</em> CVPR 2020. <span class="mut">(why FID is unusable at the sample sizes here)</span></li>
   <li>T. Kynk&auml;&auml;nniemi, T. Karras, M. Aittala, T. Aila and J. Lehtinen. <em>The Role of
       ImageNet Classes in Fr&eacute;chet Inception Distance.</em> ICLR 2023.</li>
+  <li>P. Debevec, C. Taylor and J. Malik. <em>Modeling and Rendering Architecture from
+      Photographs.</em> SIGGRAPH 1996.</li>
+  <li>C. Buehler, M. Bosse, L. McMillan, S. Gortler and M. Cohen. <em>Unstructured Lumigraph
+      Rendering.</em> SIGGRAPH 2001.</li>
+  <li>C. Ericson. <em>Real-Time Collision Detection.</em> Morgan Kaufmann, 2004, &sect;5.2.3.</li>
+  <li>S. Niedermayr, J. Stumpfegger and R. Westermann. <em>Compressed 3D Gaussian Splatting for
+      Accelerated Novel View Synthesis.</em> CVPR 2024.</li>
+  <li>J. C. Lee, D. Rho, X. Sun, J. H. Ko and E. Park. <em>Compact 3D Gaussian Representation for
+      Radiance Field.</em> CVPR 2024.</li>
+  <li>Z. Fan et&nbsp;al. <em>LightGaussian: Unbounded 3D Gaussian Compression with 15&times;
+      Reduction.</em> NeurIPS 2024.</li>
+  <li>Y. Chen et&nbsp;al. <em>HAC: Hash-grid Assisted Context for 3D Gaussian Splatting
+      Compression.</em> ECCV 2024.</li>
+  <li>W. Morgenstern et&nbsp;al. <em>Compact 3D Scene Representation via Self-Organizing Gaussian
+      Grids.</em> ECCV 2024.</li>
+  <li>M. Bagdasarian et&nbsp;al. <em>3DGS.zip: A Survey on 3D Gaussian Splatting Compression.</em>
+      Eurographics STAR 2025.</li>
+  <li>G. Fang and B. Wang. <em>Mini-Splatting: Representing Scenes with a Constrained Number of
+      Gaussians.</em> ECCV 2024.</li>
+  <li>S. Mallick et&nbsp;al. <em>Taming 3DGS: High-Quality Radiance Fields with Limited
+      Resources.</em> SIGGRAPH Asia 2024.</li>
+  <li>N. Molino, Z. Bao and R. Fedkiw. <em>A Virtual Node Algorithm for Changing Mesh Topology
+      During Simulation.</em> SIGGRAPH 2004.</li>
+  <li>E. Sifakis, K. Der and R. Fedkiw. <em>Arbitrary Cutting of Deformable Tetrahedra.</em>
+      SCA 2007.</li>
+  <li>D. Koschier, J. Bender and N. Thuerey. <em>Robust eXtended Finite Elements for Complex Cutting
+      of Deformables.</em> ACM TOG 36(4), SIGGRAPH 2017.</li>
+  <li>D. Bielser and M. Gross. <em>Interactive Simulation of Surgical Cuts.</em> Pacific Graphics
+      2000.</li>
+  <li>J. Wolper, Y. Fang, M. Li, J. Lu, M. Gao and C. Jiang. <em>CD-MPM: Continuum Damage Material
+      Point Methods for Dynamic Fracture Animation.</em> ACM TOG 38(4), SIGGRAPH 2019.</li>
+  <li>Z. Yu, A. Chen, B. Huang, T. Sattler and A. Geiger. <em>Mip-Splatting: Alias-free 3D Gaussian
+      Splatting.</em> CVPR 2024.</li>
+  <li>Z. Liang et&nbsp;al. <em>Analytic-Splatting: Anti-Aliased 3D Gaussian Splatting via Analytic
+      Integration.</em> ECCV 2024.</li>
+  <li>J. T. Barron et&nbsp;al. <em>Mip-NeRF: A Multiscale Representation for Anti-Aliasing Neural
+      Radiance Fields.</em> ICCV 2021.</li>
 </ol>
 
 <p class="mut">The two references that carry the most weight here are [6] and [11]: dual contouring
@@ -2408,8 +2515,8 @@ from, and its numbers are the baseline throughout.</p>
 <footer>
 Every number here was measured on the three objects the previous project reports, or on a
 synthetic shape whose answer is known in closed form. Continues
-<a href="https://gino6178.github.io/project2/" style="color:var(--acc)">Voxel-Lattice
-Gaussians</a>.
+<span style="color:var(--acc)">Voxel-Lattice
+Gaussians</span>.
 </footer>
 
 </div>
