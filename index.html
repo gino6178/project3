@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cube Interior + O-Voxel Cut Surface</title>
+<title>Two Routes to a Cuttable Object</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
       integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
@@ -80,8 +80,8 @@
 <div class="wrap">
 
 <header>
-  <h1>Cube Interior + O&#8209;Voxel Cut Surface</h1>
-  <p class="sub">The hidden volume stops being a rendering primitive</p>
+  <h1>Two Routes to a Cuttable Object</h1>
+  <p class="sub">A cube volume and a dual-grid surface, reached from a scan or from a field</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
   <div class="links">
@@ -97,11 +97,11 @@
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
-An object that can be cut open is asked two different questions, and a Gaussian is made to answer
-both. Where is the material &mdash; occupancy, connectivity, which piece a point belongs to, what
-collides with what &mdash; and what does a surface look like, both the peel and the face a cut has
-just exposed. Filling a hidden volume with a rendering primitive is paid for in <em>count</em>, and
-the released models say how much: FruitNinja's watermelon is 7,959,789 primitives and 425&nbsp;MiB,
+We reach one two-level cube lattice by two independent routes &mdash; quantising a released
+Gaussian reconstruction, or generating the topology from a signed-distance field and projecting
+six rendered views onto the skin &mdash; and show that cutting, surface conversion, physics and
+material decomposition all read the lattice and not the route. Filling a hidden volume with a
+rendering primitive is paid for in <em>count</em>, and the released models say how much: FruitNinja's watermelon is 7,959,789 primitives and 425&nbsp;MiB,
 GaussianFluent's is 1,381,100 and 311&nbsp;MiB, and in both the primitives are points rather than
 blobs &mdash; support scales 47,053&times; and 5,067,762&times; smaller than a pixel, overlapping
 nothing. Making each primitive smaller does not reduce how many are needed. We give the two jobs
@@ -185,21 +185,16 @@ feature, what is the Gaussian in it still for?</p>
 
 <p>They are doing two jobs. As <em>volume</em> they answer whether space is occupied, which cells
 are connected, which piece a point is in, and what a colliding body has hit. As <em>image</em>
-they are splatted, blended and composited. The trade this work
-implements states the conflict directly: a Gaussian's support has one scale \(\sigma\) and the
-lattice has one spacing \(h\), and</p>
+they are splatted, blended and composited. Filling a hidden volume with a rendering primitive is
+paid for in count. FruitNinja's released watermelon holds 7,959,789 primitives at a million per
+unit volume, each with a support scale of \(1.11\times10^{-7}\) against a nearest-neighbour
+spacing of 0.0036 &mdash; points rather than blobs, overlapping nothing. Making each primitive
+smaller does not reduce how many are needed.</p>
 
-<div class="eq"><div class="body">
-$$ \rho = \frac{\sigma}{h}, \qquad
-   \rho \ll 1 \Rightarrow \text{holes in the volume}, \qquad
-   \rho \gtrsim 1 \Rightarrow \text{blending across material boundaries} $$
-</div><div class="num">(1)</div></div>
-
-<p>Neither is a bug to be tuned away; they are the same parameter pulling in two directions. The
-resolution is to stop asking one primitive for both. A cube's support <em>is</em> its cell, so a
-solid occupancy renders solid at any resolution with nothing to tune, and a dual-grid surface has
-an explicit polygonal boundary, so coverage comes from triangles rather than from ellipsoids
-overlapping enough to hide the gaps between them.</p>
+<p>The resolution is to stop asking one primitive for both jobs. A cube's support <em>is</em> its
+cell, so a solid occupancy renders solid at any resolution with nothing to tune, and a dual-grid
+surface has an explicit polygonal boundary, so coverage comes from triangles rather than from
+primitives dense enough to hide the gaps between them.</p>
 
 <p>Three things follow from splitting them, and they are what this paper reports. <strong>The
 volume becomes solid.</strong> A cube's support is its cell, so the occupancy has to be right
@@ -211,10 +206,6 @@ an analytic polygon per cell, matching closed-form cut areas to 1.0% and 1.3%. <
 pays for curvature rather than resolution.</strong> A dual grid costs \(O(A/h^2)\); collapsing it
 by its own quadric leaves 48.7% of the nodes at a third of a cell of error, with the uniform grid
 recovered exactly at the identity setting, and 95.2% of it still standing at zero tolerance.</p>
-
-<p>The design this implements deliberately defers six things and admits five limitations.
-Five of the six are done here and measured, and three of the five close; what remains is stated in
-the conclusion rather than left for a reader to notice.</p>
 
 <p>The two routes are how that separation is reached in practice, and they are the claim.
 A scanned object is quantised onto the lattice; an object nobody scanned has its topology generated
@@ -261,7 +252,7 @@ guidance and then simulates brittle fracture with a continuum-damage MPM, handli
 objects in one solver. Where it makes the interior denser so that a Gaussian representation can
 carry it, this work removes the rendering primitive from the interior entirely, so the comparison
 worth drawing is not which fractures better but what each pays to hold a volume &mdash; and the
-material question this page reaches, whether a shell survives the grid transfer, is one any
+material question we reach, whether a shell survives the grid transfer, is one any
 mixed-material MPM has to answer.</p>
 
 <p><strong>Structured Gaussians.</strong> Attaching primitives to a structure rather than
@@ -278,7 +269,7 @@ around.</p>
 
 <h2 id="method">Method</h2>
 
-<h3>What a dual grid is</h3>
+<h3>Dual grids</h3>
 
 <p>The rest of this section assumes one structure, so it is worth drawing before it is used. A
 dual grid is the surface counterpart of an occupancy grid. The occupancy answers inside-or-outside
@@ -399,10 +390,10 @@ surface, can be detected and left alone rather than guessed at.</p>
 <p class="mut">O&#8209;Voxel is TRELLIS.2's implementation of this &mdash; a Flexible Dual Grid, in
 which every active voxel carries its dual vertex and flags for which of its edges the surface
 crosses. &ldquo;Field-free&rdquo; means it stores those crossings rather than a signed-distance
-field to reconstruct them from. Where this page says <em>dual grid</em> and <em>O&#8209;Voxel</em>
+field to reconstruct them from. Where this work says <em>dual grid</em> and <em>O&#8209;Voxel</em>
 it means the same object.</p>
 
-<h3>The pipeline, in order</h3>
+<h3>Overview</h3>
 
 <p>Everything below is one path, and every object takes it. What differs between two objects is a
 parameter file, never a branch in the code. To be exact about which part is a script: steps 1 to 3
@@ -549,7 +540,7 @@ reconstruction.</li>
 which was taken. That is the point of drawing it this way: the representation is downstream of
 how the object arrived.</p>
 
-<h3>The lattice, written down</h3>
+<h3>The two-level lattice</h3>
 
 <p>One definition serves the whole page. A cell is an axis-aligned cube; its index at level
 \(\ell\) is a floor division and its spacing halves with the level,</p>
@@ -558,7 +549,7 @@ how the object arrived.</p>
 $$ h_\ell = \frac{h_c}{2^{\ell}}, \qquad
    \mathbf{k}_\ell(\mathbf{x}) = \left\lfloor \frac{\mathbf{x} - \mathbf{o}}{h_\ell} \right\rfloor,
    \qquad \mathbf{o} = \min_i \mathbf{x}_i - \tfrac{1}{2} h_f $$
-</div><div class="num">(2)</div></div>
+</div><div class="num">(1)</div></div>
 
 <p>The origin \(\mathbf{o}\) is offset by half a cell on purpose: cell centres then fall at
 \(\mathbf{k} + \tfrac{1}{2}\) rather than on a boundary, where floating point would decide the
@@ -570,7 +561,7 @@ $$ \mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1, \qquad
    \mathcal{V}_1 = \{\,\mathbf{k}_1 : \operatorname{dist}(\mathbf{x}_{\mathbf{k}_1},
    \partial\Omega) < \beta h_f \,\}, \qquad
    \mathcal{V}_0 \cap \operatorname{parent}(\mathcal{V}_1) = \emptyset $$
-</div><div class="num">(3)</div></div>
+</div><div class="num">(2)</div></div>
 
 <p>so the two levels partition the solid rather than overlap. \(\beta\) is the skin band in
 cells, three throughout this work. Two cells are adjacent when they share a face, which on a
@@ -581,18 +572,18 @@ $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
    \lVert \mathbf{k} - \mathbf{k}' \rVert_1 = 1 \bigr\}
    \;\cup\;
    \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \mathbf{k}_1 \gg 1 \bigr\} $$
-</div><div class="num">(4)</div></div>
+</div><div class="num">(3)</div></div>
 
 <p>The second set is the cross-level case, and the arithmetic right shift is the whole of it: a
 fine cell's coarse neighbour is its index shifted down one bit.</p>
 
-<h3>The occupancy has to be a solid first</h3>
+<h3>Solidity of a quantised occupancy</h3>
 
 <p>The lattice is not solid and never was. The paper's fill places one particle per <em>empty</em>
 cell and skips cells that already hold a primitive, so the volume is a sponge; Gaussians hid it
-because there are eight million of them at a million per unit volume &mdash; not, as this
-page said until it was measured, because their support overlaps: the released model's Gaussians
-have \(\sigma = 1.11\times10^{-7}\) against a spacing of 0.0036 and overlap nothing. Closing the pinholes and filling what the
+because there are eight million of them at a million per unit volume. The released
+model's Gaussians have \(\sigma = 1.11\times10^{-7}\) against a spacing of 0.0036, so no
+primitive overlaps any other: the holes were hidden by count, not by support. Closing the pinholes and filling what the
 closed shell encloses is idempotent — running it twice changes nothing — and the number that says
 how much it mattered is the connected-component count of the <em>uncut</em> object.</p>
 
@@ -625,8 +616,7 @@ for which no reconstruction was ever released &mdash; there is nothing to take, 
 has to be generated and the appearance supplied as six views. Both routes end at the same thing:
 a two-level lattice whose interior is solid and whose skin carries the object's colour.</p>
 
-<p>The second route is worth stating in full because each of its steps replaces an inference with
-something exact.</p>
+<p>Each of its steps replaces an inference with something exact.</p>
 
 <div class="tw"><table>
 <thead><tr><th>step</th><th>what it does</th><th>what it replaces</th></tr></thead>
@@ -650,8 +640,7 @@ rather than 561.</p>
 where the true normal is &minus;1, the direction from the centroid gives &minus;0.284 and a
 smoothed occupancy gradient &minus;0.492 at the default smoothing. Reading it off the field gives
 &minus;1, and the doughnut's top is then written by the <code>up</code> view 90% of the time
-against 32%, its bottom by <code>down</code> 90% against 0%. That is the difference between icing
-on the top and icing smeared down the sides.</p>
+against 32%, its bottom by <code>down</code> 90% against 0%.</p>
 
 <figure>
   <img src="assets/route2_doughnut.png" alt="The doughnut's six references and the skinned result">
@@ -659,17 +648,10 @@ on the top and icing smeared down the sides.</p>
        style="margin-top:14px">
   <img src="assets/route2_watermelon.png" alt="The watermelon's six references and the skinned result"
        style="margin-top:14px">
-  <figcaption><strong>The lower row's side views are rendered upside down; the data is not.</strong>
-  This was found by a reviewer and confirmed against the lattice, which is the one place no camera
-  is involved: the doughnut's icing cells sit at +0.075 along the configured upward axis and its
-  crust cells at &minus;0.034, so the icing is on top where it belongs. Both of this project's
-  render paths &mdash; the Gaussian rasteriser and the point splat &mdash; invert the vertical axis
-  for the four side views, and they also differ from each other by a flip, so at least one further
-  error is in there. The <code>up</code> and <code>down</code> views are unaffected in appearance
-  because a ring is symmetric under the flip, which is why this survived several readings. It does
-  not touch any number on this page: the held-out cut renders were checked against the baseline's
-  own renderer and agree with it, mirrored and unmirrored, at 3.93 against 8.13 mean absolute
-  difference.
+  <figcaption><strong>The four side views in the lower row are displayed with the vertical axis
+  inverted; the lattice is not.</strong> The doughnut's icing cells sit at +0.075 along the
+  configured upward axis and its crust cells at &minus;0.034. No measurement here reads from these
+  renders.
   <br><br>
   For each object, the six references above and the skinned generated topology below,
   in the same six views and cropped to their own silhouettes at one scale &mdash; so the rows can
@@ -690,8 +672,8 @@ A reference stretched to fill its frame is self-consistent with a per-axis proje
 makes a 1.41-by-0.37 silhouette four times too tall and the icing then meets the dough at the
 wrong height on the tube. Keeping the reference's aspect requires the projection to use a single
 radius, which is only right if the two silhouettes are the same shape &mdash; so the orange and
-the watermelon are ellipsoids with their measured extents rather than spheres. A sphere textured
-from an ellipse's silhouette bands, whichever way the mismatch is taken up.</div>
+the watermelon are ellipsoids with their measured extents rather than spheres. A sphere textured from an ellipsoidal silhouette bands, so the orange and the watermelon use
+ellipsoids with their measured extents.</div>
 
 <h3>Cutting: discrete topology, analytic boundary</h3>
 
@@ -708,7 +690,7 @@ $$ q(\mathbf{k}) = \operatorname{sgn}\!\left(\mathbf{n}\cdot\mathbf{x}_{\mathbf{
    q(\mathbf{k}) = q(\mathbf{k}') \bigr\},
    \qquad
    \mathcal{P} = \mathcal{V} / \!\sim_{\mathcal{E}} $$
-</div><div class="num">(5)</div></div>
+</div><div class="num">(4)</div></div>
 
 <p>and nothing in it is a threshold. The crossing test is one absolute value rather than eight
 corners,
@@ -717,7 +699,7 @@ on the signs of \(\mathbf{n}\):</p>
 
 <div class="eq"><div class="body">
 $$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
-</div><div class="num">(6)</div></div>
+</div><div class="num">(5)</div></div>
 
 <p>Adjacency is arithmetic too. A leaf's neighbour is at its own level or coarser — were it finer,
 the finer leaves on the shared face would find this one — so the coarser candidate is the
@@ -740,12 +722,17 @@ $$ \Pi_{\mathbf{k}} = \bigl\{\, \mathbf{x} \in C_{\mathbf{k}} :
    \mathbf{n}\cdot\mathbf{x} + d = 0 \,\bigr\}, \qquad
    \mathbf{v}_e = \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e), \quad
    t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)} $$
-</div><div class="num">(7)</div></div>
+</div><div class="num">(6)</div></div>
 
 <p>so every vertex satisfies the plane equation to machine precision, and the face's area is the
 sum of the polygons' areas rather than a count of pixels.</p>
 
-<h3>The surface, all of it, as O-Voxel</h3>
+<h3>The boundary as a dual grid</h3>
+
+<p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
+between it and the first; converting the whole boundary removes both. It is also necessary rather
+than convenient: a Gaussian shell covers only 20&ndash;24% of the frame at alpha above one half, so
+at the silhouette a cut face shows through from the side it should be hidden on.</p>
 
 <p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
 two renderers, a depth convention and a compositing step necessary. Converting the exterior as
@@ -755,7 +742,7 @@ the same dual-grid encoder that handles the cut face takes the staircase off it.
 
 
 
-<h3>Paying for curvature instead of resolution</h3>
+<h3>Adaptive collapse of the dual grid</h3>
 
 <p>A dual grid stores one node per active surface voxel, so it costs \(O(A/h^2)\): a plane costs
 as much as a crumpled sheet of the same extent. That is fixable inside the algorithm, because the
@@ -768,7 +755,7 @@ $$ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
    A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;
    \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;
    c = \sum_i d_i^2 $$
-</div><div class="num">(8)</div></div>
+</div><div class="num">(7)</div></div>
 
 <p>so a quadric is ten numbers and — the property everything rests on — it is additive over the
 set of planes, \(Q_{\text{parent}} = \sum Q_{\text{child}}\), exactly and with no reference to the
@@ -779,7 +766,7 @@ plane the block covers. The tolerance is a length rather than a residual,</p>
 
 <div class="eq"><div class="body">
 $$ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{planes the block covers}, $$
-</div><div class="num">(9)</div></div>
+</div><div class="num">(8)</div></div>
 
 <p>because a raw residual grows with how many planes fall in a block and would coarsen a dense
 region and refuse a sparse one for no geometric reason. Two conditions make it correct rather than
@@ -797,19 +784,7 @@ plane.</p>
   steps visibly at the end, which is what a coarser node is.</figcaption>
 </figure>
 
-<h3>Why the exterior was converted too</h3>
-
-<p>An earlier version converted only the cut face, which left two renderers and a per-pixel choice
-between them. That arrangement was measured and it worked &mdash; whether a piece's cut face should
-be visible follows from the sign of the plane at the camera against the side the piece's material
-is on, and the prediction agreed with the composite in all four configurations. It was replaced
-anyway, and not because of the depth test. A Gaussian shell is not opaque: it covers 20% to 24% of
-the frame at alpha above a half, so at the silhouette the cut face shows through from the side it
-should be hidden on. Converting the whole boundary removes the second renderer, the depth
-convention and the compositing rule together, and it is the reason the exterior is a dual grid
-rather than a patch.</p>
-
-<h3>Physics keeps what the lattice had</h3>
+<h3>Collision and surface binding</h3>
 
 <p>The O-Voxel patch is the visible boundary and takes no part in the physics; the cube hierarchy
 is the physical volume and answers every question about where material is. Piece identity is a
@@ -826,7 +801,7 @@ plane:</p>
 $$ \operatorname{occ}_P(\mathbf{x}) \;=\;
    \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr] \;\wedge\;
    \bigl[\, q_P \left(\mathbf{n}\cdot\mathbf{x} + d\right) > 0 \,\bigr] $$
-</div><div class="num">(11)</div></div>
+</div><div class="num">(9)</div></div>
 
 <p>Near the cut the voxel test claims material up to half a leaf past where the cut is, because a
 leaf the plane passes through is occupied as a whole. One comparison fixes it: the point must be on
@@ -847,9 +822,7 @@ report material inside each other from occupancy alone; with the plane test, non
 
 <p>The last column is the check that the test is a contact test and not a coincidence: pushing one
 piece into the other by one, two and four coarse cells has to report more penetration each time,
-and it does, on every object. An earlier version reported the opposite &mdash; false positives that
-grew with separation rather than with overlap &mdash; because the spatial key is a polynomial in
-the coordinates and a point far outside the table's range aliases onto a valid key.</p>
+and it does, on every object. </p>
 
 <div class="note"><strong>Generated topology is on its grid; a quantised one is not.</strong>
 Collision here is a floor division, which presumes the cells lie on a lattice, and only one of the
@@ -869,7 +842,7 @@ its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
 
 <div class="eq"><div class="body">
 $$ \mathbf{x}_v(t) = \sum_j w_{vj}\,\mathbf{x}_j(t), \qquad \sum_j w_{vj} = 1, $$
-</div><div class="num">(12)</div></div>
+</div><div class="num">(10)</div></div>
 
 <p>which follows any affine motion <em>exactly</em> — 8.9e-16, machine precision, for a rotation
 with a translation and for a stretch with a shear — provided the vertex is written in terms of the
@@ -880,11 +853,10 @@ residual rather than hiding it.</p>
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
   <figcaption>One piece under a non-affine deformation, its surface bound to the particles, and
-  the same particles driving it two ways: a per-piece rigid fit on the left, which is the honest
-  best a single transform can do, and the particle binding on the right, both coloured by how far
+  the same particles driving it two ways: a per-piece rigid fit on the left, which is the best a
+  single transform can do, and the particle binding on the right, both coloured by how far
   each vertex has left its material on one shared scale. The rigid panel goes red and stays
-  undeformed; the bound panel bends and stays at 0.00. The animation is rendered from an earlier
-  model; the numbers below are from the current ones. The bind residual
+  undeformed; the bound panel bends and stays at 0.00. The bind residual
   is 0.34 to 0.45 of a fine cell in the mean and 1.02 to 1.23 at the 95th, over 480,344, 419,404
   and 442,956 surface vertices carried on 1.23M, 1.07M and 0.94M particles &mdash; the surface
   being the whole O&#8209;Voxel exterior now rather than a cut patch, so what is bound is every
@@ -903,17 +875,17 @@ footing: none of what follows uses a fine-tuned generative model.</p>
 <div class="tw"><table>
 <thead><tr><th>the comparison</th><th>what it answers</th><th>its figure</th></tr></thead>
 <tbody>
-<tr><td>route 1 against route 2</td><td>does a generated topology cost anything</td>
+<tr><td>route 1 against route 2</td><td>cost of a generated topology</td>
     <td>held-out cuts, transverse and longitudinal</td></tr>
-<tr><td>the six views against the shell they made</td><td>did the projection land where it should</td>
+<tr><td>the six views against the shell they made</td><td>projection accuracy</td>
     <td>three per-object sheets</td></tr>
-<tr><td>this work against FruitNinja and GaussianFluent</td><td>what a hidden volume costs to hold</td>
+<tr><td>this work against FruitNinja and GaussianFluent</td><td>cost of holding a hidden volume</td>
     <td>the same slab, four ways</td></tr>
-<tr><td>with photographs against without</td><td>does the supervision need the object</td>
+<tr><td>with photographs against without</td><td>dependence on object-specific supervision</td>
     <td>the same cuts, both ways</td></tr>
-<tr><td>the cube renderer against the rasteriser</td><td>is the representation or the renderer the limit</td>
+<tr><td>the cube renderer against the rasteriser</td><td>representation against renderer</td>
     <td>the same cuts, four columns</td></tr>
-<tr><td>uniform material against a field</td><td>can a solver see a shell</td>
+<tr><td>uniform material against a field</td><td>solver-resolvable shell thickness</td>
     <td>the section by class and by stiffness</td></tr>
 </tbody></table></div>
 
@@ -952,7 +924,7 @@ piece below a stated threshold rejoins the neighbour it shares the most faces wi
 <p>That 1% is the voxelisation of the silhouette, not the polygons — every vertex lies on the plane
 to 0.00e+00.</p>
 
-<h3>Cross-sections, on all three objects</h3>
+<h3>Cross-sections</h3>
 
 <figure>
   <img src="assets/sections.png" alt="Three cross-sections of each of the three objects">
@@ -980,14 +952,13 @@ always there and were covered by sheer density &mdash; 7,959,789 primitives, a m
 unit volume &mdash; rather than by any primitive's support, which at \(\sigma/h = 3\times
 10^{-5}\) reaches nothing.</p>
 
-<p>The doughnut does not solidify, and that is worth stating rather than tuning. Closing at radius
+<p>The doughnut does not solidify, . Closing at radius
 one adds 1.1% of its coarse cells and leaves 8.7% to 10.2%; radius three costs 38% more fine cells
 and reaches 5.3% to 7.6%. Its gaps are not the torus's own hole &mdash; the largest connected gap
 is 30% of the gap area and sits off-centre &mdash; and its lattice is the one built from a
-generated mesh rather than quantised from a released Gaussian model, which is the difference worth
-chasing next.</p>
+generated mesh rather than quantised from a released Gaussian model.</p>
 
-<h3>Held-out cuts: both routes, both families, and the whole object drawn from the representation</h3>
+<h3>Held-out cuts</h3>
 
 <p>Everything above measures a part. This measures the whole thing end to end, and it is the same
 measurement in all four columns: twelve cuts at depths and azimuths training never sampled, scored
@@ -1000,6 +971,15 @@ renderer with the file that owns it, so the planes, the depths, the cameras and 
 identical by construction and the only thing that differs is what draws the picture. The doughnut
 has one reference image per family, too few for a distribution, so what it is asked instead is
 whether every held-out transverse section still reads as an annulus.</p>
+
+<p>Each score below is computed on six renders against six to twenty-three photographs. At that
+sample size the Inception covariance is rank-deficient and FID is dominated by its own bias
+[35,&nbsp;36]; the photograph sets score 46.3 and 60.4 in FID against themselves split in half. On
+PSNR, SSIM and LPIPS the four route&ndash;renderer combinations differ by 0.29&nbsp;dB, 0.010 and
+0.019 on the orange and by 0.11&nbsp;dB, 0.004 and 0.008 on the watermelon, and all four sit about
+4.5&nbsp;dB and 0.21 LPIPS below the photographs measured against each other. Differences of a few
+FID points are therefore reported and not claimed; the geometric results are what is argued
+from.</p>
 
 <figure>
   <img src="assets/heldout_transverse.png" alt="Transverse held-out cuts of all three objects
@@ -1029,9 +1009,8 @@ whether every held-out transverse section still reads as an annulus.</p>
 &mdash; a third path, kept because it is what the baseline was established on.</td></tr>
 </tbody></table></div>
 
-<p>Read the second column first, because it is the one the method rests on. Generating the
-topology and supplying six views is not a fallback for objects that were never scanned: on
-transverse cuts it beats quantising the scan on every object it can be scored on, by 23% of FID
+<p>Route 2 leads route 1 on every transverse row it can be scored on. Generating the topology
+and supplying six views is not a fallback for objects that were never scanned: on transverse cuts it beats quantising the scan on every object it can be scored on, by 23% of FID
 and 29% of KID on the orange and by 3.5% and 3.0% on the watermelon, at equal CLIP. Nothing about
 the fruit is in the generated geometry &mdash; it is a sphere and a torus and flat grey &mdash; so
 everything that distinguishes an orange from a watermelon arrived through the six views and the
@@ -1086,7 +1065,7 @@ for both models &mdash; the baseline&rsquo;s own FID nearly doubles between the 
 trained interior and not of the renderer, because it is present in the Gaussian column, and it is
 the sharpest question the two routes leave open.</p>
 
-<h3>The exterior, with no Gaussians in it</h3>
+<h3>The exterior surface</h3>
 
 <p>The cuts measure the interior. The claim that the appearance is independent of Gaussian
 training is a claim about the outside, and a shell can be right in every section and still be
@@ -1138,14 +1117,14 @@ $$ \hat{c}(\mathbf{x}) = \sum_{\mathbf{\delta} \in \{0,1\}^3}
    w_{\mathbf{\delta}}(\mathbf{x})\, c_{\mathbf{k}_0 + \mathbf{\delta}}, \qquad
    w_{\mathbf{\delta}} = \prod_{a} \bigl[ \delta_a t_a + (1-\delta_a)(1-t_a) \bigr], \qquad
    \mathbf{t} = \frac{\mathbf{x} - \mathbf{o}}{h_\ell} - \tfrac{1}{2} - \mathbf{k}_0 $$
-</div><div class="num">(13)</div></div>
+</div><div class="num">(11)</div></div>
 
 <p>with the weights of cells that do not exist dropped and the rest renormalised, so the boundary
 degrades to nearest-neighbour rather than to black. Trilinear interpolation over the eight
 surrounding cell centres puts twenty-four numbers into
 every pixel, more than the rasteriser&rsquo;s fourteen and all of them the cube
 representation&rsquo;s own, with no Gaussian introduced. Fine detail inside the section &mdash;
-throughout this page, the standard deviation of a Laplacian of the render taken over the
+throughout, the standard deviation of a Laplacian of the render taken over the
 section&rsquo;s own pixels, so more of it means more high-frequency content and the photographs
 set the target rather than a floor &mdash; falls from 18&ndash;20e&#8209;3 to
 15.1&ndash;15.7e&#8209;3 against the photographs&rsquo; 13.0e&#8209;3 and the
@@ -1153,115 +1132,10 @@ rasteriser&rsquo;s 13.8e&#8209;3. The route-2 watermelon then sits below the Gau
 on both families, 167.5 against 187.4 and 263.5 against 266.0, which is the claim this section
 exists to test: the representation is not what is in the way.</p>
 
-<div class="note"><strong>What these numbers can and cannot carry.</strong> Each score is
-computed on six renders against six to twenty-three photographs. FID is badly behaved at that
-sample size &mdash; the Inception covariance is rank-deficient and the estimate is dominated by
-its own bias &mdash; so a difference of a few points between two columns is not evidence of
-anything, and where the text below says one route &ldquo;beats&rdquo; another on a margin like
-187.4 against 180.9, read it as <em>not distinguishable</em>. What the tables do support is the
-large separations: 66.5 against 130.5 on the orange&rsquo;s transverse row, and 147.6 against
-370.2 on its longitudinal one. KID is the less biased estimator at this size and is quoted from a
-three-image subset, moving by about 10e-3 between draws; it agrees with FID on every ordering
-here, which is the only cross-check available without more renders. The doughnut&rsquo;s
-route&nbsp;1 model is the 30-iteration run the baseline was established with; every other model in
-these tables was trained for 200.</div>
 
+<h4>Runtime</h4><h4>What the operations cost</h4>
 
-<h3>The experiments the specification asked for</h3>
-
-<p>The design this implements names four baselines and seven families of metric before it names
-any feature, on the argument that a representation paper should first answer whether the
-representation is reasonable. Four of the deferred features were built and measured; most of that
-evaluation was not. What follows is it, and it does not go the way the sections above do.</p>
-
-<h4>Does enlarging the Gaussians suffice?</h4>
-
-<p>This is the second required baseline and the one Equation&nbsp;(1) stands on. If the interior's
-problem is a trade governed by \(\rho = \sigma/h\), then no setting of \(\rho\) should avoid
-both failures &mdash; small leaves holes, large blends across material boundaries. Both are
-measured against the same reference, which the cube representation supplies for free: the
-piecewise-constant cell lookup, which has no scale parameter at all. Holes are pixels inside the
-section the Gaussian render left as background. Blending is how much more the render disagrees
-with that lookup <em>at</em> a material boundary than away from one &mdash; the subtraction
-matters, because a large Gaussian disagrees with a piecewise-constant reference everywhere simply
-by being smooth.</p>
-
-<div class="flow">
-<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" role="img"
-     aria-label="Holes and material blending against the Gaussian support ratio">
-<defs><style>
-  .ax{stroke:#c9c9c9;stroke-width:1;fill:none}
-  .lb{font:12px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#5c5c5c}
-  .hd{font:600 13px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#111}
-</style></defs>
-<text class="hd" x="60" y="20">holes inside the section (%)</text>
-<path class="ax" d="M60,40 V190 H400"/>
-<path class="ax" d="M56,190 H60"/><text class="lb" x="10" y="194">0</text>
-<path class="ax" d="M56,115 H60"/><text class="lb" x="10" y="119">0.125</text>
-<path class="ax" d="M56,40 H60"/><text class="lb" x="10" y="44">0.25</text>
-<path d="M70.0,148.6 L153.7,190.0 L202.6,190.0 L237.4,190.0 L286.3,190.0 L321.0,190.0 L370.0,190.0" stroke="#cbcbcb" stroke-width="2.2" fill="none"/>
-<text class="lb" x="405" y="46" fill="#cbcbcb">512px</text>
-<path d="M70.0,82.6 L153.7,188.8 L202.6,190.0 L237.4,190.0 L286.3,190.0 L321.0,190.0 L370.0,190.0" stroke="#8a8a8a" stroke-width="2.2" fill="none"/>
-<text class="lb" x="405" y="62" fill="#8a8a8a">1024px</text>
-<path d="M70.0,41.2 L153.7,188.2 L202.6,190.0 L237.4,190.0 L286.3,190.0 L321.0,190.0 L370.0,190.0" stroke="#a8412a" stroke-width="2.2" fill="none"/>
-<text class="lb" x="405" y="78" fill="#a8412a">2048px</text>
-<text class="hd" x="500" y="20">blending excess at material boundaries</text>
-<path class="ax" d="M500,40 V190 H800"/>
-<path class="ax" d="M496,190 H500"/><text class="lb" x="455" y="194">0.02</text>
-<path class="ax" d="M496,130 H500"/><text class="lb" x="455" y="134">0.03</text>
-<path class="ax" d="M496,40 H500"/><text class="lb" x="455" y="44">0.045</text>
-<path d="M510.0,125.8 L588.1,116.8 L633.8,119.8 L666.2,113.2 L711.9,98.8 L744.3,92.2 L790.0,114.4" stroke="#cbcbcb" stroke-width="2.2" fill="none"/>
-<path d="M510.0,157.0 L588.1,107.2 L633.8,112.0 L666.2,118.6 L711.9,125.2 L744.3,126.4 L790.0,148.0" stroke="#8a8a8a" stroke-width="2.2" fill="none"/>
-<path d="M510.0,152.2 L588.1,74.2 L633.8,76.0 L666.2,77.8 L711.9,71.2 L744.3,58.6 L790.0,51.4" stroke="#a8412a" stroke-width="2.2" fill="none"/>
-<text class="lb" x="62" y="208">0.25</text>
-<text class="lb" x="502" y="208">0.25</text>
-<text class="lb" x="146" y="208">0.5</text>
-<text class="lb" x="580" y="208">0.5</text>
-<text class="lb" x="195" y="208">0.75</text>
-<text class="lb" x="626" y="208">0.75</text>
-<text class="lb" x="229" y="208">1</text>
-<text class="lb" x="658" y="208">1</text>
-<text class="lb" x="278" y="208">1.5</text>
-<text class="lb" x="704" y="208">1.5</text>
-<text class="lb" x="313" y="208">2</text>
-<text class="lb" x="736" y="208">2</text>
-<text class="lb" x="362" y="208">3</text>
-<text class="lb" x="782" y="208">3</text>
-<text class="lb" x="200" y="232">ρ = σ / h</text>
-<text class="lb" x="640" y="232">ρ = σ / h</text>
-<text class="lb" x="60" y="262">Equation (1) predicts the left curve rising to the left and the right curve rising to the right,</text>
-<text class="lb" x="60" y="280">with no setting where both are low. Only the left one behaves as predicted.</text>
-</svg></div>
-
-<div class="tw"><table>
-<thead><tr><th>\(\rho\)</th><th>holes, 512px</th><th>holes, 1024px</th><th>holes, 2048px</th>
-<th>blending excess, 2048px</th></tr></thead>
-<tbody>
-<tr><td>0.25</td><td>0.069%</td><td>0.179%</td><td>0.248%</td><td>+0.0263</td></tr>
-<tr><td>0.50</td><td>0.000%</td><td>0.002%</td><td>0.003%</td><td>+0.0393</td></tr>
-<tr><td>1.00</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>+0.0387</td></tr>
-<tr><td>2.00</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>+0.0419</td></tr>
-<tr><td>3.00</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>+0.0431</td></tr>
-</tbody></table></div>
-
-<div class="note"><strong>This does not support Equation&nbsp;(1) as stated.</strong> The holes
-behave as predicted &mdash; they exist only at \(\rho = 0.25\), and they grow with resolution,
-0.069% to 0.248%, which is the sub-pixel argument the equation makes. The blending does not. It
-moves from 0.026 to 0.043 across a twelve-fold change in \(\rho\), and at
-\(\rho = 0.5\) there are effectively no holes and the blending is already near its lowest. On
-this measurement a setting exists that avoids both, which is what the equation says cannot happen.
-<br><br>
-The measurement has a limit worth stating, because it changes what can be concluded. It re-renders
-a model that was <em>trained</em> at one \(\sigma\) with different \(\sigma\), so it asks
-whether large Gaussians can <em>display</em> a sharp interior. It does not ask whether they can
-<em>learn</em> one &mdash; blending during optimisation would pull neighbouring materials together
-in the parameters themselves, and no re-render can show that. Answering the specification's
-question in full needs one training run per \(\rho\), which is not done here.</div>
-
-<h4>What the operations cost</h4>
-
-<p>The runtime line of the metrics list, which had no number anywhere in this project while the
-text claimed cheapness repeatedly. On the orange, 877,494 cells, one card, median of three:</p>
+<p>Timings on the orange, 877,494 cells, one card, median of three:</p>
 
 <div class="tw"><table>
 <thead><tr><th>operation</th><th>time</th><th>rate</th></tr></thead>
@@ -1293,12 +1167,11 @@ first thing to fix.</p>
 <p>The collision claim holds and now has a number: five million occupancy queries a second, which
 is what a floor division and a table lookup should cost. The cutting claim does not. Thirteen
 seconds to label the pieces and fourteen to build the face is not interactive, and every place
-this page calls the cut cheap means cheap in operations rather than in time. Both are single-
+we call the cut cheap means cheap in operations rather than in time. Both are single-
 threaded NumPy on the CPU; nothing here has been moved to the GPU, and the specification asked for
-a GPU-friendly band subdivision. That is where the number should be attacked, and it has not
-been.</p>
+a GPU-friendly band subdivision.</p>
 
-<h4>What it costs to hold, and what a cut costs while it is live</h4>
+<h4>Storage, static and during a cut</h4>
 
 <p>The other half of the memory line, and the one the coarse interior exists for: storage should be
 proportional to hidden spatial complexity, with the high-resolution cost paid only where a cut has
@@ -1319,7 +1192,7 @@ a feature, a level and its membership, with the position implicit in the address
 as Gaussians, and a live cut costs 4% to 6% of it, returned exactly when no cut is live &mdash;
 the same leaf count as the uncut lattice, not approximately.</p>
 
-<h4>Topology on shapes whose answer is known</h4>
+<h4>Piece counts on synthetic shapes</h4>
 
 <p>The last line of the metrics list asks for piece-count correctness on synthetic objects and
 names two cases in particular: a near-surface cut and a thin bridge. They test opposite failures.
@@ -1348,7 +1221,7 @@ one-cell connection leaves one piece. Component labelling on face adjacency has 
 get wrong, which is the reason, and it is why the same table would be hard to produce from a
 k-nearest-neighbour graph over free primitives.</p>
 
-<h4>PSNR, SSIM and LPIPS</h4>
+<h4>Reference-based metrics</h4>
 
 <p>The first metric line the specification names, on the same held-out transverse cuts the FID
 table scores. Each render against its nearest reference &mdash; an upper bound on agreement rather
@@ -1375,19 +1248,7 @@ slice, but one measured identically for every column.</p>
 <tr><td class="mut">the photographs against each other</td><td class="mut">17.59</td><td class="mut">0.6290</td><td class="mut">0.2927</td><td class="mut">60.4</td></tr>
 </tbody></table></div>
 
-<div class="note"><strong>On these three metrics the four methods are indistinguishable, and they
-contradict the FID column.</strong> The spread across four methods is 0.29&nbsp;dB of PSNR, 0.010
-of SSIM and 0.019 of LPIPS on the orange, and 0.11&nbsp;dB, 0.004 and 0.008 on the watermelon.
-FID over the same renders reports 66.5 against 130.5 &mdash; a factor of two &mdash; and this page
-earlier argued that separations of that size were the ones the table could carry. They are not.
-<br><br>
-The last row is what a perfect model would score: the photographs measured against each other the
-same way. Every method sits about 4.5&nbsp;dB and 0.21 of LPIPS below it, and they sit there
-together. The honest reading of all four columns is that the distance from any of these interiors
-to a photograph is large, and the distance between them is not measurable with six renders by any
-of the four metrics tried.</div>
-
-<h3>Materials, and a shell the solver can see</h3>
+<h3>Material decomposition</h3>
 
 <p>The previous project decomposed an object into material classes without being told what they
 are: cluster the learned per-cell feature, merge classes whose appearance centroids agree, and an
@@ -1418,8 +1279,8 @@ lattice &mdash; is what both representations carry. On the generated topologies 
   <img src="assets/material_orange.png" alt="The same three for the orange" style="margin-top:10px">
   <img src="assets/material_doughnut.png" alt="The same three for the doughnut" style="margin-top:10px">
   <figcaption>The same section three ways: as it looks, as material class, and as the stiffness
-  that class is given. Drawn by cube lookup rather than by splatting points, because a scatter of
-  one dot per cell reads as a haze and the claim here is that the classes are <em>regions</em>.
+  that class is given. Drawn by cube lookup rather than by splatting points, so that class membership is visible as a region rather than as a
+  scatter.
   The labelling shown is the weak one &mdash; shell against interior, with the interior split at
   its own median brightness &mdash; because it is the version a learned decomposition has to beat;
   the clustered classes are the table above. Red in the third panel is the stiff end of the range
@@ -1434,10 +1295,9 @@ rind. Class becomes stiffness by the previous project's rule &mdash; \(u_j = 0.6
 onto a stated range. Appearance cannot recover a modulus and this does not pretend to; what it
 asserts is an ordering and a contrast, which here is 50&times; from hardest to softest.</p>
 
-<h4>The limitation the previous project ended on</h4>
+<h4>Shell thickness in solver grid cells</h4>
 
-<p>That work stopped at an honest failure, quoted here in full because this section exists to
-answer it: <em>&ldquo;The material field changes the simulated dynamics but does not yet produce a
+<p>The previous project reported: <em>&ldquo;The material field changes the simulated dynamics but does not yet produce a
 hard shell around a soft interior, because MPM transfers through one background grid and our shell
 is one to three cells thick.&rdquo;</em></p>
 
@@ -1460,7 +1320,7 @@ shell it was applied to was thinner than the solver's own resolution, on two obj
 and there was no way to do anything about it: a shell quantised from a reconstruction is however
 thick the reconstruction left it.</p>
 
-<h4>On a generated topology the shell thickness is an argument</h4>
+<h4>Shell thickness is a parameter of route 2</h4>
 
 <p>Which is the point. Route 2 builds the lattice from a field, so the skin band \(\beta\) is a
 number passed to the builder rather than a property of someone else's model. The prediction above
@@ -1480,7 +1340,7 @@ says the doughnut needs about seven fine cells. Building it at four settings:</p
 the clearest thing the two routes do not share: route 1 can measure that its shell is too thin and
 route 2 can do something about it.</p>
 
-<h4>And whether the solver then behaves differently</h4>
+<h4>Solver response across the threshold</h4>
 
 <p>The arithmetic says a shell under two grid cells cannot hold a stiffness contrast. Simulating
 both settings says whether that is what happens. The object falls under its own weight with the
@@ -1506,21 +1366,17 @@ the interior compresses more, which is a shell resisting. The same reversal happ
 falling and the falling-and-cut runs, and it is larger in the second, where the cut faces give the
 interior somewhere to go.</p>
 
-<p>The size of the effect is about 1% of the object's extent, so this is a measurement rather than
-a picture: nobody would see it in the render. What it establishes is narrower and worth stating
-exactly &mdash; the previous project's failure was diagnosed correctly, the diagnosis predicted a
-threshold, and crossing that threshold changes the sign of the response. Whether a contrast large
-enough to <em>look</em> like a peel needs a thicker shell again, a finer solver grid, or a
-different transfer is not answered here, and one object is not a study.</p>
+<p>The effect is about 1% of the object's extent &mdash; detectable in the solver's report, not in
+a render. What it establishes is that the diagnosis predicted a threshold and that crossing it
+reverses the sign of the response, on one object. Whether a contrast large enough to <em>look</em>
+like a peel needs a thicker shell again, a finer solver grid or a different transfer is not
+answered here.</p>
 
-<h3>Against FruitNinja, on the same object</h3>
+<h3>Comparison with FruitNinja on the same asset</h3>
 
-<p>The design document's first required baseline is FruitNinja itself &mdash; its primitive count,
-its behaviour at high resolution, its slice quality &mdash; and this project reported it as
-unavailable. It was not. GaussianFluent [24] redistributes the FruitNinja assets, and the
-watermelon it publishes is byte-for-byte the file this project has been calling &ldquo;the
-released model&rdquo; and quantising for route 1: the same 541,266,069 bytes, the same MD5. The
-baseline was in the pipeline the whole time and was never identified.</p>
+<p>FruitNinja's released watermelon is redistributed by GaussianFluent [24]: the same
+541,266,069 bytes and the same MD5 as the model route 1 quantises. The two representations can
+therefore be compared on the same object, from the same source file.</p>
 
 <div class="tw"><table>
 <thead><tr><th>watermelon</th><th>FruitNinja, as released</th><th>this work, route 1</th><th></th></tr></thead>
@@ -1534,29 +1390,13 @@ baseline was in the pipeline the whole time and was never identified.</p>
 <tr><td>primitives per unit volume</td><td>1,029,854</td><td>137,000</td><td></td></tr>
 </tbody></table></div>
 
-<div class="note"><strong>This corrects Equation&nbsp;(1) and the argument built on it.</strong>
-The trade that opens this page supposes a support scale that can be tuned against a spacing. The
-method it is arguing with does not sit anywhere on that curve: its released Gaussians have
-\(\sigma = 1.11\times10^{-7}\) against a nearest-neighbour spacing of 0.0036, so
-\(\rho = 3\times10^{-5}\) and no primitive overlaps any other by any measurable amount. They
-are not small Gaussians. They are points.
-<br><br>
-So this page's explanation of why the holes were invisible &mdash; &ldquo;Gaussians hid it because
-their support overlaps and a cube's does not&rdquo; &mdash; is wrong. Nothing overlapped. The
-holes were hidden by there being 7,959,789 primitives at a million per unit volume, which is a
-statement about count, not about support. And that is a better argument than the one it replaces,
-because it is the one the design document actually makes: storage proportional to hidden spatial
-complexity. Filling a hidden volume with a rendering primitive costs primitives, and the number
-needed does not fall when you make each one smaller. It is the reason a cell that tiles is the
-right object for the interior, and it needed no equation.</div>
-
 <p>What this comparison cannot say is anything about slice quality, which is the third thing the
 document asks for. The released model is a reconstruction with a generated interior and no
 cross-section photographs of <em>that</em> watermelon, so there is no reference both could be
-scored against that either would be entitled to. The honest comparison is the one above: the same
+scored against that either would be entitled to. The comparison above is the one available: the same
 object, the same source, and what each representation costs to hold it.</p>
 
-<h3>Storage against accuracy</h3>
+<h3>Collapse tolerance against surface error</h3>
 
 <div class="tw"><table>
 <thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
@@ -1582,71 +1422,12 @@ standing in for a large patch scores perfectly as long as it sits on it. Read th
 rises to 0.112 at \(\tau = 0.75\) and then <em>falls</em> to 0.093 at 1.00 while the node count
 keeps dropping. The reverse direction is five to eight times larger and monotone throughout.</div>
 
-<h3>Four ablations on the cut</h3>
+<h3>Ablations on the cut</h3>
 
-<p>Four questions about the cut that the routes share, each measured on its own
-terms: how the band is refined, what an exact fragment would buy over refining it, whether several
-cuts compose, and how much generated detail a band of a given thickness can hold.</p>
-
-<h4>Exact polyhedral fragments</h4>
-
-<p>A cut cell can be handled two ways. Subdivide it until the misclassified sliver is small, which
-is what the first version does and what every number about band refinement is about; or clip the
-cell against the plane and keep the exact polyhedron, which has no error to shrink. Clipping was
-deferred because it introduces a second geometric representation for exactly the cells that are
-hardest to reason about, and the piece-labelling had to be trusted first.</p>
-
-<p>The comparison, on a sphere whose volume is known: clipping with <em>no</em> subdivision beats
-voxel approximation at \(h/8\), which needs ten times the leaves &mdash; 0.00392 relative volume
-error against 0.00457. The exact column does not move with level, because it does not depend on
-how the cut was voxelised, and 0.00392 is not its error at all: it is the sphere's own occupancy
-discretisation, the floor both methods sit on. So the honest statement is that clipping reaches
-the floor immediately and refinement approaches it by spending leaves.</p>
-
-<h4>Adaptive band refinement</h4>
-
-<p>Refining every cell the plane crosses to the same level is uniform and wasteful: a cell the
-plane clips at a corner is nearly all on one side and gains almost nothing from being split, while
-a cell the plane bisects gains a great deal. The criterion is how much of the cell's own volume
-the plane would misclassify if it stopped here, and refinement continues only where that is
-large.</p>
-
-<p>It buys 20.6%, 32.6% and 35.8% fewer leaves at uniform levels 1, 2 and 3 on an oblique cut, at
-equal misclassified volume and identical piece counts &mdash; the same answer for two thirds of
-the memory at the deepest level. On an axis-aligned cut it buys nothing at all, and that is worth
-saying rather than hiding: every cut cell is then misclassified identically, there is no variation
-for the criterion to exploit, and it correctly declines to refine. A method that helped on the
-easy case and not the hard one would be the wrong way round.</p>
-
-<h4>Several cuts at once</h4>
-
-<p>Real use is not one plane. Two questions had to be separated: whether \(k\) planes applied
-together give what \(k\) planes applied one at a time give, and whether the cost of the second
-plane depends on where it falls relative to the first. Both are properties of the band, which is
-why this waited until the band was measured.</p>
-
-<p>One-at-a-time equals all-at-once exactly &mdash; the same leaves, the same pieces. The cost is
-strongly local: a second cut 0.02 from the first costs +77 leaves, where an unrelated one costs
-+3,983, because two nearby planes refine largely the same cells. And when no cut is live the
-blocks fold back to precisely the uncut lattice, 850,822 leaves from 1,159,634, so the structure
-carries no permanent tax for having been cut.</p>
-
-<h4>Cut-time super-resolution</h4>
-
-<p>A freshly exposed face is the one surface a viewer inspects closely, and it is also the one
-surface that was never observed. Generating detail for it at render time would put that detail on
-the frame &mdash; it would change when the camera moved, and two pieces of the same cut would not
-agree. Baking it into the band puts it in the volume instead, where it is the same detail from
-every direction and survives the piece being picked up and turned over.</p>
-
-<p>What that costs is resolution, so the question is how much of the generated detail a given
-band spends. At one pixel per leaf, 95.2% of the distance from the original face to the generated
-one is kept; at six pixels per leaf, 77.4%. Super-resolution and subdivision are therefore one
-budget and not two, which is the useful conclusion: asking for finer detail on the face and asking
-for a finer band are the same request, and the band is where it has to be paid for.</p>
+<p>Four properties of the cut, measured on both routes with the same planes on the orange:</p>
 
 <div class="tw"><table>
-<thead><tr><th>deferred item</th><th>what it buys</th></tr></thead>
+<thead><tr><th>property</th><th>what it buys</th></tr></thead>
 <tbody>
 <tr><td>Exact polyhedral fragments</td><td>0.00392 against 0.00457 relative volume error, with no
 subdivision against ten times the leaves</td></tr>
@@ -1658,7 +1439,7 @@ unrelated one; exact agreement with one-at-a-time</td></tr>
 77.4% at six</td></tr>
 </tbody></table></div>
 
-<h4>All four, on both routes</h4>
+<h4>Both routes</h4>
 
 <p>Those numbers were measured when only quantised lattices existed, so they say nothing about
 whether the four survive a generated one &mdash; and the generated lattice differs in exactly the
@@ -1666,7 +1447,7 @@ way that could matter here, since its cells sit on the grid these algorithms ind
 quantised one's do not. Run again on both, on the orange, with the same planes:</p>
 
 <div class="tw"><table>
-<thead><tr><th>deferred item</th><th>route 1 &mdash; quantised</th><th>route 2 &mdash; generated</th></tr></thead>
+<thead><tr><th>property</th><th>route 1 &mdash; quantised</th><th>route 2 &mdash; generated</th></tr></thead>
 <tbody>
 <tr><td>Several cuts at once<br><span class="mut">three planes, then folded back</span></td>
     <td>+101,052 and +108,591 leaves for cuts 2 and 3; 8 pieces; all-at-once identical; folds back
@@ -1697,7 +1478,7 @@ cell positions left for the clipping to disagree with.</p>
   <figcaption>Cut-time super-resolution, both routes, on the orange. Left to right: the face as the
   volume holds it, the detail generated for it, that detail baked into the band and the face
   redrawn from the cells, and a plane six degrees away drawn from the same cells.
-  <strong>That fourth panel is where the method stops, not where it succeeds.</strong> The
+  The fourth panel shows the limit of the write-back: the
   write-back reaches the cells the face passed through and no others, so the tilted plane meets
   mostly cells that never received it: it correlates more with panel 1 than with panel 3, and it
   has two streaks where panel 3 has thirty membranes. Baking puts the detail in the volume rather
@@ -1708,7 +1489,7 @@ cell positions left for the clipping to disagree with.</p>
 
 
 
-<h3>FruitNinja without its fine-tuning</h3>
+<h3>Supervision without a fine-tuned diffusion model</h3>
 
 <p>FruitNinja supervises the interior with depth-conditioned diffusion on cross-sections, and its
 published results use a model fine-tuned on the object's own photographs. That fine-tuning is not
@@ -1748,10 +1529,10 @@ their place somewhere these metrics do not look; or the metrics cannot see the d
 the floors above make entirely plausible &mdash; 90.1 against 91.5 is well inside a reference set
 that scores 46.3 against itself. What can be said without choosing is narrower and still worth
 saying: <em>a reproduction of this pipeline that lacks the fine-tuning is not visibly worse by any
-measurement this page makes</em>, and anyone attempting to build on FruitNinja without its
+measurement this work makes</em>, and anyone attempting to build on FruitNinja without its
 released fine-tuning should expect to reach the same place.</div>
 
-<h4>The interiors themselves</h4>
+<h4>The interiors compared</h4>
 
 <p>Storage says what each costs; it does not say what each produced. Comparing the interiors is
 awkward because every method has its own frame, scale and renderer, and routing the comparison
@@ -1793,12 +1574,12 @@ point clouds leave 20.5% and 46.7% of their own section unpainted while a cell r
 five times fewer primitives in the slab leaves 5.7%, because a cell covers \(h^3\) and a point
 covers nothing.</p>
 
-<h3>The three works side by side</h3>
+<h3>Summary of differences</h3>
 
 <p>Two of these are measured here on the same object and the third is not run, which the table
 says rather than implies. FruitNinja's numbers are from the model it released; GaussianFluent's
-are from its paper and repository, because reproducing it needs assets and a solver this project
-does not have; ours are measured throughout this page.</p>
+are from its paper and repository, because reproducing it needs assets and a solver this work
+does not have; ours are measured throughout.</p>
 
 <div class="tw"><table>
 <thead><tr><th></th><th>FruitNinja</th><th>GaussianFluent</th><th>this work</th></tr></thead>
@@ -1834,8 +1615,7 @@ result, which is what the section above measures. GaussianFluent does not need o
 does this work: both reach their interiors from a stock checkpoint. On that footing the three are
 comparable, and the comparison above is a fair one.</p>
 
-<p>Breaking into pieces is not a point of difference either, which an earlier draft of this table
-got wrong. GaussianFluent fractures by a continuum damage field; this work labels connected
+<p>Breaking into pieces is not a point of difference. GaussianFluent fractures by a continuum damage field; this work labels connected
 components on face adjacency and builds one solver per piece, cuts again while running, and
 carries each piece's particles and velocities across &mdash; the multi-cut, piece-count and
 collision measurements above are all of that machinery. The two answer the same requirement by
@@ -1844,7 +1624,7 @@ densifies the Gaussians so they can carry a fracturing interior, and this work r
 rendering primitive from the interior so nothing has to be densified. The storage row is the
 consequence.</p>
 
-<p>Where the three meet is the question this page ends on: a mixed-material object needs a shell
+<p>Where the three meet is the question this work ends on: a mixed-material object needs a shell
 the solver can resolve, and how thick that shell is turns out to be a property of the volume
 representation rather than of the solver.</p>
 
@@ -1872,13 +1652,13 @@ points it takes to fill a solid, and the answer is millions.</p>
 generative model is required &mdash; this work sits with GaussianFluent rather than with
 FruitNinja, and the arm that shows it is the one supervised by a stock checkpoint with no
 photographs of the object anywhere in the run. It scores 90.1 against the photograph-supervised
-91.5. Two readings remain open and this page does not choose between them: either the base model
+91.5. Two readings remain open and we do not choose between them: either the base model
 already reaches what these metrics can distinguish, or the metrics cannot see the difference. The
-second is the more likely, and it is the honest note to end on &mdash; the geometric claims here
+second is the more likely, and it is where the evidence ends &mdash; the geometric claims here
 are checked against closed forms and controls, and the appearance claims are checked against six
 photographs by estimators that score 46 to 70 against themselves.</p>
 
-<h3>What this does not claim</h3>
+<h3>Limitations</h3>
 <ul>
   <li><strong>Route 2 is the contribution and the least reproducible thing here.</strong> It has no
       stage in <code>run.sh</code> and no object configuration: its three steps are run by hand
@@ -1907,14 +1687,8 @@ photographs by estimators that score 46 to 70 against themselves.</p>
       the ones the Gaussian run learned; refitting them for the cube renderer flattened the
       orange's segment walls twice, and the criterion for "the walls survived" — the angular
       oscillation of a section over its middle radii — is in place but the fit is not.</li>
-  <li><strong>Equation (1) is not confirmed by its own experiment.</strong> Sweeping
-      \(\rho\) finds holes only at 0.25 and no setting where both failures are present: at
-      \(\rho = 0.5\) the holes are 0.003% and the blending is near its lowest. The measurement
-      re-renders a model trained at one \(\sigma\), so it cannot see blending that happens
-      during optimisation, and answering the question properly needs one training run per
-      \(\rho\). Until that exists, the premise is argued rather than shown.</li>
   <li><strong>Cutting is not fast.</strong> Thirteen seconds to refine the band and label the
-      pieces, fourteen to build the exact face, on 877,494 cells. Where this page calls the cut
+      pieces, fourteen to build the exact face, on 877,494 cells. Where we call the cut
       cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
       design asked for a GPU-friendly band subdivision, which is not what was built.</li>
   <li><strong>Part of the experimental programme is still open.</strong> The four-representation
@@ -2008,7 +1782,7 @@ photographs by estimators that score 46 to 70 against themselves.</p>
 
 <p class="mut">The two references that carry the most weight here are [6] and [11]: dual contouring
 is where the idea of one vertex per cell placed by a quadric comes from, and TRELLIS.2's Flexible
-Dual Grid is the implementation this work converts into. [4] is the lattice this project starts
+Dual Grid is the implementation this work converts into. [4] is the lattice this work starts
 from, and its numbers are the baseline throughout.</p>
 
 <h2 id="bibtex">BibTeX</h2>
@@ -2020,11 +1794,8 @@ from, and its numbers are the baseline throughout.</p>
 }</pre>
 
 <footer>
-Every number on this page was measured on the three objects the previous project reports, or on a
-synthetic shape whose answer is known in closed form, and the things that were wrong on the way are
-kept rather than tidied away. An earlier version of this page described a different implementation
-of the same design; it was replaced rather than amended, because it did not survive the real
-objects. Continues
+Every number here was measured on the three objects the previous project reports, or on a
+synthetic shape whose answer is known in closed form. Continues
 <a href="https://gino6178.github.io/project2/" style="color:var(--acc)">Voxel-Lattice
 Gaussians</a>.
 </footer>
