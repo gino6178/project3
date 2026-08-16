@@ -1990,6 +1990,25 @@ table lookup should cost, while thirteen seconds to label the pieces is not inte
 <tr><td>1024px</td><td>28,871.6 ms &nbsp;<span class="mut">0.03 fps</span></td><td>81.7 ms &nbsp;<span class="mut">12.25 fps</span></td><td>353&times;</td></tr>
 </tbody></table></div>
 
+<p>The third representation, the dual-grid exterior, is the one the method draws a whole object
+with, and it had no number here. It has one now, and it does not rescue the runtime story. There is
+no triangle rasteriser in this work: the surface is drawn by splatting points sampled on its
+triangles, three per triangle, which for the route-2 watermelon's 859,070 triangles is 5,154,420
+samples.</p>
+
+<div class="tw"><table>
+<thead><tr><th>the dual-grid exterior, route 2 watermelon</th><th>ms/frame</th><th>fps</th></tr></thead>
+<tbody>
+<tr><td>512&nbsp;px</td><td>1,057</td><td>0.95</td></tr>
+<tr><td>1024&nbsp;px</td><td>1,070</td><td>0.93</td></tr>
+</tbody></table></div>
+
+<p>Single-threaded NumPy, median of three, and flat in resolution because the cost is the sample
+count and not the pixel count. It is twenty times faster than marching the volume and twenty times
+slower than the Gaussian rasteriser it would replace. A real triangle rasteriser would change this
+number by orders of magnitude and none is implemented, so what the table establishes is where the
+cost sits and not what the representation could cost.</p>
+
 <h4>4.5.6&ensp;Storage, static and during a cut</h4>
 
 <p>The other half of the memory line, and the one the coarse interior exists for: storage should be
