@@ -229,8 +229,17 @@ feature-sensitive extraction [8] are the two nearest relatives of what is used h
 <p><strong>Physics on primitives.</strong> PhysGaussian [19] simulates Gaussians with MPM. We keep
 the existing particle set and give it piece identity, so subdividing a cut band multiplies leaves
 and not particles. The solver is MPM [20, 21] in the moving-least-squares form [22], and the
-surface follows it by the same weighted-sum binding that skinning [24] and embedded deformation
-[25] use, which is why an affine motion is followed exactly.</p>
+surface follows it by the same weighted-sum binding that skinning [25] and embedded deformation
+[26] use, which is why an affine motion is followed exactly.</p>
+
+<p><strong>Mixed materials and fracture.</strong> GaussianFluent [24] is the nearest current work
+and reaches the same two obstacles from the other side: it densifies an interior with generative
+guidance and then simulates brittle fracture with a continuum-damage MPM, handling mixed-material
+objects in one solver. Where it makes the interior denser so that a Gaussian representation can
+carry it, this work removes the rendering primitive from the interior entirely, so the comparison
+worth drawing is not which fractures better but what each pays to hold a volume &mdash; and the
+material question this page reaches, whether a shell survives the grid transfer, is one any
+mixed-material MPM has to answer.</p>
 
 <p><strong>Structured Gaussians.</strong> Attaching primitives to a structure rather than
 letting them float is the line this work sits in: anchors on a sparse voxel grid [13], a dense
@@ -1313,6 +1322,86 @@ together. The honest reading of all four columns is that the distance from any o
 to a photograph is large, and the distance between them is not measurable with six renders by any
 of the four metrics tried.</div>
 
+<h3>Materials, and a shell the solver can see</h3>
+
+<p>The previous project decomposed an object into material classes without being told what they
+are: cluster the learned per-cell feature, merge classes whose appearance centroids agree, and an
+orange separates into peel, flesh, a transition and pith. The same decomposition runs unchanged on
+the cube lattice, because the thing it clusters &mdash; a learned feature and a position on a
+lattice &mdash; is what both representations carry. On the generated topologies it finds:</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>class</th><th>cells</th><th>mean RGB</th><th>shell fraction</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">orange</td><td>deep pulp</td><td>130,608 (10.6%)</td><td>0.94, 0.61, 0.03</td><td>0.00</td></tr>
+<tr><td>bright pulp</td><td>270,913 (22.0%)</td><td>0.98, 0.69, 0.10</td><td>0.00</td></tr>
+<tr><td>peel</td><td>530,696 (43.1%)</td><td>0.93, 0.62, 0.27</td><td><strong>0.63</strong></td></tr>
+<tr><td>transition</td><td>299,095 (24.3%)</td><td>0.96, 0.69, 0.21</td><td>0.01</td></tr>
+<tr><td rowspan="4">watermelon</td><td>flesh</td><td>169,230 (15.9%)</td><td>0.81, 0.07, 0.09</td><td>0.00</td></tr>
+<tr><td>rind</td><td>244,766 (23.0%)</td><td>0.43, 0.52, 0.24</td><td><strong>1.00</strong></td></tr>
+<tr><td>lighter flesh</td><td>328,179 (30.8%)</td><td>0.92, 0.24, 0.24</td><td>0.00</td></tr>
+<tr><td>pith</td><td>323,681 (30.4%)</td><td>0.80, 0.66, 0.50</td><td>0.23</td></tr>
+<tr><td rowspan="4">doughnut</td><td>crumb</td><td>166,915 (17.7%)</td><td>0.58, 0.42, 0.23</td><td>0.00</td></tr>
+<tr><td>lighter crumb</td><td>253,479 (26.9%)</td><td>0.71, 0.57, 0.39</td><td>0.00</td></tr>
+<tr><td>icing</td><td>365,428 (38.8%)</td><td>0.86, 0.54, 0.48</td><td><strong>1.00</strong></td></tr>
+<tr><td>pale crumb</td><td>157,018 (16.7%)</td><td>0.82, 0.68, 0.52</td><td>0.12</td></tr>
+</tbody></table></div>
+
+<p>The watermelon is the clearest: a green class at shell fraction 1.00, a red class at 0.00, and
+a pale class between them at 0.23. Nothing was told that a watermelon has a white layer under its
+rind. Class becomes stiffness by the previous project's rule &mdash; \(u_j = 0.65\beta_j +
+0.35\,\mathcal{R}(L)_j\) with \(\beta\) the shell fraction, then \(E\) is that rank mapped
+onto a stated range. Appearance cannot recover a modulus and this does not pretend to; what it
+asserts is an ordering and a contrast, which here is 50&times; from hardest to softest.</p>
+
+<h4>The limitation the previous project ended on</h4>
+
+<p>That work stopped at an honest failure, quoted here in full because this section exists to
+answer it: <em>&ldquo;The material field changes the simulated dynamics but does not yet produce a
+hard shell around a soft interior, because MPM transfers through one background grid and our shell
+is one to three cells thick.&rdquo;</em></p>
+
+<p>That has a number, and the number can be worked out before any simulation runs. MPM moves
+particle quantities to a background grid of spacing \(dx\) and back, so a feature thinner than
+about two grid cells is averaged with its neighbours on the way through and comes back as the
+average. The quantity that decides whether a hard shell is possible is therefore the shell's
+thickness <em>in MPM grid cells</em>, and it had never been measured:</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>shell thickness</th><th>in fine cells</th><th>in MPM grid cells</th><th>a stiffness contrast is</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>0.01910</td><td>3.2</td><td>2.00</td><td>exactly at the threshold</td></tr>
+<tr><td>watermelon</td><td>0.02571</td><td>3.0</td><td>1.25</td><td>not resolvable &mdash; needs 4.8 cells</td></tr>
+<tr><td>doughnut</td><td>0.01234</td><td>3.0</td><td>0.87</td><td>not resolvable &mdash; needs 6.8 cells</td></tr>
+</tbody></table></div>
+
+<p>So the previous project's failure was not that the material field was wrong. It was that the
+shell it was applied to was thinner than the solver's own resolution, on two objects out of three,
+and there was no way to do anything about it: a shell quantised from a reconstruction is however
+thick the reconstruction left it.</p>
+
+<h4>On a generated topology the shell thickness is an argument</h4>
+
+<p>Which is the point. Route 2 builds the lattice from a field, so the skin band \(\beta\) is a
+number passed to the builder rather than a property of someone else's model. The prediction above
+says the doughnut needs about seven fine cells. Building it at four settings:</p>
+
+<div class="tw"><table>
+<thead><tr><th>\(\beta\), fine cells</th><th>cells</th><th>measured thickness</th><th>in MPM grid cells</th><th></th></tr></thead>
+<tbody>
+<tr><td>3 <span class="mut">(the default)</span></td><td>1,129,008</td><td>4.1</td><td>1.17</td><td>no</td></tr>
+<tr><td>5</td><td>1,486,904</td><td>5.5</td><td>1.57</td><td>no</td></tr>
+<tr><td><strong>7</strong></td><td>1,827,832 <span class="mut">(+62%)</span></td><td>7.2</td><td><strong>2.06</strong></td><td><strong>yes</strong></td></tr>
+<tr><td>9</td><td>2,148,936 <span class="mut">(+90%)</span></td><td>9.0</td><td>2.59</td><td>yes</td></tr>
+</tbody></table></div>
+
+<p>It crosses at exactly the \(\beta\) the arithmetic predicted, and the cost of crossing it is
+62% more cells &mdash; paid entirely in the skin, since the interior stays at \(h_c\). This is
+the clearest thing the two routes do not share: route 1 can measure that its shell is too thin and
+route 2 can do something about it. Whether a resolvable shell then produces the behaviour a hard
+shell should &mdash; a peel that resists while the flesh gives &mdash; is a simulation
+result, and it is not in this table.</p>
+
 <h3>Storage against accuracy</h3>
 
 <div class="tw"><table>
@@ -1569,6 +1658,9 @@ operations on a structured grid, not queries against arbitrary free particles.</
       Discontinuity and Two-Way Rigid Body Coupling.</em> ACM TOG 37(4), 2018.</li>
   <li>Y. Jiang et&nbsp;al. <em>VR-GS: A Physical Dynamics-Aware Interactive Gaussian Splatting
       System in Virtual Reality.</em> SIGGRAPH 2024.</li>
+  <li>B. Huang, Y. Chen, R. Lu, G. Zeng, H. Zha, Y. Pei and S. Huang. <em>GaussianFluent:
+      Gaussian Simulation for Dynamic Scenes with Mixed Materials.</em>
+      <a href="https://arxiv.org/abs/2601.09265">arXiv:2601.09265</a>, CVPR 2026.</li>
   <li>J. P. Lewis, M. Cordner and N. Fong. <em>Pose Space Deformation: A Unified Approach to Shape
       Interpolation and Skeleton-Driven Deformation.</em> SIGGRAPH 2000.</li>
   <li>R. W. Sumner, J. Schmid and M. Pauly. <em>Embedded Deformation for Shape Manipulation.</em>
