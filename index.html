@@ -89,7 +89,7 @@
 
 <header>
   <h1>The Hidden Volume Stops Being a Rendering Primitive</h1>
-  <p class="sub">Decoupling interior occupancy from splatted primitives for exact cutting and physical simulation</p>
+  <p class="sub">Decoupling interior occupancy from splatted primitives for exact cutting, on supervision that is a dozen unaligned photographs</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
   <div class="links">
@@ -269,12 +269,13 @@ simulated dynamics is not evaluated in this paper.</p>
       only one triangle, and 0.07% of the face unpainted at 2048&nbsp;px where a released baseline
       reaches 38.7%. A splatted interior does not define these quantities, so they cannot be
       reported for it.</li>
-  <li><strong>A grid a solver reads directly.</strong> Occupancy, adjacency and piece identity are
+  <li><strong>A partition a solver can be handed.</strong> Occupancy, adjacency and piece identity are
       integer operations, so fragments are labelled by connected components in time linear in the
       crossed cells and contact resolves to the same integers &mdash; closing 2,698 of 610,723
       penetrations to zero on the contact slab &mdash; with no mesh extraction between the
-      representation and the solver. The accuracy of the resulting dynamics is not evaluated
-      here.</li>
+      representation and the solver. Where the cut divides a ball, the piece masses match the
+      analytic spherical cap to 0.14% and sum to the whole exactly. The dynamics themselves are the
+      solver's and are not evaluated here; this is a claim about the handoff.</li>
 </ul>
 
 <h2 id="related">2&ensp;Related work</h2>
@@ -1929,6 +1930,33 @@ the sign flip against. It is detectable in the solver's report and not in a rend
 reverses the sign of the response, on one object. Whether a contrast large enough to <em>look</em>
 like a peel needs a thicker shell again, a finer solver grid or a different transfer is not
 answered here.</p>
+
+<h4>4.2.4&ensp;How the cut divides mass</h4>
+
+<p>A solver's dynamics are the solver's. What the lattice is answerable for is what it hands over:
+which material went to which piece and how much of it, and that has a closed form on a ball. A
+plane at signed distance \(t\) from the centre of a ball of radius \(R\) cuts a cap of volume
+\(\pi (R-t)^2 (2R+t)/3\); the lattice's answer is the leaves labelled to that side times their own
+volume. Both sides are compared at four offsets and three spacings, on the same oblique off-grid
+plane used elsewhere.</p>
+
+<div class="tw"><table>
+<thead><tr><th>ball radius in cells</th><th>\(t/R = 0\)</th><th>0.25</th><th>0.50</th><th>0.75</th>
+<th>pieces sum to the whole</th></tr></thead>
+<tbody>
+<tr><td>16</td><td>0.47%</td><td>0.52%</td><td>0.65%</td><td>0.98%</td><td>0.000%</td></tr>
+<tr><td>24</td><td>0.22%</td><td>0.18%</td><td>0.29%</td><td>0.65%</td><td>0.000%</td></tr>
+<tr><td>32</td><td><strong>0.14%</strong></td><td><strong>0.14%</strong></td>
+    <td><strong>0.14%</strong></td><td>0.47%</td><td><strong>0.000%</strong></td></tr>
+</tbody></table></div>
+
+<p>Two readings. The error against the analytic cap falls with the spacing and is worst for the
+thinnest cap, which is where a discretisation has least material to be right about &mdash; the same
+first-order behaviour the cut-area error shows, and for the same reason. Conservation is not
+approximate: the pieces sum to the whole to zero, at every offset and every spacing, because a leaf
+is handed to one side and only one and no material is created or destroyed at the boundary. This is
+the one physical quantity the representation rather than the solver is responsible for, and it is
+the extent of the quantitative physics in this paper.</p>
 
 <h4>4.2.4&ensp;Collision</h4>
 
