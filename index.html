@@ -279,7 +279,18 @@ simulated dynamics is not evaluated in this paper.</p>
 
 <h2 id="related">2&ensp;Related work</h2>
 
-<p><strong>Interior generation.</strong> FruitNinja [3] supervises an object's interior with
+<h3>2.1&ensp;Interior generation from 2D generative priors</h3>
+
+<p><strong>Score distillation and what it filters.</strong> Optimising a radiance field or a
+Gaussian set against a pre-trained diffusion model through score distillation [2, 3] averages the
+score over timesteps drawn uniformly from its range, which acts as a low-pass filter on the target.
+We measured the consequence for cross-sections: under either prompt and at any run length the
+distilled target for an orange is a smooth disc with a single bright centre, and the membranes,
+fibres and seeds that a section consists of are absent. Fine-tuning the diffusion model on the
+object's own cross-section photographs restores them, and that is what the closest prior work
+does.</p>
+
+<p><strong>Fine-tuned interior generators.</strong> FruitNinja [3] supervises an object's interior with
 depth-conditioned diffusion on cross-sections and stores it as opaque atomic Gaussians, the
 diffusion model having first been fine-tuned on photographs of the object being reconstructed. We
 take the same photographs and make them the target, so the supervision is images of the object
@@ -290,6 +301,15 @@ measured against, is a Gaussian model quantised as it stands; the representation
 are Gaussian splatting [1] and radiance fields [2]. Solid texture synthesis [29] asked the
 same question before diffusion existed, and InFusion [30] and InnerGS [31] answer it for scenes
 rather than for objects that are cut.</p>
+
+<h3>2.2&ensp;Volumetric representations and solid textures</h3>
+
+<p><strong>Structured Gaussians.</strong> Attaching primitives to a structure rather than
+letting them float is the line this work sits in: anchors on a sparse voxel grid [12], a dense
+structured cube [13], an octree with level of detail [14], and before them the octree and voxel
+grids that accelerated radiance fields [15, 16] and the hash encoding that replaced them [17]. What
+those share is that the structure serves the renderer. Here it serves the volume, and the renderer
+is given its own representation.</p>
 
 <p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O&#8209;Voxel [10] is a
 field-free sparse voxel surface: a Flexible Dual Grid in which every active voxel carries a dual
@@ -303,6 +323,42 @@ collapse's error be read off the same quadric that placed the vertex. Marching c
 alternative that places vertices on edges instead, and cannot represent a feature inside a cell;
 quadric error metrics [8] are where the additivity comes from, and dual marching cubes [6] and
 feature-sensitive extraction [7] are the two nearest relatives of what is used here.</p>
+
+<p><strong>Sub-pixel primitives and antialiasing.</strong> A primitive whose screen-space footprint
+falls below the sampling rate disintegrates as resolution rises, and the fix is a minimum-scale
+filter: Mip-Splatting caps the extent at the sampling rate for exactly this reason [53], analytic
+integration does it differently [54], and the framing that a primitive is a reconstruction filter
+which must match the sampling rate is older still [55]. The released models we measure carry no
+such filter. Section 4.1.2's claim is therefore that a cube needs no minimum-scale parameter, not
+that a Gaussian cannot be given one.</p>
+
+<p><strong>Compressing a Gaussian model.</strong> Every storage figure here counts fields at
+float32 on both sides, which is a file format rather than a representation. The literature that
+closes that gap is not small: sensitivity-aware vector quantisation [40], learnable masking with
+residual quantisation [41], spherical-harmonic distillation [42], hash-grid context modelling [43],
+and putting Gaussians on a grid precisely to make them compressible [44], surveyed in [45].
+Reported reductions run from fifteen-fold to seventy-five, and primitive count itself can be cut an
+order of magnitude at equal quality [46, 47]. We do not run any of them, and section 4.1.1 states
+what that leaves owed.</p>
+
+<p>What these share is that the structure serves the renderer: a grid, an octree or a hash
+accelerates or compresses a primitive set whose job is still to be splatted. The conflict this work
+is about survives all of them, because a kernel wide enough to close volumetric pinholes bleeds
+across internal materials and a narrow one leaves voids, and a point primitive has no surface for a
+slice to be defined against. We keep the structured grid and remove the rendering primitive from
+the interior instead: discrete occupancy with one feature per cell for the volume, and a separate
+dual-grid boundary for what is seen.</p>
+
+<h3>2.3&ensp;Virtual cutting and physical simulation</h3>
+
+<p><strong>Cutting a discretisation.</strong> Keeping a coarse volumetric discretisation and
+representing the cut surface analytically inside the cells it crosses is two decades old in
+graphics: the virtual node algorithm duplicates a cut element so each copy carries one side [48],
+arbitrary cutting of deformable tetrahedra produces exact polyhedral fragments [49], and extended
+finite elements formulate the same idea as enrichment [50], with the surgical-simulation line
+starting earlier [51]. What has not been available before is any of this on a photogrammetric
+radiance-field asset, because such an asset has no volumetric discretisation to cut. Fracture by
+continuum damage [52] is the alternative separation mechanism GaussianFluent uses.</p>
 
 <p><strong>Physics on primitives.</strong> PhysGaussian [18] simulates Gaussians with MPM. We keep
 the existing particle set and give it piece identity, so subdividing a cut band multiplies leaves
@@ -319,40 +375,17 @@ worth drawing is not which fractures better but what each pays to hold a volume.
 material question we reach, whether a shell survives the grid transfer, is one any
 mixed-material MPM has to answer.</p>
 
-<p><strong>Structured Gaussians.</strong> Attaching primitives to a structure rather than
-letting them float is the line this work sits in: anchors on a sparse voxel grid [12], a dense
-structured cube [13], an octree with level of detail [14], and before them the octree and voxel
-grids that accelerated radiance fields [15, 16] and the hash encoding that replaced them [17]. What
-those share is that the structure serves the renderer. Here it serves the volume, and the renderer
-is given its own representation.</p>
+<p>Both lines leave the same gap. Mesh-based cutting needs a volumetric discretisation, which
+a photogrammetric radiance-field asset does not have; primitive-based cutting has the asset but
+defines the exposed face by which primitives survive a side test, so its geometry is not something
+the method states. A two-level lattice has both: a discretisation to cut, and integer occupancy and
+adjacency that a particle solver reads without an intervening mesh. What this paper establishes
+about that last point is compatibility rather than accuracy &mdash; contact resolves on the same
+integers, and no dynamics are validated against a reference solver.</p>
 
-<p><strong>Compressing a Gaussian model.</strong> Every storage figure here counts fields at
-float32 on both sides, which is a file format rather than a representation. The literature that
-closes that gap is not small: sensitivity-aware vector quantisation [40], learnable masking with
-residual quantisation [41], spherical-harmonic distillation [42], hash-grid context modelling [43],
-and putting Gaussians on a grid precisely to make them compressible [44], surveyed in [45].
-Reported reductions run from fifteen-fold to seventy-five, and primitive count itself can be cut an
-order of magnitude at equal quality [46, 47]. We do not run any of them, and section 4.1.1 states
-what that leaves owed.</p>
+<h3>2.4&ensp;Evaluation</h3>
 
-<p><strong>Cutting a discretisation.</strong> Keeping a coarse volumetric discretisation and
-representing the cut surface analytically inside the cells it crosses is two decades old in
-graphics: the virtual node algorithm duplicates a cut element so each copy carries one side [48],
-arbitrary cutting of deformable tetrahedra produces exact polyhedral fragments [49], and extended
-finite elements formulate the same idea as enrichment [50], with the surgical-simulation line
-starting earlier [51]. What has not been available before is any of this on a photogrammetric
-radiance-field asset, because such an asset has no volumetric discretisation to cut. Fracture by
-continuum damage [52] is the alternative separation mechanism GaussianFluent uses.</p>
-
-<p><strong>Sub-pixel primitives and antialiasing.</strong> A primitive whose screen-space footprint
-falls below the sampling rate disintegrates as resolution rises, and the fix is a minimum-scale
-filter: Mip-Splatting caps the extent at the sampling rate for exactly this reason [53], analytic
-integration does it differently [54], and the framing that a primitive is a reconstruction filter
-which must match the sampling rate is older still [55]. The released models we measure carry no
-such filter. Section 4.1.2's claim is therefore that a cube needs no minimum-scale parameter, not
-that a Gaussian cannot be given one.</p>
-
-<p><strong>Evaluation.</strong> FID [32] and KID [33] against photographs, and CLIPScore [34] for
+<p><strong>Instruments and their sample sizes.</strong> FID [32] and KID [33] against photographs, and CLIPScore [34] for
 whether the picture reads as the thing. Both distribution metrics are used at sample sizes far
 below where they are reliable [35, 36], which the results section states rather than works
 around.</p>
