@@ -1478,9 +1478,40 @@ says the doughnut needs about seven fine cells. Building it at four settings:</p
 <p>It crosses at exactly the \(\beta\) the arithmetic predicted, and the cost of crossing it is
 62% more cells &mdash; paid entirely in the skin, since the interior stays at \(h_c\). This is
 the clearest thing the two routes do not share: route 1 can measure that its shell is too thin and
-route 2 can do something about it. Whether a resolvable shell then produces the behaviour a hard
-shell should &mdash; a peel that resists while the flesh gives &mdash; is a simulation
-result, and it is not in this table.</p>
+route 2 can do something about it.</p>
+
+<h4>And whether the solver then behaves differently</h4>
+
+<p>The arithmetic says a shell under two grid cells cannot hold a stiffness contrast. Simulating
+both settings says whether that is what happens. The object falls under its own weight with the
+material field applied &mdash; skin at 8.0e6, interior at 6.0e5, a contrast of 13&times; &mdash;
+and the solver reports each body's extent along the gravity axis as a fraction of its rest extent,
+separately for the cells the field called skin and the ones it called interior. A hard shell keeps
+its own extent and lets the interior lose more, so the sign of the gap between them is the
+question, not its size.</p>
+
+<div class="tw"><table>
+<thead><tr><th>doughnut, at deepest compression</th><th>shell, in grid cells</th><th>skin extent</th><th>interior extent</th><th>interior &minus; skin</th></tr></thead>
+<tbody>
+<tr><td>\(\beta = 3\), falling</td><td>1.17</td><td>0.9220</td><td>0.9259</td><td><strong>+0.0040</strong></td></tr>
+<tr><td>\(\beta = 7\), falling</td><td>2.06</td><td>0.9334</td><td>0.9318</td><td><strong>&minus;0.0016</strong></td></tr>
+<tr><td>\(\beta = 3\), falling and cut</td><td>1.17</td><td>0.9264</td><td>0.9333</td><td><strong>+0.0070</strong></td></tr>
+<tr><td>\(\beta = 7\), falling and cut</td><td>2.06</td><td>0.9280</td><td>0.9177</td><td><strong>&minus;0.0103</strong></td></tr>
+</tbody></table></div>
+
+<p>The sign flips where the arithmetic said it would. Below the threshold the interior compresses
+<em>less</em> than the shell &mdash; the contrast is not merely absent, it is inverted, which is
+what averaging a stiff thin layer into a soft thick one through a shared grid would do. Above it
+the interior compresses more, which is a shell resisting. The same reversal happens in both the
+falling and the falling-and-cut runs, and it is larger in the second, where the cut faces give the
+interior somewhere to go.</p>
+
+<p>The size of the effect is about 1% of the object's extent, so this is a measurement rather than
+a picture: nobody would see it in the render. What it establishes is narrower and worth stating
+exactly &mdash; the previous project's failure was diagnosed correctly, the diagnosis predicted a
+threshold, and crossing that threshold changes the sign of the response. Whether a contrast large
+enough to <em>look</em> like a peel needs a thicker shell again, a finer solver grid, or a
+different transfer is not answered here, and one object is not a study.</p>
 
 <h3>Storage against accuracy</h3>
 
