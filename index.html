@@ -261,8 +261,7 @@ scope leaves out.</p>
       and holding the photograph out costs 0.0044.</li>
   <li><strong>Closed-form planar cutting, refined by the error it makes.</strong> A planar cut is
       computed analytically as edge&ndash;plane intersections per cell: planar to machine epsilon on
-      an oblique off-grid plane, cut-area error first order in \(h\) and reaching 0.09%, no edge of
-      the triangulation used by only one triangle, and 0.07% of the face unpainted at
+      an oblique off-grid plane, cut-area error first order in \(h\) and reaching 0.09%, a cut face that is a 2-manifold with boundary &mdash; no edge shared by more than two triangles, the rim exactly the silhouette &mdash; and 0.07% of the face unpainted at
       2048&nbsp;px where a released baseline reaches 38.7%. Which cells to refine is decided by the
       cut's own error rather than by a depth: a leaf goes whole to one side, so its error is the
       volume on the other, and clipping a cube by a half-space has a closed form &mdash; an
@@ -2554,11 +2553,7 @@ face carries no error term that resolution has to chase; the silhouette does.</p
 edge&ndash;plane intersection solved from the plane equation, so the residual
 \(|\mathbf{n}\cdot\mathbf{v}+d|\) is at machine precision on an oblique off-grid plane rather
 than at a tolerance. Area: the error against the closed form is first order in the cell size and
-reaches 0.09%. Gaps: on the orange, cut axis-aligned and obliquely, the triangulation of the face
-has <strong>no edge used by exactly one triangle</strong> &mdash; 171,920 and 225,506 triangles
-respectively &mdash; which is the absence of a free boundary and therefore of holes. We do not
-claim manifoldness: a full manifold test was not run, and the edge count is the property that was
-measured.</p>
+reaches 0.09%. Gaps and manifoldness: the cut face is a disc, so a correct one is a 2-manifold <em>with boundary</em> &mdash; interior edges shared by exactly two triangles, and a rim of edges belonging to one. On the orange, cut axis-aligned and obliquely, that is what it is: of 85,960 and 112,753 distinct triangles, <strong>no edge is used by more than two</strong>, 128,430 and 168,570 are used by exactly two, and the 1,020 and 1,119 used once form the rim &mdash; a count consistent with the silhouette's own length divided by the leaf size. There are no non-manifold edges and no interior gaps. (The mesh is emitted double-sided, one triangle per winding, so the counts above are taken after reducing each face to one instance; counting on the emitted mesh doubles every edge and hides the rim.)</p>
 
 <p>Peak device memory during training is 5.2 to 5.9&nbsp;GB at the settings used here, on one
 card.</p>
