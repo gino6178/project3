@@ -264,7 +264,7 @@ scope leaves out.</p>
       cut's own error rather than by a depth: a leaf goes whole to one side, so its error is the
       volume on the other, and clipping a cube by a half-space has a closed form &mdash; an
       inclusion&ndash;exclusion over corners, agreeing with a convex hull to
-      2.4&times;10<sup>&minus;12</sup> of a cell &mdash; that evaluates it for a whole band at once.
+      \(2.4\times10^{-12}\) of a cell &mdash; that evaluates it for a whole band at once.
       Refining on that instead of to a fixed depth is <strong>15 to 36% fewer leaves</strong> at
       identical misclassification and identical piece counts. A splatted interior defines none of
       these quantities, so none can be reported for it.</li>
@@ -361,16 +361,15 @@ dual-grid boundary for what is seen.</p>
 
 <h3>2.3&ensp;Virtual cutting and physical simulation</h3>
 
-<p><strong>What is old here, and what is not.</strong> The machinery of the cut is classical and we
-would not claim otherwise: clipping a cube by a plane into a three-to-six-sided polygon is
+<p><strong>What is old here, and what is not.</strong> The machinery of the cut is classical: clipping a cube by a plane into a three-to-six-sided polygon is
 textbook, connected components on a grid is textbook, and dual contouring is two decades old. Every
 one of those was worked out on volumetric data that already existed &mdash; a segmented scan, a
 tetrahedral mesh, a modelled field. What has not existed is that data for an object reconstructed
 from photographs, and it is the absence rather than the algorithms that has kept these operations
 away from radiance-field assets. This paper's claim is about supplying it: an occupancy with an
 interior that a dozen unregistered photographs can specify, on which the classical operations then
-apply unchanged and exactly. The contribution we would defend is the supervision and what the
-volume does to it, not a new way to intersect a plane with a cube.</p>
+apply unchanged and exactly. The contribution is the supervision and what the volume does to it, not a new way to intersect a
+plane with a cube.</p>
 
 <p><strong>Cutting in medical simulation.</strong> Interactive cutting was posed as a problem by
 surgical simulation long before it was posed for reconstructed assets, and the constraints there are
@@ -401,8 +400,7 @@ surface follows it by the same weighted-sum binding that skinning [24] and embed
 and reaches the same two obstacles from the other side: it densifies an interior with generative
 guidance and then simulates brittle fracture with a continuum-damage MPM, handling mixed-material
 objects in one solver. Where it makes the interior denser so that a Gaussian representation can
-carry it, this work removes the rendering primitive from the interior entirely, so the comparison
-worth drawing is not which fractures better but what each pays to hold a volume. The
+carry it, this work removes the rendering primitive from the interior entirely, so the comparison is not which fractures better but what each pays to hold a volume. The
 material question we reach, whether a shell survives the grid transfer, is one any
 mixed-material MPM has to answer.</p>
 
@@ -436,7 +434,7 @@ implementation:</p>
 <thead><tr><th></th><th>query</th><th>signature</th></tr></thead>
 <tbody>
 <tr><td>Q1</td><td>occupancy and material</td>
-    <td>\(\mathbf{x} \in \mathbb{R}^3 \mapsto (\,[\mathbf{x} \in \Omega],\ \mathbf{f}(\mathbf{x}) \in \mathbb{R}^F\,)\)</td></tr>
+    <td>\(\mathbf{x} \in \mathbb{R}^3 \mapsto (\,[\mathbf{x} \in \Omega],\ \mathbf{f}(\mathbf{x}) \in \mathbb{R}^{8}\,)\)</td></tr>
 <tr><td>Q2</td><td>partition under a cut</td>
     <td>\(\Pi \mapsto \{\Omega_1 \dots \Omega_K\}\) with \(\bigsqcup_k \Omega_k = \Omega \setminus \Pi\)</td></tr>
 <tr><td>Q3</td><td>the exposed surface</td>
@@ -453,7 +451,7 @@ give appearance its own representation.</p>
 \mathcal{V}_1\) of axis-aligned cells, coarse cells at spacing \(h_c\) and fine cells at
 \(h_f = h_c/2^r\) with \(r\) the refinement factor, each cell \(\mathbf{k}\) carrying a centre
 \(\mathbf{x_k}\), a level \(\ell(\mathbf{k})\) and a feature
-\(\mathbf{f_k} \in \mathbb{R}^F\). Occupancy is membership, so Q1 is a floor division and a table
+\(\mathbf{f_k} \in \mathbb{R}^{8}\). Occupancy is membership, so Q1 is a floor division and a table
 lookup and its support is exactly the cell: a cube tiles \(\mathbb{R}^3\), which is the property the
 rest of the paper rests on.</p>
 
@@ -532,7 +530,7 @@ $$ \mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1, \qquad
 $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
    \lVert \mathbf{k} - \mathbf{k}' \rVert_1 = 1 \bigr\}
    \;\cup\;
-   \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \mathbf{k}_1 \gg 1 \bigr\} $$
+   \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \lfloor \mathbf{k}_1 / 2 \rfloor \bigr\} $$
 </div><div class="num">(3)</div></div>
 
 <h3>3.1.4&ensp;The boundary as a dual grid</h3>
@@ -576,7 +574,7 @@ block, add the quadrics, solve \(A\mathbf{x} = \mathbf{b}\), and read the residu
 \(r = c - \mathbf{b}^\top\mathbf{x}\), the sum of squared distances from that one vertex to every
 plane the block covers. The tolerance is a length rather than a residual,</p>
 
-<p>The collapse is a constrained optimisation and is worth writing as one. A block of cells
+<p>The collapse is a constrained optimisation: A block of cells
 carries the planes its children saw; collapsing it replaces their dual vertices with a single
 \(v^{*}\) placed where those planes agree best, subject to the surface remaining the boundary of
 the same solid:</p>
@@ -657,11 +655,7 @@ question about what exists before the pipeline starts.</p>
     adjacency and one feature per cell, and cannot tell which route produced them.</td></tr>
 </tbody></table></div>
 
-<p>Route 2 additionally needs six views to paint the skin. Where those come from is a separate
-question from what the route does with them: of the objects here only one had no reconstruction to
-begin with, and for the other two the field and the views are derived from the released model, so
-those two demonstrate that the route reaches the same lattice rather than that it can do without a
-scan.</p>
+<p>Route 2 additionally needs six views to paint the skin.</p>
 
 <h4>3.2.2&ensp;Solidity of a quantised occupancy</h4>
 
@@ -718,7 +712,7 @@ code runs it rather than assuming it.</p>
 
 <h4>3.2.3&ensp;Populating the lattice</h4>
 
-<p>Everything after this section is shared. An object reaches the same two-level lattice by one of
+<p> An object reaches the same two-level lattice by one of
 two paths, and which one it took is not recoverable downstream: cutting, the surface conversion, the
 physics and the material field all read a lattice and none of them asks where it came from. The two
 paths are how the lattice gets populated rather than the claim being made; the supplement measures the independence and section 4.1 the claims that rest on the lattice itself.</p>
@@ -833,8 +827,7 @@ translation, no rotation and no shear:</p>
 \mathbf{t}_j}{s_j} \right) \]</div>
 
 <p>\(\Phi\) is therefore fixed by the first and second moments of two silhouettes and by nothing
-learned. It is also where the two halves of the system meet, and the way they meet is the part
-worth being explicit about: \(\alpha_j\) is produced by the current \(\mathcal{F}\) and
+learned. It is also where the two halves of the system meet, and they meet like this: \(\alpha_j\) is produced by the current \(\mathcal{F}\) and
 \(\theta\), so \(\mathbf{T}_j\) depends on the parameters &mdash; and no gradient is taken
 through that dependence. The target is rebuilt from the current render and then held constant while
 the parameters move,</p>
@@ -867,8 +860,7 @@ happens at \(J = 0\), \(0.25\) and \(1\).</p>
 
 <p><strong>What is optimised and what is not.</strong> The objection to supervising from
 photographs with no camera is that the slice pose is unknown, so it must either be recovered or the
-gradient cannot be formed. Neither happens here, and it is worth writing down which symbols are
-variables. The optimisation is over the per-cell features \(\mathcal{F} = \{\mathbf{f}_i\}\) and
+gradient cannot be formed. Neither happens here. The optimisation is over the per-cell features \(\mathcal{F} = \{\mathbf{f}_i\}\) and
 the shared decoder \(\theta\), and over nothing else:</p>
 
 <div class="eq">\[ \min_{\mathcal{F},\,\theta} \; \sum_{j} \mathcal{L}_j
@@ -886,8 +878,7 @@ construction is volume&nbsp;&rarr;&nbsp;image, and the photograph is compared ag
 so an unknown pose has nothing to be unknown about: no term in the objective depends on where the
 photograph was taken, and there is no correspondence to get wrong.</p>
 
-<p class="mut">One consequence worth stating because reviewers have assumed the opposite: there is
-no total-variation term on the interior features, and none is needed for the argument. Smoothing
+<p class="mut">There is no total-variation term on the interior features, and the argument does not want one. Smoothing
 neighbouring cells toward each other would reconcile disagreeing references by blurring them, which
 is the failure this paper measured elsewhere &mdash; reconciling two targets by averaging along
 their intersection cost 0.012 DreamSim against a control, forty times the run-to-run spread,
@@ -915,11 +906,9 @@ reported here. Three things are absent and their absence is the point: no score,
 and no term that measures a rendered plane against another rendered plane. DreamSim appears nowhere
 in the objective, because it is the instrument the results are read with.</p>
 
-<p><strong>Is this averaging, and does it cost the texture?</strong> The objection to
-reconciling unaligned references on a shared lattice is that a cell receiving two demands must
-resolve them by averaging, and that averaging is a low-pass filter which destroys the very
-structure the references were supplying. It is the right question and it has four measurable
-parts.</p>
+<p><strong>Averaging, in four measurements.</strong> A cell receiving two demands resolves them by
+averaging, and averaging is a low-pass filter on the structure the references supply. How much of
+the volume that applies to, and what survives it, are separate quantities.</p>
 
 <p><em>How much of the volume is actually in conflict.</em> The objection assumes the references
 overlap. Two planes of one family are parallel and share nothing; two planes of different families
@@ -963,27 +952,6 @@ supervision reaches the whole volume, and it reaches it through the shared decod
 through per-cell fitting, which is what makes twelve images enough for eight hundred thousand
 cells. The per-cell feature carries where a cell sits in that decoded space; the decoder carries
 what the object is made of.</p>
-
-<p><strong>There is no pose to recover.</strong> The obvious objection to supervising from
-photographs with no camera and no known depth is that the slice projection cannot be aligned. It
-does not have to be, because the alignment never runs in that direction. The plane \(\Pi_j\) is
-<em>ours</em>: it is sampled by the trainer, the lattice is rendered through it, and the resulting
-silhouette \(\alpha_j\) is a known quantity. The photograph is then warped onto that silhouette by
-\(\Phi\). At no point does anything estimate where a photograph was taken, and no photograph
-contributes geometry &mdash; it contributes the appearance the plane's own geometry will carry. A
-misregistered reference is therefore not a geometric error to be corrected but a different claim
-about what the interior looks like there, which is the quantity section 3.2.4's table measures and
-the volume resolves.</p>
-
-<p>Two consequences follow. Over the range measured, deformation between specimens does not produce ghosting in the usual
-sense, because nothing is being superimposed: each plane has one target, the target is fitted to
-that plane, and doubled structure would require two references to be applied to one plane. What
-misalignment does produce is <em>disagreement between planes</em> about the cells they share, which
-is resolved by the cells holding one value each and is measured as such. And the failure mode that
-remains is angular rather than positional: a reference rotated relative to the family puts its
-radial structure at an angle the others do not share, which is why the transverse family is phase
-aligned, and an ablation that injects rotations deliberately is the way to find where that
-breaks.</p>
 
 <p><strong>Choosing the phases rather than inheriting them.</strong> The phase each transverse
 reference is given is a free parameter, and the pipeline sets it by cross-correlating that
@@ -1924,15 +1892,14 @@ $$ q(\mathbf{k}) = \operatorname{sgn}\!\left(\mathbf{n}\cdot\mathbf{x}_{\mathbf{
    \mathcal{E} = \bigl\{ (\mathbf{k},\mathbf{k}') \in \mathcal{A} :
    q(\mathbf{k}) = q(\mathbf{k}') \bigr\},
    \qquad
-   \mathcal{P} = \mathcal{V} / \!\sim_{\mathcal{E}} $$
+   \mathcal{G} = \mathcal{V} / \!\sim_{\mathcal{E}} $$
 </div><div class="num">(8)</div></div>
 
 <div class="eq"><div class="body">
 $$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
 </div><div class="num">(9)</div></div>
 
-<p>A cut here is an unbounded plane, and that is a property of the representation rather than of
-the implementation. A piece is an equivalence class of face adjacency under a global sign code, one
+<p>Here \(\mathcal{A}\) is face adjacency on the leaves, \(\mathcal{E}\) the pairs the plane does not separate, and \(\mathcal{G}\) the pieces &mdash; the quotient of the leaf set by connectivity under \(\mathcal{E}\). The cut surface itself is \(\mathcal{P}\), defined in section 3.1.1 and constructed in section 3.3.1. A cut here is an unbounded plane, and that is a property of the representation rather than of the implementation. A piece is an equivalence class of face adjacency under a global sign code, one
 sign per plane, so the cut has no extent: an incision that enters, travels and stops has no
 expression, because it would need the same pair of cells severed inside the incision's footprint
 and adjacent beyond its end. A curved cut approximated by \(Q\) planes generates up to \(2^Q\)
@@ -1941,8 +1908,7 @@ freehand surgical cutting are therefore outside this formulation. The constructi
 them is known and fits this lattice almost unchanged: duplicate the crossed cell rather than the
 geometry and let each copy carry one side of an analytic cut surface [48], which is the virtual
 node algorithm, with the MPM counterpart carrying the discontinuity as two velocity fields either
-side of a crack. It is worth separating which half of the construction a curved cut
-breaks, because they are not equally hard. The <em>face</em> survives: a smooth cut surface is
+side of a crack. The two halves of the construction fail differently. The <em>face</em> survives: a smooth cut surface is
 planar to first order over a cell, so at cell scale the same twelve-edge intersection applies to
 the local tangent plane, and the band refinement of section 3.3.2 is already the mechanism for making
 the cell small relative to the local radius of curvature &mdash; the cost is more leaves in the
@@ -1953,8 +1919,7 @@ therefore a question about how a cell records that it is severed, not about how 
 which is why the virtual-node construction is the one to reach for. We have not implemented it and
 report no numbers for it.</p>
 
-<p>Placing that against the alternatives is worth doing explicitly, because the formulations differ
-in what they can express and not only in how fast they are. The rows below are what each
+<p>The formulations differ in what they can express, not only in how fast they are. The rows below are what each
 representation supports in principle, from the constructions cited above rather than from anything
 measured here; only the last row is this work.</p>
 
@@ -2039,8 +2004,7 @@ polygons meet edge to edge because every crossed cell is refined to the same dep
 
 <h4>3.3.2&ensp;Adaptive refinement of the cut band</h4>
 
-<p>This is the one place where the cutting machinery is not classical, so it is worth saying what
-is being replaced. Every subdivision scheme needs a stopping rule, and the usual one for a cut band
+<p>This is the one place where the cutting machinery is not classical. Every subdivision scheme needs a stopping rule, and the usual one for a cut band
 is a target depth: refine until \(h_\ell \le h_{\text{target}}\). A depth is a proxy. What a
 cut actually costs is the material a leaf assigns to the wrong side, and that quantity is available
 in closed form here rather than by sampling, because the leaf is a cube and the cut is a plane. The
@@ -2059,7 +2023,7 @@ turns the level from a depth into a ceiling. The criterion has to be cheaper tha
 and for a plane it is closed form: clipping a cube by a half-space is an inclusion-exclusion over
 the corners, so \(e\) is evaluated for every cell in the band at once with no hull and no
 tetrahedra. Checked against a convex hull on 300 random cubes and planes, the closed form agrees to
-2.4e&#8722;12 of a cell.</p>
+\(2.4\times10^{-12}\) of a cell.</p>
 
 <p>This is the ablation the design asks for, on a ball cut by an oblique plane, comparing uniform
 refinement to adaptive refinement at matched error:</p>
@@ -2135,8 +2099,7 @@ staircase. Per cut leaf we intersect the plane with the twelve edges, order the 
 their centroid in the plane's own basis, and fan them: a convex polygon of three to six vertices lying on the plane.
 The residual is what the arithmetic leaves: measured on an axis-aligned plane through the origin it
 is 0.00e+00 exactly, which is that plane's own accident, and for an oblique plane it is the rounding
-of \(\mathbf{a} + t(\mathbf{b}-\mathbf{a})\), a small multiple of the machine epsilon. The claim
-worth making is not the size of that number but that there is no other error term: no primitive is
+of \(\mathbf{a} + t(\mathbf{b}-\mathbf{a})\), a small multiple of the machine epsilon. There is no other error term: no primitive is
 asked to approximate the plane, so the only departure in a cut is the voxelisation of the
 silhouette. Every crossed cell is
 refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
@@ -2144,7 +2107,7 @@ them.</p>
 <h3 id="physics">3.5&ensp;Direct grid interfacing for simulation</h3>
 
 <p>The path from a photograph to a simulated fragment runs without an intermediate mesh at any
-point, which is unusual enough to state as a sequence. Sparse 2D cross-sections optimise a feature
+point, and the sequence is. Sparse 2D cross-sections optimise a feature
 lattice; a plane is intersected with that lattice in closed form; the connected components of face
 adjacency are the fragments; and the fragments are handed to a material point solver as occupancy
 and per-cell material, which is the form it already wants. A reconstruction that begins as a
@@ -2276,10 +2239,10 @@ second, and a cut takes seconds rather than milliseconds. <strong>Physics</stron
 and it is the axis that is not filled: contact is measured and a resolvability criterion is derived
 and swept, but there is no comparison against a reference solver, no deformation or stress error, no
 fracture &mdash; which this formulation does not implement at all &mdash; and no interactive frame
-rate. A reader looking for a physics benchmark will not find one here, and the
-<a href="supplement.html#limits">limitations</a> say so in the same words.</p>
+rate. No physics benchmark is reported; the <a href="supplement.html#limits">limitations</a> say so in
+the same words.</p>
 
-<p>Everything below is a comparison, and every comparison has a picture. The organising axis is
+<p> The organising axis is
 the two routes, a lattice quantised from a scan and a lattice generated from a field and skinned
 from six views, because after the second step nothing downstream can tell which was
 taken, so any result that separates them is a result about how an object is <em>reached</em>
@@ -2347,10 +2310,9 @@ therefore be compared on the same object, from the same source file.</p>
 
 <h4>4.1.2&ensp;The cut face</h4>
 
-<p>Two claims are made here and the second is the one a viewer cares about. The first is that a
+<p>Two claims are made here and the second is the one a cut exposes. The first is that a
 cut face drawn from a cube volume can be <em>stated</em>; the second is that it <em>looks more like
-the fruit</em>. The second is the stronger result and it survives the strictest comparison in the
-paper, so it goes first.</p>
+the fruit</em>. The second is measured under leave-one-out, at 0.0979 against 0.1498 on all six folds, and goes first.</p>
 
 <p>The comparison turns on what the supervision is. Both methods are given the same asset &mdash;
 photographs of the fruit's cross-sections, six of each family. FruitNinja spends them on a
@@ -2451,7 +2413,7 @@ two ways of spending the same six images and not between one method that has see
 that has not, and the leave-one-out study above has already removed it from our side alone.</p>
 
 
-<p>And it does not survive every instrument, which has to be said in the same breath. FID at six
+<p>And it does not survive every instrument, and is stated with it. FID at six
 references is dominated by its own bias, so we scored the same renders three ways:</p>
 
 <div class="tw"><table>
@@ -2522,14 +2484,13 @@ the one with brown flesh and crusted segment walls, which is the clearest availa
 that it does not measure what is in dispute. And improved precision and recall cannot be estimated
 at all here: with six references the manifold radii are smaller than the gap between any render and
 any photograph, so every arm reads 0.00 and the metric returns no information rather than a low
-score. We report it because we ran it.</p>
+score. </p>
 
 <p>So: three instruments favour this work, one of them the one built for human judgement; one
 favours the baseline marginally on a compressed scale; one is at its ceiling; one is unestimable.
 That is not a proof, and a two-alternative forced choice against the photographs would settle it
 properly, which the <a href="supplement.html#limits">limitations</a> list as owed. It is enough to say that a lattice supervised without any
-photograph of the object produces a cut face at least as believable as a pipeline whose interiors
-came from a diffusion model fine-tuned on exactly those photographs, and by the human-aligned
+photograph of the object produces a cut face 1.53 times closer on DreamSim than a pipeline whose interiors came from a diffusion model fine-tuned on exactly those photographs, and by the human-aligned
 measure, more so.</p>
 
 <p>The instrument matters on the watermelon and the two disagree. On FID this work is level
@@ -2538,16 +2499,15 @@ ahead of both, 0.167 against 0.221 and 0.328. We read the perceptual pairing as 
 give the reason in section 4.1.2 above. The orange's photograph-supervised rows are in-sample and are not a
 comparison at all.</p>
 
-<p>The rest of this section is the first claim, and the result goes first there too. <strong>A cut face drawn
+<p> <strong>A cut face drawn
 from a cube volume stays closed at every resolution; a cut face drawn from splatted primitives
-comes apart as the viewer looks closer.</strong> At 2048&nbsp;px, which is the scale at which
-somebody actually inspects a cut, GaussianFluent's section is <strong>38.73%</strong> background
+comes apart as the viewer looks closer.</strong> At 2048&nbsp;px, the scale at which a cut is inspected, GaussianFluent's section is <strong>38.73%</strong> background
 and FruitNinja's is 2.37%, while the same lattice drawn as a volume is <strong>0.07%</strong>.
 That is a factor of 550 against one baseline and 34 against the other, and it is not a tuning
 result: a cell's support is the cell, so a pixel either falls inside an occupied one or it does
 not, at any zoom, with nothing to set.</p>
 
-<p>The structural claim underneath it is stronger than the numbers. A splatted interior does not define a cut face explicitly. It has the primitives that lie near the plane, so the surface a viewer
+<p>A splatted interior defines no cut-face planarity, area or extent, so none can be reported for it. A splatted interior does not define a cut face explicitly. It has the primitives that lie near the plane, so the surface a viewer
 sees is a rendering artefact of their density and support, and no statement can be made about it:
 not that it is planar, not what its area is, not where its boundary lies. Here the face is the
 convex polygon of equation&nbsp;(10), one per crossed cell, and the statements follow by
@@ -2556,7 +2516,7 @@ plane, and the area error against a closed form falls from 0.97% to 0.09% as the
 so the only error in a cut is the voxelised silhouette and it is first order in \(h\). Neither
 baseline can be measured on that axis at all, which is the difference this paper is about.</p>
 
-<p>The rest of this section is the evidence, in the order it was gathered.</p>
+<p></p>
 
 <h5>What each primitive covers</h5>
 
@@ -2594,8 +2554,7 @@ image size settles nothing:</p>
 <tr><td>this work, route 2</td><td><strong>0.00%</strong></td><td><strong>0.01%</strong></td></tr>
 </tbody></table></div>
 
-<p>The one row that is not under a percent is the stock-checkpoint reproduction, at 11.40%, and it
-is a result rather than an embarrassment: without the fine-tuned model the supervision leaves the
+<p>The one row that is not under a percent is the stock-checkpoint reproduction, at 11.40%, : without the fine-tuned model the supervision leaves the
 interior sparse as well as brown, so the same collapse shows in coverage and in FID.</p>
 
 <p>Two things qualify that table. Every row in it, ours included, is a <em>Gaussian</em> render: a route-2 cell carries fourteen numbers and is splatted like any other
@@ -2638,7 +2597,7 @@ are given so they are not read as one:</p>
   4.3.1 seen from inside: a cube covers exactly and it covers at the resolution of a cell.</figcaption>
 </figure>
 
-<p>This is the result stated at the top, now with its measurement. Coverage from a splatted
+<p> Coverage from a splatted
 representation is resolution-dependent for every model including ours: at 256&nbsp;px they are all
 under two tenths of a percent and indistinguishable, and by 2048&nbsp;px GaussianFluent's section
 is 39% background (32.9 to 49.5 across the six cuts), FruitNinja's 2.4% (1.5 to 3.4) and our own
@@ -2782,8 +2741,7 @@ error monotonically, so a point on that curve is chosen rather than found. A cub
 neither knob: its support is its cell.</p>
 
 
-<p>So the answer to "just make them bigger" is: on a fixed primitive set it works, within a window
-you have to find, and it is not what the published models do. FruitNinja sits at
+<p>So the answer to "just make them bigger" is: on a fixed primitive set it works, within a window that must be located per primitive set, and it is not what the published models do. FruitNinja sits at
 \(\rho = 3\times10^{-5}\), four orders of magnitude to the left of that window, and
 GaussianFluent's \(\sigma\) is two orders smaller again, though its own nearest-neighbour spacing
 is not published so no \(\rho\) can be formed for it here, where the table says 16 to 45% of a section is unpainted for a primitive set
@@ -2864,8 +2822,8 @@ longitudinal photographs are the entire supervision, the interior is a stack of 
 and a transverse cut &mdash; which is what this column scores &mdash; is the one section those
 photographs never show. What the lattice produces there is an extrapolation from three images of a
 different cake, and it is worse than what a diffusion model fine-tuned on the same three produced.
-That is the honest boundary of supervision by photograph: it holds where the families between them
-see the structure, and the cake is the case where they do not.</p>
+That is the boundary of supervision by photograph: it holds where the families between them see
+the structure, and the cake is the case where they do not.</p>
 
 <figure>
   <img src="assets/six_objects.png" alt="Six objects, one held-out plane each: a photograph of a
@@ -2971,8 +2929,7 @@ an angle the rest of the family does not share.</p>
 </tbody></table></div>
 
 <p>The curve is nearly flat to fifteen degrees and costs fifteen per cent at thirty, which is a
-third of a right angle; at every setting the result stays well ahead of a fine-tuned baseline that
-had no noise injected at all. Two mechanisms produce that and they should not be conflated. The
+third of a right angle; at every setting the worst setting is 0.0850 against the fine-tuned baseline's 0.1326, which had no noise injected. Two mechanisms produce that and they should not be conflated. The
 first is the transverse family's phase alignment, which rotates each reference to the family's
 common angular phase and therefore undoes part of an injected rotation before the loss sees it &mdash;
 this is why five and fifteen degrees are indistinguishable. The second is the lattice, which resolves
@@ -3021,14 +2978,12 @@ axis &darr;</th><th>DreamSim &darr;</th></tr></thead>
 </tbody></table></div>
 
 <p>The solve improves the quantity it targets, by 11% on held-out cuts of the two families and 6%
-on cuts at forty-five degrees, which is the orientation a reader of this paper's claim about
-arbitrary planes would care about most and the one no photograph constrains. It does not improve
+on cuts at forty-five degrees, the orientation no photograph constrains. It does not improve
 similarity to the photographs: DreamSim moves by 0.0021 in the wrong direction, which is small
 against the spread between folds and is reported as no gain. And it makes the longitudinal family
 slightly less self-consistent on the axis, 0.0520 to 0.0617, which follows from what was solved
 &mdash; the transverse phases were free and the axis is where longitudinal sections meet each other,
-not where they meet the transverse family. The honest summary is that cross-family coherence and
-photographic similarity are separable, and this addresses the first.</p>
+not where they meet the transverse family. Cross-family coherence and photographic similarity are separable, and this addresses the first.</p>
 
 <h4>4.1.8&ensp;Both methods through the same evaluator</h4>
 
@@ -3080,7 +3035,7 @@ FruitNinja on the orange and does not on the watermelon.</div>
 and two of those arms were fitted to the photographs they are scored against, so that ordering is
 not a comparison. The two rows that can be compared with FruitNinja's are the no-photograph arm at
 90.1 and the stock-checkpoint reproduction at 378.7, both out-of-sample like FruitNinja's 102.2.
-That narrower comparison is the one we would defend on this object.</p>
+That narrower comparison is the one this object supports.</p>
 
 <p>On the watermelon the answer goes the other way and should be stated plainly:
 <strong>GaussianFluent's released model scores best</strong>, 170.2 and 177.5 against our 180.9 and
@@ -3088,8 +3043,7 @@ That narrower comparison is the one we would defend on this object.</p>
 its cameras were chosen by us, and its upright axis is the best of three we tried while every other
 row is a single draw, so it is a minimum over configurations against single draws and not a
 like-for-like win. It is still the best FID in the table and nothing here is served by hiding
-that. On cost the honest reading is narrower than this
-paper first claimed. GaussianFluent's file is 310.8&nbsp;MiB, but 76% of that is degree-1-to-3
+that. On cost the reading is narrower than this paper first claimed. GaussianFluent's file is 310.8&nbsp;MiB, but 76% of that is degree-1-to-3
 spherical harmonics, a view-dependent capability this representation does not have at all. Charged
 the same fields, at degree 0, its 1,381,100 primitives cost <strong>73.8&nbsp;MiB</strong> against
 this work's 62.6 and route 1's 163.5. So against GaussianFluent the storage advantage is
@@ -3302,7 +3256,7 @@ two halves exactly as the cut left them, occupancy alone reports 2,698 particles
 inside the other piece, 2,699 of the watermelon and 943 of the doughnut; the sign test takes all
 three to zero.</p>
 
-<p>That zero is a consequence rather than a finding, and it is worth writing down as one. A leaf
+<p>That zero is a consequence: A leaf
 assigned to piece B has its centre on B's side, so a point on A's side that falls inside a B leaf
 must lie within the leaf's half-diagonal of the plane, which is the bound of equation (9), and the
 sign test removes exactly that band. The at-rest column is therefore a check that the indexing has
@@ -3361,7 +3315,7 @@ whatever the solver does to them, including deformations no rigid transform can 
 <h4>4.3.1&ensp;The cut face</h4>
 
 
-<p>This is the paper's first claim and the one a viewer sees. Each crossed cell contributes one
+<p> Each crossed cell contributes one
 convex polygon, obtained by intersecting the plane with the cell's twelve edges in closed form. No primitive is asked to approximate a plane, so there is no error to tune away and the only departure in a cut area is the voxelisation of the silhouette.
 A method whose cut face is determined by the primitives near the plane does not define these
 quantities, so neither can be reported for it.</p>
@@ -3469,7 +3423,7 @@ no primitive asked to do both. The tension that separation removes is real and w
 four decades of support scale, with both published methods sitting far outside the window where
 neither branch of it bites.</p>
 
-<p>The result we would put first is about supervision rather than representation. An interior reaching 0.0979 DreamSim under leave-one-out can be built from a sparse set of
+<p>The result is about supervision rather than representation. An interior reaching 0.0979 DreamSim under leave-one-out can be built from a sparse set of
 <em>unaligned</em> cross-section photographs used
 directly as the target, with no per-object diffusion fine-tuning and no score distillation. Under
 leave-one-out over six references, scored against the photograph its own run never saw, this is
@@ -3478,8 +3432,7 @@ photograph, ahead on all six folds; and holding a photograph out costs 0.0044, l
 spread across folds. The mechanism is not a loss term. Every plane reads the same cells and a cell
 holds one value, so references that disagree resolve to one answer before anything is rendered, and
 they do so without flattening: 96.5% of the variation the references carry along their shared axis
-survives in the model. That is what makes loose exemplars sufficient, and it is the part we would
-carry to another problem.</p>
+survives in the model. That is what makes loose exemplars sufficient, and it is the part that transfers.</p>
 
 <p>On geometry the claim is narrower and firmer. A planar cut is one convex polygon per crossed
 cell in closed form &mdash; planar to machine epsilon on an oblique off-grid plane, cut-area error
