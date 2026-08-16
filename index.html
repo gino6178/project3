@@ -2121,27 +2121,46 @@ was quantised from scored beside it in the same batch.</p>
 <th>FruitNinja, released</th><th class="mut">the photographs against each other</th>
 <th class="mut">references</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td><strong>0.070</strong></td><td>0.416</td><td class="mut">0.042</td>
+<tr><td>orange</td><td><strong>0.070</strong></td><td>0.129</td><td class="mut">0.042</td>
     <td class="mut">6 h + 6 v</td></tr>
-<tr><td>watermelon</td><td><strong>0.178</strong></td><td>0.473</td><td class="mut">0.067</td>
+<tr><td>watermelon</td><td><strong>0.178</strong></td><td>0.233</td><td class="mut">0.067</td>
     <td class="mut">20 h + 20 v</td></tr>
-<tr><td>apple</td><td><strong>0.287</strong></td><td>0.504</td><td class="mut">0.165</td>
+<tr><td>apple</td><td><strong>0.287</strong></td><td>0.382</td><td class="mut">0.165</td>
     <td class="mut">9 h + 3 v</td></tr>
-<tr><td>pomegranate</td><td><strong>0.250</strong></td><td>0.602</td><td class="mut">0.132</td>
+<tr><td>pomegranate</td><td><strong>0.250</strong></td><td>0.299</td><td class="mut">0.132</td>
     <td class="mut">3 h + 5 v</td></tr>
-<tr><td>bread</td><td><strong>0.369</strong></td><td>0.523</td><td class="mut">0.187</td>
+<tr><td>bread</td><td><strong>0.369</strong></td><td>0.495</td><td class="mut">0.187</td>
     <td class="mut">5 transverse only</td></tr>
-<tr><td>cake</td><td><strong>0.495</strong></td><td>0.700</td><td class="mut">0.268</td>
+<tr><td>cake</td><td>0.495</td><td><strong>0.343</strong></td><td class="mut">0.268</td>
     <td class="mut">3 longitudinal only</td></tr>
 </tbody></table></div>
 
-<p>Six objects, six wins, by 1.4 to 2.7 times. The three we expected to be hardest are the three
-that matter most here. The pomegranate has three transverse references, half the orange's, and an
+<p>Five of six, by 1.2 to 1.8 times, and the cake goes the other way. The three we expected to be
+hardest are the three that decide what this table is worth. The pomegranate has three transverse references, half the orange's, and an
 interior of packed arils that has no repeating angular pattern for the phase alignment to exploit.
 The loaf and the cake have references in one family only, because their interiors read differently
 along the other axis &mdash; a cinnamon swirl is a spiral across the loaf and stripes along it, and
 a layer cake is stripes lengthwise and a single-colour disc across &mdash; so what the volume
 produces in the family it never saw is a prediction rather than a fit.</p>
+
+<p>The cake is the one this work loses, and it loses to the arm it is supposed to beat. Three
+longitudinal photographs are the entire supervision, the interior is a stack of horizontal layers,
+and a transverse cut &mdash; which is what this column scores &mdash; is the one section those
+photographs never show. What the lattice produces there is an extrapolation from three images of a
+different cake, and it is worse than what a diffusion model fine-tuned on the same three produced.
+That is the honest boundary of supervision by photograph: it holds where the families between them
+see the structure, and the cake is the case where they do not.</p>
+
+<figure>
+  <img src="assets/six_objects.png" alt="Six objects, one held-out plane each: a photograph of a
+       real cut of that kind, this work, and the released model each was quantised from">
+  <figcaption>Every object the prior method released, one held-out plane each, all three columns
+  rendered in one batch at the same depths and with the same settings. The left column is a
+  photograph of a real cut of that kind of thing and is not that plane, since no photograph is. The
+  cake, bottom right, is the row this work loses: its supervision is three longitudinal
+  photographs and the plane scored here is transverse, which those photographs never show.
+  </figcaption>
+</figure>
 
 <p class="mut">Every row here is in-sample: each model is scored against the photographs that
 supervised it, as is the released model it is compared with, whose generator was fine-tuned on
