@@ -589,7 +589,7 @@ independence and section 4.1 the claims that rest on the lattice itself.</p>
 from what the route does with them. Of the three objects here only the doughnut had no
 reconstruction to begin with; for the orange and the watermelon the field and the six views are
 derived from the released model, so those two demonstrate that the route reaches the same lattice
-and not that it can do without a scan. Section 5 states what that leaves unproven.</p>
+and not that it can do without a scan. The <a href="supplement.html#limits">limitations</a> state what that leaves unproven.</p>
 
 <p>Route 2 does not quantise anything. The topology comes from a signed-distance field
 \(\phi\) evaluated at the cell centres, and the same field gives the normal and the skin band,
@@ -1156,6 +1156,19 @@ residual below is a statement about bending and not about drift.</p>
 
 <h2 id="results">4&ensp;Experiments</h2>
 
+<p>The validation is organised along four axes, and it is worth saying at the outset which of
+them this paper fills and which it does not. <strong>Perceptual fidelity</strong> under loose,
+unaligned references is section 4.1, and it is the axis the paper's main claim rests on.
+<strong>Geometric precision of the cut face</strong> &mdash; planarity, area error, unpainted
+fraction, absence of gaps &mdash; is sections 4.1.2 and 4.3.1. <strong>Storage and runtime</strong>
+is section 4.3, and it contains a result in each direction: contact queries run at 4.9 million per
+second, and a cut takes seconds rather than milliseconds. <strong>Physics</strong> is section 4.2,
+and it is the axis that is not filled: contact is measured and a resolvability criterion is derived
+and swept, but there is no comparison against a reference solver, no deformation or stress error, no
+fracture &mdash; which this formulation does not implement at all &mdash; and no interactive frame
+rate. A reader looking for a physics benchmark will not find one here, and the
+<a href="supplement.html#limits">limitations</a> say so in the same words.</p>
+
 <p>Everything below is a comparison, and every comparison has a picture. The organising axis is
 the two routes, a lattice quantised from a scan and a lattice generated from a field and skinned
 from six views, because after the second step nothing downstream can tell which was
@@ -1383,7 +1396,7 @@ score. We report it because we ran it.</p>
 <p>So: three instruments favour this work, one of them the one built for human judgement; one
 favours the baseline marginally on a compressed scale; one is at its ceiling; one is unestimable.
 That is not a proof, and a two-alternative forced choice against the photographs would settle it
-properly, which section 5 lists as owed. It is enough to say that a lattice supervised without any
+properly, which the <a href="supplement.html#limits">limitations</a> list as owed. It is enough to say that a lattice supervised without any
 photograph of the object produces a cut face at least as believable as a pipeline whose interiors
 came from a diffusion model fine-tuned on exactly those photographs, and by the human-aligned
 measure, more so.</p>
@@ -2012,7 +2025,39 @@ axis-aligned plane through the origin, where the intersection lands on a coordin
 few multiples of the machine epsilon for an oblique off-grid plane at every resolution. The cut
 face carries no error term that resolution has to chase; the silhouette does.</p>
 
-<h4>4.3.2&ensp;Storage, static and during a cut</h4>
+<h4>4.3.2&ensp;What the operations cost</h4>
+
+<p>The paper repeatedly calls the lattice's operations cheap &mdash; connectivity, piece identity
+and collision are integer queries &mdash; and a claim of cheapness with no wall-clock number is an
+assertion. Each operation is timed as it is used rather than in a microbenchmark: the cut is a whole
+cut on a whole object, and the collision query is against the number of particles the solver
+actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
+
+<div class="tw"><table>
+<thead><tr><th>operation</th><th>time</th><th>rate</th></tr></thead>
+<tbody>
+<tr><td>read the model from disk</td><td>23.7&nbsp;ms</td><td></td></tr>
+<tr><td>occupancy: close and fill</td><td>1,676.5&nbsp;ms</td><td class="mut">once per object</td></tr>
+<tr><td>single cut: refine the band, label the pieces</td><td><strong>4,883.9&nbsp;ms</strong></td><td></td></tr>
+<tr><td>cut face: the exact polygons</td><td><strong>6,206.2&nbsp;ms</strong></td><td></td></tr>
+<tr><td>collision index: build it</td><td>156.9&nbsp;ms</td><td class="mut">once per cut</td></tr>
+<tr><td>collision: label every particle by piece</td><td>556.6&nbsp;ms</td><td>1,576,452 particles/s</td></tr>
+<tr><td>collision: one occupancy query over the particle set</td><td>179.0&nbsp;ms</td>
+    <td><strong>4,902,612 queries/s</strong></td></tr>
+</tbody></table></div>
+
+<p>The two halves of the claim come apart here and both are reported. Contact is cheap as claimed:
+a floor division and a table lookup run at 4.9 million queries per second against the solver's own
+particle set, which is what makes physics on this representation practical. <strong>Cutting is
+not interactive.</strong> A cut costs about eleven seconds end to end at this resolution, dominated
+by refining the band and by emitting one polygon per crossed cell, and nothing in this paper should
+be read as a claim of real-time dissection. The complexity is linear in the crossed cells and the
+constant is large; section 3.8's adaptive criterion and the GPU formulation of the same passes are
+the two levers on it, and neither is benchmarked here. Two of the specification's four runtime
+figures are missing: the O&#8209;Voxel conversion, because the extension is not built on the machine
+these were taken on, and the interactive render rate, which the harness fails to produce.</p>
+
+<h4>4.3.3&ensp;Storage, static and during a cut</h4>
 
 <p>The other half of the memory line, and the one the coarse interior exists for: storage should be
 proportional to hidden spatial complexity, with the high-resolution cost paid only where a cut has
