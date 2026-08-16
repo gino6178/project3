@@ -144,8 +144,8 @@ We present a decoupled representation that builds an explicit interior directly 
 generative model. Volumetric occupancy becomes a compact two-level lattice with one learned feature
 per cell; the visible exterior is given its own dual-grid surface. Planar cuts are then resolved
 analytically, as one convex polygon per crossed cell from the plane's intersection with the cell's
-twelve edges, with topological pieces recovered by connected-component labelling in time linear in
-the crossed cells. No camera pose is estimated and no reference is registered: the cutting plane is
+twelve edges, with topological pieces recovered by connected-component labelling on the lattice's own
+adjacency. No camera pose is estimated and no reference is registered: the cutting plane is
 the optimiser's own, each photograph is warped onto the silhouette that plane renders, and because
 every plane reads the same cells and a cell holds one value, references that disagree are
 reconciled by the lattice rather than by an alignment step.
@@ -237,8 +237,8 @@ as one convex polygon per crossed cell, obtained by intersecting the plane with 
 edges: planar to machine epsilon on an oblique off-grid plane, with a cut-area error first order in
 the cell size reaching 0.09%, and with no edge of the resulting triangulation used by only one
 triangle, so the face has no gaps. Because occupancy, adjacency and piece identity are integer
-operations on the lattice, separated fragments are labelled by connected components in time linear
-in the crossed cells, and the same integers answer collision, so the grid is handed to a material
+operations on the lattice, separated fragments are labelled by connected components on adjacency the addresses already
+give, and the same integers answer collision, so the grid is handed to a material
 point method without an intervening mesh extraction. Section 3.3.1 states the scope of the planar
 formulation against mesh, tetrahedral and implicit alternatives, and section 5.2 collects what the
 scope leaves out.</p>
@@ -271,8 +271,7 @@ scope leaves out.</p>
       identical misclassification and identical piece counts. A splatted interior defines none of
       these quantities, so none can be reported for it.</li>
   <li><strong>A partition a solver can be handed.</strong> Occupancy, adjacency and piece identity are
-      integer operations, so fragments are labelled by connected components in time linear in the
-      crossed cells and contact resolves to the same integers &mdash; closing 2,698 of 610,723
+      integer operations, so fragments are labelled by connected components on adjacency the addresses already give and contact resolves to the same integers &mdash; closing 2,698 of 610,723
       penetrations to zero on the contact slab. Where a cut divides a ball, the piece masses match
       the analytic spherical cap to 0.14% and sum to the whole exactly, so what a solver is handed
       is a partition that conserves what it was given &mdash; with no marching-cubes step, no
@@ -1386,7 +1385,7 @@ plane changes face adjacency only where it refines: a pair of unrefined leaves i
 the cut exactly when it was adjacent before. So the object's own adjacency is computed once and
 every cut reuses the pairs whose ends it did not touch, recomputing only the pairs with a refined
 leaf on either end. That set is the band, which is \(O(N^{2/3})\) of the volume and measures 4.0
-to 10.7% of the cells on the objects here, so the cut is linear in the crossed cells \(K\) rather
+to 10.7% of the cells on the objects here, so the cut's <em>geometry</em> is linear in the crossed cells \(K\) rather
 than in the object \(N\). Labelling is then connected components on the surviving graph.</p>
 
 <div class="tw"><table>
@@ -2579,11 +2578,13 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
     <td><strong>4,902,612 queries/s</strong></td></tr>
 </tbody></table></div>
 
+<p><strong>What the cost scales with.</strong> The labelling itself is linear in the leaves the cut touches, but the implementation is not: adjacency is rebuilt and the component structure allocated over every leaf, so the measured cost follows the object rather than the band. On balls of 17k, 58k, 137k and 268k cells cut by one oblique plane, the time per thousand cells is 0.0091, 0.0059, 0.0054 and 0.0056&nbsp;ms while the time per thousand band leaves rises from 0.0185 to 0.0286 &mdash; flat against the total, rising against the band. Reusing the adjacency outside the band is what took a cut on the orange from 13.76 to 2.91&nbsp;s, and taking the rest of the way to a cost proportional to the band is open.</p>
+
 <p>The two halves of the claim come apart here and both are reported. Contact is cheap as claimed:
 a floor division and a table lookup run at 4.9 million queries per second against the solver's own
 particle set, which is what makes physics on this representation practical. <strong>Cutting is
 not interactive.</strong> A cut costs about eleven seconds end to end at this resolution, dominated
-by refining the band and by emitting one polygon per crossed cell, The complexity is linear in the crossed cells and the constant is large; section 3.3.2's adaptive criterion and a GPU formulation of the same passes are the two levers on it.</p>
+by refining the band and by emitting one polygon per crossed cell. The geometry is linear in the crossed cells; the implementation's total cost is not, and section 4.3.3 measures which; section 3.3.2's adaptive criterion and a GPU formulation of the same passes are the two levers on it.</p>
 
 <h4>4.3.4&ensp;Storage, static and during a cut</h4>
 
@@ -2657,7 +2658,7 @@ far the results should be carried.</p>
       objects at large.</li>
   <li><strong>Cutting is not interactive.</strong> A cut is about eleven seconds at the resolution
       used here, 4.9 for the band and the labelling and 6.2 for the polygons. Nothing in this paper
-      is a real-time result. The complexity is linear in the crossed cells and the constant is
+      is a real-time result. The geometry is linear in the crossed cells and the implementation's constant is
       large; the adaptive criterion and a GPU formulation of the same passes are the two levers,
       and neither is benchmarked.</li>
   <li><strong>The physics is compatibility, not validation.</strong> Contact resolves on integer
