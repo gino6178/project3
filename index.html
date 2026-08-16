@@ -41,6 +41,12 @@
   .grid3 video{width:100%;display:block;border-radius:3px;background:#fff}
   .grid3 .cap{color:var(--mut);font-size:13.5px;margin-top:5px;text-align:center}
   @media (max-width:640px){ .grid3{grid-template-columns:1fr} }
+  .algo{border:1px solid var(--line);border-radius:3px;margin:18px 0;overflow:hidden}
+  .algo-h{background:var(--panel);border-bottom:1px solid var(--line);padding:7px 12px;
+          font-weight:600;font-size:14.5px}
+  .algo pre{margin:0;padding:11px 12px;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;
+            overflow-x:auto}
+  .algo-f{border-top:1px solid var(--line);padding:7px 12px;font-size:13px;color:var(--mut)}
   .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
   nav.toc{display:flex;flex-wrap:wrap;gap:0 18px;justify-content:center;padding:14px 0 2px;
           border-bottom:1px solid var(--line);font-size:14.5px}
@@ -557,6 +563,47 @@ cut runs along the boundary already between them. Neither case needs an epsilon 
 distance, because the sign that decides membership is evaluated at cell centres, which a plane
 through a vertex or along a face never touches.</p>
 
+<p>Written as an algorithm, with \(\mathcal{C}\) the coarse occupancy, \(\Pi\) the plane and
+\(K = |\{c : c \cap \Pi \neq \emptyset\}|\) the number of crossed cells:</p>
+
+<div class="algo">
+<div class="algo-h">Algorithm 1 &nbsp; Cut, in \(O(K)\) after one \(O(N)\) preprocess</div>
+<pre>  precompute once per object      E<sub>0</sub> &larr; adjacency(C)                              O(N log N)
+
+  cut(C, E<sub>0</sub>, &Pi;, h<sub>target</sub>)
+1   B &larr; { c &isin; C : |n&middot;x<sub>c</sub> + d| &le; &frac12;h &Sigma;<sub>a</sub>|n<sub>a</sub>| }        crossed cells, eq. (9)      O(N)*
+2   L &larr; refine(B) until h<sub>&ell;</sub> &le; h<sub>target</sub>; L &larr; L &cup; (C \ B)      leaves                      O(K)
+3   E &larr; { (u,v) &isin; E<sub>0</sub> : u,v unrefined } &cup; adjacency(L|<sub>B&cup;&part;B</sub>)   reuse outside the band      O(K)
+4   q(&ell;) &larr; sgn(n&middot;x<sub>&ell;</sub> + d)  for &ell; &isin; L                          side, eq. (8)               O(K)
+5   E' &larr; { (u,v) &isin; E : q(u) = q(v) }                            drop the crossings          O(|E|)
+6   P &larr; connected_components(L, E')                            pieces, eq. (9)             O(|E| &alpha;)
+7   <b>for</b> c &isin; B <b>do</b>  &Pi;<sub>c</sub> &larr; Poly(c &cap; &Pi;)  by eq. (10)                   the cut face                O(K)
+8   <b>return</b>  P,  &#x1D4AB; = &cup;<sub>c&isin;B</sub> &Pi;<sub>c</sub></pre>
+<div class="algo-f">* step 1 is a predicate over cells and is the only \(O(N)\) term; it is a single
+vectorised comparison and is not what a cut spends its time on. Steps 2 to 4 and 7 touch only the
+band. \(|E|\) is bounded by \(3|L|\) on a face-adjacency graph.</div>
+</div>
+
+<p>Step 7 is the geometry the whole construction exists for. For a crossed cell \(c\) with vertices
+\(V_c\) and edges \(E_c\), the face is the intersection of a convex body with a half-space
+boundary, so it is a convex polygon and it is the convex hull of the plane's crossings of the
+cell's twelve edges,</p>
+
+<div class="eq"><div class="body">
+$$ \Pi_c \;=\; \bigl\{\, \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e) \;:\; e \in E_c,\;
+   t_e \in [0,1] \,\bigr\}, \qquad
+   t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)} $$
+</div><div class="num">(10)</div></div>
+
+<p>and the cut surface of the whole object is their union,
+\(\mathcal{P} = \bigcup_{c \in \mathcal{B}} \Pi_c\). Every vertex of \(\Pi_c\) satisfies
+\(\mathbf{n}\cdot\mathbf{x} + d = 0\) by construction rather than by fitting, so \(\mathcal{P}\)
+is planar to whatever the arithmetic leaves and carries no approximation term. Ordering the
+crossings by angle about their centroid in the plane's own basis gives the polygon; three to six
+crossings occur for a cube, and the two degenerate cases are handled as described below. The
+polygons meet edge to edge because every crossed cell is refined to the same depth, so
+\(\mathcal{P}\) is a manifold with boundary wherever the occupancy is.</p>
+
 <p>A cut costs what it touches. Refinement is already local, and so is the rest of it, because a
 plane changes face adjacency only where it refines: a pair of unrefined leaves is adjacent after
 the cut exactly when it was adjacent before. So the object's own adjacency is computed once and
@@ -602,14 +649,6 @@ asked to approximate the plane, so the only departure in a cut is the voxelisati
 silhouette. Every crossed cell is
 refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
 them.</p>
-
-<div class="eq"><div class="body">
-$$ \Pi_{\mathbf{k}} = \bigl\{\, \mathbf{x} \in C_{\mathbf{k}} :
-   \mathbf{n}\cdot\mathbf{x} + d = 0 \,\bigr\}, \qquad
-   \mathbf{v}_e = \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e), \quad
-   t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)} $$
-</div><div class="num">(10)</div></div>
-
 <h3>3.8&ensp;The boundary as a dual grid</h3>
 
 <p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
@@ -651,9 +690,31 @@ block, add the quadrics, solve \(A\mathbf{x} = \mathbf{b}\), and read the residu
 \(r = c - \mathbf{b}^\top\mathbf{x}\), the sum of squared distances from that one vertex to every
 plane the block covers. The tolerance is a length rather than a residual,</p>
 
+<p>The collapse is a constrained optimisation and is worth writing as one. A block of cells
+carries the planes its children saw; collapsing it replaces their dual vertices with a single
+\(v^{*}\) placed where those planes agree best, subject to the surface remaining the boundary of
+the same solid:</p>
+
+<div class="eq"><div class="body">
+$$ v^{*} \;=\; \arg\min_{v}\; \sum_{p \in \mathcal{H}(c)} \bigl( \mathbf{n}_p^\top v - d_p \bigr)^2
+   \quad \text{s.t.}\quad \chi(\mathcal{M}) = \chi(\mathcal{M}_0),\;\;
+   \partial \mathcal{M} = \partial \mathcal{M}_0 $$
+</div><div class="num">(12)</div></div>
+
+<p>The objective is the quadric of equation&nbsp;(11), additive over the planes a block covers, so
+the sum is ten numbers added per child and the minimiser is one \(3\times3\) solve. The constraint
+is what keeps a collapse changing the resolution rather than the object: the Euler characteristic
+and the boundary curve set are held at their uncollapsed values. That is enforced structurally, not
+by a penalty. A dual grid's connectivity comes from the occupancy and not from where its vertices
+sit, so a collapse merges vertices and never edges or faces, and a merge is refused when it would
+identify two vertices the occupancy does not make adjacent, which is the only move that could
+change \(\chi\). The same fact gives manifoldness where a cut face meets the exterior: both are
+indexed by the same cells, and the seam is exactly the boundary cells the plane crosses.</p>
+
+
 <div class="eq"><div class="body">
 $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
-</div><div class="num">(12)</div></div>
+</div><div class="num">(13)</div></div>
 
 <figure>
   <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
@@ -698,7 +759,7 @@ refined.</p>
 <div class="eq"><div class="body">
 $$ \operatorname{occ}_P(\mathbf{x}) \;=\;
    \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr] \;\wedge\;   \bigl[\, q_P \left(\mathbf{n}\cdot\mathbf{x} + d\right) > 0 \,\bigr] $$
-</div><div class="num">(13)</div></div>
+</div><div class="num">(14)</div></div>
 
 <p>\(q_P \in \{+1, -1\}\) is the side of the plane piece \(P\) lies on, taken as the sign
 that the majority of its leaves carry under equation&nbsp;(8); \(\operatorname{leaf}(\mathbf{x})\)
@@ -723,7 +784,7 @@ rather than the absolute value is the claim,</p>
 <div class="eq"><div class="body">
 $$ u_j = 0.65\,\beta_j + 0.35\,\mathcal{R}(L)_j,
    \qquad   E_j = E_{\min} + \mathcal{R}(u)_j \,\bigl( E_{\max} - E_{\min} \bigr) $$
-</div><div class="num">(14)</div></div>
+</div><div class="num">(15)</div></div>
 
 <p>where \(\beta_j\) is the fraction of class \(j\)'s cells in the skin band, \(L_j\) its
 mean luminance, \(\mathcal{R}\) the rank normalised to \([0, 1]\), and
@@ -742,7 +803,7 @@ $$ \tau_s = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
    \Delta x = \frac{\text{grid\_lim}}{n_{\text{grid}}}, \qquad
    t_{\text{shell}} = P_{90}\Bigl( \min_{\mathbf{k}' \notin \mathcal{S}}
        \lVert \mathbf{x}_{\mathbf{k}} - \mathbf{x}_{\mathbf{k}'} \rVert \Bigr)       + \tfrac{1}{2} h_f $$
-</div><div class="num">(15)</div></div>
+</div><div class="num">(16)</div></div>
 
 <p>The percentile in (15) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
 
@@ -794,7 +855,7 @@ its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
 <div class="eq"><div class="body">
 $$ \mathbf{x}_v(t) = \sum_{j \in \mathcal{N}_k(v)} w_{vj}\,\mathbf{x}_j(t),
    \qquad \sum_j w_{vj} = 1 $$
-</div><div class="num">(16)</div></div>
+</div><div class="num">(17)</div></div>
 
 <p>The weights are a smooth kernel over the \(k\) nearest particles, whose support is the
 \(k\)-th distance itself, so a vertex in a dense region binds tightly and one in a sparse region
@@ -804,12 +865,12 @@ reaches further without a length scale being chosen anywhere,</p>
 $$ w_{vj} = \frac{\tilde{w}_{vj}}{\sum_{j'} \tilde{w}_{vj'}}, \qquad
    \tilde{w}_{vj} = \Bigl( 1 - r_{vj}^2 \Bigr)_{\!+}^{3} + \varepsilon, \qquad   r_{vj} = \frac{\lVert \mathbf{x}_v(0) - \mathbf{x}_j(0) \rVert}
                  {\max_{j' \in \mathcal{N}_k(v)} \lVert \mathbf{x}_v(0) - \mathbf{x}_{j'}(0) \rVert} $$
-</div><div class="num">(17)</div></div>
+</div><div class="num">(18)</div></div>
 
 <p>\(\varepsilon = 10^{-12}\), which only keeps the outermost weight from being exactly zero.
 Because the weights sum to one and are fixed at bind time, any affine motion of the particles is
 followed exactly: substituting \(\mathbf{x}_j(t) = \mathbf{A}\mathbf{x}_j(0) + \mathbf{b}\)
-into (16) gives \(\mathbf{x}_v(t) = \mathbf{A}\mathbf{x}_v(0) + \mathbf{b}\), which is why the
+into (17) gives \(\mathbf{x}_v(t) = \mathbf{A}\mathbf{x}_v(0) + \mathbf{b}\), which is why the
 residual below is a statement about bending and not about drift.</p>
 
 
