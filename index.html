@@ -101,7 +101,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.9 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.2 Prior work</a><a href="#phys-res">4.3 Materials and collision</a><a href="#conclusion">5 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.10 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.2 Prior work</a><a href="#phys-res">4.3 Materials and collision</a><a href="#conclusion">5 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
@@ -214,6 +214,13 @@ plane residual at machine precision.</p>
       support is the cell. At 2048&nbsp;px a released GaussianFluent section is 38.7% background
       and a FruitNinja section 2.4%, against 0.07% here. Neither baseline can be measured on the
       first two of those at all.</li>
+  <li><strong>Refinement driven by misclassified volume, not by depth.</strong> A leaf is handed
+      whole to one side of a cut, so its error is the volume on the other sides, and clipping a
+      cube by a half-space has a closed form that evaluates it for a whole band at once, agreeing
+      with a convex hull to 2.4e&#8722;12 of a cell. Refining on that instead of to a fixed depth
+      is 15 to 36% fewer leaves at identical misclassification and identical piece counts, and
+      exactly nothing when the plane is axis-aligned, which we report because a criterion that
+      adapts to nothing should be known before it is trusted.</li>
   <li><strong>The cost of a rendering primitive in a hidden volume, measured.</strong> Sweeping a
       Gaussian's support over four decades on a fixed primitive set, both branches of the trade are
       real and neither is escapable: 16 to 45% of a section is unpainted at \(\rho \le 0.01\), and
@@ -377,7 +384,7 @@ connected components of face adjacency; and it meets each crossed cell \(c\) in 
 plane equation by construction. The set of crossed cells has size \(K = O(N^{2/3})\) for \(N\)
 cells, and section 3.7 shows the cut costs \(O(K)\) after one preprocess.</p>
 
-<p>Sections 3.1 to 3.6 build \(\mathcal{V}\), section 3.7 answers Q2 and Q3, section 3.8 builds
+<p>Sections 3.1 to 3.6 build \(\mathcal{V}\), section 3.7 answers Q2 and Q3, section 3.9 builds
 \(\mathcal{M}\), and section 3.9 uses \(\mathbf{f_k}\) for material and contact.</p>
 
 
@@ -715,7 +722,55 @@ asked to approximate the plane, so the only departure in a cut is the voxelisati
 silhouette. Every crossed cell is
 refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
 them.</p>
-<h3>3.8&ensp;The boundary as a dual grid</h3>
+<h3>3.8&ensp;Adaptive refinement of the cut band</h3>
+
+<p>Refining every crossed cell to a fixed depth spends the deepest level any cell needed on all of
+them, and what varies across a band is not depth but how badly a leaf is <em>misclassified</em>.
+A leaf is handed whole to one side of the plane, so its error is everything on the other sides,</p>
+
+<div class="eq"><div class="body">
+$$ e(c) \;=\; h_\ell^3 \;-\; \max_{k} \operatorname{vol}\bigl( c \cap H_k \bigr) $$
+</div><div class="num">(11)</div></div>
+
+<p>with \(H_k\) the half-spaces the planes cut \(c\) into. Refining while \(e\) exceeds a tolerance
+turns the level from a depth into a ceiling. The criterion has to be cheaper than what it saves,
+and for a plane it is closed form: clipping a cube by a half-space is an inclusion-exclusion over
+the corners, so \(e\) is evaluated for every cell in the band at once with no hull and no
+tetrahedra. Checked against a convex hull on 300 random cubes and planes, the closed form agrees to
+2.4e&#8722;12 of a cell.</p>
+
+<p>This is the ablation the design asks for, on a ball cut by an oblique plane, comparing uniform
+refinement to adaptive refinement at matched error:</p>
+
+<div class="tw"><table>
+<thead><tr><th>ball, oblique plane</th><th>uniform, leaves</th><th>adaptive, leaves</th>
+<th>fewer</th><th>error</th><th>pieces</th></tr></thead>
+<tbody>
+<tr><td>one level</td><td>11,359</td><td>9,014</td><td><strong>20.6%</strong></td><td>equal to 0.3%</td><td>2 / 2</td></tr>
+<tr><td>two levels</td><td>27,858</td><td>18,786</td><td><strong>32.6%</strong></td><td>identical</td><td>2 / 2</td></tr>
+<tr><td>three levels</td><td>93,980</td><td>60,324</td><td><strong>35.8%</strong></td><td>identical</td><td>2 / 2</td></tr>
+</tbody></table></div>
+
+<p>And on the orange's own lattice, 894,304 solid cells cut by an oblique off-grid plane:</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange</th><th>leaves</th><th>misclassified volume</th><th>fewer</th></tr></thead>
+<tbody>
+<tr><td>uniform to \(h_c/4\)</td><td>1,380,146</td><td>0.001079</td><td></td></tr>
+<tr><td><strong>adaptive, tolerance 0.02</strong></td><td><strong>1,165,855</strong></td>
+    <td><strong>0.001079</strong></td><td><strong>15.5%</strong></td></tr>
+<tr><td>adaptive, tolerance 0.05</td><td>1,020,402</td><td>0.001510</td><td>26.1%</td></tr>
+<tr><td>adaptive, tolerance 0.2</td><td>937,389</td><td>0.002169</td><td>32.1%</td></tr>
+</tbody></table></div>
+
+<p>The saving is not free and its shape says why. It comes entirely from cells the plane clips
+unevenly, so an oblique plane through a curved object gives 15 to 36% and an <em>axis-aligned</em>
+plane gives nothing at all: every cell it crosses is bisected equally, the error is the same in all
+of them, and there is no variation for a tolerance to exploit. We measured 0.0% on an axis-aligned
+ball and on a dumbbell, and report it because a criterion that adapts to nothing is worth knowing
+about before it is trusted.</p>
+
+<h3>3.9&ensp;The boundary as a dual grid</h3>
 
 <p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
 between it and the first; converting the whole boundary removes both. It is also necessary rather
@@ -728,7 +783,7 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 
 
 
-<h4>3.8.1&ensp;Adaptive collapse</h4>
+<h4>3.9.1&ensp;Adaptive collapse</h4>
 
 <p>What follows is Ju et al.'s adaptive dual contouring [5] applied to the Flexible Dual Grid:
 summing children's quadrics bottom-up and collapsing where the residual is small is their
@@ -747,7 +802,7 @@ $$ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
    A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;
    \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;
    c = \sum_i d_i^2 $$
-</div><div class="num">(11)</div></div>
+</div><div class="num">(12)</div></div>
 
 <p>so a quadric is ten numbers. The property everything rests on is that it is additive over the
 set of planes, \(Q_{\text{parent}} = \sum Q_{\text{child}}\), exactly and with no reference to the
@@ -765,9 +820,9 @@ the same solid:</p>
 $$ v^{*} \;=\; \arg\min_{v}\; \sum_{p \in \mathcal{H}(c)} \bigl( \mathbf{n}_p^\top v - d_p \bigr)^2
    \quad \text{s.t.}\quad \chi(\mathcal{M}) = \chi(\mathcal{M}_0),\;\;
    \partial \mathcal{M} = \partial \mathcal{M}_0 $$
-</div><div class="num">(12)</div></div>
+</div><div class="num">(13)</div></div>
 
-<p>The objective is the quadric of equation&nbsp;(11), additive over the planes a block covers, so
+<p>The objective is the quadric of equation&nbsp;(12), additive over the planes a block covers, so
 the sum is ten numbers added per child and the minimiser is one \(3\times3\) solve. The constraint
 is what keeps a collapse changing the resolution rather than the object: the Euler characteristic
 and the boundary curve set are held at their uncollapsed values. That is enforced structurally, not
@@ -780,7 +835,7 @@ indexed by the same cells, and the seam is exactly the boundary cells the plane 
 
 <div class="eq"><div class="body">
 $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
-</div><div class="num">(13)</div></div>
+</div><div class="num">(14)</div></div>
 
 <figure>
   <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
@@ -788,9 +843,9 @@ $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
   steps visibly at the end, which is what a coarser node is.</figcaption>
 </figure>
 
-<h4>3.8.2&ensp;Collapse tolerance against surface error</h4>
+<h4>3.9.2&ensp;Collapse tolerance against surface error</h4>
 
-<p>The collapse has one parameter, \(\tau_c\) in equation (12), and what it buys has to be read
+<p>The collapse has one parameter, \(\tau_c\) in equation (14), and what it buys has to be read
 against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
 count that survives, and how far the surface moved to reach it. The distances are to the
 uncollapsed grid and not to an analytic surface, so this is a self-consistency measure of what the
@@ -815,7 +870,7 @@ four voxels to the nodes that survived, and with nothing merged that reproduces 
 15.22346 against 15.22352, and the same 12,606 boundary and
 41,947 non-manifold edges its mesh already has.</p>
 
-<h3 id="physics">3.9&ensp;Physics on the lattice: pieces, materials, collision</h3>
+<h3 id="physics">3.10&ensp;Physics on the lattice: pieces, materials, collision</h3>
 
 <p>The O-Voxel patch is the visible boundary and takes no part in the physics; the cube hierarchy
 is the physical volume and answers every question about where material is. Piece identity is a relabelling and not a resampling. The existing particle set stays as it is, and each particle takes the piece of the leaf it falls in, so subdividing a cut band multiplies leaves and not particles.
@@ -825,7 +880,7 @@ refined.</p>
 <div class="eq"><div class="body">
 $$ \operatorname{occ}_P(\mathbf{x}) \;=\;
    \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr] \;\wedge\;   \bigl[\, q_P \left(\mathbf{n}\cdot\mathbf{x} + d\right) > 0 \,\bigr] $$
-</div><div class="num">(14)</div></div>
+</div><div class="num">(15)</div></div>
 
 <p>\(q_P \in \{+1, -1\}\) is the side of the plane piece \(P\) lies on, taken as the sign
 that the majority of its leaves carry under equation&nbsp;(8); \(\operatorname{leaf}(\mathbf{x})\)
@@ -850,7 +905,7 @@ rather than the absolute value is the claim,</p>
 <div class="eq"><div class="body">
 $$ u_j = 0.65\,\beta_j + 0.35\,\mathcal{R}(L)_j,
    \qquad   E_j = E_{\min} + \mathcal{R}(u)_j \,\bigl( E_{\max} - E_{\min} \bigr) $$
-</div><div class="num">(15)</div></div>
+</div><div class="num">(16)</div></div>
 
 <p>where \(\beta_j\) is the fraction of class \(j\)'s cells in the skin band, \(L_j\) its
 mean luminance, \(\mathcal{R}\) the rank normalised to \([0, 1]\), and
@@ -869,7 +924,7 @@ $$ \tau_s = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
    \Delta x = \frac{\text{grid\_lim}}{n_{\text{grid}}}, \qquad
    t_{\text{shell}} = P_{90}\Bigl( \min_{\mathbf{k}' \notin \mathcal{S}}
        \lVert \mathbf{x}_{\mathbf{k}} - \mathbf{x}_{\mathbf{k}'} \rVert \Bigr)       + \tfrac{1}{2} h_f $$
-</div><div class="num">(16)</div></div>
+</div><div class="num">(17)</div></div>
 
 <p>The percentile in (15) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
 
@@ -904,8 +959,7 @@ h_f\). Section 4.3 measures
 what the solver does on either side of the threshold.</p>
 
 <p>A cut face and the exterior surface meet at a seam, and the two are produced by different
-constructions: the face is the planar polygon of equation&nbsp;(10) and the exterior is the dual
-grid of equation&nbsp;(11). They are joined rather than blended. Both are indexed by the same
+constructions: the face is the planar polygon of equation&nbsp;(10) and the exterior is the dual grid of equation&nbsp;(13). They are joined rather than blended. Both are indexed by the same
 cells, so the seam is exactly the set of boundary cells the plane crosses, and each contributes one
 polygon and one dual vertex whose positions already agree to within the cell. The normal is
 deliberately discontinuous across it: a cut is a crease in the object, and smoothing the normal
@@ -921,7 +975,7 @@ its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
 <div class="eq"><div class="body">
 $$ \mathbf{x}_v(t) = \sum_{j \in \mathcal{N}_k(v)} w_{vj}\,\mathbf{x}_j(t),
    \qquad \sum_j w_{vj} = 1 $$
-</div><div class="num">(17)</div></div>
+</div><div class="num">(18)</div></div>
 
 <p>The weights are a smooth kernel over the \(k\) nearest particles, whose support is the
 \(k\)-th distance itself, so a vertex in a dense region binds tightly and one in a sparse region
@@ -931,12 +985,12 @@ reaches further without a length scale being chosen anywhere,</p>
 $$ w_{vj} = \frac{\tilde{w}_{vj}}{\sum_{j'} \tilde{w}_{vj'}}, \qquad
    \tilde{w}_{vj} = \Bigl( 1 - r_{vj}^2 \Bigr)_{\!+}^{3} + \varepsilon, \qquad   r_{vj} = \frac{\lVert \mathbf{x}_v(0) - \mathbf{x}_j(0) \rVert}
                  {\max_{j' \in \mathcal{N}_k(v)} \lVert \mathbf{x}_v(0) - \mathbf{x}_{j'}(0) \rVert} $$
-</div><div class="num">(18)</div></div>
+</div><div class="num">(19)</div></div>
 
 <p>\(\varepsilon = 10^{-12}\), which only keeps the outermost weight from being exactly zero.
 Because the weights sum to one and are fixed at bind time, any affine motion of the particles is
 followed exactly: substituting \(\mathbf{x}_j(t) = \mathbf{A}\mathbf{x}_j(0) + \mathbf{b}\)
-into (17) gives \(\mathbf{x}_v(t) = \mathbf{A}\mathbf{x}_v(0) + \mathbf{b}\), which is why the
+into (18) gives \(\mathbf{x}_v(t) = \mathbf{A}\mathbf{x}_v(0) + \mathbf{b}\), which is why the
 residual below is a statement about bending and not about drift.</p>
 
 
@@ -1361,7 +1415,7 @@ everywhere simply by being smooth, and only the excess is blending.</p>
 </div>
 
 <p class="mut" style="text-align:center;margin-top:-6px">Both trade-offs this work avoids by
-construction, drawn from the tables above and in section 3.8.2. <strong>a</strong>: on a fixed
+construction, drawn from the tables above and in section 3.9.2. <strong>a</strong>: on a fixed
 primitive set, support below \(\rho \approx 0.1\) leaves the section unpainted and support
 above 0.25 blends across material boundaries, with a narrow window between them; both published
 models sit at the far left. <strong>b</strong>: the dual grid trades node count against surface
@@ -1770,9 +1824,9 @@ question, not its size.</p>
 <tr><td>\(\beta = 7\), falling and cut</td><td>2.06</td><td>0.9280</td><td>0.9177</td><td><strong>&minus;0.0103</strong></td></tr>
 </tbody></table></div>
 
-<p>Three things about that field. It is not equation&nbsp;(14): it is the weak two-rule field of <code>material_field.py</code>, level deciding
+<p>Three things about that field. It is not equation&nbsp;(16): it is the weak two-rule field of <code>material_field.py</code>, level deciding
 skin from interior and lightness grading the interior, which is the version a learned decomposition
-has to beat rather than the clustered one equation&nbsp;(14) defines. Its numbers are the
+has to beat rather than the clustered one equation&nbsp;(16) defines. Its numbers are the
 <code>orange</code> preset, 8.0e6 against 6.0e5, applied to the doughnut. And the interior is
 graded rather than constant, spanning 6.0e5 to 6.0e6, so the contrast between the shell and the
 stiffest interior is 1.33&times; and not the 13&times; a shell-against-softest reading gives. A 1.33&times; contrast is a weak thing to look for a threshold with, and it is part of why the effect
@@ -1818,7 +1872,7 @@ answered here.</p>
 
 <h4>4.3.5&ensp;Collision</h4>
 
-<p>Equation (13) is two tests, and the second is the one that earns its place. At rest, with the
+<p>Equation (15) is two tests, and the second is the one that earns its place. At rest, with the
 two halves exactly as the cut left them, occupancy alone reports 2,698 particles of the orange
 inside the other piece, 2,699 of the watermelon and 943 of the doughnut; the sign test takes all
 three to zero.</p>
@@ -1861,7 +1915,7 @@ and it does, on every object. </p>
 
 <h4>4.3.6&ensp;Surface binding</h4>
 
-<p>Collision moves pieces; binding is what carries the visible surface with them. Equation (16)
+<p>Collision moves pieces; binding is what carries the visible surface with them. Equation (18)
 fixes each surface vertex to its own piece's nearest particles at bind time, so the surface follows
 whatever the solver does to them, including deformations no rigid transform can express.</p>
 
