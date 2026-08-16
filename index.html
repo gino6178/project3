@@ -135,13 +135,8 @@ grid and no Gaussian anywhere in the picture: <code>multicut_gif.py</code> takes
 offsets and nothing else from the surface code, so what is on screen is the blocky boundary the
 lattice actually has. The pieces come out of connected-component labelling on the lattice; the
 colour on every exposed face is read from the volume that was already there, and no face is
-tinted.</p>
-
-<figure>
-  <video src="assets/multicut.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption>The same for the orange at full size. 850,822 solid cells refine to 1,159,634 leaves
-  in the bands, and the pieces range from 127,115 to 174,231 leaves.</figcaption>
-</figure>
+tinted. On the orange, 850,822 solid cells refine to 1,159,634 leaves in the bands and the pieces
+range from 127,115 to 174,231 leaves.</p>
 
 <h2 id="intro">1&ensp;Introduction</h2>
 
@@ -398,12 +393,7 @@ equation&nbsp;(3)'s parent relation hold with one shared origin. Two scripts off
 cell centre in the middle of its own cell; the measurements are unaffected and the inconsistency is
 noted here rather than left for a reader to find. \(h_f = h_1\) throughout, the fine spacing, and
 \(h_c = h_0\) the coarse one; the pipeline
-figure writes them \(h_e\) and \(h_0\). Two symbols are reused in this paper and it is worth
-saying so once: \(\tau\) is the dual-grid collapse tolerance in equation&nbsp;(12) and the
-shell-to-solver-grid ratio in equation&nbsp;(15), and \(\beta\) is the skin band width in fine
-cells in equations (2) and (6) and in the prose around (15), and a material class's shell fraction
-in equation&nbsp;(14).
-They are unrelated quantities that convention gives the same letters.</p>
+figure writes them \(h_e\) and \(h_0\).</p>
 
 <p>With the origin \(\mathbf{o}\) of equation&nbsp;(1) offset by half a cell. The offset is not
 cosmetic. A generated lattice puts its cells at \((\mathbf{k} + \tfrac{1}{2})h\), so flooring
@@ -624,7 +614,7 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 summing children's quadrics bottom-up and collapsing where the residual is small is their
 construction, and the additivity that makes it work is Garland and Heckbert's [8]. The only thing
 new here is expressing the tolerance as a length rather than as a raw residual, which is what makes
-one \(\tau\) comparable across objects and levels.</p>
+one \(\tau_c\) comparable across objects and levels.</p>
 
 <p>A dual grid stores one node per active surface voxel, so it costs \(O(A/h^2)\): a plane costs
 as much as a crumpled sheet of the same extent. That is fixable inside the algorithm, because the
@@ -647,19 +637,18 @@ block, add the quadrics, solve \(A\mathbf{x} = \mathbf{b}\), and read the residu
 plane the block covers. The tolerance is a length rather than a residual,</p>
 
 <div class="eq"><div class="body">
-$$ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{planes the block covers}, $$
+$$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
 </div><div class="num">(12)</div></div>
 
 <figure>
   <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption>\(\tau\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at
-  \(\tau=0\) and 149,031 at \(\tau=1\); the surface is the same orange throughout and the rim
+  <figcaption>\(\tau_c\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at \(\tau_c=0\) and 149,031 at \(\tau_c=1\); the surface is the same orange throughout and the rim
   steps visibly at the end, which is what a coarser node is.</figcaption>
 </figure>
 
 <h4>3.8.2&ensp;Collapse tolerance against surface error</h4>
 
-<p>The collapse has one parameter, \(\tau\) in equation (12), and what it buys has to be read
+<p>The collapse has one parameter, \(\tau_c\) in equation (12), and what it buys has to be read
 against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
 count that survives, and how far the surface moved to reach it. The distances are to the
 uncollapsed grid and not to an analytic surface, so this is a self-consistency measure of what the
@@ -668,7 +657,7 @@ reproduces the uncollapsed mesh, which is what makes it the reference. All dista
 of \(h\).</p>
 
 <div class="tw"><table>
-<thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
+<thead><tr><th>\(\tau_c\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
 <tbody>
 <tr><td>&minus;1 (identity)</td><td>442,253</td><td>100.0%</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>934,520</td></tr>
 <tr><td>0.10</td><td>315,661</td><td>71.4%</td><td>0.024</td><td>0.262</td><td>0.163 \(h\)</td><td>1.000</td><td>n/a</td></tr>
@@ -677,7 +666,7 @@ of \(h\).</p>
 <tr><td>1.00</td><td>149,031</td><td><strong>33.7%</strong></td><td>0.093</td><td>0.712</td><td>0.556</td><td>1.637</td><td>326,341</td></tr>
 </tbody></table></div>
 
-<p>The doughnut's 530,958 nodes fall to 197,017 at \(\tau = 0.5\) and 143,247 at \(\tau = 1.0\).
+<p>The doughnut's 530,958 nodes fall to 197,017 at \(\tau_c = 0.5\) and 143,247 at \(\tau_c = 1.0\).
 The identity row is the check that the rest means anything: an adaptive dual grid has no uniform
 mesh to hand back to the library, so the faces are rebuilt by resolving each crossed fine edge's
 four voxels to the nodes that survived, and with nothing merged that reproduces the library's own mesh to four parts in a million: 934,520 triangles, area
@@ -734,7 +723,7 @@ a feature thinner than about two grid cells is averaged away in the transfer. So
 governs a hard shell is the shell's thickness in the solver's own units,</p>
 
 <div class="eq"><div class="body">
-$$ \tau = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
+$$ \tau_s = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
    \Delta x = \frac{\text{grid\_lim}}{n_{\text{grid}}}, \qquad
    t_{\text{shell}} = P_{90}\Bigl( \min_{\mathbf{k}' \notin \mathcal{S}}
        \lVert \mathbf{x}_{\mathbf{k}} - \mathbf{x}_{\mathbf{k}'} \rVert \Bigr)       + \tfrac{1}{2} h_f $$
@@ -762,14 +751,14 @@ section 4.3.4 reflects, and reaching \(\tau_s \gtrsim 2\) on these objects needs
 transfer grid or a band several times wider than any built here. The criterion tells a builder that
 before the run rather than after it.</div>
 
-<p>\(\text{grid\_lim}\) and \(n_{\text{grid}}\) are the solver's box size and grid resolution. The condition for a stiffness contrast to survive is \(\tau \gtrsim 2\):
+<p>\(\text{grid\_lim}\) and \(n_{\text{grid}}\) are the solver's box size and grid resolution. The condition for a stiffness contrast to survive is \(\tau_s \gtrsim 2\):
 MPM carries material through one background grid, and a feature thinner than about two of its cells
 is averaged into its surroundings by the particle-to-grid and grid-to-particle transfers. We take
 that threshold from standard MPM practice rather than deriving it, and section 4.3 tests it rather
-than assuming it. Route 2 makes \(\tau\) something to solve for: \(t_{\text{shell}} \approx
-\beta h_f\), so the band width that reaches a given \(\tau\) is \(\beta \ge 2 L \Delta x /
+than assuming it. Route 2 makes \(\tau_s\) something to solve for: \(t_{\text{shell}} \approx
+\beta h_f\), so the band width that reaches a given \(\tau_s\) is \(\beta \ge 2 L \Delta x /
 h_f\). Section 4.3 measures
-\(\tau\) on the existing objects, builds a lattice at the predicted \(\beta\), and reports
+\(\tau_s\) on the existing objects, builds a lattice at the predicted \(\beta\), and reports
 what the solver does on either side of the threshold.</p>
 
 <p>A cut face and the exterior surface meet at a seam, and the two are produced by different
@@ -938,6 +927,18 @@ are given so they are not read as one:</p>
 <tr><td><strong>this work, route 2, as a cube volume</strong></td><td><strong>0.04%</strong></td>
     <td><strong>0.07%</strong></td><td><strong>0.07%</strong></td></tr>
 </tbody></table></div>
+
+<figure>
+  <img src="assets/zoom2048.png" alt="The same watermelon cut at 2048 px from four representations,
+       each with a zoomed crop of the flesh">
+  <figcaption>The same held-out plane at 2048&nbsp;px, each model through its own renderer, with a
+  300&nbsp;px crop of the flesh magnified on the right. What the coverage numbers are counting is
+  visible directly: GaussianFluent's section is mostly the background showing between primitives,
+  FruitNinja's is dense but speckled, and this work's own splatted lattice is mottled in the same
+  way because a route-2 cell is a Gaussian like any other. The cube volume is continuous. Its cost
+  is the other thing the crop shows, the cell quantisation, which is the silhouette error of section
+  4.5.2 seen from inside: a cube covers exactly and it covers at the resolution of a cell.</figcaption>
+</figure>
 
 <p>This is the claim. Coverage from a splatted
 representation is resolution-dependent for every model including ours: at 256&nbsp;px they are all
@@ -1433,8 +1434,7 @@ same per-level extent is recorded, and only the stiffness made uniform.</p>
 the gap is the same at both band widths to within a thousandth, and therefore that a raw gap is not
 evidence about a shell. Against that baseline the material field does move the result, so the field
 is reaching the solver. But it moves it <em>more</em> at \(\beta = 3\) than at \(\beta = 7\),
-which is the opposite ordering to the one a shell becoming resolvable would produce, and it is
-consistent with the \(\tau\) correction above: on the grid the solver integrates, neither build
+which is the opposite ordering to the one a shell becoming resolvable would produce, and it is consistent with the \(\tau_s\) values above: on the grid the solver integrates, neither build
 is near the threshold, so there is no reason to expect the thicker band to behave differently in
 kind. <strong>We report this as a negative result.</strong> The band width is a parameter route 2
 can set, the criterion for choosing it is stated and computable, and the experiment intended to

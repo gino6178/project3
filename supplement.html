@@ -115,7 +115,7 @@ first thing below.</p>
       fails does not.</li>
   <li><strong>The exterior costs more, before the collapse.</strong> 442,253 dual-grid voxels
       replace 118,142 skin Gaussians on the orange. The collapse takes that to 215,304 at
-      \(\tau = 0.5\), and the same quantisation is available to either representation, so the
+      \(\tau_c = 0.5\), and the same quantisation is available to either representation, so the
       comparison that matters is not yet run.</li>
   <li><strong>The surface is faceted, and a perceptual score will say so.</strong> A dual-grid skin
       is one small planar patch per node, and CLIP or LPIPS against a photograph is exactly the
@@ -760,6 +760,8 @@ table lookup should cost, while thirteen seconds to label the pieces is not inte
 <tr><td>build the collision index</td><td>151 ms</td><td></td></tr>
 <tr><td>label every particle by piece</td><td>551 ms</td><td>1,593,256 particles/s</td></tr>
 <tr><td>one occupancy query over the particle set</td><td>178 ms</td><td><strong>4,929,213 queries/s</strong></td></tr>
+<tr><td><strong>O&#8209;Voxel conversion: the whole boundary</strong></td><td><strong>17,602 ms</strong></td>
+    <td>69,955 cells/s</td></tr>
 </tbody></table></div>
 
 <div class="tw"><table>
@@ -768,6 +770,12 @@ table lookup should cost, while thirteen seconds to label the pieces is not inte
 <tr><td>512px</td><td>6,415.6 ms &nbsp;<span class="mut">0.16 fps</span></td><td>52.7 ms &nbsp;<span class="mut">18.98 fps</span></td><td>122&times;</td></tr>
 <tr><td>1024px</td><td>28,871.6 ms &nbsp;<span class="mut">0.03 fps</span></td><td>81.7 ms &nbsp;<span class="mut">12.25 fps</span></td><td>353&times;</td></tr>
 </tbody></table></div>
+
+<p>The conversion row matters for what a cut costs end to end. If a cut changes the exterior and
+the surface has to be rebuilt, 17.6&nbsp;s of conversion sits on top of the 13.8&nbsp;s to refine
+and label and the 15.0&nbsp;s to build the face, on 894,304 solid cells producing 277,525 active
+voxels and 555,744 triangles. A cut that only exposes a new interior face does not pay it, because
+the cut face is the polygon of equation&nbsp;(10) and needs no conversion at all.</p>
 
 <p>The third representation, the dual-grid exterior, is the one the method draws a whole object
 with, and it had no number here. It has one now, and it does not rescue the runtime story. There is
