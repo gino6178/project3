@@ -626,6 +626,19 @@ that define each step.</p>
 
 <h4>3.1.3&ensp;The two-level lattice</h4>
 
+<p><strong>Explicit where a query needs an answer, implicit where appearance needs one.</strong>
+The representation is not a voxel grid of colours and the distinction matters for what it can do.
+Occupancy, level and adjacency are explicit and discrete: they are the cell's address, and a query
+against them is arithmetic with a definite answer, which is what makes a cut exact and a contact
+test an integer operation. Appearance is not stored at all. Each cell carries a feature
+\(\mathbf{f_k} \in \mathbb{R}^{8}\) and colour is produced by a decoder shared across the whole
+object, so the appearance component is an implicit field indexed by the explicit one. Section 3.2.4
+measures which of the two carries the object: cells no training plane ever touches change as much
+during training as cells that are touched, which can only happen through the shared decoder. The
+explicit half decides where a cell is and what it is connected to; the implicit half decides what it
+looks like, and it generalises across the volume from a dozen images because it is one function
+rather than eight hundred thousand independent values.</p>
+
 <p>One definition serves the whole page. A cell is an axis-aligned cube; its index at level
 \(\ell\) is a floor division and its spacing halves with the level,</p>
 
@@ -1392,6 +1405,15 @@ silhouette. Every crossed cell is
 refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
 them.</p>
 <h3 id="physics">3.5&ensp;Direct grid interfacing for simulation</h3>
+
+<p>The path from a photograph to a simulated fragment runs without an intermediate mesh at any
+point, which is unusual enough to state as a sequence. Sparse 2D cross-sections optimise a feature
+lattice; a plane is intersected with that lattice in closed form; the connected components of face
+adjacency are the fragments; and the fragments are handed to a material point solver as occupancy
+and per-cell material, which is the form it already wants. A reconstruction that begins as a
+radiance field normally reaches a solver by marching cubes or tetrahedralisation, and both steps
+are expensive, both can produce degenerate elements, and both must be redone after a cut changes
+the topology. Here the cut changes an integer label and nothing is re-extracted.</p>
 
 <p class="mut">What this section establishes is that the lattice answers the questions a solver
 asks, in the form it asks them. It does not establish that the resulting dynamics are accurate: no
