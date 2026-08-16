@@ -567,7 +567,9 @@ fine cell's coarse neighbour is its index shifted down one bit.</p>
 
 <p>The lattice is not solid and never was. The paper's fill places one particle per <em>empty</em>
 cell and skips cells that already hold a primitive, so the volume is a sponge; Gaussians hid it
-because their support overlaps and a cube's does not. Closing the pinholes and filling what the
+because there are eight million of them at a million per unit volume &mdash; not, as this
+page said until it was measured, because their support overlaps: the released model's Gaussians
+have \(\sigma = 1.11\times10^{-7}\) against a spacing of 0.0036 and overlap nothing. Closing the pinholes and filling what the
 closed shell encloses is idempotent — running it twice changes nothing — and the number that says
 how much it mattered is the connected-component count of the <em>uncut</em> object.</p>
 
@@ -961,7 +963,9 @@ to 0.00e+00.</p>
 <p>The fraction of each section's own area the renderer leaves unpainted, before and after the
 occupancy is made solid. A cube's support is exactly its cell, so a gap is a hole in the occupancy
 and not a coverage parameter, which is why the first column exists at all &mdash; those holes were
-always there and Gaussians were covering them with their skirts.</p>
+always there and were covered by sheer density &mdash; 7,959,789 primitives, a million per
+unit volume &mdash; rather than by any primitive's support, which at \(\sigma/h = 3\times
+10^{-5}\) reaches nothing.</p>
 
 <p>The doughnut does not solidify, and that is worth stating rather than tuning. Closing at radius
 one adds 1.1% of its coarse cells and leaves 8.7% to 10.2%; radius three costs 38% more fine cells
@@ -1513,6 +1517,49 @@ threshold, and crossing that threshold changes the sign of the response. Whether
 enough to <em>look</em> like a peel needs a thicker shell again, a finer solver grid, or a
 different transfer is not answered here, and one object is not a study.</p>
 
+<h3>Against FruitNinja, on the same object</h3>
+
+<p>The design document's first required baseline is FruitNinja itself &mdash; its primitive count,
+its behaviour at high resolution, its slice quality &mdash; and this project reported it as
+unavailable. It was not. GaussianFluent [24] redistributes the FruitNinja assets, and the
+watermelon it publishes is byte-for-byte the file this project has been calling &ldquo;the
+released model&rdquo; and quantising for route 1: the same 541,266,069 bytes, the same MD5. The
+baseline was in the pipeline the whole time and was never identified.</p>
+
+<div class="tw"><table>
+<thead><tr><th>watermelon</th><th>FruitNinja, as released</th><th>this work, route 1</th><th></th></tr></thead>
+<tbody>
+<tr><td>primitives / cells</td><td>7,959,789</td><td>1,065,856</td><td><strong>7.5&times; fewer</strong></td></tr>
+<tr><td>as stored</td><td>425.1 MiB</td><td>39.9 MiB</td><td><strong>10.7&times; less</strong></td></tr>
+<tr><td>opacity</td><td>1.0000 at the median and the 10th percentile</td><td>&mdash;</td><td>opaque by construction</td></tr>
+<tr><td>support scale \(\sigma\)</td><td>1.11e&#8722;7</td><td>&mdash;</td><td></td></tr>
+<tr><td>spacing \(h\)</td><td>0.0036</td><td>0.0172</td><td></td></tr>
+<tr><td><strong>\(\rho = \sigma/h\)</strong></td><td><strong>3.1e&#8722;5</strong></td><td>&mdash;</td><td></td></tr>
+<tr><td>primitives per unit volume</td><td>1,029,854</td><td>137,000</td><td></td></tr>
+</tbody></table></div>
+
+<div class="note"><strong>This corrects Equation&nbsp;(1) and the argument built on it.</strong>
+The trade that opens this page supposes a support scale that can be tuned against a spacing. The
+method it is arguing with does not sit anywhere on that curve: its released Gaussians have
+\(\sigma = 1.11\times10^{-7}\) against a nearest-neighbour spacing of 0.0036, so
+\(\rho = 3\times10^{-5}\) and no primitive overlaps any other by any measurable amount. They
+are not small Gaussians. They are points.
+<br><br>
+So this page's explanation of why the holes were invisible &mdash; &ldquo;Gaussians hid it because
+their support overlaps and a cube's does not&rdquo; &mdash; is wrong. Nothing overlapped. The
+holes were hidden by there being 7,959,789 primitives at a million per unit volume, which is a
+statement about count, not about support. And that is a better argument than the one it replaces,
+because it is the one the design document actually makes: storage proportional to hidden spatial
+complexity. Filling a hidden volume with a rendering primitive costs primitives, and the number
+needed does not fall when you make each one smaller. It is the reason a cell that tiles is the
+right object for the interior, and it needed no equation.</div>
+
+<p>What this comparison cannot say is anything about slice quality, which is the third thing the
+document asks for. The released model is a reconstruction with a generated interior and no
+cross-section photographs of <em>that</em> watermelon, so there is no reference both could be
+scored against that either would be entitled to. The honest comparison is the one above: the same
+object, the same source, and what each representation costs to hold it.</p>
+
 <h3>Storage against accuracy</h3>
 
 <div class="tw"><table>
@@ -1675,6 +1722,46 @@ how much of a constant survived being resampled. Reading colour from the trained
 gives the row above, and the conclusion reverses: super-resolution transfers. The same
 wrong-colour-source defect had already been found and fixed in three other files, which is what
 made it recognisable in a fourth.</div>
+
+<h3>The three works side by side</h3>
+
+<p>Two of these are measured here on the same object and the third is not run, which the table
+says rather than implies. FruitNinja's numbers are from the model it released; GaussianFluent's
+are from its paper and repository, because reproducing it needs assets and a solver this project
+does not have; ours are measured throughout this page.</p>
+
+<div class="tw"><table>
+<thead><tr><th></th><th>FruitNinja</th><th>GaussianFluent</th><th>this work</th></tr></thead>
+<tbody>
+<tr><td>what holds the hidden interior</td><td>opaque atomic Gaussians</td>
+    <td>densified Gaussians, generatively guided</td><td>a cube occupancy grid</td></tr>
+<tr><td>what draws a newly exposed face</td><td>the same Gaussians</td><td>the same Gaussians</td>
+    <td>a dual-grid surface, or a march into the volume</td></tr>
+<tr><td>primitives, watermelon</td><td><strong>7,959,789</strong></td><td class="mut">not run</td>
+    <td><strong>1,065,856</strong> cells</td></tr>
+<tr><td>stored</td><td><strong>425.1 MiB</strong></td><td class="mut">not run</td>
+    <td><strong>39.9 MiB</strong></td></tr>
+<tr><td>\(\rho = \sigma/h\)</td><td>3.1e&#8722;5 <span class="mut">(points, not blobs)</span></td>
+    <td class="mut">not measured</td><td>not applicable &mdash; a cell tiles</td></tr>
+<tr><td>piece identity after a cut</td><td class="mut">not addressed</td>
+    <td>fracture by continuum damage</td><td>connected components on face adjacency</td></tr>
+<tr><td>mixed materials</td><td class="mut">not addressed</td>
+    <td><strong>the paper's subject</strong></td>
+    <td>classes from the learned feature, stiffness by an ordering</td></tr>
+<tr><td>physics</td><td class="mut">not addressed</td><td>CD&#8209;MPM, brittle fracture</td>
+    <td>MPM, piece relabelling, occupancy collision</td></tr>
+<tr><td>cut geometry</td><td class="mut">not addressed</td><td class="mut">damage field</td>
+    <td>exact planar polygons, 0.00e+00 off the plane</td></tr>
+</tbody></table></div>
+
+<p>The three are not competing on one axis. FruitNinja asked how to invent an interior at all and
+answered it; this work keeps that supervision unchanged and asks what should hold the answer.
+GaussianFluent keeps the Gaussian and asks it to fracture, densifying the interior so it can &mdash;
+which is the opposite move to this one, and the honest way to read the storage row is that
+whatever a Gaussian interior costs, GaussianFluent pays more of it and this work pays less. Where
+the three do meet is the question this page ends on: a mixed-material object needs a shell the
+solver can resolve, and that is a property of the volume representation rather than of the
+solver.</p>
 
 <h2 id="conclusion">Conclusion</h2>
 
