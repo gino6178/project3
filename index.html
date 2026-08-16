@@ -101,7 +101,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.6 Simulation interface</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.5 Simulation interface</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
 <div class="grid3">
@@ -409,7 +409,7 @@ around.</p>
 
 <h2 id="method">3&ensp;Method</h2>
 
-<h3>3.1&ensp;Overview and representation</h3>
+<h3>3.1&ensp;System overview</h3>
 
 <h4>3.1.1&ensp;Problem statement and notation</h4>
 
@@ -594,8 +594,8 @@ our traversal is faster than their clustering. It is that connectivity is <em>gi
 representation on one side and <em>inferred</em> from geometry on the other, so on the lattice
 there is no threshold whose setting could change how many pieces the cut produced.</p>
 
-<p>Sections 3.1 to 3.6 build \(\mathcal{V}\), section 3.3.1 answers Q2 and Q3, section 3.4 builds
-\(\mathcal{M}\), and section 3.4 uses \(\mathbf{f_k}\) for material and contact.</p>
+<p>Sections 3.1 to 3.6 build \(\mathcal{V}\), section 3.3.1 answers Q2 and Q3, section 3.1.4 builds
+\(\mathcal{M}\), and section 3.1.4 uses \(\mathbf{f_k}\) for material and contact.</p>
 
 
 <h4>3.1.2&ensp;Overview</h4>
@@ -612,7 +612,134 @@ resolution of a cell, so each is wrong in the same place, and each is corrected 
 geometry exactly where the discretisation cannot. The numbers in parentheses are the equations
 that define each step.</p>
 
-<h4>3.1.3&ensp;Which route an object takes</h4>
+<h4>3.1.3&ensp;The two-level lattice</h4>
+
+<p>One definition serves the whole page. A cell is an axis-aligned cube; its index at level
+\(\ell\) is a floor division and its spacing halves with the level,</p>
+
+<div class="eq"><div class="body">
+$$ h_\ell = \frac{h_c}{2^{\ell}}, \qquad
+   \mathbf{k}_\ell(\mathbf{x}) = \left\lfloor \frac{\mathbf{x} - \mathbf{o}}{h_\ell} \right\rfloor,
+   \qquad \mathbf{o} = \min_i \mathbf{x}_i - \tfrac{1}{2} h_f $$
+</div><div class="num">(1)</div></div>
+
+<div class="eq"><div class="body">
+$$ \mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1, \qquad
+   \mathcal{V}_1 = \{\,\mathbf{k}_1 : \operatorname{dist}(\mathbf{x}_{\mathbf{k}_1},
+   \partial\Omega) < \beta h_f \,\}, \qquad
+   \mathcal{V}_0 \cap \operatorname{parent}(\mathcal{V}_1) = \emptyset $$
+</div><div class="num">(2)</div></div>
+
+<div class="eq"><div class="body">
+$$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
+   \lVert \mathbf{k} - \mathbf{k}' \rVert_1 = 1 \bigr\}
+   \;\cup\;
+   \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \mathbf{k}_1 \gg 1 \bigr\} $$
+</div><div class="num">(3)</div></div>
+
+<h3>3.1.4&ensp;The boundary as a dual grid</h3>
+
+<p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
+between it and the first; converting the whole boundary removes both. It is also necessary rather
+than convenient: a Gaussian shell covers only 7 to 20% of the frame at alpha above one half, so
+at the silhouette a cut face shows through from the side it should be hidden on.</p>
+
+<p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
+two renderers, a depth convention and a compositing step necessary. Converting the exterior as
+well removes the seam instead of managing it. The occupancy already holds the volume, so the exterior <em>is</em> its boundary, every face of an occupied cell whose neighbour is empty, and the same dual-grid encoder that handles the cut face takes the staircase off it.</p>
+
+
+
+<h4>3.1.5&ensp;Adaptive collapse</h4>
+
+<p>What follows is Ju et al.'s adaptive dual contouring [5] applied to the Flexible Dual Grid:
+summing children's quadrics bottom-up and collapsing where the residual is small is their
+construction, and the additivity that makes it work is Garland and Heckbert's [8]. The only thing
+new here is expressing the tolerance as a length rather than as a raw residual, which is what makes
+one \(\tau_c\) comparable across objects and levels.</p>
+
+<p>A dual grid stores one node per active surface voxel, so it costs \(O(A/h^2)\): a plane costs
+as much as a crumpled sheet of the same extent. That is fixable inside the algorithm, because the
+dual vertex is already the minimiser of a quadric. For supporting planes
+\(\{(\mathbf{n}_i, d_i)\}\),</p>
+
+<div class="eq"><div class="body">
+$$ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
+   = \mathbf{x}^\top\! A\,\mathbf{x} - 2\,\mathbf{b}^\top\mathbf{x} + c, \qquad
+   A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;
+   \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;
+   c = \sum_i d_i^2 $$
+</div><div class="num">(12)</div></div>
+
+<p>so a quadric is ten numbers. The property everything rests on is that it is additive over the
+set of planes, \(Q_{\text{parent}} = \sum Q_{\text{child}}\), exactly and with no reference to the
+mesh the children came from. The grid therefore collapses bottom-up: merge a \(2\times2\times2\)
+block, add the quadrics, solve \(A\mathbf{x} = \mathbf{b}\), and read the residual
+\(r = c - \mathbf{b}^\top\mathbf{x}\), the sum of squared distances from that one vertex to every
+plane the block covers. The tolerance is a length rather than a residual,</p>
+
+<p>The collapse is a constrained optimisation and is worth writing as one. A block of cells
+carries the planes its children saw; collapsing it replaces their dual vertices with a single
+\(v^{*}\) placed where those planes agree best, subject to the surface remaining the boundary of
+the same solid:</p>
+
+<div class="eq"><div class="body">
+$$ v^{*} \;=\; \arg\min_{v}\; \sum_{p \in \mathcal{H}(c)} \bigl( \mathbf{n}_p^\top v - d_p \bigr)^2
+   \quad \text{s.t.}\quad \chi(\mathcal{M}) = \chi(\mathcal{M}_0),\;\;
+   \partial \mathcal{M} = \partial \mathcal{M}_0 $$
+</div><div class="num">(13)</div></div>
+
+<p>The objective is the quadric of equation&nbsp;(12), additive over the planes a block covers, so
+the sum is ten numbers added per child and the minimiser is one \(3\times3\) solve. The constraint
+is what keeps a collapse changing the resolution rather than the object: the Euler characteristic
+and the boundary curve set are held at their uncollapsed values. That is enforced structurally, not
+by a penalty. A dual grid's connectivity comes from the occupancy and not from where its vertices
+sit, so a collapse merges vertices and never edges or faces, and a merge is refused when it would
+identify two vertices the occupancy does not make adjacent, which is the only move that could
+change \(\chi\). The same fact gives manifoldness where a cut face meets the exterior: both are
+indexed by the same cells, and the seam is exactly the boundary cells the plane crosses.</p>
+
+
+<div class="eq"><div class="body">
+$$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
+</div><div class="num">(14)</div></div>
+
+<figure>
+  <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
+  <figcaption>\(\tau_c\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at \(\tau_c=0\) and 149,031 at \(\tau_c=1\); the surface is the same orange throughout and the rim
+  steps visibly at the end, which is what a coarser node is.</figcaption>
+</figure>
+
+<h4>3.1.6&ensp;Collapse tolerance against surface error</h4>
+
+<p>The collapse has one parameter, \(\tau_c\) in equation (14), and what it buys has to be read
+against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
+count that survives, and how far the surface moved to reach it. The distances are to the
+uncollapsed grid and not to an analytic surface, so this is a self-consistency measure of what the
+collapse discards rather than a surface-error measure against ground truth; the identity row
+reproduces the uncollapsed mesh, which is what makes it the reference. All distances are in units
+of \(h\).</p>
+
+<div class="tw"><table>
+<thead><tr><th>\(\tau_c\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
+<tbody>
+<tr><td>&minus;1 (identity)</td><td>442,253</td><td>100.0%</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>934,520</td></tr>
+<tr><td>0.10</td><td>315,661</td><td>71.4%</td><td>0.024</td><td>0.262</td><td>0.163 \(h\)</td><td>1.000</td><td>n/a</td></tr>
+<tr><td>0.35</td><td>280,491</td><td>63.4%</td><td>0.036</td><td>0.328</td><td>0.215</td><td>1.000</td><td>614,129</td></tr>
+<tr><td>0.50</td><td>215,304</td><td><strong>48.7%</strong></td><td>0.072</td><td>0.468</td><td>0.338</td><td>1.209</td><td>474,742</td></tr>
+<tr><td>1.00</td><td>149,031</td><td><strong>33.7%</strong></td><td>0.093</td><td>0.712</td><td>0.556</td><td>1.637</td><td>326,341</td></tr>
+</tbody></table></div>
+
+<p>The doughnut's 530,958 nodes fall to 197,017 at \(\tau_c = 0.5\) and 143,247 at \(\tau_c = 1.0\).
+The identity row is the check that the rest means anything: an adaptive dual grid has no uniform
+mesh to hand back to the library, so the faces are rebuilt by resolving each crossed fine edge's
+four voxels to the nodes that survived, and with nothing merged that reproduces the library's own mesh to four parts in a million: 934,520 triangles, area
+15.22346 against 15.22352, and the same 12,606 boundary and
+41,947 non-manifold edges its mesh already has.</p>
+
+<h3>3.2&ensp;Lattice optimisation from 2D references</h3>
+
+<h4>3.2.1&ensp;Which route an object takes</h4>
 
 <p>The two routes are not alternatives to be chosen on preference; each answers a different
 question about what exists before the pipeline starts.</p>
@@ -641,34 +768,7 @@ begin with, and for the other two the field and the views are derived from the r
 those two demonstrate that the route reaches the same lattice rather than that it can do without a
 scan.</p>
 
-<h4>3.1.4&ensp;The two-level lattice</h4>
-
-<p>One definition serves the whole page. A cell is an axis-aligned cube; its index at level
-\(\ell\) is a floor division and its spacing halves with the level,</p>
-
-<div class="eq"><div class="body">
-$$ h_\ell = \frac{h_c}{2^{\ell}}, \qquad
-   \mathbf{k}_\ell(\mathbf{x}) = \left\lfloor \frac{\mathbf{x} - \mathbf{o}}{h_\ell} \right\rfloor,
-   \qquad \mathbf{o} = \min_i \mathbf{x}_i - \tfrac{1}{2} h_f $$
-</div><div class="num">(1)</div></div>
-
-<div class="eq"><div class="body">
-$$ \mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1, \qquad
-   \mathcal{V}_1 = \{\,\mathbf{k}_1 : \operatorname{dist}(\mathbf{x}_{\mathbf{k}_1},
-   \partial\Omega) < \beta h_f \,\}, \qquad
-   \mathcal{V}_0 \cap \operatorname{parent}(\mathcal{V}_1) = \emptyset $$
-</div><div class="num">(2)</div></div>
-
-<div class="eq"><div class="body">
-$$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
-   \lVert \mathbf{k} - \mathbf{k}' \rVert_1 = 1 \bigr\}
-   \;\cup\;
-   \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \mathbf{k}_1 \gg 1 \bigr\} $$
-</div><div class="num">(3)</div></div>
-
-<h3>3.2&ensp;Building the lattice</h3>
-
-<h4>3.2.1&ensp;Solidity of a quantised occupancy</h4>
+<h4>3.2.2&ensp;Solidity of a quantised occupancy</h4>
 
 <p>Route 1 reaches the lattice by quantisation. Every primitive of the source model is sent to the
 cell that contains it, and the set of cells that received at least one is the occupancy,</p>
@@ -721,7 +821,7 @@ a direct read-out of whether the occupancy is solid, and it says these are holes
 fragments. A piece count means nothing until this has run, so the cutting
 code runs it rather than assuming it.</p>
 
-<h4>3.2.2&ensp;Populating the lattice</h4>
+<h4>3.2.3&ensp;Populating the lattice</h4>
 
 <p>Everything after this section is shared. An object reaches the same two-level lattice by one of
 two paths, and which one it took is not recoverable downstream: cutting, the surface conversion, the
@@ -805,9 +905,166 @@ rather than 561.</p>
   two extremes on a quantised lattice.</figcaption>
 </figure>
 
-<h3>3.3&ensp;Closed-form cutting and fragment labelling</h3>
+<h3>3.2.4&ensp;Interior supervision from unaligned references</h3>
 
-<h4>3.3.1&ensp;Cutting: discrete topology, analytic boundary</h4>
+<p>The supervision is one reference image per training plane, and the reference is a photograph:
+the transverse family draws from six photographs of transverse cuts, the longitudinal family from
+six of longitudinal cuts, each resized and fitted to the silhouette its plane renders. No generative
+model runs. This is a departure from the work we build on, which generates each reference from a
+diffusion model fine-tuned on those same photographs, and the margin in section 4.1 is therefore
+attributable to the target as much as to the lattice &mdash; which is why that section compares
+against released models and does not present the substitution as controlled.</p>
+
+<p><p><strong>What is optimised and what is not.</strong> The objection to supervising from
+photographs with no camera is that the slice pose is unknown, so it must either be recovered or the
+gradient cannot be formed. Neither happens here, and it is worth writing down which symbols are
+variables. The optimisation is over the per-cell features \(\mathcal{F} = \{\mathbf{f}_i\}\) and
+the shared decoder \(\theta\), and over nothing else:</p>
+
+<div class="eq">\[ \min_{\mathcal{F},\,\theta} \; \sum_{j} \mathcal{L}_j
+\bigl(\, \mathcal{R}(\mathcal{F}, \theta;\, \Pi_j), \; \Phi(\mathbf{I}_{k(j)}, \alpha_j) \,\bigr),
+\qquad \Pi_j \ \text{sampled, not learned} \]</div>
+
+<p>There is no plane pose \(P_j = [\,R_j \mid \mathbf{t}_j\,]\) among the parameters and no
+gradient flows to \(\Pi_j\), because \(\Pi_j\) is not an estimate of where a photograph was
+taken. It is a plane the trainer chooses. The operator \(\mathcal{R}\) is not a projection of the
+photograph into the volume; it is a rendering of the volume at that plane &mdash; select the cells
+on one side by the sign of \(\mathbf{n}_j \cdot \mathbf{x}_i + d_j\), decode their features, and
+rasterise, giving an image and an alpha \(\alpha_j\). The photograph enters last, through
+\(\Phi\), which resizes and pastes it inside \(\alpha_j\). The direction of the whole
+construction is volume&nbsp;&rarr;&nbsp;image, and the photograph is compared against the result,
+so an unknown pose has nothing to be unknown about: no term in the objective depends on where the
+photograph was taken, and there is no correspondence to get wrong.</p>
+
+<p class="mut">One consequence worth stating because reviewers have assumed the opposite: there is
+no total-variation term on the interior features, and none is needed for the argument. Smoothing
+neighbouring cells toward each other would reconcile disagreeing references by blurring them, which
+is the failure this paper measured elsewhere &mdash; reconciling two targets by averaging along
+their intersection cost 0.012 DreamSim against a control, forty times the run-to-run spread,
+because averaging destroys exactly the discrete features that distinguish a seed from its
+surroundings. What reconciles the references is that a cell has one value and every plane reads it,
+not a penalty that makes neighbouring cells agree. The only total-variation term anywhere in the
+system acts on the physics head, where the quantity really is expected to be piecewise smooth.</p>
+
+<p><strong>The supervision, stated.</strong> Let \(\mathcal{R} = \{\mathbf{I}_k\}_{k=1}^{M}\)
+be the reference images, \(M = 12\), split into a transverse and a longitudinal family. A training
+plane \(\Pi_j = (\mathbf{n}_j, d_j)\) is rendered by keeping the cells on one side and rasterising
+them through the shared decoder \(g_\theta\), giving an image \(\hat{\mathbf{C}}_j\) and an alpha
+\(\alpha_j\); the target is a reference fitted to that alpha,
+\(\mathbf{T}_j = \Phi(\mathbf{I}_{k(j)}, \alpha_j)\). The objective is a structural and a
+photometric term over \(N_c\) random crops of side \(w\), with a per-crop band statistic:</p>
+
+<div class="eq">\[ \mathcal{L}_j = \frac{1}{N_c}\sum_{c=1}^{N_c}
+\Bigl[\, 0.7\,\bigl(1 - \mathrm{SSIM}(\hat{\mathbf{C}}_j^{c}, \mathbf{T}_j^{c})\bigr)
++ 0.3\,\bigl\lVert \hat{\mathbf{C}}_j^{c} - \mathbf{T}_j^{c} \bigr\rVert_2^2
++ \lambda_{\mathrm{b}}\, \mathcal{L}_{\mathrm{band}}(\hat{\mathbf{C}}_j^{c},
+\mathbf{T}_j^{c}) \,\Bigr] \]</div>
+
+<p class="mut">with \(w = 128\), \(N_c = 6\) and \(\lambda_{\mathrm{b}} = 0.3\) in every run
+reported here. Three things are absent and their absence is the point: no score, no diffusion model
+and no term that measures a rendered plane against another rendered plane. DreamSim appears nowhere
+in the objective, because it is the instrument the results are read with.</p>
+
+<p><strong>There is no pose to recover.</strong> The obvious objection to supervising from
+photographs with no camera and no known depth is that the slice projection cannot be aligned. It
+does not have to be, because the alignment never runs in that direction. The plane \(\Pi_j\) is
+<em>ours</em>: it is sampled by the trainer, the lattice is rendered through it, and the resulting
+silhouette \(\alpha_j\) is a known quantity. The photograph is then warped onto that silhouette by
+\(\Phi\). At no point does anything estimate where a photograph was taken, and no photograph
+contributes geometry &mdash; it contributes the appearance the plane's own geometry will carry. A
+misregistered reference is therefore not a geometric error to be corrected but a different claim
+about what the interior looks like there, which is the quantity section 3.2.4's table measures and
+the volume resolves.</p>
+
+<p>Two consequences follow. Deformation between specimens cannot produce ghosting in the usual
+sense, because nothing is being superimposed: each plane has one target, the target is fitted to
+that plane, and doubled structure would require two references to be applied to one plane. What
+misalignment does produce is <em>disagreement between planes</em> about the cells they share, which
+is resolved by the cells holding one value each and is measured as such. And the failure mode that
+remains is angular rather than positional: a reference rotated relative to the family puts its
+radial structure at an angle the others do not share, which is why the transverse family is phase
+aligned, and an ablation that injects rotations deliberately is the way to find where that
+breaks.</p>
+
+<p><strong>What absorbs the misalignment.</strong> A reference is not a picture of this object at
+this plane, so three things stand between it and a pixel loss. \(\Phi\) fits it to the silhouette
+the plane actually renders, so the object's own geometry supplies the registration and none is
+asked of the photographer. For the transverse family the images are first rotated to a common
+angular phase, because an orange's segment walls run the length of the fruit and every transverse
+cut meets the same ones: the angular profile of one section correlates \(+0.448\) with the next
+depth, \(+0.077\) six depths away, and \(+0.034\) between two different oranges, so the phase is
+the part that should be shared and everything localised is not. And the loss is read on crops
+through SSIM and a band statistic rather than globally pixel by pixel, which scores whether a crop
+has the right local structure rather than whether it lines up.</p>
+
+What the photographs do not do is agree with each other in three dimensions, and this section is
+about why that is acceptable. It is the property that decides what a user has to supply. A pipeline
+whose supervision must be mutually consistent needs registered views of one specimen; this one asks
+only for images of what the inside of such an object looks like, and the twelve used here are of
+different fruits, cut at different depths, photographed on different days, none of them taken with
+any of the others in mind. Each was taken of a different specimen at a different depth, and
+none was taken with any of the others in mind. Ten vertical training planes all contain the
+object's axis, so that axis is <em>the same line</em>
+in all ten references, and each photograph was taken without reference to the other nine.
+Whatever each shows there, it shows independently of the other nine, so the
+references make ten different claims about one line.</p>
+
+<p>That inconsistency is measurable and it is not small. Taking the axis column of each reference,
+restricted to rows where every section has material, and comparing the references pairwise:</p>
+
+<div class="tw"><table>
+<thead><tr><th>mean absolute disagreement on the shared axis</th><th>the references</th>
+<th>our renders</th><th>removed</th></tr></thead>
+<tbody>
+<tr><td>orange, route 1</td><td>0.1118</td><td>0.0436</td><td><strong>61.0%</strong></td></tr>
+<tr><td>orange, route 2</td><td>0.1130</td><td>0.0490</td><td><strong>56.7%</strong></td></tr>
+<tr><td>orange, route 2 repeat</td><td>0.1137</td><td>0.0485</td><td><strong>57.4%</strong></td></tr>
+<tr><td>watermelon, route 1</td><td>0.0171</td><td>0.0183</td><td>&minus;7.2%</td></tr>
+<tr><td>watermelon, route 2</td><td>0.0142</td><td>0.0185</td><td>&minus;30.0%</td></tr>
+</tbody></table></div>
+
+<p>On the orange the references disagree with each other about the same line by 0.113, while a
+single section varies along that line by 0.091: <strong>the conflict between the references is
+larger than the structure inside one of them</strong>. A representation cannot satisfy all ten, and
+it should not, because at most one of them can be right. What it can do is choose once, and that is
+what happens here: both sections read the same cells through the same decoder, so the volume is a
+constraint the supervision is projected onto rather than a canvas it is painted on, and 57 to 61%
+of the disagreement is gone from the renders.</p>
+
+<p>On the watermelon the references already agree, at 0.014, because a melon's core is uniform
+where an orange's is segmented and there is little for independent samples to differ about. There
+the volume adds a small amount of disagreement rather than removing it, 0.001 to 0.004 in absolute
+terms. We report both directions: the reconciliation is worth what there was to reconcile.</p>
+
+<p>The reconciliation is not paid for with structure, which is the check that decides whether it is
+worth anything. Taking the same axis band and measuring how much each image varies <em>along</em>
+the line &mdash; the row-to-row change that a membrane or a seed is &mdash; the model retains
+<strong>96.5%</strong> of what the references carry there. It is not agreeing by flattening; it is
+agreeing on one answer and keeping the detail that answer has.</p>
+
+<p>What this buys is a weaker requirement on the input than a reconstruction pipeline usually
+imposes. The twelve images are not views of one scene: nothing registers them, no camera pose is
+known or recovered, no two of them show the same fruit, and any consistency they have is
+coincidence. They are asked only to be plausible pictures of what such an interior looks like. The
+volume is what makes that sufficient, because every plane reads the same cells and a cell has one
+value, so ten contradictory claims about a line resolve to one before anything is rendered. In
+practice the input is: cut a few of the fruit, photograph the faces, and supply them.</p>
+
+<p class="mut">Stated as a limitation, the same property says the interior this produces is a
+plausible interior of that kind of object rather than the interior of the particular specimen
+scanned, and nothing here recovers the latter.</p>
+
+<p>This is a property of holding the interior as a volume at all, and it is measured here rather
+than assumed. It also locates where a better supervision would act. The volume currently resolves
+the conflict <em>after</em> the fact, by averaging ten answers into one field; the conflict itself
+is produced upstream, by generating each cross-section independently. A supervision that conditioned
+each new section on what the volume already holds along its intersections with the sections already
+drawn would remove the conflict at its source instead. That is not what this paper does, and the
+measurement above is what says it is worth doing.</p>
+
+<h3>3.3&ensp;Closed-form planar cutting operator</h3>
+
+<h4>3.3.1&ensp;The exposed face, in closed form</h4>
 
 <p>A cut arrives as a plane. Cells it crosses are subdivided until \(h_\ell \le h_{\text{target}}\),
 leaves are joined to their face neighbours, edges the plane separates are dropped, and connected
@@ -934,51 +1191,6 @@ crossings occur for a cube, and the two degenerate cases are handled as describe
 polygons meet edge to edge because every crossed cell is refined to the same depth, so
 \(\mathcal{P}\) is a manifold with boundary wherever the occupancy is.</p>
 
-<p>A cut costs what it touches. Refinement is already local, and so is the rest of it, because a
-plane changes face adjacency only where it refines: a pair of unrefined leaves is adjacent after
-the cut exactly when it was adjacent before. So the object's own adjacency is computed once and
-every cut reuses the pairs whose ends it did not touch, recomputing only the pairs with a refined
-leaf on either end. That set is the band, which is \(O(N^{2/3})\) of the volume and measures 4.0
-to 10.7% of the cells on the objects here, so the cut is linear in the crossed cells \(K\) rather
-than in the object \(N\). Labelling is then connected components on the surviving graph.</p>
-
-<div class="tw"><table>
-<thead><tr><th>one cut on the orange, 894,304 solid cells</th><th>seconds</th></tr></thead>
-<tbody>
-<tr><td>labelling as an interpreted union-find, adjacency over every leaf</td><td>13.76</td></tr>
-<tr><td>labelling vectorised</td><td>5.24</td></tr>
-<tr><td><strong>adjacency reused outside the band</strong></td><td><strong>2.91</strong></td></tr>
-<tr><td class="mut">the object's own adjacency, once, reused by every later cut</td><td class="mut">5.00</td></tr>
-</tbody></table></div>
-
-<p>The three rows produce the same 991,436 leaves, the same 2,925,520 surviving edges and the same
-two pieces; only the work differs. Checked on every synthetic case above as well, where
-the band-local result matches the full pass in piece count and edge count exactly. What remains at
-2.91&nbsp;s is the refinement itself and the component pass, not the adjacency.</p>
-
-<p>Equation (9) is the standard box-plane separating-axis test [39], and it is used twice. A cell of side \(h\) centred at
-\(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
-extent along \(\mathbf{n}\), which is the right-hand side; that decides which cells are refined.
-It also bounds how far a point inside a cell can be from the plane, which is what section 4.2.4
-uses to explain why occupancy alone claims material on both sides of a cut and why one sign test
-removes exactly that band and nothing else.</p>
-
-<p>Adjacency is arithmetic too. A leaf's neighbour is at its own level or coarser (were it finer, the finer leaves on the shared face would find this one), so the coarser candidate is the
-neighbour's coordinate shifted right, which is floor division and therefore the cell containing
-it. With \(Q\) planes a leaf carries a <em>side code</em>, the \(Q\) signs at its centre, and
-adjacency survives only between equal codes.</p>
-
-<p>Topology is voxel-approximate by construction; the visible face must not be, or it reads as a
-staircase. Per cut leaf we intersect the plane with the twelve edges, order the points around
-their centroid in the plane's own basis, and fan them: a convex polygon of three to six vertices lying on the plane.
-The residual is what the arithmetic leaves: measured on an axis-aligned plane through the origin it
-is 0.00e+00 exactly, which is that plane's own accident, and for an oblique plane it is the rounding
-of \(\mathbf{a} + t(\mathbf{b}-\mathbf{a})\), a small multiple of the machine epsilon. The claim
-worth making is not the size of that number but that there is no other error term: no primitive is
-asked to approximate the plane, so the only departure in a cut is the voxelisation of the
-silhouette. Every crossed cell is
-refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
-them.</p>
 <h4>3.3.2&ensp;Adaptive refinement of the cut band</h4>
 
 <p>Refining every crossed cell to a fixed depth spends the deepest level any cell needed on all of
@@ -1027,264 +1239,56 @@ of them, and there is no variation for a tolerance to exploit. We measured 0.0% 
 ball and on a dumbbell, and report it because a criterion that adapts to nothing is worth knowing
 about before it is trusted.</p>
 
-<h3>3.4&ensp;The boundary as a dual grid</h3>
+<h3>3.4&ensp;Discrete topology and fragment labelling</h3>
 
-<p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
-between it and the first; converting the whole boundary removes both. It is also necessary rather
-than convenient: a Gaussian shell covers only 7 to 20% of the frame at alpha above one half, so
-at the silhouette a cut face shows through from the side it should be hidden on.</p>
+<h4>3.4.1&ensp;The cost of a cut, and adjacency as arithmetic</h4>
 
-<p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
-two renderers, a depth convention and a compositing step necessary. Converting the exterior as
-well removes the seam instead of managing it. The occupancy already holds the volume, so the exterior <em>is</em> its boundary, every face of an occupied cell whose neighbour is empty, and the same dual-grid encoder that handles the cut face takes the staircase off it.</p>
-
-
-
-<h4>3.4.1&ensp;Adaptive collapse</h4>
-
-<p>What follows is Ju et al.'s adaptive dual contouring [5] applied to the Flexible Dual Grid:
-summing children's quadrics bottom-up and collapsing where the residual is small is their
-construction, and the additivity that makes it work is Garland and Heckbert's [8]. The only thing
-new here is expressing the tolerance as a length rather than as a raw residual, which is what makes
-one \(\tau_c\) comparable across objects and levels.</p>
-
-<p>A dual grid stores one node per active surface voxel, so it costs \(O(A/h^2)\): a plane costs
-as much as a crumpled sheet of the same extent. That is fixable inside the algorithm, because the
-dual vertex is already the minimiser of a quadric. For supporting planes
-\(\{(\mathbf{n}_i, d_i)\}\),</p>
-
-<div class="eq"><div class="body">
-$$ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
-   = \mathbf{x}^\top\! A\,\mathbf{x} - 2\,\mathbf{b}^\top\mathbf{x} + c, \qquad
-   A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;
-   \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;
-   c = \sum_i d_i^2 $$
-</div><div class="num">(12)</div></div>
-
-<p>so a quadric is ten numbers. The property everything rests on is that it is additive over the
-set of planes, \(Q_{\text{parent}} = \sum Q_{\text{child}}\), exactly and with no reference to the
-mesh the children came from. The grid therefore collapses bottom-up: merge a \(2\times2\times2\)
-block, add the quadrics, solve \(A\mathbf{x} = \mathbf{b}\), and read the residual
-\(r = c - \mathbf{b}^\top\mathbf{x}\), the sum of squared distances from that one vertex to every
-plane the block covers. The tolerance is a length rather than a residual,</p>
-
-<p>The collapse is a constrained optimisation and is worth writing as one. A block of cells
-carries the planes its children saw; collapsing it replaces their dual vertices with a single
-\(v^{*}\) placed where those planes agree best, subject to the surface remaining the boundary of
-the same solid:</p>
-
-<div class="eq"><div class="body">
-$$ v^{*} \;=\; \arg\min_{v}\; \sum_{p \in \mathcal{H}(c)} \bigl( \mathbf{n}_p^\top v - d_p \bigr)^2
-   \quad \text{s.t.}\quad \chi(\mathcal{M}) = \chi(\mathcal{M}_0),\;\;
-   \partial \mathcal{M} = \partial \mathcal{M}_0 $$
-</div><div class="num">(13)</div></div>
-
-<p>The objective is the quadric of equation&nbsp;(12), additive over the planes a block covers, so
-the sum is ten numbers added per child and the minimiser is one \(3\times3\) solve. The constraint
-is what keeps a collapse changing the resolution rather than the object: the Euler characteristic
-and the boundary curve set are held at their uncollapsed values. That is enforced structurally, not
-by a penalty. A dual grid's connectivity comes from the occupancy and not from where its vertices
-sit, so a collapse merges vertices and never edges or faces, and a merge is refused when it would
-identify two vertices the occupancy does not make adjacent, which is the only move that could
-change \(\chi\). The same fact gives manifoldness where a cut face meets the exterior: both are
-indexed by the same cells, and the seam is exactly the boundary cells the plane crosses.</p>
-
-
-<div class="eq"><div class="body">
-$$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
-</div><div class="num">(14)</div></div>
-
-<figure>
-  <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption>\(\tau_c\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at \(\tau_c=0\) and 149,031 at \(\tau_c=1\); the surface is the same orange throughout and the rim
-  steps visibly at the end, which is what a coarser node is.</figcaption>
-</figure>
-
-<h4>3.4.2&ensp;Collapse tolerance against surface error</h4>
-
-<p>The collapse has one parameter, \(\tau_c\) in equation (14), and what it buys has to be read
-against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
-count that survives, and how far the surface moved to reach it. The distances are to the
-uncollapsed grid and not to an analytic surface, so this is a self-consistency measure of what the
-collapse discards rather than a surface-error measure against ground truth; the identity row
-reproduces the uncollapsed mesh, which is what makes it the reference. All distances are in units
-of \(h\).</p>
+<p>A cut costs what it touches. Refinement is already local, and so is the rest of it, because a
+plane changes face adjacency only where it refines: a pair of unrefined leaves is adjacent after
+the cut exactly when it was adjacent before. So the object's own adjacency is computed once and
+every cut reuses the pairs whose ends it did not touch, recomputing only the pairs with a refined
+leaf on either end. That set is the band, which is \(O(N^{2/3})\) of the volume and measures 4.0
+to 10.7% of the cells on the objects here, so the cut is linear in the crossed cells \(K\) rather
+than in the object \(N\). Labelling is then connected components on the surviving graph.</p>
 
 <div class="tw"><table>
-<thead><tr><th>\(\tau_c\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
+<thead><tr><th>one cut on the orange, 894,304 solid cells</th><th>seconds</th></tr></thead>
 <tbody>
-<tr><td>&minus;1 (identity)</td><td>442,253</td><td>100.0%</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>934,520</td></tr>
-<tr><td>0.10</td><td>315,661</td><td>71.4%</td><td>0.024</td><td>0.262</td><td>0.163 \(h\)</td><td>1.000</td><td>n/a</td></tr>
-<tr><td>0.35</td><td>280,491</td><td>63.4%</td><td>0.036</td><td>0.328</td><td>0.215</td><td>1.000</td><td>614,129</td></tr>
-<tr><td>0.50</td><td>215,304</td><td><strong>48.7%</strong></td><td>0.072</td><td>0.468</td><td>0.338</td><td>1.209</td><td>474,742</td></tr>
-<tr><td>1.00</td><td>149,031</td><td><strong>33.7%</strong></td><td>0.093</td><td>0.712</td><td>0.556</td><td>1.637</td><td>326,341</td></tr>
+<tr><td>labelling as an interpreted union-find, adjacency over every leaf</td><td>13.76</td></tr>
+<tr><td>labelling vectorised</td><td>5.24</td></tr>
+<tr><td><strong>adjacency reused outside the band</strong></td><td><strong>2.91</strong></td></tr>
+<tr><td class="mut">the object's own adjacency, once, reused by every later cut</td><td class="mut">5.00</td></tr>
 </tbody></table></div>
 
-<p>The doughnut's 530,958 nodes fall to 197,017 at \(\tau_c = 0.5\) and 143,247 at \(\tau_c = 1.0\).
-The identity row is the check that the rest means anything: an adaptive dual grid has no uniform
-mesh to hand back to the library, so the faces are rebuilt by resolving each crossed fine edge's
-four voxels to the nodes that survived, and with nothing merged that reproduces the library's own mesh to four parts in a million: 934,520 triangles, area
-15.22346 against 15.22352, and the same 12,606 boundary and
-41,947 non-manifold edges its mesh already has.</p>
+<p>The three rows produce the same 991,436 leaves, the same 2,925,520 surviving edges and the same
+two pieces; only the work differs. Checked on every synthetic case above as well, where
+the band-local result matches the full pass in piece count and edge count exactly. What remains at
+2.91&nbsp;s is the refinement itself and the component pass, not the adjacency.</p>
 
-<h3>3.5&ensp;Interior supervision from unaligned references</h3>
+<p>Equation (9) is the standard box-plane separating-axis test [39], and it is used twice. A cell of side \(h\) centred at
+\(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
+extent along \(\mathbf{n}\), which is the right-hand side; that decides which cells are refined.
+It also bounds how far a point inside a cell can be from the plane, which is what section 4.2.4
+uses to explain why occupancy alone claims material on both sides of a cut and why one sign test
+removes exactly that band and nothing else.</p>
 
-<p>The supervision is one reference image per training plane, and the reference is a photograph:
-the transverse family draws from six photographs of transverse cuts, the longitudinal family from
-six of longitudinal cuts, each resized and fitted to the silhouette its plane renders. No generative
-model runs. This is a departure from the work we build on, which generates each reference from a
-diffusion model fine-tuned on those same photographs, and the margin in section 4.1 is therefore
-attributable to the target as much as to the lattice &mdash; which is why that section compares
-against released models and does not present the substitution as controlled.</p>
+<p>Adjacency is arithmetic too. A leaf's neighbour is at its own level or coarser (were it finer, the finer leaves on the shared face would find this one), so the coarser candidate is the
+neighbour's coordinate shifted right, which is floor division and therefore the cell containing
+it. With \(Q\) planes a leaf carries a <em>side code</em>, the \(Q\) signs at its centre, and
+adjacency survives only between equal codes.</p>
 
-<p><p><strong>What is optimised and what is not.</strong> The objection to supervising from
-photographs with no camera is that the slice pose is unknown, so it must either be recovered or the
-gradient cannot be formed. Neither happens here, and it is worth writing down which symbols are
-variables. The optimisation is over the per-cell features \(\mathcal{F} = \{\mathbf{f}_i\}\) and
-the shared decoder \(\theta\), and over nothing else:</p>
-
-<div class="eq">\[ \min_{\mathcal{F},\,\theta} \; \sum_{j} \mathcal{L}_j
-\bigl(\, \mathcal{R}(\mathcal{F}, \theta;\, \Pi_j), \; \Phi(\mathbf{I}_{k(j)}, \alpha_j) \,\bigr),
-\qquad \Pi_j \ \text{sampled, not learned} \]</div>
-
-<p>There is no plane pose \(P_j = [\,R_j \mid \mathbf{t}_j\,]\) among the parameters and no
-gradient flows to \(\Pi_j\), because \(\Pi_j\) is not an estimate of where a photograph was
-taken. It is a plane the trainer chooses. The operator \(\mathcal{R}\) is not a projection of the
-photograph into the volume; it is a rendering of the volume at that plane &mdash; select the cells
-on one side by the sign of \(\mathbf{n}_j \cdot \mathbf{x}_i + d_j\), decode their features, and
-rasterise, giving an image and an alpha \(\alpha_j\). The photograph enters last, through
-\(\Phi\), which resizes and pastes it inside \(\alpha_j\). The direction of the whole
-construction is volume&nbsp;&rarr;&nbsp;image, and the photograph is compared against the result,
-so an unknown pose has nothing to be unknown about: no term in the objective depends on where the
-photograph was taken, and there is no correspondence to get wrong.</p>
-
-<p class="mut">One consequence worth stating because reviewers have assumed the opposite: there is
-no total-variation term on the interior features, and none is needed for the argument. Smoothing
-neighbouring cells toward each other would reconcile disagreeing references by blurring them, which
-is the failure this paper measured elsewhere &mdash; reconciling two targets by averaging along
-their intersection cost 0.012 DreamSim against a control, forty times the run-to-run spread,
-because averaging destroys exactly the discrete features that distinguish a seed from its
-surroundings. What reconciles the references is that a cell has one value and every plane reads it,
-not a penalty that makes neighbouring cells agree. The only total-variation term anywhere in the
-system acts on the physics head, where the quantity really is expected to be piecewise smooth.</p>
-
-<p><strong>The supervision, stated.</strong> Let \(\mathcal{R} = \{\mathbf{I}_k\}_{k=1}^{M}\)
-be the reference images, \(M = 12\), split into a transverse and a longitudinal family. A training
-plane \(\Pi_j = (\mathbf{n}_j, d_j)\) is rendered by keeping the cells on one side and rasterising
-them through the shared decoder \(g_\theta\), giving an image \(\hat{\mathbf{C}}_j\) and an alpha
-\(\alpha_j\); the target is a reference fitted to that alpha,
-\(\mathbf{T}_j = \Phi(\mathbf{I}_{k(j)}, \alpha_j)\). The objective is a structural and a
-photometric term over \(N_c\) random crops of side \(w\), with a per-crop band statistic:</p>
-
-<div class="eq">\[ \mathcal{L}_j = \frac{1}{N_c}\sum_{c=1}^{N_c}
-\Bigl[\, 0.7\,\bigl(1 - \mathrm{SSIM}(\hat{\mathbf{C}}_j^{c}, \mathbf{T}_j^{c})\bigr)
-+ 0.3\,\bigl\lVert \hat{\mathbf{C}}_j^{c} - \mathbf{T}_j^{c} \bigr\rVert_2^2
-+ \lambda_{\mathrm{b}}\, \mathcal{L}_{\mathrm{band}}(\hat{\mathbf{C}}_j^{c},
-\mathbf{T}_j^{c}) \,\Bigr] \]</div>
-
-<p class="mut">with \(w = 128\), \(N_c = 6\) and \(\lambda_{\mathrm{b}} = 0.3\) in every run
-reported here. Three things are absent and their absence is the point: no score, no diffusion model
-and no term that measures a rendered plane against another rendered plane. DreamSim appears nowhere
-in the objective, because it is the instrument the results are read with.</p>
-
-<p><strong>There is no pose to recover.</strong> The obvious objection to supervising from
-photographs with no camera and no known depth is that the slice projection cannot be aligned. It
-does not have to be, because the alignment never runs in that direction. The plane \(\Pi_j\) is
-<em>ours</em>: it is sampled by the trainer, the lattice is rendered through it, and the resulting
-silhouette \(\alpha_j\) is a known quantity. The photograph is then warped onto that silhouette by
-\(\Phi\). At no point does anything estimate where a photograph was taken, and no photograph
-contributes geometry &mdash; it contributes the appearance the plane's own geometry will carry. A
-misregistered reference is therefore not a geometric error to be corrected but a different claim
-about what the interior looks like there, which is the quantity section 3.5's table measures and
-the volume resolves.</p>
-
-<p>Two consequences follow. Deformation between specimens cannot produce ghosting in the usual
-sense, because nothing is being superimposed: each plane has one target, the target is fitted to
-that plane, and doubled structure would require two references to be applied to one plane. What
-misalignment does produce is <em>disagreement between planes</em> about the cells they share, which
-is resolved by the cells holding one value each and is measured as such. And the failure mode that
-remains is angular rather than positional: a reference rotated relative to the family puts its
-radial structure at an angle the others do not share, which is why the transverse family is phase
-aligned, and an ablation that injects rotations deliberately is the way to find where that
-breaks.</p>
-
-<p><strong>What absorbs the misalignment.</strong> A reference is not a picture of this object at
-this plane, so three things stand between it and a pixel loss. \(\Phi\) fits it to the silhouette
-the plane actually renders, so the object's own geometry supplies the registration and none is
-asked of the photographer. For the transverse family the images are first rotated to a common
-angular phase, because an orange's segment walls run the length of the fruit and every transverse
-cut meets the same ones: the angular profile of one section correlates \(+0.448\) with the next
-depth, \(+0.077\) six depths away, and \(+0.034\) between two different oranges, so the phase is
-the part that should be shared and everything localised is not. And the loss is read on crops
-through SSIM and a band statistic rather than globally pixel by pixel, which scores whether a crop
-has the right local structure rather than whether it lines up.</p>
-
-What the photographs do not do is agree with each other in three dimensions, and this section is
-about why that is acceptable. It is the property that decides what a user has to supply. A pipeline
-whose supervision must be mutually consistent needs registered views of one specimen; this one asks
-only for images of what the inside of such an object looks like, and the twelve used here are of
-different fruits, cut at different depths, photographed on different days, none of them taken with
-any of the others in mind. Each was taken of a different specimen at a different depth, and
-none was taken with any of the others in mind. Ten vertical training planes all contain the
-object's axis, so that axis is <em>the same line</em>
-in all ten references, and each photograph was taken without reference to the other nine.
-Whatever each shows there, it shows independently of the other nine, so the
-references make ten different claims about one line.</p>
-
-<p>That inconsistency is measurable and it is not small. Taking the axis column of each reference,
-restricted to rows where every section has material, and comparing the references pairwise:</p>
-
-<div class="tw"><table>
-<thead><tr><th>mean absolute disagreement on the shared axis</th><th>the references</th>
-<th>our renders</th><th>removed</th></tr></thead>
-<tbody>
-<tr><td>orange, route 1</td><td>0.1118</td><td>0.0436</td><td><strong>61.0%</strong></td></tr>
-<tr><td>orange, route 2</td><td>0.1130</td><td>0.0490</td><td><strong>56.7%</strong></td></tr>
-<tr><td>orange, route 2 repeat</td><td>0.1137</td><td>0.0485</td><td><strong>57.4%</strong></td></tr>
-<tr><td>watermelon, route 1</td><td>0.0171</td><td>0.0183</td><td>&minus;7.2%</td></tr>
-<tr><td>watermelon, route 2</td><td>0.0142</td><td>0.0185</td><td>&minus;30.0%</td></tr>
-</tbody></table></div>
-
-<p>On the orange the references disagree with each other about the same line by 0.113, while a
-single section varies along that line by 0.091: <strong>the conflict between the references is
-larger than the structure inside one of them</strong>. A representation cannot satisfy all ten, and
-it should not, because at most one of them can be right. What it can do is choose once, and that is
-what happens here: both sections read the same cells through the same decoder, so the volume is a
-constraint the supervision is projected onto rather than a canvas it is painted on, and 57 to 61%
-of the disagreement is gone from the renders.</p>
-
-<p>On the watermelon the references already agree, at 0.014, because a melon's core is uniform
-where an orange's is segmented and there is little for independent samples to differ about. There
-the volume adds a small amount of disagreement rather than removing it, 0.001 to 0.004 in absolute
-terms. We report both directions: the reconciliation is worth what there was to reconcile.</p>
-
-<p>The reconciliation is not paid for with structure, which is the check that decides whether it is
-worth anything. Taking the same axis band and measuring how much each image varies <em>along</em>
-the line &mdash; the row-to-row change that a membrane or a seed is &mdash; the model retains
-<strong>96.5%</strong> of what the references carry there. It is not agreeing by flattening; it is
-agreeing on one answer and keeping the detail that answer has.</p>
-
-<p>What this buys is a weaker requirement on the input than a reconstruction pipeline usually
-imposes. The twelve images are not views of one scene: nothing registers them, no camera pose is
-known or recovered, no two of them show the same fruit, and any consistency they have is
-coincidence. They are asked only to be plausible pictures of what such an interior looks like. The
-volume is what makes that sufficient, because every plane reads the same cells and a cell has one
-value, so ten contradictory claims about a line resolve to one before anything is rendered. In
-practice the input is: cut a few of the fruit, photograph the faces, and supply them.</p>
-
-<p class="mut">Stated as a limitation, the same property says the interior this produces is a
-plausible interior of that kind of object rather than the interior of the particular specimen
-scanned, and nothing here recovers the latter.</p>
-
-<p>This is a property of holding the interior as a volume at all, and it is measured here rather
-than assumed. It also locates where a better supervision would act. The volume currently resolves
-the conflict <em>after</em> the fact, by averaging ten answers into one field; the conflict itself
-is produced upstream, by generating each cross-section independently. A supervision that conditioned
-each new section on what the volume already holds along its intersections with the sections already
-drawn would remove the conflict at its source instead. That is not what this paper does, and the
-measurement above is what says it is worth doing.</p>
-
-<h3 id="physics">3.6&ensp;Direct grid interfacing for simulation</h3>
+<p>Topology is voxel-approximate by construction; the visible face must not be, or it reads as a
+staircase. Per cut leaf we intersect the plane with the twelve edges, order the points around
+their centroid in the plane's own basis, and fan them: a convex polygon of three to six vertices lying on the plane.
+The residual is what the arithmetic leaves: measured on an axis-aligned plane through the origin it
+is 0.00e+00 exactly, which is that plane's own accident, and for an oblique plane it is the rounding
+of \(\mathbf{a} + t(\mathbf{b}-\mathbf{a})\), a small multiple of the machine epsilon. The claim
+worth making is not the size of that number but that there is no other error term: no primitive is
+asked to approximate the plane, so the only departure in a cut is the voxelisation of the
+silhouette. Every crossed cell is
+refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
+them.</p>
+<h3 id="physics">3.5&ensp;Direct grid interfacing for simulation</h3>
 
 <p class="mut">What this section establishes is that the lattice answers the questions a solver
 asks, in the form it asks them. It does not establish that the resulting dynamics are accurate: no
@@ -1887,7 +1891,7 @@ cuts each, and the other two objects and the intervening sizes are not run.</p>
 </div>
 
 <p class="mut" style="text-align:center;margin-top:-6px">Both trade-offs this work avoids by
-construction, drawn from the tables above and in section 3.4.2. <strong>a</strong>: on a fixed
+construction, drawn from the tables above and in section 3.1.6. <strong>a</strong>: on a fixed
 primitive set, support below \(\rho \approx 0.1\) leaves the section unpainted and support
 above 0.25 blends across material boundaries, with a narrow window between them; both published
 models sit at the far left. <strong>b</strong>: the dual grid trades node count against surface
