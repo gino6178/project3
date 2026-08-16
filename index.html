@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Two Routes to a Cuttable Object</title>
+<title>Decoupling Surface and Interior: Explicit Volumetric Occupancy from Unaligned Slices for Exact Planar Cutting</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
       integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
@@ -88,8 +88,8 @@
 <div class="wrap">
 
 <header>
-  <h1>The Hidden Volume Stops Being a Rendering Primitive</h1>
-  <p class="sub">Decoupling interior occupancy from splatted primitives for exact cutting, on supervision that is a dozen unaligned photographs</p>
+  <h1>Decoupling Surface and Interior: Explicit Volumetric Occupancy from Unaligned Slices for Exact Planar Cutting</h1>
+  <p class="sub">A two-level occupancy lattice supervised by a dozen cross-section photographs of different specimens, with no camera pose and no registration</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
   <div class="links">
@@ -690,6 +690,37 @@ therefore a question about how a cell records that it is severed, not about how 
 which is why the virtual-node construction is the one to reach for. We have not implemented it and
 report no numbers for it.</p>
 
+<p>Placing that against the alternatives is worth doing explicitly, because the formulations differ
+in what they can express and not only in how fast they are. The rows below are what each
+representation supports in principle, from the constructions cited above rather than from anything
+measured here; only the last row is this work.</p>
+
+<div class="tw"><table>
+<thead><tr><th>representation</th><th>planar cut</th><th>curved cut</th><th>incision that stops</th>
+<th>after the cut</th></tr></thead>
+<tbody>
+<tr><td>triangle mesh, boolean</td><td>exact, on robust predicates</td>
+    <td>exact</td><td>exact</td><td class="mut">may need remeshing; slivers</td></tr>
+<tr><td>tetrahedra, virtual node [48] or XFEM [50]</td><td>exact fragments</td><td>exact</td>
+    <td>exact</td><td class="mut">elements duplicated, no remesh</td></tr>
+<tr><td>implicit SDF</td><td>exact zero set</td><td>exact if the tool is a field</td>
+    <td class="mut">needs a bounded tool field</td><td class="mut">re-extraction to display</td></tr>
+<tr><td>splatted primitives [3, 23]</td><td class="mut">side test; no face defined</td>
+    <td class="mut">side test</td><td class="mut">no expression</td>
+    <td class="mut">nothing to redo, and no face either</td></tr>
+<tr><td><strong>this work</strong></td><td><strong>closed form per cell</strong></td>
+    <td class="mut">face survives, labelling does not</td><td class="mut">no expression</td>
+    <td><strong>nothing to redo</strong></td></tr>
+</tbody></table></div>
+
+<p>The scope this work occupies is therefore narrower than a tetrahedral cutting formulation and
+wider than a splatted one, and it is chosen rather than inherited: a photogrammetric asset has no
+volumetric discretisation for the tetrahedral constructions to act on, which is the gap this
+representation fills, and the planarity restriction is the price of labelling pieces by a global
+sign code instead of by per-element bookkeeping. A method that needs freehand incisions should use
+virtual nodes on a tetrahedral mesh and pay for the mesh; a method that needs a cut face it can
+make statements about, on an asset that began as photographs, has not previously had an option.<</p>
+
 <p>Two degeneracies have to be handled for the closed-form face to be stable, and both are handled
 by construction rather than by a tolerance. When the plane passes exactly through a cell vertex, the
 edge parameter of equation&nbsp;(10) evaluates to 0 or 1 on the two edges meeting there and the same
@@ -964,6 +995,27 @@ photometric term over \(N_c\) random crops of side \(w\), with a per-crop band s
 reported here. Three things are absent and their absence is the point: no score, no diffusion model
 and no term that measures a rendered plane against another rendered plane. DreamSim appears nowhere
 in the objective, because it is the instrument the results are read with.</p>
+
+<p><strong>There is no pose to recover.</strong> The obvious objection to supervising from
+photographs with no camera and no known depth is that the slice projection cannot be aligned. It
+does not have to be, because the alignment never runs in that direction. The plane \(\Pi_j\) is
+<em>ours</em>: it is sampled by the trainer, the lattice is rendered through it, and the resulting
+silhouette \(\alpha_j\) is a known quantity. The photograph is then warped onto that silhouette by
+\(\Phi\). At no point does anything estimate where a photograph was taken, and no photograph
+contributes geometry &mdash; it contributes the appearance the plane's own geometry will carry. A
+misregistered reference is therefore not a geometric error to be corrected but a different claim
+about what the interior looks like there, which is the quantity section 3.10's table measures and
+the volume resolves.</p>
+
+<p>Two consequences follow. Deformation between specimens cannot produce ghosting in the usual
+sense, because nothing is being superimposed: each plane has one target, the target is fitted to
+that plane, and doubled structure would require two references to be applied to one plane. What
+misalignment does produce is <em>disagreement between planes</em> about the cells they share, which
+is resolved by the cells holding one value each and is measured as such. And the failure mode that
+remains is angular rather than positional: a reference rotated relative to the family puts its
+radial structure at an angle the others do not share, which is why the transverse family is phase
+aligned, and an ablation that injects rotations deliberately is the way to find where that
+breaks.</p>
 
 <p><strong>What absorbs the misalignment.</strong> A reference is not a picture of this object at
 this plane, so three things stand between it and a pixel loss. \(\Phi\) fits it to the silhouette
