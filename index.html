@@ -282,13 +282,13 @@ simulated dynamics is not evaluated in this paper.</p>
 <h3>2.1&ensp;Interior generation from 2D generative priors</h3>
 
 <p><strong>Score distillation and what it filters.</strong> Optimising a radiance field or a
-Gaussian set against a pre-trained diffusion model through score distillation [2, 3] averages the
+Gaussian set against a pre-trained diffusion model through score distillation [27] averages the
 score over timesteps drawn uniformly from its range, which acts as a low-pass filter on the target.
 We measured the consequence for cross-sections: under either prompt and at any run length the
 distilled target for an orange is a smooth disc with a single bright centre, and the membranes,
 fibres and seeds that a section consists of are absent. Fine-tuning the diffusion model on the
-object's own cross-section photographs restores them, and that is what the closest prior work
-does.</p>
+object's own cross-section photographs restores them, and that is what the closest prior work does;
+the checkpoints involved, here and there, are latent diffusion models [26].</p>
 
 <p><strong>Fine-tuned interior generators.</strong> FruitNinja [3] supervises an object's interior with
 depth-conditioned diffusion on cross-sections and stores it as opaque atomic Gaussians, the
@@ -311,7 +311,7 @@ grids that accelerated radiance fields [15, 16] and the hash encoding that repla
 those share is that the structure serves the renderer. Here it serves the volume, and the renderer
 is given its own representation.</p>
 
-<p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O&#8209;Voxel [10] is a
+<p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O&#8209;Voxel [10], the surface stage of a structured-latent 3D generator [11], is a
 field-free sparse voxel surface: a Flexible Dual Grid in which every active voxel carries a dual
 vertex and grid-edge intersection flags, handling open, non-manifold and fully enclosed internal
 surfaces. We use its official encoder without reimplementing it, for the cut face and then for the
@@ -360,7 +360,8 @@ starting earlier [51]. What has not been available before is any of this on a ph
 radiance-field asset, because such an asset has no volumetric discretisation to cut. Fracture by
 continuum damage [52] is the alternative separation mechanism GaussianFluent uses.</p>
 
-<p><strong>Physics on primitives.</strong> PhysGaussian [18] simulates Gaussians with MPM. We keep
+<p><strong>Physics on primitives.</strong> PhysGaussian [18] simulates Gaussians with MPM, and VR-GS [22] builds an interactive system on
+that line. We keep
 the existing particle set and give it piece identity, so subdividing a cut band multiplies leaves
 and not particles. The solver is MPM [19, 20] in the moving-least-squares form [21], and the
 surface follows it by the same weighted-sum binding that skinning [24] and embedded deformation
@@ -534,7 +535,9 @@ cells.</p>
 
 <p>A quantised occupancy is not solid. Photographs see a surface, so the cells behind it were never
 occupied by anything and \(\mathcal{O}\) has interior voids. Closing removes the gaps between
-neighbouring shells and a flood fill from outside removes the rest,</p>
+neighbouring shells and a flood fill from outside removes the rest &mdash; the same pairing that
+robust repair of polygonal models uses to decide inside from outside without trusting the input's
+connectivity [9] &mdash;</p>
 
 <div class="eq"><div class="body">
 $$ \mathcal{O}^{\bullet} = \complement\, \mathcal{C}_{\partial}
@@ -942,7 +945,37 @@ diffusion model fine-tuned on those same photographs, and the margin in section 
 attributable to the target as much as to the lattice &mdash; which is why that section compares
 against released models and does not present the substitution as controlled.</p>
 
-<p>What the photographs do not do is agree with each other in three dimensions, and this section is
+<p><p><strong>The supervision, stated.</strong> Let \(\mathcal{R} = \{\mathbf{I}_k\}_{k=1}^{M}\)
+be the reference images, \(M = 12\), split into a transverse and a longitudinal family. A training
+plane \(\Pi_j = (\mathbf{n}_j, d_j)\) is rendered by keeping the cells on one side and rasterising
+them through the shared decoder \(g_\theta\), giving an image \(\hat{\mathbf{C}}_j\) and an alpha
+\(\alpha_j\); the target is a reference fitted to that alpha,
+\(\mathbf{T}_j = \Phi(\mathbf{I}_{k(j)}, \alpha_j)\). The objective is a structural and a
+photometric term over \(N_c\) random crops of side \(w\), with a per-crop band statistic:</p>
+
+<div class="eq">\[ \mathcal{L}_j = \frac{1}{N_c}\sum_{c=1}^{N_c}
+\Bigl[\, 0.7\,\bigl(1 - \mathrm{SSIM}(\hat{\mathbf{C}}_j^{c}, \mathbf{T}_j^{c})\bigr)
++ 0.3\,\bigl\lVert \hat{\mathbf{C}}_j^{c} - \mathbf{T}_j^{c} \bigr\rVert_2^2
++ \lambda_{\mathrm{b}}\, \mathcal{L}_{\mathrm{band}}(\hat{\mathbf{C}}_j^{c},
+\mathbf{T}_j^{c}) \,\Bigr] \]</div>
+
+<p class="mut">with \(w = 128\), \(N_c = 6\) and \(\lambda_{\mathrm{b}} = 0.3\) in every run
+reported here. Three things are absent and their absence is the point: no score, no diffusion model
+and no term that measures a rendered plane against another rendered plane. DreamSim appears nowhere
+in the objective, because it is the instrument the results are read with.</p>
+
+<p><strong>What absorbs the misalignment.</strong> A reference is not a picture of this object at
+this plane, so three things stand between it and a pixel loss. \(\Phi\) fits it to the silhouette
+the plane actually renders, so the object's own geometry supplies the registration and none is
+asked of the photographer. For the transverse family the images are first rotated to a common
+angular phase, because an orange's segment walls run the length of the fruit and every transverse
+cut meets the same ones: the angular profile of one section correlates \(+0.448\) with the next
+depth, \(+0.077\) six depths away, and \(+0.034\) between two different oranges, so the phase is
+the part that should be shared and everything localised is not. And the loss is read on crops
+through SSIM and a band statistic rather than globally pixel by pixel, which scores whether a crop
+has the right local structure rather than whether it lines up.</p>
+
+What the photographs do not do is agree with each other in three dimensions, and this section is
 about why that is acceptable. It is the property that decides what a user has to supply. A pipeline
 whose supervision must be mutually consistent needs registered views of one specimen; this one asks
 only for images of what the inside of such an object looks like, and the twelve used here are of
