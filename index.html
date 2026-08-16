@@ -557,12 +557,27 @@ cut runs along the boundary already between them. Neither case needs an epsilon 
 distance, because the sign that decides membership is evaluated at cell centres, which a plane
 through a vertex or along a face never touches.</p>
 
-<p>Piece labelling is a connected-component pass over the face-adjacency graph, so it is
-\(O(N_\ell\,\alpha(N_\ell))\) in the leaf count under a union-find and costs one parent index
-per leaf. A thin slice is the worst case for the constant rather than for the order: each plane
-refines the band it crosses, which is \(O(N^{2/3})\) of the volume and measures 4.0 to 10.7% of
-the cells for a single cut on the objects here, and a slice thinner than one leaf produces no
-separating band until refinement reaches the target spacing, which is what bounds the growth.</p>
+<p>A cut costs what it touches. Refinement is already local, and so is the rest of it, because a
+plane changes face adjacency only where it refines: a pair of unrefined leaves is adjacent after
+the cut exactly when it was adjacent before. So the object's own adjacency is computed once and
+every cut reuses the pairs whose ends it did not touch, recomputing only the pairs with a refined
+leaf on either end. That set is the band, which is \(O(N^{2/3})\) of the volume and measures 4.0
+to 10.7% of the cells on the objects here, so the cut is linear in the crossed cells \(K\) rather
+than in the object \(N\). Labelling is then connected components on the surviving graph.</p>
+
+<div class="tw"><table>
+<thead><tr><th>one cut on the orange, 894,304 solid cells</th><th>seconds</th></tr></thead>
+<tbody>
+<tr><td>labelling as an interpreted union-find, adjacency over every leaf</td><td>13.76</td></tr>
+<tr><td>labelling vectorised</td><td>5.24</td></tr>
+<tr><td><strong>adjacency reused outside the band</strong></td><td><strong>2.91</strong></td></tr>
+<tr><td class="mut">the object's own adjacency, once, reused by every later cut</td><td class="mut">5.00</td></tr>
+</tbody></table></div>
+
+<p>The three rows produce the same 991,436 leaves, the same 2,925,520 surviving edges and the same
+two pieces; only the work differs. Checked on every synthetic case of section 4.3.7 as well, where
+the band-local result matches the full pass in piece count and edge count exactly. What remains at
+2.91&nbsp;s is the refinement itself and the component pass, not the adjacency.</p>
 
 <p>Equation (9) is the standard box-plane separating-axis test [39], and it is used twice. A cell of side \(h\) centred at
 \(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
@@ -1321,7 +1336,7 @@ behalf.</p>
 <tr><td>transverse FID, 100 held-out cuts</td><td>182.0</td><td><strong>170.2</strong></td><td>180.9</td><td>4.2.4</td></tr>
 <tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.2.1</td></tr>
 <tr><td>slicing and piece labelling</td><td class="mut">not addressed</td><td class="mut">damage field</td>
-    <td>\(O(K)\) in crossed cells; 13.7&nbsp;s as implemented</td><td>4.5.1</td></tr>
+    <td>\(O(K)\) in crossed cells, 2.9&nbsp;s</td><td>4.5.1</td></tr>
 </tbody></table></div>
 
 <p>The view-dependence row is a bound rather than a measurement, and it is the one honest way to
@@ -1336,11 +1351,10 @@ and a fair reading of the compressed row is 7.0&nbsp;MiB for a Lambertian volume
 <p>Two rows go against this work and are worth reading rather than skipping. GaussianFluent takes
 the transverse FID, on a different watermelon through cameras we chose for it, and it does so while
 spending 45 spherical-harmonic bands on view-dependent appearance that this representation cannot
-express at all. And the slicing row states an algorithmic complexity next to an implementation that
-does not achieve it: the work is linear in the cells a plane crosses, which is 4.0 to 10.7% of the
-lattice, while the code rebuilds face adjacency over every leaf on every cut. The gap between those
-two numbers is engineering, and it is the difference between a cut that is interactive and one that
-is not.</p>
+express at all. And the slicing row is now an implementation rather than an
+asymptotic hope: reusing the object's adjacency outside the band takes a cut from 13.8&nbsp;s to
+2.9&nbsp;s with an identical result. That is still not interactive, and section 3.7 says where the
+remaining time goes.</p>
 
 <h3 id="phys-res">4.3&ensp;Materials, collision and a shell the solver can resolve</h3>
 
