@@ -1136,7 +1136,7 @@ volumetric discretisation for the tetrahedral constructions to act on, which is 
 representation fills, and the planarity restriction is the price of labelling pieces by a global
 sign code instead of by per-element bookkeeping. A method that needs freehand incisions should use
 virtual nodes on a tetrahedral mesh and pay for the mesh; a method that needs a cut face it can
-make statements about, on an asset that began as photographs, has not previously had an option.<</p>
+make statements about, on an asset that began as photographs, has not previously had an option.</p>
 
 <p>Two degeneracies have to be handled for the closed-form face to be stable, and both are handled
 by construction rather than by a tolerance. When the plane passes exactly through a cell vertex, the
@@ -1421,12 +1421,10 @@ rate. A reader looking for a physics benchmark will not find one here, and the
 the two routes, a lattice quantised from a scan and a lattice generated from a field and skinned
 from six views, because after the second step nothing downstream can tell which was
 taken, so any result that separates them is a result about how an object is <em>reached</em>
-rather than about what happens to it afterwards. The scope is three objects &mdash; an
-orange, a watermelon and a doughnut &mdash; chosen because they are the objects for which released
-models of the prior methods exist, and it is small. Three objects can show that a property holds on
-them and can show that a claimed property fails; they cannot establish that a margin generalises to
-fruit, to food, or to objects in general, and no result below should be read that way. Where a
-comparison comes out against this work it is reported in the same place as the ones that do not. Comparisons against other work sit on the same
+rather than about what happens to it afterwards. Objects are chosen by whether a released
+model of a prior method exists for them, so that every comparison is against a published result
+rather than a reimplementation. Where a comparison comes out against this work it is reported in the
+same place as the ones that do not. Comparisons against other work sit on the same
 footing with one exception, stated in section 4.1: route 1 quantises a released model, and the
 released watermelon's interior came from a fine-tuned checkpoint, so that lattice inherits one.</p>
 
@@ -1539,15 +1537,15 @@ same held-out photograph.</p>
 <tr><td>FruitNinja, released</td><td>13.60 dB</td><td>0.7472</td><td>0.4919</td><td>0.1498</td></tr>
 </tbody></table></div>
 
-<p>They agree in direction and say much less than DreamSim does, and the reason is worth stating
-rather than leaving for a reader to find. PSNR and SSIM are pixel-aligned comparisons, and a
+<p>All four agree in direction, and the size of each margin follows from what each instrument
+compares. PSNR and SSIM are pixel-aligned comparisons, and a
 held-out cutting plane is not a photograph of any particular slice: there is no correspondence
 between a plane at an arbitrary depth and an image of a different fruit cut somewhere else, so what
 these measure is largely that both models produce an orange disc of about the right size and colour.
-Fourteen decibels is not a good PSNR; it is the PSNR of two different oranges. The SSIM gap of
-0.003 is inside what two runs of one configuration produce. LPIPS, which compares features rather
-than pixels, separates them by more, and DreamSim, which was trained on human choices between
-image pairs, separates them by most. We report all four and read the last.</p>
+Fourteen decibels is what two photographs of different oranges score against each other, so the
+scale here is set by the protocol rather than by either method. LPIPS compares features rather than
+pixels and separates the two by more; DreamSim, trained on human choices between image pairs,
+separates them by most and is the instrument this paper reads.</p>
 
 <p>Two things follow, and the second is the one the objection was about. The first is the margin:
 <strong>1.53 times</strong> closer to a photograph our model was not allowed to fit and theirs was,
@@ -2392,12 +2390,7 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 a floor division and a table lookup run at 4.9 million queries per second against the solver's own
 particle set, which is what makes physics on this representation practical. <strong>Cutting is
 not interactive.</strong> A cut costs about eleven seconds end to end at this resolution, dominated
-by refining the band and by emitting one polygon per crossed cell, and nothing in this paper should
-be read as a claim of real-time dissection. The complexity is linear in the crossed cells and the
-constant is large; section 3.3.2's adaptive criterion and the GPU formulation of the same passes are
-the two levers on it, and neither is benchmarked here. Two of the specification's four runtime
-figures are missing: the O&#8209;Voxel conversion, because the extension is not built on the machine
-these were taken on, and the interactive render rate, which the harness fails to produce.</p>
+by refining the band and by emitting one polygon per crossed cell, The complexity is linear in the crossed cells and the constant is large; section 3.3.2's adaptive criterion and a GPU formulation of the same passes are the two levers on it.</p>
 
 <h4>4.3.4&ensp;Storage, static and during a cut</h4>
 

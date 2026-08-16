@@ -90,6 +90,23 @@ first thing below.</p>
 
 <h2 id="limits">Limitations</h2>
 <ul>
+  <li><strong>The evidence is a small number of objects.</strong> Objects were chosen by whether a
+      released model of a prior method exists for them, which is what makes every comparison here a
+      comparison against a published result. That is a small set. It can show that a property holds
+      on those objects, and it can show that a claimed property fails; it cannot establish that a
+      margin generalises to fruit, to food, or to objects in general, and no result in the paper
+      should be read that way.</li>
+  <li><strong>Two of the four runtime figures are not reported.</strong> The specification asks for
+      initial load, single-cut update, O&#8209;Voxel conversion and render rate. The first two are in
+      section 4.3.3. The O&#8209;Voxel conversion is not timed because the extension is not built on
+      the machine the timings were taken on, and the interactive render rate is not timed because
+      the harness fails to produce it. Neither absence is evidence either way about the cost of
+      those operations.</li>
+  <li><strong>The two levers on cutting cost are unbenchmarked.</strong> A cut is about eleven
+      seconds at the resolution used, and the complexity is linear in the crossed cells with a large
+      constant. The adaptive refinement criterion of section 3.3.2 and a GPU formulation of the same
+      passes are the two ways to reduce it; the first is measured for leaf count but not for time,
+      and the second exists in the repository without a timing.</li>
   <li><strong>The physics is a capability, not a validated solver.</strong> What is
       measured here is that the lattice answers the questions a solver asks: contact resolves to
       integer queries and closes 2,698 of 610,723 penetrations to zero on the contact slab, a
