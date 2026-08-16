@@ -927,7 +927,49 @@ diffusion model fine-tuned on those same photographs, and the margin in section 
 attributable to the target as much as to the lattice &mdash; which is why that section compares
 against released models and does not present the substitution as controlled.</p>
 
-<p><p><strong>What is optimised and what is not.</strong> The objection to supervising from
+<p><p><strong>The warp, written down.</strong> Two operators stand between a photograph and the
+loss, and both are stated here because their form decides what the optimisation is. Neither carries
+a parameter.</p>
+
+<p>The first acts once per reference and only on the transverse family. Let \(a_k(\phi)\) be the
+angular intensity profile of \(\mathbf{I}_k\) about its own centroid. The family is brought to a
+common phase by the shift that maximises circular cross-correlation against a fixed member,</p>
+
+<div class="eq">\[ \delta_k = \frac{2\pi}{P}\,\arg\max_{m}\;
+\mathcal{F}^{-1}\!\bigl[\, \hat{a}_0 \overline{\hat{a}_k} \,\bigr](m), \qquad
+\tilde{\mathbf{I}}_k = \mathrm{Rot}_{-\delta_k} \mathbf{I}_k \]</div>
+
+<p>with \(\mathrm{Rot}\) an image rotation and \(P\) the number of angular bins. The second acts
+per plane, per rebuild. Given the alpha \(\alpha_j\) the plane's own render produces, write
+\(c(\cdot)\) for a silhouette's centroid and \(r(\cdot)\) for its radius. Then \(\Phi\) is
+the similarity transform that takes one silhouette onto the other &mdash; isotropic scale and
+translation, no rotation and no shear:</p>
+
+<div class="eq">\[ s_j = \frac{r(\alpha_j)}{r(\tilde{\mathbf{I}}_{k(j)})}, \qquad
+\mathbf{t}_j = c(\alpha_j) - s_j\, c(\tilde{\mathbf{I}}_{k(j)}), \qquad
+\mathbf{T}_j(\mathbf{u}) = \tilde{\mathbf{I}}_{k(j)}\!\left( \frac{\mathbf{u} -
+\mathbf{t}_j}{s_j} \right) \]</div>
+
+<p>\(\Phi\) is therefore fixed by the first and second moments of two silhouettes and by nothing
+learned. It is also where the two halves of the system meet, and the way they meet is the part
+worth being explicit about: \(\alpha_j\) is produced by the current \(\mathcal{F}\) and
+\(\theta\), so \(\mathbf{T}_j\) depends on the parameters &mdash; and no gradient is taken
+through that dependence. The target is rebuilt from the current render and then held constant while
+the parameters move,</p>
+
+<div class="eq">\[ \min_{\mathcal{F},\,\theta}\; \sum_j \mathcal{L}_j\bigl(\,
+\mathcal{R}(\mathcal{F}, \theta;\, \Pi_j),\; \mathrm{sg}\bigl[\Phi(\tilde{\mathbf{I}}_{k(j)},
+\alpha_j)\bigr] \,\bigr) \]</div>
+
+<p>so the scheme is alternating rather than joint: the warp is recomputed each iteration from the
+render as it stands, the parameters then descend against a fixed target, and neither step
+differentiates the other. This is what makes an unregistered photograph usable without a pose
+estimate. The registration is re-derived from the object's own silhouette every iteration and costs
+a resize and a paste, and because the warp has two degrees of freedom fixed by moments rather than
+by fitting, there is no configuration of it that the optimiser could exploit to lower the loss
+without changing the volume.</p>
+
+<p><strong>What is optimised and what is not.</strong> The objection to supervising from
 photographs with no camera is that the slice pose is unknown, so it must either be recovered or the
 gradient cannot be formed. Neither happens here, and it is worth writing down which symbols are
 variables. The optimisation is over the per-cell features \(\mathcal{F} = \{\mathbf{f}_i\}\) and
