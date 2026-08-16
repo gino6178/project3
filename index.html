@@ -47,6 +47,8 @@
   .algo pre{margin:0;padding:11px 12px;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;
             overflow-x:auto}
   .algo-f{border-top:1px solid var(--line);padding:7px 12px;font-size:13px;color:var(--mut)}
+  h5{font-size:15px;margin:22px 0 6px;color:var(--mut);font-weight:600;
+     letter-spacing:.2px}
   .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
   nav.toc{display:flex;flex-wrap:wrap;gap:0 18px;justify-content:center;padding:14px 0 2px;
           border-bottom:1px solid var(--line);font-size:14.5px}
@@ -104,19 +106,22 @@
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
-An object reconstructed from photographs has a surface and nothing behind it, and methods that fill
-the hidden interior do so with the same primitives that render it. We measure what that costs.
-Sweeping a Gaussian's support over four decades, both failure modes are real and neither is
-escapable: 16 to 45% of a cut section is unpainted below \(\rho = 0.01\), and blending across
-material boundaries rises through \(\rho = 2\). Two published methods sit four or more decades
-left of the usable window and buy coverage with sheer count instead, 7,959,789 and 1,381,100
-primitives for one watermelon. Replacing the interior with a two-level cube occupancy and giving
-the boundary its own dual-grid surface holds the same object in 1,065,856 cells, and the cut face
-becomes a convex polygon per crossed cell in closed form, carrying no approximation term: its area
-error falls from 0.97% to 0.09% as the lattice refines while the plane residual stays at machine
-epsilon. Coverage separates the representations only under resolution: at 2048&nbsp;px every
-splatted model thins out, ours included, while the same lattice drawn as a volume holds 0.07%
-across three octaves. The lattice is reached either by quantising a scan or by generating topology
+A cut face is the one surface a viewer inspects and the one no reconstruction ever saw. Methods
+that fill an object's hidden interior with rendering primitives have no cut face at all, only
+whatever primitives happen to lie near the plane, so nothing can be stated about it: not that it is
+planar, not what its area is, not where it ends. We remove the rendering primitive from the volume.
+The interior becomes a two-level cube occupancy and the boundary is given its own dual-grid
+surface, and a cut is then a convex polygon per crossed cell in closed form, planar to machine
+epsilon on an oblique off-grid plane, with an area error that falls from 0.97% to <strong>0.09%</strong>
+as the lattice refines. It also stays closed: at 2048&nbsp;px, the scale at which a cut is actually
+inspected, a released GaussianFluent section is <strong>38.7%</strong> background and a FruitNinja
+section 2.4%, while the same lattice drawn as a volume holds <strong>0.07%</strong> across three
+octaves, because a cell's support is the cell and there is nothing to set. What that costs is
+measured rather than assumed: sweeping a Gaussian's support over four decades, 16 to 45% of a
+section is unpainted below \(\rho = 0.01\) and blending rises through \(\rho = 2\), so both
+published methods, four decades left of the usable window, buy coverage with count instead, at
+7,959,789 and 1,381,100 primitives against 1,065,856 cells and 7.0&nbsp;MiB against 58.3 and 26.5
+through one codec. The lattice is reached either by quantising a scan or by generating topology
 from a field, and nothing downstream can tell which.
 </p>
 
@@ -187,7 +192,14 @@ makes the comparisons here comparisons rather than assertions.</p>
 
 <h3>1.1&ensp;Contributions</h3>
 
-<ul>
+<ul>  <li><strong>A cut face that can be stated, not approximated.</strong> A splatted interior has
+      no cut face: it has the primitives near the plane, and nothing about that surface can be
+      asserted. Here it is a convex polygon per crossed cell in closed form, so it is planar to
+      machine epsilon on an oblique off-grid plane, its area error against a closed form is first
+      order in \(h\) and reaches 0.09%, and it stays closed at any resolution because a cell's
+      support is the cell. At 2048&nbsp;px a released GaussianFluent section is 38.7% background
+      and a FruitNinja section 2.4%, against 0.07% here. Neither baseline can be measured on the
+      first two of those at all.</li>
   <li><strong>The cost of a rendering primitive in a hidden volume, measured.</strong> Sweeping a
       Gaussian's support over four decades on a fixed primitive set, both branches of the trade are
       real and neither is escapable: 16 to 45% of a section is unpainted at \(\rho \le 0.01\), and
@@ -199,15 +211,7 @@ makes the comparisons here comparisons rather than assertions.</p>
       size on one object, every splatted representation thins out as pixels shrink, ours included:
       by 2048&nbsp;px GaussianFluent's section is 38.7% background, FruitNinja's 2.4% and our own
       splatted lattice's 3.3%. The same lattice drawn as a cube volume moves from 0.04% to 0.07%
-      across three octaves, because a cell's support is the cell.</li>
-  <li><strong>A cut face with no approximation term.</strong> The visible face of a cut is a convex
-      polygon per crossed cell, intersected with the cell's twelve edges in closed form. The
-      construction is standard; what is new is that it becomes available to a photogrammetric asset
-      at all, since a splatted interior has no volumetric discretisation to cut. Demonstrated rather
-      than asserted: the area error falls from 0.97% to 0.09% as the lattice refines while the
-      plane residual stays at machine epsilon on an oblique off-grid plane, so the only error is the
-      silhouette.</li>
-  <li><strong>Less to hold the interior, with the accounting stated.</strong> On the same
+      across three octaves, because a cell's support is the cell.</li>  <li><strong>Less to hold the interior, with the accounting stated.</strong> On the same
       watermelon, counting the sparse index and the exterior surface this method needs,
       62.6&nbsp;MiB generated or 163.5 quantised against FruitNinja's 425.1 and GaussianFluent's
       310.8. At matched fields, with GaussianFluent's higher-band spherical harmonics removed since
@@ -939,7 +943,30 @@ therefore be compared on the same object, from the same source file.</p>
 <tr><td>primitives per unit volume</td><td>1,029,854</td><td>137,000</td><td></td></tr>
 </tbody></table></div>
 
-<h4>4.2.2&ensp;The interiors compared</h4>
+<h4>4.2.2&ensp;The cut face</h4>
+
+<p>This is the section the paper exists for, so the result goes first. <strong>A cut face drawn
+from a cube volume stays closed at every resolution; a cut face drawn from splatted primitives
+comes apart as the viewer looks closer.</strong> At 2048&nbsp;px, which is the scale at which
+somebody actually inspects a cut, GaussianFluent's section is <strong>38.73%</strong> background
+and FruitNinja's is 2.37%, while the same lattice drawn as a volume is <strong>0.07%</strong>.
+That is a factor of 550 against one baseline and 34 against the other, and it is not a tuning
+result: a cell's support is the cell, so a pixel either falls inside an occupied one or it does
+not, at any zoom, with nothing to set.</p>
+
+<p>The structural claim underneath it is stronger than the numbers. A splatted interior has no cut
+face to speak of. It has whatever primitives happen to lie near the plane, so the surface a viewer
+sees is a rendering artefact of their density and support, and no statement can be made about it:
+not that it is planar, not what its area is, not where its boundary lies. Here the face is the
+convex polygon of equation&nbsp;(10), one per crossed cell, and the statements follow by
+construction. Every vertex satisfies the plane equation to machine epsilon on an oblique off-grid
+plane, and the area error against a closed form falls from 0.97% to 0.09% as the lattice refines,
+so the only error in a cut is the voxelised silhouette and it is first order in \(h\). Neither
+baseline can be measured on that axis at all, which is the difference this paper is about.</p>
+
+<p>The rest of this section is the evidence, in the order it was gathered.</p>
+
+<h5>What each primitive covers</h5>
 
 <p>Storage says what each costs, not what each produced. Every method has its own frame, scale and
 renderer, so a comparison of the interiors routes through none of them: for each model, the plane
@@ -959,9 +986,11 @@ are, at median and tenth-percentile opacity 1.0000.</p>
 
 
 
+<h5>Through each method's own renderer, at one size</h5>
+
 <p>Measured on the images each method's own rasteriser produced, over the same hundred held-out
-transverse cuts at 512&nbsp;px, the picture is different and coverage barely separates the
-released models:</p>
+transverse cuts at 512&nbsp;px. At this size the released models are close, which is why a single
+image size settles nothing:</p>
 
 <div class="tw"><table>
 <thead><tr><th>unpainted inside the section, own rasteriser, 100 cuts</th><th>watermelon</th><th>orange</th></tr></thead>
@@ -983,8 +1012,9 @@ Gaussian set pays little for coverage. So this is not yet a comparison between a
 Gaussian: at this image size every row is a Gaussian render inside the window where a Gaussian set
 pays little for coverage, and no claim about a cube's support can rest on it.</p>
 
-<p>And a coverage number at one pixel count says nothing, which is the objection that retired the
-footprint figure and applies here too. Swept over resolution, on the watermelon, six transverse
+<h5>And over resolution, which is where it separates</h5>
+
+<p>A coverage number at one pixel count says nothing. Swept over resolution, on the watermelon, six transverse
 cuts per cell, with the cube volume rendered by cube lookup rather than by splatting and with
 supersampling off, so that every row is one sample per pixel. That last point is not incidental:
 the cube march defaults to two-by-two supersampling, and measuring it that way against Gaussian
@@ -1016,7 +1046,7 @@ are given so they are not read as one:</p>
   4.5.2 seen from inside: a cube covers exactly and it covers at the resolution of a cell.</figcaption>
 </figure>
 
-<p>This is the claim. Coverage from a splatted
+<p>This is the result stated at the top, now with its measurement. Coverage from a splatted
 representation is resolution-dependent for every model including ours: at 256&nbsp;px they are all
 under two tenths of a percent and indistinguishable, and by 2048&nbsp;px GaussianFluent's section
 is 39% background (32.9 to 49.5 across the six cuts), FruitNinja's 2.4% (1.5 to 3.4) and our own
@@ -1665,6 +1695,13 @@ primitives, and counting the sparse index and the exterior surface the method ac
 62.6 or 163.5&nbsp;MiB against 425.1 and 310.8. Swept over four decades of \(\rho\) the trade is
 real in both directions, holes below 0.1 and blending above 0.25, and both published models sit far
 to the left of that window and buy their coverage with count instead.</p>
+
+<p>The cut face is the claim. A splatted interior cannot state one: it renders whatever primitives
+lie near the plane, and the surface a viewer sees is an artefact of their density and support, so
+its planarity, its area and its boundary are not properties the method has. A cube volume states
+all three by construction, and the statements survive being checked: machine epsilon off an oblique
+plane, an area error first order in the cell size, and a section that stays closed at 2048&nbsp;px
+where a released GaussianFluent section is 38.7% background.</p>
 
 <p>Coverage is where the revision changed the answer. At 256&nbsp;px nothing separates the four
 representations, and by 2048&nbsp;px GaussianFluent's section is 38.7% background, FruitNinja's
