@@ -80,12 +80,70 @@
 <div class="wrap">
 <header>
   <h1>Supplementary material</h1>
-  <p class="sub">The sections the paper carries in full and the short version points to</p>
+  <p class="sub">Limitations, and the sections held out of the paper for length</p>
   <p class="authors">Anonymous</p>
 </header>
 
-<p>The paper states every result; these are the sections whose detail did not fit a venue's length
-and which are kept here unchanged rather than summarised. Section numbers are the paper's own.</p>
+<p>The paper states every result; this is the detail behind them, unchanged rather than
+summarised, with the paper's own section numbers. The limitations are here too, and they are the
+first thing below.</p>
+
+<h2 id="limits">Limitations</h2>
+<ul>
+  <li><strong>Route 2 is the least reproducible thing here.</strong> It has no
+      stage in <code>run.sh</code> and no object configuration: its three steps are run by hand
+      against a lattice, and the radii that produced the orange and the watermelon are not written
+      down anywhere, so only the doughnut can be rebuilt from what is published. And for two of the
+      three objects the six views are renders of the released reconstruction, so the route that is
+      &ldquo;available always&rdquo; is demonstrated end to end only on the object that never had
+      a scan.</li>  <li><strong>One thing downstream branches, on the object rather than the route.</strong> The
+      surface conversion colours from skin cells when they are more than a fifth of the lattice and
+      from all cells otherwise. The skin fraction runs 13.5 to 68.2% across the quantised lattices
+      and 27.5 to 40.8% across the generated ones, so the threshold separates objects and not
+      routes, and the quantised orange is the only one of six below it. The claim that nothing
+      downstream can tell which route was taken survives; the claim that this line is where it
+      fails does not.</li>
+  <li><strong>The exterior costs more, before the collapse.</strong> 442,253 dual-grid voxels
+      replace 118,142 skin Gaussians on the orange. The collapse takes that to 215,304 at
+      \(\tau = 0.5\), and the same quantisation is available to either representation, so the
+      comparison that matters is not yet run.</li>
+  <li><strong>The surface is faceted, and a perceptual score will say so.</strong> A dual-grid skin
+      is one small planar patch per node, and CLIP or LPIPS against a photograph is exactly the
+      measurement that punishes that even where the geometry is right. No perceptual number for the dual-grid exterior is
+      quoted here, and quoting one would need the faceting addressed rather than the metric
+      chosen.</li>
+  <li><strong>Cut-time detail is per cut.</strong> The write-back reaches the cells the face passed
+      through and no others, so a plane six degrees away shows the volume as it was.</li>
+  <li><strong>The interior features are not retrained.</strong> The per-cell features are still
+      the ones the Gaussian run learned; refitting them for the cube renderer flattened the
+      orange's segment walls twice, and the criterion for "the walls survived", the angular oscillation of a section over its middle radii, is in place but the fit is not.</li>
+  <li><strong>Cutting is not fast.</strong> Thirteen seconds to refine the band and label the
+      pieces, fourteen to build the exact face, on 877,494 cells. Where we call the cut
+      cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
+      design asked for a GPU-friendly band subdivision, which is not what was built.</li>  <li><strong>Resolution bounds what the representation can hold.</strong> Occupancy is a
+      decision per cell, so a feature narrower than a cell is either absorbed into its neighbours
+      or forces a global refinement, and storage is linear in cells at 46 bytes each with cell
+      count cubic in resolution. Micro-porous structure is the case this excludes: the pore network
+      of crumb, a vessel lumen, foam. The solidity pass makes it worse deliberately, since closing
+      seals any channel narrower than the structuring element and the fill then removes every
+      enclosed void, so the occupancy this work builds is the complement of the exterior and
+      preserves genus only for through-holes above the closing radius. For objects whose interior
+      is a solid graded material, which is what is demonstrated here, that is the right trade; for
+      objects whose interior is mostly structured air it is the wrong representation.</li>
+  <li><strong>Coverage is a property of a renderer as much as of a representation.</strong>
+      Drawing each primitive at its own footprint and drawing it through its own rasteriser give
+      different answers, and only the second is what a viewer sees. Our coverage claim is made at
+      2048&nbsp;px through each method's own renderer, and at 512&nbsp;px no representation here is
+      separable from any other.</li>
+  <li class="mut"><strong>Open ends.</strong> The four-representation
+      baseline and the interior-appearance, resolution-stability, memory and runtime families wait
+      until the architecture is finished. Topology and collision are the two already measured.</li>
+</ul>
+
+
+<h2>Sections held here for length</h2>
+
+
 
 <h3>3.1&ensp;Preliminaries: dual grids</h3>
 

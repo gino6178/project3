@@ -84,13 +84,16 @@
   <p class="sub">Decoupling interior occupancy from splatted primitives for exact cutting and physical simulation</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
-  <div class="links">    <a href="#">Code (coming soon)</a>
+  <div class="links">
+    <a href="supplement.html">Supplementary material</a>
+    <a href="supplement.html#limits">Limitations</a>
+    <a href="#">Code (coming soon)</a>
     <a href="#">arXiv (coming soon)</a>
   </div>
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.9 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.2 Prior work</a><a href="#phys-res">4.3 Materials and collision</a><a href="supplement.html">Supplement</a><a href="#limits">5 Limitations</a><a href="#conclusion">6 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.9 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.2 Prior work</a><a href="#phys-res">4.3 Materials and collision</a><a href="#conclusion">5 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
@@ -1486,69 +1489,7 @@ figures is measured against a compressed Gaussian model, which would move them a
     <td>+97,209 leaves, 1.6 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
 </tbody></table></div>
 
-<h2 id="supp">4.6&ensp;Material held in the supplement</h2>
-
-<p>Five sections are kept out of the paper for length and are unchanged in the
-<a href="supplement.html">supplementary material</a>: the dual-grid preliminaries and the pipeline
-sheet (3.1, 3.2), route independence measured on both lattices (4.1), the material decomposition
-(4.3.1), piece counts on synthetic shapes (4.3.7), appearance against the photographs (4.4), and
-the cutting, cross-section, exterior and runtime tables (4.5.1, 4.5.3, 4.5.4, 4.5.5), the summary-of-differences table (4.2.5) and the held-out cut
-sheets (4.4.1). Nothing there
-contradicts anything here; it is the detail behind results the paper states.</p>
-
-<h2 id="limits">5&ensp;Limitations</h2>
-<ul>
-  <li><strong>Route 2 is the contribution and the least reproducible thing here.</strong> It has no
-      stage in <code>run.sh</code> and no object configuration: its three steps are run by hand
-      against a lattice, and the radii that produced the orange and the watermelon are not written
-      down anywhere, so only the doughnut can be rebuilt from what is published. And for two of the
-      three objects the six views are renders of the released reconstruction, so the route that is
-      &ldquo;available always&rdquo; is demonstrated end to end only on the object that never had
-      a scan.</li>  <li><strong>One thing downstream branches, on the object rather than the route.</strong> The
-      surface conversion colours from skin cells when they are more than a fifth of the lattice and
-      from all cells otherwise. The skin fraction runs 13.5 to 68.2% across the quantised lattices
-      and 27.5 to 40.8% across the generated ones, so the threshold separates objects and not
-      routes, and the quantised orange is the only one of six below it. The claim that nothing
-      downstream can tell which route was taken survives; the claim that this line is where it
-      fails does not.</li>
-  <li><strong>The exterior costs more, before the collapse.</strong> 442,253 dual-grid voxels
-      replace 118,142 skin Gaussians on the orange. The collapse takes that to 215,304 at
-      \(\tau = 0.5\), and the same quantisation is available to either representation, so the
-      comparison that matters is not yet run.</li>
-  <li><strong>The surface is faceted, and a perceptual score will say so.</strong> A dual-grid skin
-      is one small planar patch per node, and CLIP or LPIPS against a photograph is exactly the
-      measurement that punishes that even where the geometry is right. No perceptual number for the dual-grid exterior is
-      quoted here, and quoting one would need the faceting addressed rather than the metric
-      chosen.</li>
-  <li><strong>Cut-time detail is per cut.</strong> The write-back reaches the cells the face passed
-      through and no others, so a plane six degrees away shows the volume as it was.</li>
-  <li><strong>The interior features are not retrained.</strong> The per-cell features are still
-      the ones the Gaussian run learned; refitting them for the cube renderer flattened the
-      orange's segment walls twice, and the criterion for "the walls survived", the angular oscillation of a section over its middle radii, is in place but the fit is not.</li>
-  <li><strong>Cutting is not fast.</strong> Thirteen seconds to refine the band and label the
-      pieces, fourteen to build the exact face, on 877,494 cells. Where we call the cut
-      cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
-      design asked for a GPU-friendly band subdivision, which is not what was built.</li>  <li><strong>Resolution bounds what the representation can hold.</strong> Occupancy is a
-      decision per cell, so a feature narrower than a cell is either absorbed into its neighbours
-      or forces a global refinement, and storage is linear in cells at 46 bytes each with cell
-      count cubic in resolution. Micro-porous structure is the case this excludes: the pore network
-      of crumb, a vessel lumen, foam. The solidity pass makes it worse deliberately, since closing
-      seals any channel narrower than the structuring element and the fill then removes every
-      enclosed void, so the occupancy this work builds is the complement of the exterior and
-      preserves genus only for through-holes above the closing radius. For objects whose interior
-      is a solid graded material, which is what is demonstrated here, that is the right trade; for
-      objects whose interior is mostly structured air it is the wrong representation.</li>
-  <li><strong>Coverage is a property of a renderer as much as of a representation.</strong>
-      Drawing each primitive at its own footprint and drawing it through its own rasteriser give
-      different answers, and only the second is what a viewer sees. Our coverage claim is made at
-      2048&nbsp;px through each method's own renderer, and at 512&nbsp;px no representation here is
-      separable from any other.</li>
-  <li class="mut"><strong>Open ends.</strong> The four-representation
-      baseline and the interior-appearance, resolution-stability, memory and runtime families wait
-      until the architecture is finished. Topology and collision are the two already measured.</li>
-</ul>
-
-<h2 id="conclusion">6&ensp;Conclusion</h2>
+<h2 id="conclusion">5&ensp;Conclusion</h2>
 
 <p>Separating the two jobs costs less than it sounds and gives back more than the rendering. The
 hidden volume becomes occupancy plus a low-dimensional feature, with no \(\sigma\) to tune against
