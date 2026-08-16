@@ -862,7 +862,7 @@ a_j \sim \mathcal{U}\Bigl(\tfrac{180^\circ}{N_v}(i - J),\; \tfrac{180^\circ}{N_v
 <p>with \(\Delta\) the spacing between slots, \(J = 0.5\) and \(N_v = 10\) in every run reported
 here. At \(J = 0.5\) the slots tile the interval exactly: no depth is sampled twice and none is
 unreachable. This is the reason the 66% of cells no fixed plane would touch are not a hole to be
-filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.6 reports what
+filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.8 reports what
 happens at \(J = 0\), \(0.25\) and \(1\).</p>
 
 <p><strong>What is optimised and what is not.</strong> The objection to supervising from
@@ -990,7 +990,7 @@ reference is given is a free parameter, and the pipeline sets it by cross-correl
 photograph against the first of its family. That makes one family internally coherent and says
 nothing about the other. Since the two families meet in lines that are known before training, the
 phases can instead be chosen against the disagreement they produce there, which is a mixed discrete&ndash;continuous problem over a permutation and a set of angles, solved to a coordinate-wise optimum in seconds.
-Section 4.1.5 gives the formulation and what it measures: it lowers cross-family disagreement, most
+Section 4.1.7 gives the formulation and what it measures: it lowers cross-family disagreement, most
 visibly on cuts at orientations neither family supervised, and does not change similarity to the
 photographs.</p>
 
@@ -2884,7 +2884,66 @@ them. The orange is the one object with a leave-one-out study, in section 4.1.2.
 counts differ by object and are given because a distribution metric on three images is not one; that
 is why DreamSim, which is a distance between pairs, is the column reported.</p>
 
-<h4>4.1.4&ensp;How much misalignment the references may carry</h4>
+<h4>4.1.4&ensp;What the jitter and the second level are worth</h4>
+
+<p>Two design choices are swept here because each is a parameter the paper had reported a role for
+without measuring it.</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange</th><th>DreamSim &darr;<br><span class="mut">held-out, same families</span></th>
+<th>cross-family gap &darr;<br><span class="mut">at 45&deg;, neither family supervised</span></th>
+<th>detail &uarr;<br><span class="mut">at 45&deg;, transverse</span></th></tr></thead>
+<tbody>
+<tr><td>no jitter, \(J = 0\)</td><td>0.0701</td><td><strong>0.1825</strong></td><td><strong>0.03019</strong></td></tr>
+<tr><td>\(J = 0.25\)</td><td><strong>0.0688</strong></td><td class="mut">&mdash;</td><td class="mut">&mdash;</td></tr>
+<tr><td>\(J = 0.5\), the setting used throughout</td><td>0.0738</td><td>0.1955</td><td>0.02942</td></tr>
+<tr><td>\(J = 1\)</td><td>0.0704</td><td>0.1873</td><td>0.03026</td></tr>
+<tr><td>single level, \(h_f = h_c\)</td><td>0.0961</td><td class="mut">&mdash;</td><td class="mut">&mdash;</td></tr>
+</tbody></table></div>
+
+<p>The second level earns its place: collapsing it costs 0.022 of DreamSim, seventy times the
+spread between two runs of one configuration. The jitter does not. Every setting including
+\(J = 0\) lands within 0.005 on held-out cuts of the supervised families, and on the 45&deg; cuts
+neither family supervised &mdash; where a sweeping plane family is the mechanism that would matter
+&mdash; the arm with no jitter at all has the smallest cross-family gap and the most detail. The
+ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather
+than an effect. Blind cells sit a mean of 1.35 cells from a supervised one and change as much
+during training as supervised cells do; the supervision reaches them through the shared decoder,
+and the jitter is not what carries it.</p>
+
+<h4>4.1.5&ensp;How many references, and which</h4>
+
+<p>An interior is not consistent with itself across specimens. Six transverse photographs of six
+oranges show 9 to 19 segment walls, and the disagreement between them along a line they share,
+0.113, is larger than the variation within any one of them, 0.091. Adding a reference therefore
+adds structure and disagreement together, and which of the two dominates is a question with an
+answer. Models trained on one transverse and one longitudinal photograph, on three of each, and on
+all six of each, all scored against three photographs none of them saw:</p>
+
+<div class="tw"><table>
+<thead><tr><th>references</th><th>which</th><th>DreamSim to a photograph none saw &darr;</th></tr></thead>
+<tbody>
+<tr><td>12</td><td>all six of each family</td><td>0.0765</td></tr>
+<tr><td>6</td><td>first three of each</td><td>0.0867</td></tr>
+<tr><td>2</td><td>the first of each</td><td>0.0684</td></tr>
+<tr><td>2</td><td>the fourth of each</td><td>0.0742</td></tr>
+<tr><td>2</td><td>the sixth of each</td><td><strong>0.0498</strong></td></tr>
+</tbody></table></div>
+
+<p>All three two-image pairs beat all twelve, and the six-image arm is the worst of the five. The
+count is not what determines the result. The spread <em>between</em> pairs is 0.024, eighty times
+what two runs of one configuration produce and three times the gap between the best pair and the
+twelve-image arm, so which two photographs are used matters more than how many. This is the
+supervision's own inconsistency arriving as a cost: twelve images of twelve fruits ask the shared
+cells for twelve answers, and the lattice returns one. Two images that agree with each other ask
+for one answer to begin with.</p>
+
+<p class="mut">The practical reading is not "use fewer photographs". It is that a photograph is
+worth including when it agrees with the others about the cells they share, and the chordal
+disagreement of section 4.1.7 is computable before training for exactly that purpose &mdash; though
+it does not, on the three sets measured here, rank them the way the trained models rank.</p>
+
+<h4>4.1.6&ensp;How much misalignment the references may carry</h4>
 
 <p>The claim that references need not be registered invites the obvious question of how far that
 goes. Each reference is rotated by an angle drawn uniformly from \(\pm\sigma\), independently
@@ -2913,7 +2972,7 @@ what alignment leaves. What the table measures is the system's tolerance, not th
 and an object whose sections have no shared angular phase to align to would not get the first
 mechanism.</p>
 
-<h4>4.1.5&ensp;Choosing the references' phases against the geometry they share</h4>
+<h4>4.1.7&ensp;Choosing the references' phases against the geometry they share</h4>
 
 <p>The transverse and longitudinal families meet in known lines, so the disagreement between them
 is a function of the phases alone and can be minimised before training. Where a transverse section
@@ -2963,7 +3022,7 @@ slightly less self-consistent on the axis, 0.0520 to 0.0617, which follows from 
 not where they meet the transverse family. The honest summary is that cross-family coherence and
 photographic similarity are separable, and this addresses the first.</p>
 
-<h4>4.1.6&ensp;Both methods through the same evaluator</h4>
+<h4>4.1.8&ensp;Both methods through the same evaluator</h4>
 
 
 
@@ -3060,7 +3119,7 @@ hundred; the two tables are internally consistent and should not be read across.
   statistics of a slice, not whether the slice is a plane.</figcaption>
 </figure>
 
-<h4>4.1.7&ensp;The comparison in one table</h4>
+<h4>4.1.9&ensp;The comparison in one table</h4>
 
 <p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
 or marked where the quantity does not exist for that representation. A cut-face residual and a cut-area error need a cut-face
