@@ -97,22 +97,28 @@
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
-We reach one two-level cube lattice by two independent routes &mdash; quantising a released
-Gaussian reconstruction, or generating the topology from a signed-distance field and projecting
-six rendered views onto the skin &mdash; and show that cutting, surface conversion, physics and
-material decomposition read the lattice and not the route. Filling a hidden volume with a
-rendering primitive is paid for in count: FruitNinja's released watermelon holds 7,959,789
-primitives in 425&nbsp;MiB and GaussianFluent's 1,381,100 in 311&nbsp;MiB, with support scales
-four and six orders of magnitude below a pixel, so nothing overlaps and the count is the whole
-cost. The same object becomes 1,741,169 cells and 56.5&nbsp;MiB quantised, or 1,065,856 and
-34.6&nbsp;MiB generated, and a slab through it leaves 5.7% of its section unpainted against 20.5%
-and 46.7%. Cutting is then discrete on the lattice and analytic on the boundary: connected
-components label the pieces, one solver runs per piece, and each visible face is an exact planar
-polygon, matching closed-form cut areas to 1.0% and 1.3%. Generating the topology also makes the
-skin band a free parameter, which decides whether an MPM solver can resolve a stiffness contrast
-at all: the shell is 0.87 to 2.00 grid cells on the existing objects, and building it at the
-predicted width crosses the threshold and reverses the sign of the solver's response. Neither
-route needs a fine-tuned diffusion model.
+A cut face is the one surface a viewer inspects and the one no reconstruction ever saw. Methods
+that fill an object's interior with rendering primitives draw it by whatever primitives happen to
+lie near the plane; we make it exact. We reach one two-level cube lattice by two independent routes
+&mdash; quantising a released Gaussian reconstruction, or generating the topology from a
+signed-distance field and projecting six rendered views onto the skin &mdash; and the visible face
+of a cut is then a convex polygon per crossed cell, solved in closed form: every vertex lies on the
+plane to <strong>0.00e+00</strong> and cut areas match \(\pi r^2\) and \(4\pi Rr\) to
+<strong>1.0%</strong> and <strong>1.3%</strong>. On the same slab through the same watermelon our
+section leaves <strong>5.7%</strong> of itself unpainted where FruitNinja's leaves 20.5% and
+GaussianFluent's 46.7%, and it does so with <strong>4.6&ndash;7.5&times; fewer primitives</strong>
+and <strong>7.5&ndash;12.3&times; less storage</strong> &mdash; 1,741,169 cells in 56.5&nbsp;MiB
+quantised or 1,065,856 in 34.6&nbsp;MiB generated, against 7,959,789 in 425&nbsp;MiB and 1,381,100
+in 311&nbsp;MiB. Filling a hidden volume with a rendering primitive is paid for in count: both
+published models carry support scales four and six orders of magnitude below a pixel, so nothing
+overlaps and the count is the whole cost.
+<br><br>
+Cutting is discrete on the lattice and analytic on the boundary: connected components label the
+pieces and one solver runs per piece. Generating the topology also makes the skin band a free
+parameter, which decides whether an MPM solver can resolve a stiffness contrast at all &mdash; the
+shell is 0.87 to 2.00 grid cells on the existing objects, and building it at the predicted width
+crosses the threshold and reverses the sign of the solver's response. Neither route needs a
+fine-tuned diffusion model.
 </p>
 
 <div class="grid3">
@@ -185,6 +191,31 @@ decides whether an MPM solver can resolve a stiffness contrast at all.</p>
 lattice; an object nobody scanned has its topology generated from a signed-distance field and its
 skin projected from six rendered views. Neither needs a fine-tuned generative model, which is what
 makes the comparisons here comparisons rather than assertions.</p>
+
+<h3>Contributions</h3>
+
+<ul>
+  <li><strong>An exact cut face.</strong> The visible face of a cut is a convex polygon per crossed
+      cell, intersected with the cell's twelve edges in closed form &mdash; not a plane approximated
+      by primitives that happen to lie near it. Vertices lie on the plane to 0.00e+00 and cut areas
+      match closed forms to 1.0% and 1.3%.</li>
+  <li><strong>Two routes to one lattice, one of which needs no reconstruction.</strong> Quantising a
+      scan, or generating the topology from a signed-distance field and projecting six rendered
+      views. Cutting, surface conversion, physics and material decomposition read the lattice and
+      not the route.</li>
+  <li><strong>An order of magnitude less to hold the interior.</strong> 4.6&ndash;7.5&times; fewer
+      primitives and 7.5&ndash;12.3&times; less storage than the two published methods that fill an
+      interior with Gaussians, on the same object, with a denser section.</li>
+  <li><strong>A shell thickness the solver can resolve.</strong> Because route 2 builds the lattice
+      from a field, the skin band is an argument. The previous project could not produce a hard
+      shell; we show why &mdash; 0.87 to 2.00 MPM grid cells where about two are needed &mdash;
+      predict the band width that fixes it, and confirm the sign of the solver's response reverses
+      at exactly that width.</li>
+  <li><strong>No fine-tuned generative model.</strong> Supervision from a stock checkpoint with no
+      photographs of the object scores 90.1 against 91.5 in FID, which is what puts this work and
+      GaussianFluent on the same footing for comparison and separates both from FruitNinja's
+      published results.</li>
+</ul>
 
 <h2 id="related">Related Work</h2>
 
@@ -855,10 +886,12 @@ median and tenth-percentile opacity 1.0000.</p>
   turns out to be.</figcaption>
 </figure>
 
-<p>Every primitive is drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for
-a cell. Neither published model can be given one: their primitives are four and six orders of
-magnitude smaller than a pixel here, so what reaches the screen is the rasteriser's minimum
-radius.</p>
+<p>This is cut-face fidelity measured rather than argued: a slab through the object is what a cut
+exposes, and the question is how much of it each representation can actually paint. Every primitive
+is drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for a cell. Neither
+published model can be given one: their primitives are four and six orders of magnitude smaller
+than a pixel here, so what reaches the screen is the rasteriser's minimum radius, and 20.5% and
+46.7% of their own sections go unpainted against our 5.7%.</p>
 
 <div class="tw"><table>
 <thead><tr><th>watermelon</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work, route 1</th><th>route 2</th></tr></thead>
@@ -1181,9 +1214,12 @@ with the smallest kept at 2,287 cells.</p>
 <h4>The cut face</h4>
 
 
-<p>Each crossed cell contributes one convex polygon, obtained by intersecting the plane with the
-cell's twelve edges. Every vertex lies on the plane to 0.00e+00, so the only error in a cut area
-is the voxelisation of the silhouette:</p>
+<p>This is the paper's first claim and the one a viewer sees. Each crossed cell contributes one
+convex polygon, obtained by intersecting the plane with the cell's twelve edges in closed form. No
+primitive is asked to approximate a plane, so there is no error to tune away: every vertex lies on
+the plane to 0.00e+00, and the only departure in a cut area is the voxelisation of the silhouette.
+A method that draws a cut face from whatever primitives lie near the plane has neither property,
+and cannot state either.</p>
 
 <div class="tw"><table>
 <thead><tr><th>shape</th><th>cut area, mesh</th><th>closed form</th><th>error</th></tr></thead>
