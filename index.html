@@ -104,15 +104,7 @@ the topology from a signed-distance field and projects six rendered views onto t
 visible face of a cut is then a convex polygon per crossed cell, solved in closed form. No
 primitive is asked to approximate the plane, so the only error in a cut is the voxelised
 silhouette, and cut areas match \(\pi r^2\) and \(4\pi Rr\) to <strong>1.0%</strong> and
-<strong>1.3%</strong>. On the same slab through the same watermelon our
-section leaves <strong>5.7%</strong> of itself unpainted where FruitNinja's leaves 20.5% and
-GaussianFluent's 46.7%. It holds that volume in 1,741,169 cells at 56.5&nbsp;MiB quantised or
-1,065,856 at 34.6&nbsp;MiB generated, against FruitNinja's 7,959,789 primitives at 425&nbsp;MiB
-and GaussianFluent's 1,381,100 at 311&nbsp;MiB: <strong>4.6 to 7.5&times; fewer primitives and
-7.5 to 12.3&times; less storage than FruitNinja</strong>, and against GaussianFluent 1.3&times;
-fewer for route 2 while route 1 carries 26% more, at 5.5 to 9.0&times; less storage. Filling a hidden volume with a rendering primitive is paid for in count: both
-published models carry support scales four and six orders of magnitude below a pixel, so nothing
-overlaps and the count is the whole cost.
+<strong>1.3%</strong>. It holds the same watermelon in <strong>1,065,856</strong> cells generated or 1,741,169 quantised, against FruitNinja's 7,959,789 primitives and GaussianFluent's 1,381,100, and counting everything each method needs, the sparse index and the exterior surface included, in <strong>62.6</strong> or 163.5&nbsp;MiB against 425.1 and 310.8. Coverage is not what separates them: through each method's own rasteriser all four leave under a percent of a cut face unpainted, and an earlier version of this work reported otherwise from a footprint convention no rasteriser uses. What separates them is what coverage costs. Sweeping a Gaussian's support over four decades on a fixed primitive set, 17 to 45% of a section is unpainted below \(\rho = 0.1\) and boundary blending rises monotonically above \(\rho = 0.25\); both published models sit at \(\rho\) of \(3\times10^{-5}\) and below, so they buy coverage with count instead. A cube's support is its cell, so it covers exactly at any resolution with nothing to set.
 <br><br>
 Cutting is discrete on the lattice and analytic on the boundary: connected components label the
 pieces and one solver runs per piece. Generating the topology also makes the skin band a free
@@ -219,12 +211,12 @@ makes the comparisons here comparisons rather than assertions.</p>
       scan, or generating the topology from a signed-distance field and projecting six rendered
       views. Cutting, surface conversion, physics and material decomposition read the lattice and
       not the route.</li>
-  <li><strong>Less to hold the interior, and a denser section for it.</strong> Against FruitNinja
-      on the same object, 4.6 to 7.5&times; fewer primitives and 7.5 to 12.3&times; less storage.
-      Against GaussianFluent the storage saving is 5.5 to 9.0&times; but the primitive count is
-      only 1.3&times; better under route 2 and 26% worse under route 1, so the count claim is
-      about FruitNinja and the storage claim is about both. Neither is measured against a
-      compressed Gaussian model.</li>
+  <li><strong>Less to hold the interior.</strong> On the same watermelon, counting the sparse
+      index and the exterior surface the method needs, 62.6&nbsp;MiB generated or 163.5 quantised
+      against FruitNinja's 425.1 and GaussianFluent's 310.8, from 1,065,856 cells against 7,959,789
+      and 1,381,100 primitives. Route 1's primitive count is 26% worse than GaussianFluent's, and
+      nothing here is measured against a compressed Gaussian model, which is the comparison this
+      claim still owes.</li>
   <li><strong>A shell thickness the solver can resolve.</strong> Because route 2 builds the lattice
       from a field, the skin band is an argument. The previous project could not produce a hard
       shell; we show why (0.87 to 2.00 MPM grid cells where about two are needed),
@@ -1166,7 +1158,10 @@ therefore be compared on the same object, from the same source file.</p>
 <thead><tr><th>watermelon</th><th>FruitNinja, as released</th><th>this work, route 1</th><th></th></tr></thead>
 <tbody>
 <tr><td>primitives / cells</td><td>7,959,789</td><td>1,741,169</td><td><strong>4.6&times; fewer</strong></td></tr>
-<tr><td>as stored</td><td>425.1 MiB</td><td>56.5 MiB</td><td><strong>7.5&times; less</strong></td></tr>
+<tr><td>as stored, cells only, index implicit</td><td>425.1 MiB</td><td>56.5 MiB</td><td>7.5&times; less</td></tr>
+<tr><td>with the sparse index the lattice needs</td><td>425.1 MiB</td><td>76.4 MiB</td><td>5.6&times; less</td></tr>
+<tr><td><strong>with the dual-grid exterior as well</strong></td><td><strong>425.1 MiB</strong></td>
+    <td><strong>163.5 MiB</strong></td><td><strong>2.6&times; less</strong></td></tr>
 <tr><td>opacity</td><td>1.0000 at the median and the 10th percentile</td><td>n/a</td><td>opaque by construction</td></tr>
 <tr><td>support scale \(\sigma\)</td><td>1.11e&#8722;7</td><td>n/a</td><td></td></tr>
 <tr><td>spacing \(h\)</td><td>0.0036</td><td>0.0172</td><td></td></tr>
@@ -1174,42 +1169,117 @@ therefore be compared on the same object, from the same source file.</p>
 <tr><td>primitives per unit volume</td><td>1,029,854</td><td>137,000</td><td></td></tr>
 </tbody></table></div>
 
-<h4>4.2.2&ensp;The interiors compared</h4>
+<h4>4.2.2&ensp;The interiors compared, and a claim we withdraw</h4>
 
 <p>Storage says what each costs, not what each produced. Every method has its own frame, scale and
-renderer, so the comparison routes through none of them: for each model, the plane through its own
-centroid, the primitives within a slab 1% of its own extent, projected orthographically,
-normalised by its own projected radius, opaque and nearest-first, which all three are, at median and tenth-percentile opacity 1.0000.</p>
+renderer, so a comparison of the interiors routes through none of them: for each model, the plane
+through its own centroid, the primitives within a slab 1% of its own extent, projected
+orthographically, normalised by its own projected radius, opaque and nearest-first, which all three
+are, at median and tenth-percentile opacity 1.0000.</p>
 
 <figure>
   <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
        representations: FruitNinja, GaussianFluent, and this work's two routes">
-  <figcaption>The same slab through the same fruit, four ways. GaussianFluent's sits smaller in
-  frame because its released model's bounding box carries more than the melon and the
-  normalisation is per model; the interior is what to look at, not the size. Every primitive is
-  drawn at its own footprint (\(\sigma\) for a Gaussian, \(h\) for a cell), which is the only setting under which the four are comparable at all, and is where the difference
-  turns out to be.</figcaption>
+  <figcaption>The same slab through the same fruit, four ways, with every primitive drawn at its
+  own footprint: \(\sigma\) for a Gaussian, \(h\) for a cell. GaussianFluent's sits smaller in
+  frame because its released model's bounding box carries more than the melon and the normalisation
+  is per model. Read this as what each primitive <em>covers</em>, and not as what each method draws:
+  the next paragraph is why.</figcaption>
 </figure>
 
-<p>This is cut-face fidelity measured rather than argued: a slab through the object is what a cut
-exposes, and the question is how much of it each representation can actually paint. Every primitive
-is drawn at its own footprint: \(\sigma\) for a Gaussian, \(h\) for a cell. Neither published model can be given one: their primitives are four and six orders of magnitude smaller
-than a pixel here, so what reaches the screen is the rasteriser's minimum radius, and 20.5% and
-46.7% of their own sections go unpainted against our 5.7%.</p>
+<div class="note"><strong>An earlier version of this page reported that figure's unpainted
+fractions as cut-face fidelity, and that was wrong.</strong> Drawing a Gaussian at radius
+\(\sigma/2\) is a fair way to ask what a primitive covers, but no rasteriser draws it that way. A
+real one clamps the screen-space footprint and applies an antialiasing filter, which is exactly why
+sub-pixel Gaussians reach the screen as a solid surface, and at \(\sigma = 10^{-7}\) the footprint
+radius rounds to zero pixels so the primitive is painted as a single pixel. The 20.5% and 46.7%
+that number gave for FruitNinja and GaussianFluent were a property of that convention, not of their
+renders.</div>
+
+<p>Measured on the images each method's own rasteriser produced, over the same hundred held-out
+transverse cuts, the picture is different and the honest conclusion is that coverage does not
+separate these methods:</p>
+
+<div class="tw"><table>
+<thead><tr><th>unpainted inside the section, own rasteriser, 100 cuts</th><th>watermelon</th><th>orange</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released model</td><td>0.21%</td><td>0.90%</td></tr>
+<tr><td>FruitNinja, stock checkpoint</td><td class="mut">not run</td><td>11.40%</td></tr>
+<tr><td>GaussianFluent, released model</td><td>0.10%</td><td class="mut">no orange released</td></tr>
+<tr><td>this work, route 1</td><td>0.17%</td><td>0.18%</td></tr>
+<tr><td>this work, route 2</td><td><strong>0.00%</strong></td><td><strong>0.01%</strong></td></tr>
+</tbody></table></div>
+
+<p>Route 2 is the only column that reaches zero, and a cube lattice reaches it without a parameter
+because a cell tiles space, where every Gaussian column reaches its number by having enough
+primitives. But the differences are fractions of a percent, and no argument about cut-face
+appearance should be built on them. What the footprint figure does establish, and what survives, is
+the mechanism: neither published model's primitives cover anything, so their coverage is bought
+entirely with count.</p>
 
 <div class="tw"><table>
 <thead><tr><th>watermelon</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work, route 1</th><th>route 2</th></tr></thead>
 <tbody>
-<tr><td>primitives / cells</td><td>7,959,789</td><td>1,381,100</td><td>1,741,169</td><td><strong>1,065,856</strong></td></tr>
-<tr><td>stored</td><td>425.1 MiB</td><td>310.8 MiB</td><td>56.5 MiB</td><td><strong>34.6 MiB</strong></td></tr>
-<tr><td>higher-band SH</td><td>0</td><td>45</td><td>0</td><td>0</td></tr>
+<tr><td><strong>primitives / cells</strong></td><td><strong>7,959,789</strong></td><td>1,381,100</td>
+    <td>1,741,169</td><td><strong>1,065,856</strong></td></tr>
+<tr><td>stored, cells only</td><td>425.1 MiB</td><td>310.8 MiB</td><td>56.5 MiB</td><td>34.6 MiB</td></tr>
+<tr><td><strong>stored, with the sparse index and the exterior surface</strong></td>
+    <td><strong>425.1 MiB</strong></td><td><strong>310.8 MiB</strong></td><td>163.5 MiB</td>
+    <td><strong>62.6 MiB</strong></td></tr>
+<tr><td>higher-band SH coefficients</td><td>0</td><td>45 <span class="mut">(76% of its bytes)</span></td><td>0</td><td>0</td></tr>
 <tr><td>support \(\sigma\) / cell \(h\)</td><td>1.11e&#8722;7</td><td>1.35e&#8722;9</td><td>0.0172</td><td>0.0172</td></tr>
-<tr><td>that, against one pixel here</td><td>47,053&times; smaller</td><td>5,067,762&times; smaller</td>
-    <td><strong>3.3 pixels across</strong></td><td>3.3 pixels</td></tr>
-<tr><td>in the slab</td><td>256,696</td><td>57,289</td><td>51,763</td><td>34,587</td></tr>
-<tr><td><strong>unpainted, inside the section</strong></td><td>20.5%</td><td>46.7%</td>
-    <td><strong>5.7%</strong></td><td><strong>6.1%</strong></td></tr>
+<tr><td>that, against one pixel in the slab figure</td><td>47,053&times; smaller</td>
+    <td>5,067,762&times; smaller</td><td>3.3 pixels across</td><td>3.3 pixels</td></tr>
+<tr><td>primitives in the slab</td><td>256,696</td><td>57,289</td><td>51,763</td><td>34,587</td></tr>
+<tr><td>unpainted at each primitive's own footprint</td><td>20.5%</td><td>46.7%</td><td>5.7%</td><td>6.1%</td></tr>
+<tr><td><strong>unpainted through its own rasteriser</strong></td><td>0.21%</td><td><strong>0.10%</strong></td>
+    <td>0.17%</td><td><strong>0.00%</strong></td></tr>
 </tbody></table></div>
+
+<h4>4.2.2.1&ensp;Then enlarge the Gaussians: what \(\rho\) actually costs</h4>
+
+<p>The obvious reply to any of this is that a Gaussian's support is a free parameter, so make it
+bigger. Equation (1) asserts a trade, and asserting a trade is not the same as showing that no
+setting of its parameter escapes one. This measures both branches against a reference with no scale
+parameter at all: the cube lookup of equation (18), which reads the cell containing each pixel.
+Holes are pixels inside the true section the Gaussian render left as background. Blending is how
+much more the Gaussian render disagrees with that reference <em>at material boundaries</em> than it
+does away from them, since a large Gaussian disagrees with a piecewise-constant reference
+everywhere simply by being smooth, and only the excess is blending.</p>
+
+<div class="tw"><table>
+<thead><tr><th>\(\rho = \sigma/h\)</th><th colspan="2">orange</th><th colspan="2">watermelon</th>
+<th colspan="2">doughnut</th></tr>
+<tr><th></th><th>holes</th><th>blending</th><th>holes</th><th>blending</th><th>holes</th><th>blending</th></tr></thead>
+<tbody>
+<tr><td>0.0001</td><td><strong>44.7%</strong></td><td>&minus;0.09</td><td><strong>16.5%</strong></td><td>&minus;0.07</td><td><strong>44.4%</strong></td><td>&minus;0.02</td></tr>
+<tr><td>0.01</td><td>44.4%</td><td>&minus;0.09</td><td>16.3%</td><td>&minus;0.07</td><td>44.2%</td><td>&minus;0.02</td></tr>
+<tr><td>0.05</td><td>37.1%</td><td>&minus;0.10</td><td>11.8%</td><td>&minus;0.06</td><td>38.7%</td><td>&minus;0.02</td></tr>
+<tr><td>0.10</td><td>17.5%</td><td>&minus;0.09</td><td>2.6%</td><td>&minus;0.05</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+<tr><td><strong>0.25</strong></td><td><strong>0.0%</strong></td><td><strong>+0.005</strong></td><td><strong>0.0%</strong></td><td><strong>+0.020</strong></td><td><strong>0.0%</strong></td><td><strong>&minus;0.009</strong></td></tr>
+<tr><td>0.50</td><td>0.0%</td><td>+0.028</td><td>0.0%</td><td>+0.045</td><td>0.0%</td><td>+0.011</td></tr>
+<tr><td>1.00</td><td>0.0%</td><td>+0.107</td><td>0.0%</td><td>+0.072</td><td>0.0%</td><td>+0.030</td></tr>
+<tr><td>1.50</td><td>0.0%</td><td>+0.198</td><td>0.0%</td><td>+0.089</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+<tr><td>2.00</td><td>0.0%</td><td>+0.226</td><td>0.0%</td><td>+0.097</td><td>0.0%</td><td>+0.074</td></tr>
+<tr><td>3.00</td><td>0.0%</td><td>+0.197</td><td>0.0%</td><td>+0.105</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+</tbody></table></div>
+
+<p>At 1024&nbsp;px, on this work's own primitive set so that only \(\sigma\) changes. Both branches
+are there and neither is avoidable, but the curve is not the one equation (1) implies. The hole
+branch does not bite gradually below one: it is flat and severe from \(10^{-4}\) to \(0.05\) and
+then collapses to nothing between 0.10 and 0.25. The blending branch is monotone above 0.25 and
+reaches a fifth of the reference's own boundary disagreement by \(\rho = 2\). Between them is a
+window, roughly \(0.25 \le \rho \le 0.5\), where a Gaussian set does pay very little for either,
+and the models this work trains sit inside it at a median \(\rho\) of 0.26.</p>
+
+<p>So the answer to "just make them bigger" is: on a fixed primitive set it works, within a window
+you have to find, and it is not what the published models do. FruitNinja sits at
+\(\rho = 3\times10^{-5}\) and GaussianFluent lower still, four and six orders of magnitude to the
+left of that window, where the table says 17 to 45% of a section is unpainted for a primitive set
+of this size. Their renders are not full of holes because they buy coverage the other way, with
+7,959,789 and 1,381,100 primitives against this lattice's 877,494. That is the trade this paper is
+actually about, and it is a trade about count rather than about support: a cube's support is its
+cell, so it covers exactly, at any resolution, with no window to find and no parameter to set.</p>
 
 <h4>4.2.3&ensp;Reproduction without a fine-tuned diffusion model</h4>
 
@@ -1401,8 +1471,8 @@ what its paper states.</p>
     <td>a dual-grid surface, or a march into the volume</td></tr>
 <tr><td>primitives, watermelon</td><td><strong>7,959,789</strong></td><td>1,381,100</td>
     <td>1,741,169 <span class="mut">route 1</span> / <strong>1,065,856</strong> <span class="mut">route 2</span></td></tr>
-<tr><td>stored</td><td><strong>425.1 MiB</strong></td><td>310.8 MiB</td>
-    <td>56.5 MiB / <strong>34.6 MiB</strong></td></tr>
+<tr><td>stored, everything the method needs</td><td><strong>425.1 MiB</strong></td><td>310.8 MiB</td>
+    <td>163.5 MiB <span class="mut">route 1</span> / <strong>62.6 MiB</strong> <span class="mut">route 2</span></td></tr>
 <tr><td>\(\rho = \sigma/h\)</td><td>3.1e&#8722;5 <span class="mut">(points, not blobs)</span></td>
     <td class="mut">not measured</td><td>not applicable, a cell tiles</td></tr>
 <tr><td><strong>needs a fine-tuned diffusion model</strong></td>
@@ -1857,20 +1927,26 @@ proportional to hidden spatial complexity, with the high-resolution cost paid on
 made something visible and returned when it has not. Counted as fields rather than as process memory: a Gaussian stores position, scale, rotation, opacity and colour; a cube cell stores
 a feature, a level and its membership, with the position implicit in the address.</p>
 
-<p>This table and the one in section 4.2.1 answer different questions and their ratios should not
-be read as one number. Here the count is held fixed and only the per-element fields change, which
-is 1.6&times;. There the whole asset is compared against the whole asset, and most of that
-7.5&times; is the count: 1,741,169 cells against 7,959,789 primitives. The honest one-line summary
-is that the saving is mostly in how many things there are and only 1.6&times; in what each one
-costs, and that neither figure is measured against a compressed Gaussian model.</p>
+<p>Three accountings, and they answer different questions. Holding the count fixed and changing
+only the per-element fields is 1.6&times;. Paying for the integer coordinates a sparse lattice has
+to store, which every structure built over it keys on, takes that to 1.2&times;. Adding the
+dual-grid exterior, which the method needs and a Gaussian model carries inside its own primitives,
+takes the orange past parity: 55.6&nbsp;MiB against 46.9 for route 1. The saving against the
+published models is therefore almost entirely in <em>how many things there are</em>, not in what
+each one costs, and on an object whose lattice is mostly fine cells it can vanish. None of these
+figures is measured against a compressed Gaussian model, which would move them again.</p>
 
 <div class="tw"><table>
 <thead><tr><th>orange</th><th>as Gaussians</th><th>as cube cells</th><th>a cut, while live</th><th>folded back</th></tr></thead>
 <tbody>
-<tr><td>route 1, 877,494 cells</td><td>46.9 MiB</td><td><strong>28.5 MiB</strong> <span class="mut">(1.6&times; less)</span></td>
-    <td>+98,623 leaves, 1.6 MiB <span class="mut">(5.6%)</span></td><td>exactly returned</td></tr>
-<tr><td>route 2, 1,231,312 cells</td><td>65.8 MiB</td><td><strong>39.9 MiB</strong> <span class="mut">(1.6&times; less)</span></td>
-    <td>+97,601 leaves, 1.6 MiB <span class="mut">(4.0%)</span></td><td>exactly returned</td></tr>
+<tr><td>route 1, 877,494 cells</td><td>46.9 MiB</td>
+    <td>28.5 MiB <span class="mut">(1.6&times;)</span> / <strong>38.5 with the index</strong>
+        / 55.6 with the exterior</td>
+    <td>+98,714 leaves, 1.6 MiB <span class="mut">(4.2%)</span></td><td>exactly returned</td></tr>
+<tr><td>route 2, 1,231,312 cells</td><td>65.8 MiB</td>
+    <td>39.9 MiB <span class="mut">(1.6&times;)</span> / <strong>54.0 with the index</strong>
+        / 71.7 with the exterior</td>
+    <td>+97,209 leaves, 1.6 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
 </tbody></table></div>
 
 <h2 id="limits">5&ensp;Limitations</h2>
@@ -1920,12 +1996,16 @@ where discreteness is cheap and becomes analytic exactly where a staircase would
 lattice's own advantages survive intact: connectivity, piece identity and collision are integer operations on a structured grid, not queries against arbitrary free particles.</p>
 
 <p>Against the two methods that fill an interior with Gaussians, the difference is what a volume
-costs. On the same watermelon, from the same source file, the interior here is 1,741,169 cells in
-56.5&nbsp;MiB quantised or 1,065,856 in 34.6&nbsp;MiB generated, against FruitNinja's 7,959,789 in
-425&nbsp;MiB and GaussianFluent's 1,381,100 in 311&nbsp;MiB, and the section it can paint is denser
-for it: 5.7% and 6.1% of the cut left unpainted against 20.5% and 46.7%. Both published models
-carry support scales four and six orders of magnitude below a pixel, so their primitives cover
-nothing and the count is the whole cost of the volume.</p>
+costs, and it is smaller than an earlier version of this work claimed. On the same watermelon the
+interior here is 1,065,856 cells generated or 1,741,169 quantised, against 7,959,789 and 1,381,100
+primitives, and counting the sparse index and the exterior surface the method actually needs,
+62.6 or 163.5&nbsp;MiB against 425.1 and 310.8. Coverage is not the differentiator: through each
+method's own rasteriser every column leaves under a percent of a cut face unpainted, and the 20.5%
+and 46.7% this page previously reported came from drawing each primitive at its own footprint,
+which is a fair question about what a primitive covers and the wrong instrument for what a
+renderer draws. Swept over four decades of \(\rho\) the trade is real in both directions, holes
+below 0.1 and blending above 0.25, and both published models sit far to the left of that window and
+buy their coverage with count.</p>
 
 <p>Appearance does not pay for that, and the appearance numbers do not all go one way. On the
 orange, every arm here beats FruitNinja's released model, and the arm that beats it by the most
