@@ -101,7 +101,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.11 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.11 Physics</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
 <h2 id="abstract">Abstract</h2>
@@ -2086,50 +2086,84 @@ figures is measured against a compressed Gaussian model, which would move them a
     <td>+97,209 leaves, 1.6 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
 </tbody></table></div>
 
-<h2 id="conclusion">5&ensp;Conclusion</h2>
+<h2 id="conclusion">5&ensp;Conclusion and limitations</h2>
 
-<p>Separating the two jobs costs less than it sounds and gives back more than the rendering. The
-hidden volume becomes occupancy plus a low-dimensional feature, with no \(\sigma\) to tune against
-\(h\); the visible boundary becomes a surface with an explicit polygonal extent, which is what lets
-a flat cut face be flat rather than a plane approximated by ellipsoids. Cutting stays discrete
-where discreteness is cheap and becomes analytic exactly where a staircase would show. And the
-lattice's own advantages survive intact: connectivity, piece identity and collision are integer operations on a structured grid, not queries against arbitrary free particles.</p>
+<h3>5.1&ensp;Conclusion</h3>
 
-<p>Against the two methods that fill an interior with Gaussians, the difference is what a volume
-costs. On the same watermelon the
-interior here is 1,065,856 cells generated or 1,741,169 quantised, against 7,959,789 and 1,381,100
-primitives, and counting the sparse index and the exterior surface the method actually needs,
-62.6 or 163.5&nbsp;MiB against 425.1 and 310.8. Swept over four decades of \(\rho\) the trade is
-real in both directions, holes below 0.1 and blending above 0.25, and both published models sit far
-to the left of that window and buy their coverage with count instead.</p>
+<p>We have presented a decoupled representation for objects that are cut open: continuous surface
+rendering on a dual-grid boundary, discrete volumetric occupancy on a two-level feature lattice, and
+no primitive asked to do both. The tension that separation removes is real and we measured it over
+four decades of support scale, with both published methods sitting far outside the window where
+neither branch of it bites.</p>
 
-<p>The cut face is the claim, in two senses. On appearance this work is ahead of a fine-tuned
-pipeline while doing none of its fine-tuning, and the instrument that says so most clearly is the
-one trained on human judgement. Under leave-one-out over the six references, DreamSim puts this
-work at 0.0979 against 0.1498 for a released model whose generator saw the held-out photograph,
-ahead on all six folds; on the watermelon it is 0.167 against 0.221 and 0.328, where photographs of
-the same fruit agree at 0.042 and 0.067. FID and KID order the orange the same way; on the
-watermelon FID favours the model DreamSim ranks last, which is the clearest case here of the two
-instruments measuring different properties. A forced-choice study
-would settle it and is owed.</p>
+<p>The result we would put first is about supervision rather than representation. A high-fidelity
+interior can be built from a sparse set of <em>unaligned</em> cross-section photographs used
+directly as the target, with no per-object diffusion fine-tuning and no score distillation. Under
+leave-one-out over six references, scored against the photograph its own run never saw, this is
+0.0979 DreamSim against 0.1498 for a released model whose generator was fine-tuned on that
+photograph, ahead on all six folds; and holding a photograph out costs 0.0044, less than half the
+spread across folds. The mechanism is not a loss term. Every plane reads the same cells and a cell
+holds one value, so references that disagree resolve to one answer before anything is rendered, and
+they do so without flattening: 96.5% of the variation the references carry along their shared axis
+survives in the model. That is what makes loose exemplars sufficient, and it is the part we would
+carry to another problem.</p>
 
-<p>The second sense is not in doubt. A splatted interior does not define one explicitly: it renders
-the primitives near the plane, so planarity, area and boundary are not quantities the method
-exposes. A cube volume states all three by construction and the statements survive checking
-&mdash; machine epsilon off an oblique plane, area error first order in the cell size, and a
-section still closed at 2048&nbsp;px where a released GaussianFluent section is 38.7% background
-and this work's own splatted lattice is 3.3%. That last pair is the honest form of the coverage
-claim: it is the volume that holds, not the method's name. The 20.5% and 46.7% this page once
-reported came from drawing each primitive at radius \(\sigma/2\), which measures what a
-primitive covers rather than what a renderer draws.</p>
+<p>On geometry the claim is narrower and firmer. A planar cut is one convex polygon per crossed
+cell in closed form &mdash; planar to machine epsilon on an oblique off-grid plane, cut-area error
+first order in the cell size and reaching 0.09%, no edge of the triangulation used by a single
+triangle &mdash; and a splatted interior does not define these quantities at all, so the comparison
+is between having them and not. Through one appearance-neutral codec the same object is 7.0&nbsp;MiB
+against 26.5 and 58.3, and the cut face drawn as a cube volume holds 0.07% unpainted at
+2048&nbsp;px where our own splatted lattice reaches 3.3%: the property belongs to the volume, not to
+the method's name.</p>
 
-<p>What is left between the three methods is the volume itself, and what it costs. A cube tiles
-space and a sub-pixel Gaussian does not; through one appearance-neutral codec the same object is
-7.0&nbsp;MiB against 26.5 and 58.3. On the watermelon GaussianFluent still takes the best FID at
-170.2 against our 180.9, on a different fruit and through cameras we had to choose for it, and we
-would defend the reading that at this sample size these interiors are not separable by the metrics
-the task has. What separates the representations is what they cost and what they can state about a
-surface no reconstruction ever saw.</p>
+<h3>5.2&ensp;Limitations and future work</h3>
+
+<p>The <a href="supplement.html#limits">limitations</a> list fourteen items in full. Six decide how
+far the results should be carried.</p>
+
+<ol>
+  <li><strong>Three objects.</strong> An orange, a watermelon and a doughnut, chosen because they
+      are the ones with released baselines. That is enough to show a property holds or that a
+      claimed one fails; it is not enough to say a margin generalises to fruit, to food, or to
+      objects at large.</li>
+  <li><strong>Cutting is not interactive.</strong> A cut is about eleven seconds at the resolution
+      used here, 4.9 for the band and the labelling and 6.2 for the polygons. Nothing in this paper
+      is a real-time result. The complexity is linear in the crossed cells and the constant is
+      large; the adaptive criterion and a GPU formulation of the same passes are the two levers,
+      and neither is benchmarked.</li>
+  <li><strong>The physics is compatibility, not validation.</strong> Contact resolves on integer
+      queries at 4.9 million per second and closes 2,698 of 610,723 penetrations to zero, and a
+      criterion predicts before the first timestep whether a transfer grid resolves the skin. There
+      is no reference solver, no deformation or stress error, no fracture &mdash; the formulation
+      does not implement it &mdash; and no interactive frame rate.</li>
+  <li><strong>Cuts are unbounded planes.</strong> A piece is a class under a global sign code, so
+      an incision that enters, travels and stops has no expression, and a curved cut approximated by
+      \(Q\) planes shatters into up to \(2^Q\) regions. The face survives curvature &mdash; a
+      smooth surface is planar to first order over a cell, so the same twelve-edge construction
+      applies to the local tangent plane and the cost is more leaves, not a different algorithm.
+      What fails is the labelling, and the virtual-node construction is the specific extension.</li>
+  <li><strong>The evaluation is in-sample except where stated.</strong> Only the leave-one-out study
+      holds a reference out. Every other appearance number, ours and the baselines', is scored
+      against images that were in some way available to the method producing them.</li>
+  <li><strong>The interior is of that kind of object, not of that object.</strong> Loose exemplars
+      are the strength and the limit in one: what is produced is a plausible interior of an orange,
+      not the interior of the orange that was scanned, and nothing here recovers the latter.</li>
+</ol>
+
+<p><strong>Future work.</strong> Three directions follow from measurements in this paper rather than
+from speculation. First, the volume already reconciles contradictory supervision without losing
+detail, which means the remaining gain is <em>upstream</em>: the conflict is created by drawing each
+section independently, and conditioning each new reference on what the volume already holds along
+its intersections with the references drawn so far would remove it at source rather than average it
+away. Second, that has to be done carefully, because we tried the downstream version and it
+failed: reconciling two targets by averaging them along their intersection line cost 0.012 DreamSim
+against a control, forty times the run-to-run spread, since averaging destroys exactly the discrete
+features &mdash; a seed averaged with no seed is a smudge &mdash; and any consistency term must
+therefore be paired with one that penalises flattening. Third, the field needs better instruments
+at this sample size: two identical runs of ours differ by 5.0 FID and 0.0003 DreamSim, so a table
+turning on four points of FID is reporting its seed, and a forced-choice study against human
+observers is what would actually settle cut-face realism.</p>
 
 <h2 id="refs">References</h2>
 
