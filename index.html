@@ -543,6 +543,18 @@ $$ q(\mathbf{k}) = \operatorname{sgn}\!\left(\mathbf{n}\cdot\mathbf{x}_{\mathbf{
 $$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
 </div><div class="num">(9)</div></div>
 
+<p>A cut here is an unbounded plane, and that is a property of the representation rather than of
+the implementation. A piece is an equivalence class of face adjacency under a global sign code, one
+sign per plane, so the cut has no extent: an incision that enters, travels and stops has no
+expression, because it would need the same pair of cells severed inside the incision's footprint
+and adjacent beyond its end. A curved cut approximated by \(Q\) planes generates up to \(2^Q\)
+sign regions and shatters the object rather than cutting along a curve. Peeling, tearing and
+freehand surgical cutting are therefore outside this formulation. The construction that extends to
+them is known and fits this lattice almost unchanged: duplicate the crossed cell rather than the
+geometry and let each copy carry one side of an analytic cut surface [48], which is the virtual
+node algorithm, with the MPM counterpart carrying the discontinuity as two velocity fields either
+side of a crack.</p>
+
 <p>Two degeneracies have to be handled for the closed-form face to be stable, and both are handled
 by construction rather than by a tolerance. When the plane passes exactly through a cell vertex, the
 edge parameter of equation&nbsp;(10) evaluates to 0 or 1 on the two edges meeting there and the same
@@ -1024,6 +1036,35 @@ blends or merely covers is the same experiment on their primitive sets and is no
 actually about, and it is a trade about count rather than about support: a cube's support is its
 cell, so it covers exactly, at any resolution, with no window to find and no parameter to set.</p>
 
+<h4>4.2.2.2&ensp;And under compression</h4>
+
+<p>Counting fields at float32 measures a file format rather than a representation, and the obvious
+objection is that a codec would close the gap. It does not. Every arm below goes through the same
+appearance-neutral pipeline: constant fields dropped, unobservable fields dropped, positions
+quantised to sixteen bits of the model's own extent, log-scales and colours to eight, and the
+result entropy-coded field by field. For the lattice the cell coordinates are Morton-ordered and
+delta-coded first, which is the octree compaction a structured representation is open to and a free
+point cloud is not.</p>
+
+<div class="tw"><table>
+<thead><tr><th>watermelon</th><th>as counted</th><th>same codec, compressed</th><th>ratio</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released</td><td>425.1 MiB</td><td>58.3 MiB</td><td>7.3&times;</td></tr>
+<tr><td>GaussianFluent, released</td><td>310.8 MiB</td><td>26.5 MiB</td><td>11.7&times;</td></tr>
+<tr><td>this work, route 1</td><td>76.4 MiB</td><td>11.6 MiB</td><td>6.6&times;</td></tr>
+<tr><td><strong>this work, route 2</strong></td><td>46.8 MiB</td><td><strong>7.0 MiB</strong></td><td>6.6&times;</td></tr>
+</tbody></table></div>
+
+<p>The Gaussian models compress harder, which is expected and is the objection stated properly:
+FruitNinja's opacity has a single value across all 7,959,789 primitives, and its median anisotropy
+is 1.06, so the quaternion describes the orientation of a sphere. Removing what carries no
+information takes 425.1&nbsp;MiB to 58.3 before any entropy coding does its part. The lattice has
+less of that redundancy to give up and still ends smaller: <strong>3.8&times; smaller than
+GaussianFluent and 8.3&times; smaller than FruitNinja</strong> after every arm has been compressed
+the same way. The lattice figure is also an upper bound, because the per-cell feature is
+substituted here by white noise of the same shape, which is the least compressible object of that
+size; a learned feature can only do better.</p>
+
 <h4>4.2.3&ensp;Reproduction without a fine-tuned diffusion model</h4>
 
 <p>FruitNinja supervises the interior with depth-conditioned diffusion on cross-sections, and its
@@ -1255,6 +1296,50 @@ hundred; the two tables are internally consistent and should not be read across.
   direction, and it still takes the best FID in the table. The metric is measuring the colour
   statistics of a slice, not whether the slice is a plane.</figcaption>
 </figure>
+
+<h4>4.2.6&ensp;The comparison in one table</h4>
+
+<p>Each cell is measured on the watermelon by the section named, or marked where the quantity does
+not exist for that representation. A cut-face residual and a cut-area error need a cut-face
+construction to measure; a splatted interior draws whatever primitives lie near the plane and has
+none, which is the difference this paper is about and not a number it can report on their
+behalf.</p>
+
+<div class="tw"><table>
+<thead><tr><th>dimension</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work</th><th>&sect;</th></tr></thead>
+<tbody>
+<tr><td>primitives or cells</td><td>7,959,789</td><td>1,381,100</td><td><strong>1,065,856</strong></td><td>4.2.1</td></tr>
+<tr><td>stored, all a method needs</td><td>425.1 MiB</td><td>310.8 MiB</td><td><strong>62.6 MiB</strong></td><td>4.2.1</td></tr>
+<tr><td><strong>stored, same codec</strong></td><td>58.3 MiB</td><td>26.5 MiB</td><td><strong>7.0 MiB</strong></td><td>4.2.2.2</td></tr>
+<tr><td>unpainted at 512&nbsp;px, own renderer</td><td>0.21%</td><td>0.10%</td><td><strong>0.00%</strong></td><td>4.2.2</td></tr>
+<tr><td><strong>unpainted at 2048&nbsp;px</strong></td><td>2.37%</td><td>38.73%</td><td><strong>0.07%</strong> <span class="mut">as a volume</span></td><td>4.2.2</td></tr>
+<tr><td>cut-face plane residual</td><td class="mut">no cut-face construction</td>
+    <td class="mut">no cut-face construction</td><td><strong>machine &epsilon;</strong></td><td>4.5.2</td></tr>
+<tr><td>cut-area error against a closed form</td><td class="mut">not measurable without one</td>
+    <td class="mut">not measurable without one</td><td>0.97% &rarr; <strong>0.09%</strong>, first order in \(h\)</td><td>4.5.2</td></tr>
+<tr><td>transverse FID, 100 held-out cuts</td><td>182.0</td><td><strong>170.2</strong></td><td>180.9</td><td>4.2.4</td></tr>
+<tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.2.1</td></tr>
+<tr><td>slicing and piece labelling</td><td class="mut">not addressed</td><td class="mut">damage field</td>
+    <td>\(O(K)\) in crossed cells; 13.7&nbsp;s as implemented</td><td>4.5.1</td></tr>
+</tbody></table></div>
+
+<p>The view-dependence row is a bound rather than a measurement, and it is the one honest way to
+read the storage column. The decoder here takes a cell's feature and returns a colour; it takes no
+view direction, so a wet cut face, a specular rind and a translucent flesh are outside what this
+representation can express, not degraded versions of them. Nothing in this paper measures
+appearance under moving illumination for that reason. The storage advantage is therefore partly a
+capability difference: we do not pay for view-dependent appearance because we do not provide it,
+and a fair reading of the compressed row is 7.0&nbsp;MiB for a Lambertian volume against
+26.5&nbsp;MiB for one that also carries a third-order angular field.</p>
+
+<p>Two rows go against this work and are worth reading rather than skipping. GaussianFluent takes
+the transverse FID, on a different watermelon through cameras we chose for it, and it does so while
+spending 45 spherical-harmonic bands on view-dependent appearance that this representation cannot
+express at all. And the slicing row states an algorithmic complexity next to an implementation that
+does not achieve it: the work is linear in the cells a plane crosses, which is 4.0 to 10.7% of the
+lattice, while the code rebuilds face adjacency over every leaf on every cut. The gap between those
+two numbers is engineering, and it is the difference between a cut that is interactive and one that
+is not.</p>
 
 <h3 id="phys-res">4.3&ensp;Materials, collision and a shell the solver can resolve</h3>
 

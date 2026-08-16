@@ -90,6 +90,16 @@ first thing below.</p>
 
 <h2 id="limits">Limitations</h2>
 <ul>
+  <li><strong>Cuts are unbounded planes.</strong> A piece is a global sign-code class, so a bounded
+      incision has no expression and a curved cut approximated by \(Q\) planes shatters into up to
+      \(2^Q\) regions rather than cutting along a curve. Peeling, tearing and freehand cutting are
+      outside the formulation; the virtual-node construction that extends to them fits this lattice
+      but is not implemented here.</li>
+  <li><strong>There is no view-dependent appearance.</strong> The decoder maps a cell's feature to a
+      colour and takes no view direction, so specular rind, a wet cut face and translucent flesh are
+      inexpressible rather than approximated. Every appearance number here is under the fixed
+      illumination the references were taken in, and the storage comparison should be read as a
+      Lambertian volume against representations that also carry an angular field.</li>
   <li><strong>Route 2 is the least reproducible thing here.</strong> It has no
       stage in <code>run.sh</code> and no object configuration: its three steps are run by hand
       against a lattice, and the radii that produced the orange and the watermelon are not written
