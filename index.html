@@ -2901,13 +2901,21 @@ without measuring it.</p>
 <tr><td>single level, \(h_f = h_c\)</td><td>0.0961</td><td class="mut">&mdash;</td><td class="mut">&mdash;</td></tr>
 </tbody></table></div>
 
+<p>What either parameter could be worth is bounded by a property of the object rather than of
+the method. An interior is not the same everywhere. Two regions of an orange a centimetre apart
+share a segment wall and are continuous across it; two regions on opposite sides of the fruit
+belong to different segments and have no reason to match. Consistency is therefore a local
+requirement, not a global one, and a mechanism that enforces it at long range would be enforcing
+something false. This is why the quantities measured below are coherence between planes and detail
+within them, and not similarity between distant parts of one volume &mdash; and it bounds what a
+sweeping plane family could contribute in the first place: continuity where cells are shared, and
+nothing at a distance.</p>
+
 <p>The second level earns its place: collapsing it costs 0.022 of DreamSim, seventy times the
 spread between two runs of one configuration. The jitter does not. Every setting including
 \(J = 0\) lands within 0.005 on held-out cuts of the supervised families, and on the 45&deg; cuts
 neither family supervised &mdash; where a sweeping plane family is the mechanism that would matter
-&mdash; the arm with no jitter at all has the smallest cross-family gap and the most detail. The
-ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather
-than an effect. Blind cells sit a mean of 1.35 cells from a supervised one and change as much
+&mdash; the arm with no jitter at all has the smallest cross-family gap and the most detail. The ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather than an effect. The measurements here are whole-section: a spatially resolved test, binning coherence by distance to the nearest training plane, would separate a local effect from a global one and was not run. Blind cells sit a mean of 1.35 cells from a supervised one and change as much
 during training as supervised cells do; the supervision reaches them through the shared decoder,
 and the jitter is not what carries it.</p>
 
