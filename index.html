@@ -158,7 +158,14 @@ offsets and nothing else from the surface code, so what is on screen is the bloc
 lattice actually has. The pieces come out of connected-component labelling on the lattice; the
 colour on every exposed face is read from the volume that was already there, and no face is
 tinted. On the orange, 850,822 solid cells refine to 1,159,634 leaves in the bands and the pieces
-range from 127,115 to 174,231 leaves.</p>
+range from 127,115 to 174,231 leaves.
+<br><br>
+These faces are also the ones a person judges most like the fruit. Scored by DreamSim, a perceptual
+distance trained on human forced-choice judgements, against photographs of real cut fruit:
+<strong>0.076</strong> on the orange and <strong>0.167</strong> on the watermelon, against
+<strong>0.133</strong> and <strong>0.221</strong> for FruitNinja's released models and
+<strong>0.328</strong> for GaussianFluent's, on a scale where photographs of the same fruit agree
+with each other at 0.042 and 0.067. Section 4.2.2 gives the other five instruments.</p>
 
 <h2 id="intro">1&ensp;Introduction</h2>
 
@@ -1530,8 +1537,8 @@ hundred; the two tables are internally consistent and should not be read across.
 
 <h4>4.2.6&ensp;The comparison in one table</h4>
 
-<p>Each cell is measured on the watermelon by the section named, or marked where the quantity does
-not exist for that representation. A cut-face residual and a cut-area error need a cut-face
+<p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
+or marked where the quantity does not exist for that representation. A cut-face residual and a cut-area error need a cut-face
 construction to measure; a splatted interior draws whatever primitives lie near the plane and has
 none, which is the difference this paper is about and not a number it can report on their
 behalf.</p>
@@ -1548,9 +1555,14 @@ behalf.</p>
     <td class="mut">no cut-face construction</td><td><strong>machine &epsilon;</strong></td><td>4.5.2</td></tr>
 <tr><td>cut-area error against a closed form</td><td class="mut">not measurable without one</td>
     <td class="mut">not measurable without one</td><td>0.97% &rarr; <strong>0.09%</strong>, first order in \(h\)</td><td>4.5.2</td></tr>
-<tr><td><strong>DreamSim to the photographs, watermelon</strong></td><td>0.2211</td><td>0.3278</td>
-    <td><strong>0.1674</strong></td><td>4.2.2</td></tr>
-<tr><td>transverse FID, 100 held-out cuts</td><td>182.0</td><td><strong>170.2</strong></td><td>180.9</td><td>4.2.4</td></tr>
+<tr><td><strong>DreamSim to the photographs, watermelon</strong>
+    <span class="mut">(0.067 between photographs)</span></td>
+    <td>0.221</td><td>0.328</td><td><strong>0.167</strong></td><td>4.2.2</td></tr>
+<tr><td><strong>DreamSim to the photographs, orange</strong>
+    <span class="mut">(0.042 between photographs)</span></td>
+    <td>0.133</td><td class="mut">no orange released</td><td><strong>0.076</strong></td><td>4.2.2</td></tr>
+<tr><td>transverse FID, 100 held-out cuts, watermelon</td><td>182.0</td><td><strong>170.2</strong></td>
+    <td>180.9</td><td>4.2.4</td></tr>
 <tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.2.1</td></tr>
 <tr><td>slicing and piece labelling</td><td class="mut">not addressed</td><td class="mut">damage field</td>
     <td>\(O(K)\) in crossed cells, 2.9&nbsp;s</td><td>4.5.1</td></tr>
