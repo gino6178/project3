@@ -688,7 +688,8 @@ $$ \mathbf{k}(\mathbf{p}) = \left\lfloor \frac{\mathbf{p} - \mathbf{o}}{h_\ell} 
 figure writes them \(h_e\) and \(h_0\). Two symbols are reused in this paper and it is worth
 saying so once: \(\tau\) is the dual-grid collapse tolerance in equation&nbsp;(12) and the
 shell-to-solver-grid ratio in equation&nbsp;(15), and \(\beta\) is the skin band width in fine
-cells in equations (2), (6) and (15) and a material class's shell fraction in equation&nbsp;(14).
+cells in equations (2) and (6) and in the prose around (15), and a material class's shell fraction
+in equation&nbsp;(14).
 They are unrelated quantities that convention gives the same letters.</p>
 
 <p>With the origin \(\mathbf{o}\) of equation&nbsp;(1) offset by half a cell. The offset is not
@@ -824,6 +825,13 @@ $$ q(\mathbf{k}) = \operatorname{sgn}\!\left(\mathbf{n}\cdot\mathbf{x}_{\mathbf{
 $$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
 </div><div class="num">(9)</div></div>
 
+<p>Equation (9) is the crossing test, and it is used twice. A cell of side \(h\) centred at
+\(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
+extent along \(\mathbf{n}\), which is the right-hand side; that decides which cells are refined.
+It also bounds how far a point inside a cell can be from the plane, which is what section 4.3.5
+uses to explain why occupancy alone claims material on both sides of a cut and why one sign test
+removes exactly that band and nothing else.</p>
+
 <p>Adjacency is arithmetic too. A leaf's neighbour is at its own level or coarser (were it finer, the finer leaves on the shared face would find this one), so the coarser candidate is the
 neighbour's coordinate shifted right, which is floor division and therefore the cell containing
 it. With \(Q\) planes a leaf carries a <em>side code</em>, the \(Q\) signs at its centre, and
@@ -852,8 +860,7 @@ $$ \Pi_{\mathbf{k}} = \bigl\{\, \mathbf{x} \in C_{\mathbf{k}} :
 
 <p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
 between it and the first; converting the whole boundary removes both. It is also necessary rather
-than convenient: a Gaussian shell covers only a fifth to a quarter of the frame at alpha above one half on the
-objects measured here, and 7 to 20% on the ones the previous project measured, so
+than convenient: a Gaussian shell covers only 7 to 20% of the frame at alpha above one half, so
 at the silhouette a cut face shows through from the side it should be hidden on.</p>
 
 <p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
@@ -898,8 +905,12 @@ $$ \sqrt{r / w} \;\le\; \tau\,h, \qquad w = \text{planes the block covers}, $$
 <h4>3.7.2&ensp;Collapse tolerance against surface error</h4>
 
 <p>The collapse has one parameter, \(\tau\) in equation (12), and what it buys has to be read
-against what it costs. Sweeping it on a shape whose exact surface is known gives both at once: the
-node count that survives, and how far the surface moved to reach it.</p>
+against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
+count that survives, and how far the surface moved to reach it. The distances are to the
+uncollapsed grid and not to an analytic surface, so this is a self-consistency measure of what the
+collapse discards rather than a surface-error measure against ground truth; the identity row
+reproduces the uncollapsed mesh, which is what makes it the reference. All distances are in units
+of \(h\).</p>
 
 <div class="tw"><table>
 <thead><tr><th>\(\tau\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
@@ -927,9 +938,12 @@ refined.</p>
 
 <div class="eq"><div class="body">
 $$ \operatorname{occ}_P(\mathbf{x}) \;=\;
-   \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr] \;\wedge\;
-   \bigl[\, q_P \left(\mathbf{n}\cdot\mathbf{x} + d\right) > 0 \,\bigr] $$
+   \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr] \;\wedge\;   \bigl[\, q_P \left(\mathbf{n}\cdot\mathbf{x} + d\right) > 0 \,\bigr] $$
 </div><div class="num">(13)</div></div>
+
+<p>\(q_P \in \{+1, -1\}\) is the side of the plane piece \(P\) lies on, taken as the sign
+that the majority of its leaves carry under equation&nbsp;(8); \(\operatorname{leaf}(\mathbf{x})\)
+is the leaf containing \(\mathbf{x}\), found by the floor division of equation&nbsp;(4).</p>
 
 <p>Near the cut the voxel test claims material up to half a leaf past where the cut is, because a
 leaf the plane passes through is occupied as a whole. One comparison fixes it: the point must be on
@@ -943,12 +957,14 @@ the ordering rather than the absolute value is the claim,</p>
 
 <div class="eq"><div class="body">
 $$ u_j = 0.65\,\beta_j + 0.35\,\mathcal{R}(L)_j,
-   \qquad
-   E_j = E_{\min} + \mathcal{R}(u)_j \,\bigl( E_{\max} - E_{\min} \bigr) $$
+   \qquad   E_j = E_{\min} + \mathcal{R}(u)_j \,\bigl( E_{\max} - E_{\min} \bigr) $$
 </div><div class="num">(14)</div></div>
 
 <p>where \(\beta_j\) is the fraction of class \(j\)'s cells in the skin band, \(L_j\) its
-mean luminance, and \(\mathcal{R}\) the rank normalised to \([0,1]\). Each piece then carries a
+mean luminance, \(\mathcal{R}\) the rank normalised to \([0,1]\), and
+\(E_{\min} = 10^5\), \(E_{\max} = 5\times10^6\) the ends of the range the ordering is mapped
+onto. The weights 0.65 and 0.35 are the previous project's and are fixed rather than fitted; what
+is claimed is the ordering they produce, not the values. Each piece then carries a
 per-particle stiffness field instead of one modulus, and the solver runs once per piece.</p>
 
 <p>Whether the solver can see any of that is a separate question, and it is decided before the
@@ -960,9 +976,10 @@ governs a hard shell is the shell's thickness in the solver's own units,</p>
 $$ \tau = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
    \Delta x = \frac{\text{grid\_lim}}{n_{\text{grid}}}, \qquad
    t_{\text{shell}} = P_{90}\Bigl( \min_{\mathbf{k}' \notin \mathcal{S}}
-       \lVert \mathbf{x}_{\mathbf{k}} - \mathbf{x}_{\mathbf{k}'} \rVert \Bigr)
-       + \tfrac{1}{2} h_f $$
+       \lVert \mathbf{x}_{\mathbf{k}} - \mathbf{x}_{\mathbf{k}'} \rVert \Bigr)       + \tfrac{1}{2} h_f $$
 </div><div class="num">(15)</div></div>
+
+<p>The percentile in (15) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
 
 <p>where \(L\) is the object's own extent, because the solver normalises the object into its
 grid box and a world length only reaches \(\Delta x\) through that scaling; \(\text{grid\_lim}\)
@@ -991,12 +1008,12 @@ reaches further without a length scale being chosen anywhere,</p>
 
 <div class="eq"><div class="body">
 $$ w_{vj} = \frac{\tilde{w}_{vj}}{\sum_{j'} \tilde{w}_{vj'}}, \qquad
-   \tilde{w}_{vj} = \Bigl( 1 - r_{vj}^2 \Bigr)_{\!+}^{3} + \varepsilon, \qquad
-   r_{vj} = \frac{\lVert \mathbf{x}_v(0) - \mathbf{x}_j(0) \rVert}
+   \tilde{w}_{vj} = \Bigl( 1 - r_{vj}^2 \Bigr)_{\!+}^{3} + \varepsilon, \qquad   r_{vj} = \frac{\lVert \mathbf{x}_v(0) - \mathbf{x}_j(0) \rVert}
                  {\max_{j' \in \mathcal{N}_k(v)} \lVert \mathbf{x}_v(0) - \mathbf{x}_{j'}(0) \rVert} $$
 </div><div class="num">(17)</div></div>
 
-<p>Because the weights sum to one and are fixed at bind time, any affine motion of the particles is
+<p>\(\varepsilon = 10^{-12}\), which only keeps the outermost weight from being exactly zero.
+Because the weights sum to one and are fixed at bind time, any affine motion of the particles is
 followed exactly: substituting \(\mathbf{x}_j(t) = \mathbf{A}\mathbf{x}_j(0) + \mathbf{b}\)
 into (16) gives \(\mathbf{x}_v(t) = \mathbf{A}\mathbf{x}_v(0) + \mathbf{b}\), which is why the
 residual below is a statement about bending and not about drift.</p>
@@ -1078,11 +1095,11 @@ object.</p>
 
 <p>Every downstream operation reads three things and nothing else: occupancy at two levels, face
 adjacency, and one feature per cell. Both routes emit exactly these, so cutting, the physics and
-the material field cannot tell which route produced a lattice. One stage can, and it is the surface
-conversion: it colours from skin cells when they are more than a fifth of the lattice, and a
-generated lattice is 44 to 53% skin where a quantised one is 13.5%, so the two fall on opposite
-sides of that test. That exception is stated here rather than at the end because it is the only
-one, and the rest of this section measures the operations for which the claim holds.</p>
+the material field cannot tell which route produced a lattice. One stage can distinguish two lattices, and it turns out
+not to distinguish the routes: the surface conversion colours from skin cells when they are more
+than a fifth of the lattice, and which side of that test a lattice falls on depends on the object.
+The note below gives the six measured skin fractions. The rest of this section measures the
+operations for which the route-independence claim holds.</p>
 
 <h4>4.1.1&ensp;Four properties of the cut</h4>
 
@@ -1197,18 +1214,19 @@ therefore be compared on the same object, from the same source file.</p>
 
 <p>Storage says what each costs, not what each produced. Every method has its own frame, scale and
 renderer, so a comparison of the interiors routes through none of them: for each model, the plane
-through its own centroid, the primitives within a slab 1% of its own extent, projected
-orthographically, normalised by its own projected radius, opaque and nearest-first, which all three
+through its own centroid, the primitives within a slab of half-width 1% of its own extent, so
+2% thick, projected orthographically, normalised by its own projected radius, opaque and nearest-first, which all three
 are, at median and tenth-percentile opacity 1.0000.</p>
 
 <figure>
   <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
-       representations: FruitNinja, GaussianFluent, and this work's two routes">
-  <figcaption>The same slab through the same fruit, four ways, with every primitive drawn at its
+       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption>The same slab through the same fruit, four ways, with every primitive drawn at its
   own footprint: \(\sigma\) for a Gaussian, \(h\) for a cell. GaussianFluent's sits smaller in
-  frame because its released model's bounding box carries more than the melon and the normalisation
-  is per model. Read this as what each primitive <em>covers</em>, and not as what each method draws:
-  the next paragraph is why.</figcaption>
+  frame because each model is normalised by its own projected radius and its released file carries
+  more than the melon. This figure used to have an unpainted percentage printed under each tile and
+  no longer does, because those numbers were reported as cut-face fidelity and are not: read it as
+  what each primitive <em>covers</em>, which is the question it does answer, and see the table
+  below for what each method draws.</figcaption>
 </figure>
 
 <div class="note"><strong>An earlier version of this page reported that figure's unpainted
@@ -1242,8 +1260,10 @@ Gaussian, and the sentence an earlier version of this page put here, that a cube
 without a parameter, was not supported by it.</p>
 
 <p>And a coverage number at one pixel count says nothing, which is the objection that retired the
-footprint figure and applies here too. Swept over resolution, on twelve cuts each, with the cube
-volume rendered by cube lookup rather than by splatting:</p>
+footprint figure and applies here too. Swept over resolution, on the watermelon, six transverse
+cuts per cell, with the cube volume rendered by cube lookup rather than by splatting. The row above
+is a hundred cuts at 512&nbsp;px and these are six at each of three sizes; they are separate
+experiments and the counts are given so they are not read as one:</p>
 
 <div class="tw"><table>
 <thead><tr><th>unpainted inside the section, watermelon</th><th>256&nbsp;px</th><th>1024&nbsp;px</th><th>2048&nbsp;px</th></tr></thead>
@@ -1256,13 +1276,15 @@ volume rendered by cube lookup rather than by splatting:</p>
 </tbody></table></div>
 
 <p>This is the claim, and it is not the one the withdrawn figure made. Coverage from a splatted
-representation is resolution-dependent for every model including ours: at 512&nbsp;px they are all
-under a percent and indistinguishable, and by 2048&nbsp;px GaussianFluent's section is 39%
-background, FruitNinja's 2.4% and our own splatted lattice's 3.3%. The cube volume does not move,
+representation is resolution-dependent for every model including ours: at 256&nbsp;px they are all
+under two tenths of a percent and indistinguishable, and by 2048&nbsp;px GaussianFluent's section
+is 39% background (32.9 to 49.5 across the six cuts), FruitNinja's 2.4% (1.5 to 3.4) and our own
+splatted lattice's 3.3% (2.5 to 3.8), against the cube volume's 0.06% (0.05 to 0.07). The cube volume does not move,
 0.02% to 0.06% over three octaves, because a cell's support is the cell and a pixel either falls
 inside an occupied one or does not. What a Gaussian buys with enough primitives at a chosen zoom, a
-cube has by construction at every zoom, and that is a property of the representation rather than a
-number that happens to come out well.</p>
+cube has by construction at every zoom, and that follows from what a cell is rather than from a
+number that happened to come out well. It is measured on one object at three image sizes, on six
+cuts each, and the other two objects and the intervening sizes are not run.</p>
 
 <div class="tw"><table>
 <thead><tr><th>watermelon</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work, route 1</th><th>route 2</th></tr></thead>
@@ -1295,7 +1317,10 @@ number that happens to come out well.</p>
 bigger. FruitNinja [3] asserts the trade in the form \(\rho \ll 1\) leaves holes in the volume and
 \(\rho \gtrsim 1\) blends across material boundaries, and asserting a trade is not the same as
 showing that no setting of its parameter escapes one. This measures both branches against a reference with no scale
-parameter at all: the cube lookup of equation (18), which reads the cell containing each pixel.
+parameter at all: a piecewise-constant cube lookup that gives each pixel the colour of the cell
+containing it, so every cell edge is a step and there is no support to tune. That is not equation
+(18), which reconstructs trilinearly over eight cell centres and therefore has a one-cell support
+of its own.
 Holes are pixels inside the true section the Gaussian render left as background. Blending is how
 much more the Gaussian render disagrees with that reference <em>at material boundaries</em> than it
 does away from them, since a large Gaussian disagrees with a piecewise-constant reference
@@ -1318,12 +1343,15 @@ everywhere simply by being smooth, and only the excess is blending.</p>
 <tr><td>3.00</td><td>0.0%</td><td>+0.197</td><td>0.0%</td><td>+0.105</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
 </tbody></table></div>
 
-<p>At 1024&nbsp;px, on this work's own primitive set so that only \(\sigma\) changes. Both branches
+<p>At 1024&nbsp;px, one plane through the middle of each object, the same plane for every
+\(\rho\), on this work's own primitive set so that only \(\sigma\) changes. The doughnut's
+missing cells are values not swept for it rather than failures. Both branches
 are there and neither is avoidable, but the curve is not the one that assertion implies. The hole
 branch does not bite gradually below one: it is flat and severe from \(10^{-4}\) to \(0.05\) and
 then collapses to nothing between 0.10 and 0.25. The blending branch rises through \(\rho = 2\) on all
-three objects, to a mean absolute colour disagreement of 0.23 at material boundaries beyond what
-the same render shows away from them; on the orange it then falls back to 0.197 at \(\rho = 3\),
+three objects, reaching a mean absolute colour disagreement at material boundaries, beyond what the
+same render shows away from them, of 0.226 on the orange, 0.097 on the watermelon and 0.074 on the
+doughnut; on the orange it then falls back to 0.197 at \(\rho = 3\),
 where the primitives are large enough to be disagreeing everywhere. Between them is a
 window, roughly \(0.25 \le \rho \le 0.5\), where a Gaussian set does pay very little for either,
 and the models this work trains sit inside it at a median \(\rho\) of 0.26.</p>
@@ -1331,7 +1359,7 @@ and the models this work trains sit inside it at a median \(\rho\) of 0.26.</p>
 <p>So the answer to "just make them bigger" is: on a fixed primitive set it works, within a window
 you have to find, and it is not what the published models do. FruitNinja sits at
 \(\rho = 3\times10^{-5}\) and GaussianFluent lower still, four and six orders of magnitude to the
-left of that window, where the table says 17 to 45% of a section is unpainted for a primitive set
+left of that window, where the table says 16 to 45% of a section is unpainted for a primitive set
 of this size. Their renders are not full of holes because they buy coverage the other way, with 7,959,789 and 1,381,100 primitives against this
 lattice's 1,741,169 quantised and 1,065,856 generated. The sweep above is on the orange's 877,494,
 which is a lattice of one particular size; whether an 8-million-primitive set at \(\rho = 0.25\)
@@ -1649,7 +1677,7 @@ says the doughnut needs about seven fine cells. Building it at four settings:</p
 <h4>4.3.4&ensp;Solver response across the threshold</h4>
 
 <p>The arithmetic says a shell under two grid cells cannot hold a stiffness contrast. Simulating
-both settings says whether that is what happens. The object falls under its own weight with the material field applied, skin at 8.0e6 and interior at 6.0e5 for a contrast of 13&times;, and the solver reports each body's extent along the gravity axis as a fraction of its rest extent,
+both settings says whether that is what happens. The object falls under its own weight with the material field applied, and the solver reports each body's extent along the gravity axis as a fraction of its rest extent,
 separately for the cells the field called skin and the ones it called interior. A hard shell keeps
 its own extent and lets the interior lose more, so the sign of the gap between them is the
 question, not its size.</p>
@@ -1662,6 +1690,16 @@ question, not its size.</p>
 <tr><td>\(\beta = 3\), falling and cut</td><td>1.17</td><td>0.9264</td><td>0.9333</td><td><strong>+0.0070</strong></td></tr>
 <tr><td>\(\beta = 7\), falling and cut</td><td>2.06</td><td>0.9280</td><td>0.9177</td><td><strong>&minus;0.0103</strong></td></tr>
 </tbody></table></div>
+
+<p>Three things about that field, none of them in an earlier version of this section. It is not
+equation&nbsp;(14): it is the weak two-rule field of <code>material_field.py</code>, level deciding
+skin from interior and lightness grading the interior, which is the version a learned decomposition
+has to beat rather than the clustered one equation&nbsp;(14) defines. Its numbers are the
+<code>orange</code> preset, 8.0e6 against 6.0e5, applied to the doughnut. And the interior is
+graded rather than constant, spanning 6.0e5 to 6.0e6, so the contrast between the shell and the
+stiffest interior is 1.33&times; and not the 13&times; a shell-against-softest reading gives. A
+1.33&times; contrast is a weak thing to look for a threshold with, and it is part of why the effect
+is small.</p>
 
 <p>The four gaps are 0.16%, 0.40%, 0.70% and 1.03% of the object's extent, so the effect is a
 fraction of a percent at three of the four settings and reaches 1% at one. Each cell is a single
@@ -1789,7 +1827,7 @@ from.</p>
 
 <div class="tw"><table>
 <thead><tr><th>transverse</th><th></th><th>route 1 (3DGS), the baseline</th><th>route 2 (3DGS)</th>
-<th>route 1 (O&#8209;Voxel)</th><th>route 2 (O&#8209;Voxel)</th></tr></thead>
+<th>route 1 (cube)</th><th>route 2 (cube)</th></tr></thead>
 <tbody>
 <tr><td rowspan="3">orange</td><td>FID</td><td>86.4</td><td><strong>66.5</strong></td><td>130.5</td><td>107.9</td></tr>
 <tr><td>KID</td><td>125.0e-3</td><td><strong>88.7e-3</strong></td><td>208.4e-3</td><td>158.8e-3</td></tr>
@@ -1812,7 +1850,7 @@ from.</p>
 
 <div class="tw"><table>
 <thead><tr><th>longitudinal</th><th></th><th>route 1 (3DGS), the baseline</th><th>route 2 (3DGS)</th>
-<th>route 1 (O&#8209;Voxel)</th><th>route 2 (O&#8209;Voxel)</th></tr></thead>
+<th>route 1 (cube)</th><th>route 2 (cube)</th></tr></thead>
 <tbody>
 <tr><td rowspan="3">orange</td><td>FID</td><td><strong>147.6</strong></td><td>247.3</td><td>292.6</td><td>370.2</td></tr>
 <tr><td>KID</td><td><strong>175.3e-3</strong></td><td>303.7e-3</td><td>437.3e-3</td><td>585.4e-3</td></tr>
@@ -1822,8 +1860,13 @@ from.</p>
 <tr><td>CLIP</td><td>33.4</td><td>33.7</td><td>33.6</td><td><strong>34.7</strong></td></tr>
 </tbody></table></div>
 
+<p>One statistic separates the two routes where FID does not, and it is given here for what it
+is rather than as a result: the mean blue channel over the pulp region of a section, on the orange,
+which is a proxy for how grey the flesh reads. Closer to the photographs is better, and route 2
+matches them transversally and overshoots longitudinally.</p>
+
 <div class="tw"><table>
-<thead><tr><th>pulp, blue channel</th><th>photographs</th><th>baseline</th><th>route 2</th></tr></thead>
+<thead><tr><th>orange, pulp, mean blue channel</th><th>photographs</th><th>route 1</th><th>route 2</th></tr></thead>
 <tbody>
 <tr><td>transverse</td><td>0.149</td><td>0.168</td><td><strong>0.148</strong></td></tr>
 <tr><td>longitudinal</td><td>0.179</td><td>0.221</td><td>0.234</td></tr>
@@ -2089,13 +2132,17 @@ lattice's own advantages survive intact: connectivity, piece identity and collis
 costs, and it is smaller than an earlier version of this work claimed. On the same watermelon the
 interior here is 1,065,856 cells generated or 1,741,169 quantised, against 7,959,789 and 1,381,100
 primitives, and counting the sparse index and the exterior surface the method actually needs,
-62.6 or 163.5&nbsp;MiB against 425.1 and 310.8. Coverage is not the differentiator: through each
-method's own rasteriser every column leaves under a percent of a cut face unpainted, and the 20.5%
-and 46.7% this page previously reported came from drawing each primitive at its own footprint,
+62.6 or 163.5&nbsp;MiB against 425.1 and 310.8. Swept over four decades of \(\rho\) the trade is
+real in both directions, holes below 0.1 and blending above 0.25, and both published models sit far
+to the left of that window and buy their coverage with count instead.</p>
+
+<p>Coverage is where the revision changed the answer. At 512&nbsp;px nothing separates the four
+representations, and by 2048&nbsp;px GaussianFluent's section is 38.7% background, FruitNinja's
+2.4% and this work's own splatted lattice's 3.3%, while the same lattice drawn as a cube volume
+holds 0.06%. That is one object at three image sizes and it is the claim we would defend; the
+20.5% and 46.7% this page once reported came from drawing each primitive at radius \(\sigma/2\),
 which is a fair question about what a primitive covers and the wrong instrument for what a
-renderer draws. Swept over four decades of \(\rho\) the trade is real in both directions, holes
-below 0.1 and blending above 0.25, and both published models sit far to the left of that window and
-buy their coverage with count.</p>
+renderer draws.</p>
 
 <p>Appearance does not pay for that, and the appearance numbers do not all go one way. On the
 orange, every arm here beats FruitNinja's released model, and the arm that beats it by the most
