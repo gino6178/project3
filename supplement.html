@@ -140,6 +140,15 @@ first thing below.</p>
       preserves genus only for through-holes above the closing radius. For objects whose interior
       is a solid graded material, which is what is demonstrated here, that is the right trade; for
       objects whose interior is mostly structured air it is the wrong representation.</li>
+  <li><strong>No instrument here settles cut-face realism.</strong> FID and KID are computed
+      against six photographs, where the Inception covariance has rank at most five and the metric
+      is dominated by its own bias. CLIP image similarity is robust at that sample size but
+      compresses every candidate and the references themselves into the top two percent of its
+      range, and CLIP against a text prompt is at its ceiling and ranks the visibly broken arm
+      highest. The three do not agree: two put this work ahead of a fine-tuned pipeline and one
+      puts it behind by 0.72 of a point. A two-alternative forced choice against the photographs
+      would settle in an afternoon what none of these can, and it is the single most valuable
+      experiment this paper still owes.</li>
   <li><strong>Coverage is a property of a renderer as much as of a representation.</strong>
       Drawing each primitive at its own footprint and drawing it through its own rasteriser give
       different answers, and only the second is what a viewer sees. Our coverage claim is made at
