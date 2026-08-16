@@ -1963,7 +1963,36 @@ the same way. The lattice figure is also an upper bound, because the per-cell fe
 substituted here by white noise of the same shape, which is the least compressible object of that
 size; a learned feature can only do better.</p>
 
-<h4>4.1.3&ensp;Both methods through the same evaluator</h4>
+<h4>4.1.3&ensp;How much misalignment the references may carry</h4>
+
+<p>The claim that references need not be registered invites the obvious question of how far that
+goes. Each reference is rotated by an angle drawn uniformly from \(\pm\sigma\), independently
+per plane and fixed across the run, and everything else is held. A rotation is the failure that
+matters here rather than a translation: the fit already places a reference inside the silhouette its
+plane renders, so a displaced photograph is put back, while a rotated one puts radial structure at
+an angle the rest of the family does not share.</p>
+
+<div class="tw"><table>
+<thead><tr><th>rotation injected into every reference</th><th>DreamSim &darr;</th><th>against control</th></tr></thead>
+<tbody>
+<tr><td>none (control)</td><td>0.0738</td><td>&mdash;</td></tr>
+<tr><td>&plusmn;5&deg;</td><td>0.0798</td><td>+8%</td></tr>
+<tr><td>&plusmn;15&deg;</td><td>0.0803</td><td>+9%</td></tr>
+<tr><td>&plusmn;30&deg;</td><td>0.0850</td><td>+15%</td></tr>
+<tr><td class="mut">FruitNinja, released, no injected noise</td><td class="mut">0.1326</td><td class="mut">+80%</td></tr>
+</tbody></table></div>
+
+<p>The curve is nearly flat to fifteen degrees and costs fifteen per cent at thirty, which is a
+third of a right angle; at every setting the result stays well ahead of a fine-tuned baseline that
+had no noise injected at all. Two mechanisms produce that and they should not be conflated. The
+first is the transverse family's phase alignment, which rotates each reference to the family's
+common angular phase and therefore undoes part of an injected rotation before the loss sees it &mdash;
+this is why five and fifteen degrees are indistinguishable. The second is the lattice, which resolves
+what alignment leaves. What the table measures is the system's tolerance, not the lattice's alone,
+and an object whose sections have no shared angular phase to align to would not get the first
+mechanism.</p>
+
+<h4>4.1.4&ensp;Both methods through the same evaluator</h4>
 
 
 
@@ -2060,7 +2089,7 @@ hundred; the two tables are internally consistent and should not be read across.
   statistics of a slice, not whether the slice is a plane.</figcaption>
 </figure>
 
-<h4>4.1.4&ensp;The comparison in one table</h4>
+<h4>4.1.5&ensp;The comparison in one table</h4>
 
 <p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
 or marked where the quantity does not exist for that representation. A cut-face residual and a cut-area error need a cut-face
