@@ -868,6 +868,50 @@ The orange has six transverse references and the watermelon twenty.</p>
 <p class="mut">This is a negative result on a design that was not adopted, kept here because the
 reasoning that motivated it is the reasoning a reader is likely to repeat.</p>
 
+<h4>S2.13&ensp;Where the interior changes along depth, and why</h4>
+
+<p>The assignment \(k(j) = \lfloor j\,M_f/N_f \rfloor\) gives a plane one photograph for the whole
+run and gives two or three adjacent planes the same one, so the reference changes hands at
+\(M_f - 1\) depths that can be written down before anything is rendered. With six photographs over
+sixteen planes spanning \(f \in [0.174, 0.826]\) they fall at \(f =\) 0.290, 0.406, 0.522, 0.638
+and 0.754. A real interior has no reason to change at those depths rather than any other: a seed
+spans several sections, and nothing in the fruit knows where the photographs were dealt.</p>
+
+<p>Twenty-one sections of the watermelon were rendered from \(f = 0.30\) to \(0.70\) in steps of
+0.02, and each statistic below is reduced the same way &mdash; the mean step between consecutive
+depths that straddle one of those five places, against the mean step everywhere else. A ratio near
+one means the boundaries are not special.</p>
+
+<div class="tw"><table>
+<thead><tr><th>statistic</th><th>fixed assignment</th><th>continuous blend</th><th class="mut">threshold</th></tr></thead>
+<tbody>
+<tr><td>coherence of the change, \(|\overline{\Delta L}| / \overline{|\Delta L|}\)</td><td><strong>2.59&times;</strong></td><td><strong>1.16&times;</strong></td><td class="mut">none</td></tr>
+<tr><td>edge density</td><td>3.47&times;</td><td>2.76&times;</td><td class="mut">none</td></tr>
+<tr><td>mean saturation</td><td>2.54&times;</td><td>0.66&times;</td><td class="mut">none</td></tr>
+<tr><td>spread of saturation</td><td>3.15&times;</td><td>0.89&times;</td><td class="mut">none</td></tr>
+<tr><td>fraction of the section that is dark</td><td>3.18&times;</td><td>0.68&times;</td><td class="mut">0.45</td></tr>
+<tr><td class="mut">mean absolute pixel change</td><td class="mut">1.15&times;</td><td class="mut">0.99&times;</td><td class="mut">none</td></tr>
+</tbody></table></div>
+
+<p>The first row is the one to read. It asks what fraction of the change between two depths is
+common to the whole section rather than local and self-cancelling: one when every pixel moves the
+same way, zero when the movement averages out. Under the fixed assignment the three boundaries in
+range score 0.32, 0.29 and 0.30 and are three of the four highest steps of the twenty; the mean
+elsewhere is 0.117. The section is being pulled towards a different photograph all at once, which
+is what a coordinated change means and what an interior has no reason to do.</p>
+
+<p>The last row is reported because it does not agree. The total amount of change at a boundary is
+barely above the rest, 1.15&times;. The two are consistent &mdash; the same quantity of change,
+differently organised &mdash; but any claim that a boundary is where <em>more</em> happens would be
+wrong. What is different there is that the change is in one direction. The edge-density row does
+not fall under blending either, and this work does not have an explanation for that.</p>
+
+<p class="mut">Measured on one object. The renderer had to be corrected first: the slab a cut keeps
+was tied to the depth resolution through <code>surf_dis = avg/2</code>, so asking for depths a
+hundredth apart thinned every section to 5.8% of the frame and turned it pale. The two are now
+separate parameters. Whether the same boundaries show on other objects is the next thing to
+settle.</p>
+
 <h3>A.1&ensp;Reproduction without a fine-tuned diffusion model &mdash; withdrawn</h3>
 
 <p>FruitNinja supervises the interior with depth-conditioned diffusion on cross-sections, and its
