@@ -518,7 +518,8 @@ appearance result depends on the difference.</p>
 watermelon, 0.01230 apple, 0.02070 pomegranate, 0.01310 bread, 0.01616 cake, 0.00832 doughnut.
 Feature
 dimension \(F = 8\), one Gaussian decoded per cell. Two hundred outer iterations, feature learning
-rate \(10^{-3}\). Twenty-four transverse and \(N_v = 10\) longitudinal planes per iteration,
+rate \(10^{-3}\). Sixteen transverse and \(N_v = 10\) longitudinal planes per iteration &mdash; the depth walk
+takes twenty-four steps and the trainer supervises centres 4 through 19 &mdash;
 drawn with \(J = 0.5\); six 128-pixel crops per plane and a band weight of 0.3; the skin held
 fixed and the outer 10% by radius left to the exterior views. Peak device memory 5.2 to
 5.9&nbsp;GB on one card. Values for the orange, the watermelon and the doughnut are read from the object configurations in the repository; every object's configuration file is published under <code>configs/</code>, including the ten fold and ablation variants of the orange.</p>
@@ -882,7 +883,7 @@ without changing the volume.</p>
 \(M_f\) photographs and \(N_f\) planes in the plane
 family \(f\), not the \(M = 12\) and \(N\) of the notation table. It does not depend on the iteration. Plane
 \(j\) therefore sees the same photograph on every pass of the run &mdash; six transverse images
-divided among twenty-four planes, so each image serves about four adjacent depths, and six
+divided among sixteen planes, so each image serves two or three adjacent depths, and six
 longitudinal among ten. Two consequences follow that a reader cannot otherwise infer. The conflict
 on a shared cell is not an occasional collision between whichever images happened to be drawn; it
 is the same two images pulling the same cells in the same directions on every iteration, which is
@@ -2907,6 +2908,42 @@ was quantised from scored beside it in the same batch.</p>
 <tr><td>cake</td><td>0.2816</td><td><strong>0.2669</strong></td><td class="mut">0.2677</td>
     <td class="mut">3 longitudinal only</td></tr>
 </tbody></table></div>
+
+<p><strong>Three checks that were run to break this table, and what they returned.</strong></p>
+
+<p><strong>Framing.</strong> DreamSim compares whole images, so a systematic difference in how
+much of the frame each arm fills would enter the distance. The arms do differ: this work's
+sections are larger than the released model's in every object, by 2.2% on the watermelon to 18.1%
+on the cake. That does not explain the result, because it does not predict it. If nearness to the
+references' own framing were doing the work, the pomegranate would lose &mdash; its sections are
+24.4 points of frame coverage from the references against the baseline's 19.1 &mdash; and it
+wins; and the cake would win &mdash; 10.7 against 15.8 &mdash; and it loses. The two objects where
+the framing argument is strongest both go the other way.</p>
+
+<p><strong>The instrument.</strong> Each object's renders were scored against every object's
+reference set, not only its own. If the distance were reading colour and framing rather than the
+interior, the six sets would be interchangeable.</p>
+
+<div class="tw"><table>
+<thead><tr><th>renders \ references</th><th>orange</th><th>watermelon</th><th>apple</th><th>pomegranate</th><th>bread</th><th>cake</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td><strong>0.0724</strong></td><td class="mut">0.3984</td><td class="mut">0.4909</td><td class="mut">0.6411</td><td class="mut">0.6393</td><td class="mut">0.6300</td></tr>
+<tr><td>watermelon</td><td class="mut">0.4626</td><td><strong>0.1777</strong></td><td class="mut">0.4708</td><td class="mut">0.5649</td><td class="mut">0.6642</td><td class="mut">0.6372</td></tr>
+<tr><td>apple</td><td class="mut">0.5754</td><td class="mut">0.5540</td><td><strong>0.3030</strong></td><td class="mut">0.6237</td><td class="mut">0.4635</td><td class="mut">0.6636</td></tr>
+<tr><td>pomegranate</td><td class="mut">0.5525</td><td class="mut">0.4592</td><td class="mut">0.5955</td><td><strong>0.2565</strong></td><td class="mut">0.5597</td><td class="mut">0.5552</td></tr>
+<tr><td>bread</td><td class="mut">0.7309</td><td class="mut">0.7214</td><td class="mut">0.6281</td><td class="mut">0.7120</td><td><strong>0.3656</strong></td><td class="mut">0.5939</td></tr>
+<tr><td>cake</td><td class="mut">0.6840</td><td class="mut">0.6264</td><td class="mut">0.7044</td><td class="mut">0.5529</td><td class="mut">0.6311</td><td><strong>0.2899</strong></td></tr>
+</tbody></table></div>
+
+<p>The object's own references are the nearest of the six in every row. The diagonal averages
+0.2442 and the off-diagonal 0.5929, a separation of <strong>0.3487</strong> &mdash; 2.8 times the
+largest margin this work holds over the released model anywhere in the table above. The distance
+is reading the interior. These values are computed over twelve renders per object rather than the
+full forty and sit within 0.008 of the corresponding entries above.</p>
+
+<p><strong>The band.</strong> The third check is the one that failed, and it is stated next.</p>
+
+<p class="mut"><strong>What "held out" means here, and what it does not.</strong> The cuts are drawn uniformly from the middle of the object, at depths \(f \in [0.30, 0.70]\) of its extent. This is not a region the trainer never reaches. The depth walk takes twenty-four steps and the trainer supervises centres 4 through 19, and at \(J = 0.5\) each slot's jitter window is exactly one step wide, so the windows tile: training covers \([0.146, 0.813]\) continuously and every depth scored here falls inside it. What is held out is the particular plane, not the depth &mdash; no evaluation plane coincides with a training sample, but the model has seen planes arbitrarily near it. The study in which something is genuinely unseen is the leave-one-out of section 4.1.2, which holds out a <em>photograph</em>.</p>
 
 <p class="mut">Rendered as one batch: 40 cuts per object, every arm and its baseline together at the same depths, and every arm re-rendered for this table so no value in it comes from an earlier batch. Three of these objects had references on a dark backdrop; the whole set was measured again after they were put on white, because the released model renders on white and was being scored against a black frame. Values elsewhere in this paper come from other batches and differ by up to 0.006 from the same arm here.</p>
 
