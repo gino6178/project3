@@ -265,8 +265,9 @@ scope leaves out.</p>
       volume on the other, and clipping a cube by a half-space has a closed form &mdash; an
       inclusion&ndash;exclusion over corners, agreeing with a convex hull to
       \(2.4\times10^{-12}\) of a cell &mdash; that evaluates it for a whole band at once.
-      Refining on that instead of to a fixed depth is <strong>15 to 36% fewer leaves</strong> at
-      identical misclassification and identical piece counts. A splatted interior defines none of
+      Refining on that instead of to a fixed depth is <strong>15.5% fewer leaves</strong> at identical
+      misclassification on the orange, rising to 32% if a doubling of the error is accepted, with
+      piece counts unchanged throughout. A splatted interior defines none of
       these quantities, so none can be reported for it.</li>
   <li><strong>A partition a solver can be handed.</strong> Occupancy, adjacency and piece identity are
       integer operations, so fragments are labelled by connected components on adjacency the addresses already give and contact resolves to the same integers &mdash; closing 2,698 of 610,723
@@ -514,8 +515,7 @@ dimension \(F = 8\), one Gaussian decoded per cell. Two hundred outer iterations
 rate \(10^{-3}\). Twenty-four transverse and \(N_v = 10\) longitudinal planes per iteration,
 drawn with \(J = 0.5\); six 128-pixel crops per plane and a band weight of 0.3; the skin held
 fixed and the outer 10% by radius left to the exterior views. Peak device memory 5.2 to
-5.9&nbsp;GB on one card. Every value here is read from the configuration the reported runs used,
-not from a default.</p>
+5.9&nbsp;GB on one card. The doughnut is 0.00832. Values for the orange, the watermelon and the doughnut are read from the object configurations in the repository; the four objects added later were configured on the training machine and their files are not in the published repository yet.</p>
 
 <p><strong>Explicit where a query needs an answer, implicit where appearance needs one.</strong>
 The representation is not a voxel grid of colours and the distinction matters for what it can do.
@@ -863,6 +863,18 @@ estimate. The registration is re-derived from the object's own silhouette every 
 a resize and a paste, and because the warp has two degrees of freedom fixed by moments rather than
 by fitting, there is no configuration of it that the optimiser could exploit to lower the loss
 without changing the volume.</p>
+
+<p><strong>Which photograph a plane gets, and for how long.</strong> The assignment
+\(k(j)\) is a function of the plane's index alone: \(k = \lfloor j\,M/N \rfloor \bmod M\) for
+\(M\) photographs and \(N\) planes in that family. It does not depend on the iteration. Plane
+\(j\) therefore sees the same photograph on every pass of the run &mdash; six transverse images
+divided among twenty-four planes, so each image serves about four adjacent depths, and six
+longitudinal among ten. Two consequences follow that a reader cannot otherwise infer. The conflict
+on a shared cell is not an occasional collision between whichever images happened to be drawn; it
+is the same two images pulling the same cells in the same directions on every iteration, which is
+why an assignment is a variable worth optimising at all (section 4.1.6). And the jitter moves the
+plane without changing what supervises it: a cell's target comes from the same photograph wherever
+the plane lands inside its slot, so the sweep varies geometry and not content.</p>
 
 <p><strong>The planes are drawn, not fixed.</strong> \(\Pi_j\) is sampled afresh each
 iteration from a distribution centred on a fixed schedule. The transverse family takes a depth
@@ -2003,12 +2015,13 @@ boundary, so it is a convex polygon and it is the convex hull of the plane's cro
 cell's twelve edges,</p>
 
 <div class="eq"><div class="body">
-$$ \Pi_c \;=\; \bigl\{\, \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e) \;:\; e \in E_c,\;
-   t_e \in [0,1] \,\bigr\}, \qquad
-   t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)} $$
+$$ \Pi_c \;=\; \operatorname{conv}\bigl\{\, \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e)
+   \;:\; e \in E_c^{\pm} \,\bigr\}, \qquad
+   t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)}
+   \in [0,1] $$
 </div><div class="num">(10)</div></div>
 
-<p>and the cut surface of the whole object is their union,
+<p>with \(E_c^{\pm} \subseteq E_c\) the edges whose endpoints carry opposite signs, three to six of the twelve for a cube. The hull is the polygon; without it the set is the crossed edges' points and not a face. The cut surface of the whole object is the union,
 \(\mathcal{P} = \bigcup_{c \in \mathcal{B}} \Pi_c\). Every vertex of \(\Pi_c\) satisfies
 \(\mathbf{n}\cdot\mathbf{x} + d = 0\) by construction rather than by fitting, so \(\mathcal{P}\)
 is planar to whatever the arithmetic leaves and carries no approximation term. Ordering the
@@ -2885,9 +2898,7 @@ nothing at a distance.</p>
 spread between two runs of one configuration. The jitter does not. Every setting including
 \(J = 0\) lands within 0.005 on held-out cuts of the supervised families, and on the 45&deg; cuts
 neither family supervised &mdash; where a sweeping plane family is the mechanism that would matter
-&mdash; the arm with no jitter has the smallest cross-family gap, and the most detail is at \(J = 1\). The ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather than an effect. The measurements here are whole-section: a spatially resolved test, binning coherence by distance to the nearest training plane, would separate a local effect from a global one and was not run. Blind cells sit a mean of 1.35 cells from a supervised one and change as much
-during training as supervised cells do; the supervision reaches them through the shared decoder,
-and the jitter is not what carries it.</p>
+&mdash; the arm with no jitter has the smallest cross-family gap, and the most detail is at \(J = 1\). The ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather than an effect. The measurements here are whole-section: a spatially resolved test, binning coherence by distance to the nearest training plane, would separate a local effect from a global one and was not run. Blind cells sit a mean of 1.35 cells from a supervised one and change as much during training as supervised cells do; the supervision reaches them through the shared decoder, and the jitter is not what carries it. The assignment of section 3.2.4 says why: a plane keeps its photograph wherever it lands inside its slot, so jitter varies which cells are read and not what they are asked for.</p>
 
 <h4>4.1.5&ensp;How many references, and which</h4>
 
@@ -2909,9 +2920,8 @@ all six of each, all scored against three photographs none of them saw:</p>
 </tbody></table></div>
 
 <p>All three two-image pairs beat all twelve, and the six-image arm is the worst of the five. The
-count is not what determines the result. The spread <em>between</em> pairs is 0.024, eighty times
-what two runs of one configuration produce and three times the gap between the best pair and the
-twelve-image arm, so which two photographs are used matters more than how many. This is the
+count is not what determines the result. The spread <em>between</em> pairs is 0.024, eighty times what two runs of one configuration produce and about the same size as the gap
+between the best pair and the twelve-image arm, so which two photographs are used matters more than how many. This is the
 supervision's own inconsistency arriving as a cost: twelve images of twelve fruits ask the shared
 cells for twelve answers, and the lattice returns one. Two images that agree with each other ask
 for one answer to begin with.</p>
@@ -3102,26 +3112,26 @@ behalf.</p>
 <div class="tw"><table>
 <thead><tr><th>dimension</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work</th><th>&sect;</th></tr></thead>
 <tbody>
-<tr><td>primitives or cells</td><td>7,959,789</td><td>1,381,100</td><td><strong>1,065,856</strong></td><td>4.2.1</td></tr>
-<tr><td>stored, all a method needs</td><td>425.1 MiB</td><td>310.8 MiB</td><td><strong>62.6 MiB</strong></td><td>4.2.1</td></tr>
-<tr><td><strong>stored, same codec</strong></td><td>58.3 MiB</td><td>26.5 MiB</td><td><strong>7.0 MiB</strong></td><td>4.2.2.2</td></tr>
-<tr><td>unpainted at 512&nbsp;px, own renderer</td><td>0.21%</td><td>0.10%</td><td><strong>0.00%</strong></td><td>4.2.2</td></tr>
-<tr><td><strong>unpainted at 2048&nbsp;px</strong></td><td>2.37%</td><td>38.73%</td><td><strong>0.07%</strong> <span class="mut">as a volume</span></td><td>4.2.2</td></tr>
+<tr><td>primitives or cells</td><td>7,959,789</td><td>1,381,100</td><td><strong>1,065,856</strong></td><td>4.1.1</td></tr>
+<tr><td>stored, all a method needs</td><td>425.1 MiB</td><td>310.8 MiB</td><td><strong>62.6 MiB</strong></td><td>4.1.1</td></tr>
+<tr><td><strong>stored, same codec</strong></td><td>58.3 MiB</td><td>26.5 MiB</td><td><strong>7.0 MiB</strong></td><td>4.1.2.2</td></tr>
+<tr><td>unpainted at 512&nbsp;px, own renderer</td><td>0.21%</td><td>0.10%</td><td><strong>0.00%</strong></td><td>4.1.2</td></tr>
+<tr><td><strong>unpainted at 2048&nbsp;px</strong></td><td>2.37%</td><td>38.73%</td><td><strong>0.07%</strong> <span class="mut">as a volume</span></td><td>4.1.2</td></tr>
 <tr><td>cut-face plane residual</td><td class="mut">no cut-face construction</td>
-    <td class="mut">no cut-face construction</td><td><strong>machine &epsilon;</strong></td><td>4.5.2</td></tr>
+    <td class="mut">no cut-face construction</td><td><strong>machine &epsilon;</strong></td><td>4.3.1</td></tr>
 <tr><td>cut-area error against a closed form</td><td class="mut">not measurable without one</td>
-    <td class="mut">not measurable without one</td><td>0.97% &rarr; <strong>0.09%</strong>, first order in \(h\)</td><td>4.5.2</td></tr>
+    <td class="mut">not measurable without one</td><td>0.97% &rarr; <strong>0.09%</strong>, first order in \(h\)</td><td>4.3.1</td></tr>
 <tr><td><strong>DreamSim to the photographs, watermelon</strong>
     <span class="mut">(0.067 between photographs)</span></td>
-    <td>0.221</td><td>0.328</td><td><strong>0.167</strong></td><td>4.2.2</td></tr>
+    <td>0.221</td><td>0.328</td><td><strong>0.167</strong></td><td>4.1.2</td></tr>
 <tr><td><strong>DreamSim to the photographs, orange</strong>
     <span class="mut">(0.042 between photographs)</span></td>
-    <td>0.133</td><td class="mut">no orange released</td><td><strong>0.076</strong></td><td>4.2.2</td></tr>
+    <td>0.133</td><td class="mut">no orange released</td><td><strong>0.076</strong></td><td>4.1.2</td></tr>
 <tr><td>transverse FID, 100 held-out cuts, watermelon</td><td>182.0</td><td><strong>170.2</strong></td>
-    <td>180.9</td><td>4.2.4</td></tr>
-<tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.2.1</td></tr>
+    <td>180.9</td><td>4.1.8</td></tr>
+<tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.1.1</td></tr>
 <tr><td>slicing and piece labelling</td><td class="mut">not addressed</td><td class="mut">damage field</td>
-    <td>face \(O(K)\); labelling \(\Theta(N)\), 2.9&nbsp;s</td><td>4.5.1</td></tr>
+    <td>face \(O(K)\); labelling \(\Theta(N)\), 2.9&nbsp;s</td><td>4.3.3</td></tr>
 </tbody></table></div>
 
 <p>The view-dependence row is a bound rather than a measurement, and it is the one honest way to
@@ -3201,7 +3211,7 @@ question, not its size.</p>
 interior, 750 against 950 in density, so an extent measured under gravity is being pushed by a
 density contrast in the opposite direction to the stiffness one and the paper cannot separate them.
 And the \(\beta = 7\) build is not the \(\beta = 3\) build with a thicker skin: it has 62% more
-cells and a much larger skin fraction, so at 8.0e6 in the shell the whole body is stiffer, and both
+cells and a much larger skin fraction, so at \(8.0\times10^6\ \mathrm{Pa}\) in the shell the whole body is stiffer, and both
 extents rise between the two settings, which is the signature of a stiffer object rather than of a
 resolved shell. The control that separates these is the uniform preset at both \(\beta\), which the material
 code ships for exactly this purpose. It has now been run, with the level labels present so that the
