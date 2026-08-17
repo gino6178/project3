@@ -2060,8 +2060,11 @@ crossings occur for a cube, and the two degenerate cases are handled as describe
 <p><strong>Proposition 1 (no T-junctions).</strong> Let every cell the plane crosses be refined to
 the same level \(\ell_b\), and let \(\mathcal{P} = \bigcup_c \mathcal{P}_c\) over those cells.
 Then every edge of every \(\mathcal{P}_c\) that does not lie on the boundary of the occupied
-region is shared, in full, by exactly one other polygon; \(\mathcal{P}\) has no T-junction and is
-a 2-manifold with boundary.</p>
+region is shared, in full, by exactly one other polygon: \(\mathcal{P}\) has no T-junction and is
+manifold in its edges. That alone is not a 2-manifold. Two crossed cells meeting only along a
+grid edge, with the face neighbours between them unoccupied, contribute polygons sharing a single
+vertex, and the hypothesis does not exclude such an occupancy; the edge count of section 4.3.2
+would not detect it.</p>
 
 <p class="mut"><em>Proof.</em> An edge of \(\mathcal{P}_c\) joins two crossings on the boundary of
 cell \(c\), and by construction both lie on one face \(f\) of \(c\): the plane meets the face in a
@@ -2073,7 +2076,7 @@ either side, since the segment is a property of \(f\) and the plane alone, so th
 edge of \(\mathcal{P}_{c'}\) as well and the two polygons share it entirely. Each interior edge
 therefore lies in exactly two polygons and each boundary edge in one, which is the definition. The
 hypothesis is what fails under the adaptive criterion of section 3.3.2, where the band carries two
-levels and a coarse face meets four fine ones; section 4.3.2 measures the consequence.
+levels and a coarse face meets four fine ones; that case has not been measured.
 &#9633;</p>
 
 <p>
@@ -2137,7 +2140,7 @@ about before it is trusted.</p>
 <figure id="cutstages">
   <img src="assets/cutstages.png" alt="The four states of one cut on the orange's lattice">
   <figcaption><strong>One cut on the orange, in the four states the operator passes through.</strong>
-  <strong>(a)</strong> the 758,721 coarse cells of a slab one cell thick, and the line in which the
+  <strong>(a)</strong> one slab of the orange's 758,721 coarse cells, one cell thick in \(z\), and the line in which the
   plane \(\Pi\) meets that slab. <strong>(b)</strong> one crossed cell: a filled corner is
   \(\mathbf{n}\cdot\mathbf{x} + d &gt; 0\), the six thick edges are those whose endpoints disagree,
   and \(\mathcal{P}_c\) is the hexagon on them with vertices \(\mathbf{v}_1 \ldots \mathbf{v}_6\)
@@ -2278,7 +2281,7 @@ $$ \tau_s = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
        \lVert \mathbf{x}_{\mathbf{k}} - \mathbf{x}_{\mathbf{k}'} \rVert \Bigr)       + \tfrac{1}{2} h_f $$
 </div><div class="num">(23)</div></div>
 
-<p>The percentile in (18) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
+<p>The percentile in (23) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
 
 <p>where \(L\) is the object's own extent, because the solver normalises the object into its grid
 box and a world length only reaches \(\Delta x\) through that scaling.</p>
@@ -2295,7 +2298,7 @@ h_f\). Section 4.2 measures
 what the solver does on either side of the threshold.</p>
 
 <p>A cut face and the exterior surface meet at a seam, and the two are produced by different
-constructions: the face is the planar polygon of equation&nbsp;(10) and the exterior is the dual grid of equation&nbsp;(19). They are joined rather than blended. Both are indexed by the same
+constructions: the face is the planar polygon of equation&nbsp;(19) and the exterior is the dual grid of section&nbsp;3.1.3. They are joined rather than blended. Both are indexed by the same
 cells, so the seam is exactly the set of boundary cells the plane crosses, and each contributes one
 polygon and one dual vertex whose positions already agree to within the cell. The normal is
 deliberately discontinuous across it: a cut is a crease in the object, and smoothing the normal
@@ -2325,7 +2328,7 @@ $$ w_{vj} = \frac{\tilde{w}_{vj}}{\sum_{j'} \tilde{w}_{vj'}}, \qquad
 
 <p>\(\varepsilon = 10^{-12}\), which only keeps the outermost weight from being exactly zero.
 Because the weights sum to one and are fixed at bind time, any affine motion of the particles is
-followed exactly: substituting \(\mathbf{x}_j(t) = \mathbf{A}\mathbf{x}_j(0) + \mathbf{b}\)
+followed exactly: substituting \(\mathbf{x}_j(t) = \mathbf{A}\mathbf{x}_j(0) + \mathbf{b}\) into&nbsp;(24)
 into (18) gives \(\mathbf{x}_v(t) = \mathbf{A}\mathbf{x}_v(0) + \mathbf{b}\), which is why the
 residual below is a statement about bending and not about drift.</p>
 
@@ -2335,7 +2338,7 @@ residual below is a statement about bending and not about drift.</p>
 <p>The validation is organised along four axes, and which of them this paper fills and which it does not. <strong>Perceptual fidelity</strong> under loose,
 unaligned references is section 4.1, and it is the axis the paper's main claim rests on.
 <strong>Geometric precision of the cut face</strong> &mdash; planarity, area error, unpainted
-fraction, absence of gaps &mdash; is sections 4.1.2 and 4.3.1. <strong>Storage and runtime</strong>
+fraction, absence of gaps &mdash; is sections 4.1.2 and 4.3.2. <strong>Storage and runtime</strong>
 is section 4.3, and it contains a result in each direction: contact queries run at 4.9 million per
 second, and a cut takes seconds rather than milliseconds. <strong>Physics</strong> is section 4.2,
 and it is the axis that is not filled: contact is measured and a resolvability criterion is derived
@@ -2368,7 +2371,7 @@ released watermelon's interior came from a fine-tuned checkpoint, so that lattic
     <td>the same held-out planes, five rows</td></tr>
 <tr><td>occupancy alone against occupancy and the cut plane</td><td>whether contact is real</td>
     <td>the contact slab at four separations</td></tr>
-<tr><td>with photographs against without</td><td>dependence on object-specific supervision</td>
+<tr><td>route 1 against route 2</td><td>dependence on object-specific supervision</td>
     <td>the same cuts, both ways</td></tr>
 <tr><td>the cube renderer against the rasteriser</td><td>representation against renderer</td>
     <td>the same cuts, four columns</td></tr>
@@ -2609,7 +2612,7 @@ not, at any zoom, with nothing to set.</p>
 <p>A splatted interior defines no cut-face planarity, area or extent, so none can be reported for it.  It has the primitives that lie near the plane, so the surface a viewer
 sees is a rendering artefact of their density and support, and no statement can be made about it:
 not that it is planar, not what its area is, not where its boundary lies. Here the face is the
-convex polygon of equation&nbsp;(10), one per crossed cell, and the statements follow by
+convex polygon of equation&nbsp;(19), one per crossed cell, and the statements follow by
 construction. Every vertex satisfies the plane equation to machine epsilon on an oblique off-grid
 plane, and the area error against a closed form falls from 0.97% to 0.09% as the lattice refines,
 so the only error in a cut is the voxelised silhouette, which falls with \(h\). Neither
@@ -3268,14 +3271,15 @@ out before any simulation runs. MPM moves
 particle quantities to a background grid of spacing \(dx\) and back, so a feature thinner than
 about two grid cells is averaged with its neighbours on the way through and comes back as the
 average. The quantity that decides whether a hard shell is possible is therefore the shell's thickness in
-units of the <em>transfer</em> grid \(\Delta x = 3.2/80 = 0.04\), which is the grid momentum passes
-through &mdash; not the finer grid particles are seeded on, against which every value here would
-read four times larger:</p>
+units of the <em>transfer</em> grid \(\Delta x = 3.2/80 = 0.04\), one grid for all three objects,, which is the grid momentum passes
+through &mdash; not the finer grid particles are seeded on, against which these values would read
+four to six times larger, since the filling grid is set per object: 0.01 for the watermelon and
+0.00625 for the orange.</p>
 
 <div class="tw"><table>
 <thead><tr><th>object</th><th>shell thickness</th><th>in fine cells</th><th>in MPM grid cells</th><th>a stiffness contrast is</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td>0.01910</td><td>3.2</td><td><strong>0.50</strong></td><td>not resolvable</td></tr>
+<tr><td>orange</td><td>0.01910</td><td>3.2</td><td><strong>0.31</strong></td><td>not resolvable</td></tr>
 <tr><td>watermelon</td><td>0.02571</td><td>3.0</td><td><strong>0.31</strong></td><td>not resolvable</td></tr>
 <tr><td>doughnut</td><td>0.01234</td><td>3.0</td><td><strong>0.22</strong></td><td>not resolvable</td></tr>
 </tbody></table></div>
@@ -3512,7 +3516,7 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
     <td><strong>4,902,612 queries/s</strong></td></tr>
 <tr><td>reference alignment: six angular profiles and their cross-correlations</td><td>126&nbsp;ms</td><td class="mut">once per object, equation&nbsp;(11)</td></tr>
 <tr><td>the joint phase and assignment solve of section 4.1.7</td><td>166,000&nbsp;ms</td><td class="mut">once, offline; not in the pipeline</td></tr>
-<tr><td>peak device memory during training</td><td>5.2 to 5.9&nbsp;GB</td><td class="mut">one card, at the settings of section 3.1.3</td></tr>
+<tr><td>peak device memory during training</td><td>5.2 to 5.9&nbsp;GB</td><td class="mut">one card, at the settings of section 3.1.2</td></tr>
 <tr><td>triangles emitted by one cut</td><td>85,960 to 112,753 distinct</td><td class="mut">doubled to 171,920&ndash;225,506 by two-sided emission</td></tr>
 </tbody></table></div>
 

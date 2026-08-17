@@ -690,7 +690,9 @@ what its paper states.</p>
     <td><strong>FID 170.2 / 177.5</strong></td><td>180.9 to 183.5 / 236.7 to 262.8</td></tr>
 <tr><td><strong>the same pipeline with a stock checkpoint</strong></td>
     <td><strong>FID 378.7 / 511.6</strong> <span class="mut">(our reproduction)</span></td>
-    <td class="mut">needs none</td><td><strong>FID 90.1 / 213.5</strong></td></tr>
+    <td class="mut">needs none</td>
+    <td class="mut">the arm once entered here at FID 90.1 / 213.5 is photograph-supervised;
+        see the paper's section 4.1.8</td></tr>
 <tr><td>breaking into pieces</td><td class="mut">not addressed</td>
     <td>fracture by continuum damage</td>
     <td>connected components on face adjacency, one solver per piece</td></tr>
@@ -915,7 +917,7 @@ segment walls turn into a crust, because the stock checkpoint has no idea what t
 fruit looks like inside and the Gaussian supervision has nothing else to lean on.</p>
 
 
-<h3>A.2&ensp;Section 4.1.3, the reasoning around the tables</h3>
+<h3>A.2&ensp;Section 4.1.8, the reasoning around the tables</h3>
 
 <p>The tables stayed in the paper and the argument around them came here. </p>
 
@@ -996,10 +998,12 @@ where particles are seeded inside the object and can be as fine as the geometry 
 to span, because a quadratic B-spline weight has support \(1.5\Delta x\) either side of a node,
 so any feature narrower than about \(2\Delta x\) contributes to the same nodes as its
 surroundings and returns from the grid as their average. \(\tau_s\) must therefore be formed
-against the transfer grid. In our pipeline the filling grid is \(\Delta x = 0.01\) and the
-transfer grid \(\Delta x \approx 0.04\), a factor of four, and reporting \(\tau_s\) against
-the former overstates it by that factor. Against the transfer grid the shells read
-<strong>0.50</strong> (orange), 0.31 (watermelon) and 0.22 (doughnut), and the band sweep reads
+against the transfer grid. In our pipeline the filling grid is set per object &mdash;
+\(\Delta x = 0.01\) for the watermelon and \(0.00625\) for the orange &mdash; against a
+transfer grid of \(\Delta x \approx 0.04\), so reporting \(\tau_s\) against the filling grid
+overstates it fourfold on one object and by 6.4 on the other. The orange was published at 0.50
+for that reason. Against the transfer grid the shells read <strong>0.31</strong> (orange), 0.31
+(watermelon) and 0.22 (doughnut), and the band sweep reads
 0.29, 0.39, 0.52 and 0.65 at \(\beta_s = 3, 5, 7, 9\). Every build in reach of this lattice is
 therefore below the kernel's support width, which is what the solver's insensitivity to the band in
 section 4.2.3 reflects, and reaching \(\tau_s \gtrsim 2\) on these objects needs either a finer
