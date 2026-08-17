@@ -478,12 +478,9 @@ our traversal is faster than their clustering. It is that connectivity is <em>gi
 representation on one side and <em>inferred</em> from geometry on the other, so on the lattice
 there is no threshold whose setting could change how many pieces the cut produced.</p>
 
-<p></p>
 
 
-<h4>3.1.2&ensp;Overview</h4>
-
-<h4>3.1.3&ensp;The two-level lattice</h4>
+<h4>3.1.2&ensp;The two-level lattice</h4>
 
 <p class="mut"><strong>The orange, counted once.</strong> The lattice as route 1 builds it is <strong>877,494</strong> cells &mdash; 759,353 coarse and 118,141 fine. Route 2 builds 1,231,312 for the same fruit, 892,808 coarse and 338,504 fine, because its skin band is set rather than inherited. The single-level ablation is 801,929. Where a third figure appears against a timing or a cut it names the run it was taken from; 848,021 is the occupancy after closing and filling in one earlier build and 894,304 an earlier route 1 lattice, neither of which is the configuration reported here.</p>
 
@@ -494,7 +491,7 @@ there is no threshold whose setting could change how many pieces the cut produce
 <tr><td>\(h_c,\; h_f\)</td><td>coarse and fine spacing</td><td>\(h_f = h_c/2\); \(h_c = 0.01180\) on the orange</td></tr>
 <tr><td>\(\mathbf{f_k}\)</td><td>a cell's feature</td><td>\(\mathbb{R}^{8}\)</td></tr>
 <tr><td>\(\Pi = (\mathbf{n}, d)\)</td><td>a cutting plane</td><td>\(\|\mathbf{n}\| = 1\)</td></tr>
-<tr><td>\(K\)</td><td>cells a plane crosses</td><td>2.7&ndash;10.7% of \(|\mathcal{V}|\)</td></tr>
+<tr><td>\(K\)</td><td>cells a plane crosses</td><td>4.0&ndash;10.7% of \(|\mathcal{V}|\)</td></tr>
 <tr><td>\(\mathcal{P}\)</td><td>the cut surface, \(\bigcup_c \Pi_c\)</td><td>a 2-manifold with boundary</td></tr>
 <tr><td>\(\mathcal{G}\)</td><td>the pieces, \(\mathcal{V}/\!\sim_{\mathcal{E}}\)</td><td>\(|\mathcal{G}| = 8\) for three planes</td></tr>
 <tr><td>\(\mathcal{M} = (\mathcal{N}, \mathcal{E})\)</td><td>the dual-grid boundary</td><td>one node per boundary cell</td></tr>
@@ -552,7 +549,7 @@ $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
    \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \lfloor \mathbf{k}_1 / 2 \rfloor \bigr\} $$
 </div><div class="num">(3)</div></div>
 
-<h3>3.1.4&ensp;The boundary as a dual grid</h3>
+<h3>3.1.3&ensp;The boundary as a dual grid</h3>
 
 <p> It is also necessary rather
 than convenient: a Gaussian shell covers only 7 to 20% of the frame at alpha above one half, so
@@ -564,7 +561,7 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 
 
 
-<h4>3.1.5&ensp;Adaptive collapse</h4>
+<h4>3.1.4&ensp;Adaptive collapse</h4>
 
 <p>What follows is Ju et al.'s adaptive dual contouring [5] applied to the Flexible Dual Grid:
 summing children's quadrics bottom-up and collapsing where the residual is small is their
@@ -621,7 +618,7 @@ $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
   steps visibly at the end, which is what a coarser node is.</figcaption>
 </figure>
 
-<h4>3.1.6&ensp;Collapse tolerance against surface error</h4>
+<h4>3.1.5&ensp;Collapse tolerance against surface error</h4>
 
 <p>The collapse has one parameter, \(\tau_c\) in equation (14), and what it buys has to be read
 against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
@@ -2198,7 +2195,7 @@ $$ \tau_s = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
        \lVert \mathbf{x}_{\mathbf{k}} - \mathbf{x}_{\mathbf{k}'} \rVert \Bigr)       + \tfrac{1}{2} h_f $$
 </div><div class="num">(17)</div></div>
 
-<p>The percentile in (15) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
+<p>The percentile in (17) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
 
 <p>where \(L\) is the object's own extent, because the solver normalises the object into its grid
 box and a world length only reaches \(\Delta x\) through that scaling.</p>
@@ -2370,7 +2367,7 @@ that has not seen the image it is being measured against.</p>
     <td><strong>0.1498 &plusmn; 0.0165</strong></td><td class="mut">0.0936</td></tr>
 </tbody></table></div>
 
-<p><strong>The paired metrics on the same folds.</strong> PSNR, SSIM and LPIPS are computed computed on the same six folds against the
+<p><strong>The paired metrics on the same folds.</strong> PSNR, SSIM and LPIPS are computed on the same six folds against the
 same held-out photograph.</p>
 
 <div class="tw"><table>
@@ -2537,7 +2534,6 @@ plane, and the area error against a closed form falls from 0.97% to 0.09% as the
 so the only error in a cut is the voxelised silhouette, which falls with \(h\). Neither
 baseline can be measured on that axis at all, which is the difference this paper is about.</p>
 
-<p></p>
 
 <h5>What each primitive covers</h5>
 
@@ -2753,7 +2749,7 @@ cuts each, and the other two objects and the intervening sizes are not run.</p>
 </div>
 
 <p class="mut" style="text-align:center;margin-top:-6px">Both trade-offs this work avoids by
-construction, drawn from the tables above and in section 3.1.6. <strong>a</strong>: on a fixed
+construction, drawn from the tables above and in section 3.1.5. <strong>a</strong>: on a fixed
 primitive set, support at \(\rho \le 0.1\) leaves 17.5% of the section unpainted and support above 0.5 blends
 across material boundaries, leaving a window at roughly \(0.25 \le \rho \le 0.5\); FruitNinja's released model sits at the far left; GaussianFluent's spacing is not published, so it cannot be placed. <strong>b</strong>: the dual grid trades node count against surface
 error monotonically, so a point on that curve is chosen rather than found. A cube's occupancy has
@@ -3035,7 +3031,7 @@ FruitNinja on the orange and does not on the watermelon.</div>
 <tr><td>FruitNinja's pipeline, stock checkpoint <span class="mut">(our reproduction)</span></td>    <td>378.7</td><td>667&plusmn;103</td><td>511.6</td><td>825&plusmn;79</td><td>13.09</td><td>0.6461</td><td>0.4619</td></tr>
 <tr><td>this work, route 1</td><td>91.5</td><td>142&plusmn;21</td><td>222.8</td><td>275&plusmn;96</td><td>16.13</td><td><strong>0.7650</strong></td><td>0.4070</td></tr>
 <tr><td>this work, route 2</td><td><strong>74.1</strong></td><td><strong>101&plusmn;21</strong></td><td>286.8</td><td>382&plusmn;102</td><td><strong>16.43</strong></td><td>0.7560</td><td><strong>0.4048</strong></td></tr>
-<tr><td><strong>this work, no fine-tuning</strong></td><td>90.1</td><td>136&plusmn;27</td><td><strong>213.5</strong></td><td><strong>298&plusmn;111</strong></td><td>16.07</td><td>0.7632</td><td>0.4080</td></tr>
+<tr><td>this work, a second run on the same photographs</td><td>90.1</td><td>136&plusmn;27</td><td><strong>213.5</strong></td><td><strong>298&plusmn;111</strong></td><td>16.07</td><td>0.7632</td><td>0.4080</td></tr>
 <tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td>
     <td class="mut">n/a</td><td class="mut">70.2</td><td class="mut">n/a</td>
     <td class="mut">21.24</td><td class="mut">0.8047</td><td class="mut">0.1815</td></tr>
@@ -3057,7 +3053,7 @@ FruitNinja on the orange and does not on the watermelon.</div>
 
 <p>On the orange every arm of this work is ahead of FruitNinja's released model on every column,
 and two of those arms were fitted to the photographs they are scored against, so that ordering is
-not a comparison. The stock-checkpoint reproduction at 378.7 is out-of-sample and is the one row here that can be read against FruitNinja's 102.2 without that caveat. The arm at 90.1 was described in an earlier version as photograph-free; the runs still on disk do not identify its supervision, so no comparison is drawn from it. The comparison this object supports out-of-sample is the leave-one-out study of section 4.1.2.</p>
+not a comparison. The stock-checkpoint reproduction at 378.7 is out-of-sample and is the one row here that can be read against FruitNinja's 102.2 without that caveat. The arm at 90.1 was described in an earlier version as photograph-free. Its run directory identifies it: the training log records section targets as photographs, and replaying the silhouette fit against each of the six references matches every target to a photograph at a residual of 0.0000, the same set route 1 was given. It is a second photograph-supervised run and what else distinguishes it is not recorded, so no comparison is drawn from it. The comparison this object supports out-of-sample is the leave-one-out study of section 4.1.2.</p>
 
 <p>On the watermelon the answer goes the other way and should be stated plainly:
 <strong>GaussianFluent's released model scores best</strong>, 170.2 and 177.5 against our 180.9 and
@@ -3676,7 +3672,7 @@ from, and its numbers are the baseline throughout.</p>
 }</pre>
 
 <footer>
-Every number here was measured on three objects, or on a synthetic shape whose answer is known in
+Every number here was measured on six objects, or on a synthetic shape whose answer is known in
 closed form.
 </footer>
 
