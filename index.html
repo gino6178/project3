@@ -887,8 +887,8 @@ divided among sixteen planes, so each image serves two or three adjacent depths,
 longitudinal among ten. Two consequences follow that a reader cannot otherwise infer. The conflict
 on a shared cell is not an occasional collision between whichever images happened to be drawn; it
 is the same two images pulling the same cells in the same directions on every iteration, which is
-why an assignment is a variable worth optimising at all (section 4.1.8) and why drawing one at random
-instead costs 0.067 of DreamSim (section 4.1.5). And the jitter moves the
+why an assignment is a variable worth optimising at all (section 4.1.9) and why drawing one at random
+instead costs 0.067 of DreamSim (section 4.1.6). And the jitter moves the
 plane without changing what supervises it: a cell's target comes from the same photograph wherever
 the plane lands inside its slot, so the sweep varies geometry and not content.</p>
 
@@ -947,7 +947,7 @@ would touch still carries gradient in expectation.</p>
 <p>with \(\Delta\) the spacing between slots, \(J = 0.5\) and \(N_v = 10\) in every run reported
 here. At \(J = 0.5\) the slots tile the interval exactly: no depth is sampled twice and none is
 unreachable. This is the reason the 66% of cells no fixed plane would touch are not a hole to be
-filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.5 reports what
+filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.6 reports what
 happens at \(J = 0\), \(0.25\) and \(1\).</p>
 
 <p><strong>What is optimised and what is not.</strong> The objection to supervising from
@@ -1051,7 +1051,7 @@ reference is given is a free parameter, and the pipeline sets it by cross-correl
 photograph against the first of its family. That makes one family internally coherent and says
 nothing about the other. Since the two families meet in lines that are known before training, the
 phases can instead be chosen against the disagreement they produce there, which is a mixed discrete&ndash;continuous problem over a permutation and a set of angles, solved to a coordinate-wise optimum in seconds.
-Section 4.1.8 gives the formulation and what it measures: it lowers cross-family disagreement, most
+Section 4.1.9 gives the formulation and what it measures: it lowers cross-family disagreement, most
 visibly on cuts at orientations neither family supervised, and does not change similarity to the
 photographs.</p>
 
@@ -2910,7 +2910,51 @@ the same way. The lattice figure is also an upper bound, because the per-cell fe
 substituted here by white noise of the same shape, which is the least compressible object of that
 size; a learned feature can only do better.</p>
 
-<h4>4.1.3&ensp;Every object the prior method released</h4>
+<h4>4.1.3&ensp;Every object, on photographs that supervised nothing</h4>
+
+<p>The measurements below are the ones this paper stands on. Every object is trained with the
+continuous assignment of equation&nbsp;(14) and scored against photographs that took no part in
+its supervision. Each family's references are split in two by alternating index, an odd count
+giving the extra image to training; where a family holds three photographs the split leaves one to
+score against, which is too few for the distance to mean anything on its own, so those objects are
+run as three leave-one-out folds instead and the spread across folds is reported beside the mean.
+The released model is re-rendered against each evaluation set in the same batch, because a number
+measured against a different set is not comparable.</p>
+
+<div class="tw"><table>
+<thead><tr><th>DreamSim to the nearest held-out photograph &darr;</th><th>this work</th><th>FruitNinja, released</th><th class="mut">the held-out photographs against each other</th><th class="mut">train / held out</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td><strong>0.0997</strong></td><td>0.1293</td><td class="mut">0.0551</td><td class="mut">3 / 3</td></tr>
+<tr><td>watermelon</td><td><strong>0.1934</strong></td><td>0.2390</td><td class="mut">0.0724</td><td class="mut">10 / 10</td></tr>
+<tr><td>apple</td><td><strong>0.2892</strong></td><td>0.3876</td><td class="mut">0.2120</td><td class="mut">4 / 4</td></tr>
+<tr><td>bread</td><td><strong>0.4502</strong></td><td>0.4949</td><td class="mut">0.2215</td><td class="mut">3 / 2</td></tr>
+<tr><td>pomegranate <span class="mut">(3 folds)</span></td><td>0.3708 &plusmn; 0.0131</td><td><strong>0.3057 &plusmn; 0.0041</strong></td><td class="mut">one image per fold</td><td class="mut">2 / 1</td></tr>
+<tr><td>cake <span class="mut">(3 folds)</span></td><td>0.3852 &plusmn; 0.0228</td><td><strong>0.3159 &plusmn; 0.0359</strong></td><td class="mut">one image per fold</td><td class="mut">2 / 1</td></tr>
+<tr><td>doughnut <span class="mut">(topology, not appearance)</span></td><td><strong>20 of 20</strong> held-out sections read as an annulus</td><td class="mut">no released model of this genus</td><td class="mut">&mdash;</td><td class="mut">1 / &mdash;</td></tr>
+</tbody></table></div>
+
+<p><strong>Four of six on appearance, and the two that lose are the two with the least to learn
+from.</strong> The pomegranate and the cake hold three transverse photographs each, so a fold
+trains on two. Both lose on every one of their three folds and the spread across folds is small
+&mdash; 0.013 and 0.023 against gaps of 0.065 and 0.069 &mdash; so this is a stable result and not
+a draw of the evaluation image. Under the earlier protocol, which let them train on all three and
+scored them against the same three, both were ahead at 0.2508 and 0.2816; what changed is the
+training set, not the method.</p>
+
+<p>The doughnut is scored differently because there is nothing to score it against: the released
+dataset is entirely genus zero. What its row reports is the property that matters for a torus
+&mdash; every one of the forty held-out transverse cuts still reads as an annulus, with exactly
+one hole and never two or none. Its two families hold one photograph each, so the continuous
+assignment has nothing to interpolate between and falls through to the block rule: that row
+measures the earlier assignment, not equation&nbsp;(14).</p>
+
+<p class="mut">The apple's references were corrected before this run. One was photographed on a
+pale backdrop close in colour to the flesh and had passed the earlier audit, whose thresholds it
+missed on both sides; another covered 8% of its frame against 24 to 66% for the rest, small enough
+that blending it with a neighbour hands one depth a nearly empty target. The first was whitened,
+the second dropped, and the pool went from nine to eight.</p>
+
+<h4>4.1.4&ensp;The same objects with every photograph used, and scored against those same photographs</h4>
 
 <p>FruitNinja releases six reconstructions and this work first reported on two of them. The other
 four have cross-section photographs in the same repository, so the only thing between them and a
@@ -3012,7 +3056,7 @@ them. The orange is the one object with a leave-one-out study, in section 4.1.2.
 counts differ by object and are given because a distribution metric on three images is not one; that
 is why DreamSim, which is a distance between pairs, is the column reported.</p>
 
-<h4>4.1.4&ensp;What happens when the references disagree, and whether the fit can stall</h4>
+<h4>4.1.5&ensp;What happens when the references disagree, and whether the fit can stall</h4>
 
 <p>Supervising from photographs with no camera invites two objections. If the warp that places a
 reference on the render can go wrong, the optimisation might settle in a bad configuration and
@@ -3044,7 +3088,7 @@ to satisfy one of them is read by the other.</p>
 
 <p>What is left is that the appearance can collapse, and it does have one failure mode, which this
 paper measures rather than argues away. Under conflicting supervision a cell converges to the
-<em>mean</em> of what its planes ask for, not to a robust choice among them: section 4.1.5's
+<em>mean</em> of what its planes ask for, not to a robust choice among them: section 4.1.6's
 random draw gives every plane a different photograph on every iteration and the orange's radial
 structure flattens to an even wash, 0.0700 to 0.1367, while reconciling two targets by averaging
 them explicitly costs 0.012 DreamSim. The fixed assignment avoids it by keeping a plane on one
@@ -3074,7 +3118,7 @@ configuration differ by 0.0003 DreamSim and 5.0 FID, which is the spread any com
 section has to clear.</p>
 
 <p><strong>Blurring under conflict is real, and its cause is the assignment.</strong> The
-experiment that produces it is section 4.1.5's random draw: giving a plane a different photograph
+experiment that produces it is section 4.1.6's random draw: giving a plane a different photograph
 on every iteration is the strongest disagreement the reference set can express, and it does blur
 &mdash; the orange's radial structure flattens to an even wash and DreamSim goes from 0.0700 to
 0.1367. Under the fixed rule it does not, because a plane keeps one photograph and the target it
@@ -3111,13 +3155,13 @@ as a comparison of slopes.</figcaption>
 </figure>
 
 <p class="mut">What this does not cover: sensitivity to the volume's own initialisation. The
-references' initial pose is swept in section 4.1.7, where injected rotations of up to 30&deg;
+references' initial pose is swept in section 4.1.8, where injected rotations of up to 30&deg;
 leave the worst arm at 0.0850 against the fine-tuned baseline's 0.1326, but every run in this
 paper starts from the same quantised reconstruction and no seed was varied.</p>
 
-<h4>4.1.5&ensp;What the jitter and the second level are worth</h4>
+<h4>4.1.6&ensp;What the jitter and the second level are worth</h4>
 
-<p class="mut">The sweeps in sections 4.1.5 to 4.1.7 are scored against the six photographs that supervised them, as is the control at 0.0738. Each comparison is between arms that share that condition, not against a held-out reference; section 4.1.2 is the study that holds one out.</p>
+<p class="mut">The sweeps in sections 4.1.6 to 4.1.7 are scored against the six photographs that supervised them, as is the control at 0.0738. Each comparison is between arms that share that condition, not against a held-out reference; section 4.1.2 is the study that holds one out.</p>
 
 <p>Two design choices are swept here because each is a parameter the paper had reported a role for
 without measuring it.</p>
@@ -3163,7 +3207,7 @@ spread between two runs of one configuration. The jitter does not. Every setting
 neither family supervised &mdash; where a sweeping plane family is the mechanism that would matter
 &mdash; the arm with no jitter has the smallest cross-family gap, and the most detail is at \(J = 1\). The ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather than an effect. The measurements here are whole-section: a spatially resolved test, binning coherence by distance to the nearest training plane, would separate a local effect from a global one and was not run. Blind cells sit a mean of 1.35 cells from a supervised one and change as much during training as supervised cells do; the supervision reaches them through the shared decoder, and the jitter is not what carries it. The assignment of section 3.2.4 says why: a plane keeps its photograph wherever it lands inside its slot, so jitter varies which cells are read and not what they are asked for.</p>
 
-<h4>4.1.6&ensp;How many references, and which</h4>
+<h4>4.1.7&ensp;How many references, and which</h4>
 
 <p>An interior is not consistent with itself across specimens. Six transverse photographs of six
 oranges show 9 to 19 segment walls, and the disagreement between them along a line they share,
@@ -3191,10 +3235,10 @@ for one answer to begin with.</p>
 
 <p class="mut">The practical reading is not "use fewer photographs". It is that a photograph is
 worth including when it agrees with the others about the cells they share, and the chordal
-disagreement of section 4.1.8 is computable before training for exactly that purpose &mdash; though
+disagreement of section 4.1.9 is computable before training for exactly that purpose &mdash; though
 it does not, on the three sets measured here, rank them the way the trained models rank.</p>
 
-<h4>4.1.7&ensp;How much misalignment the references may carry</h4>
+<h4>4.1.8&ensp;How much misalignment the references may carry</h4>
 
 
 
@@ -3224,7 +3268,7 @@ what alignment leaves. What the table measures is the system's tolerance, not th
 and an object whose sections have no shared angular phase to align to would not get the first
 mechanism.</p>
 
-<h4>4.1.8&ensp;Choosing the references' phases against the geometry they share</h4>
+<h4>4.1.9&ensp;Choosing the references' phases against the geometry they share</h4>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
@@ -3289,7 +3333,7 @@ slightly less self-consistent on the axis, 0.0520 to 0.0617, which follows from 
 &mdash; the transverse phases were free and the axis is where longitudinal sections meet each other,
 not where they meet the transverse family. Cross-family coherence and photographic similarity are separable, and this addresses the first.</p>
 
-<h4>4.1.9&ensp;Both methods through the same evaluator</h4>
+<h4>4.1.10&ensp;Both methods through the same evaluator</h4>
 
 
 
@@ -3383,7 +3427,7 @@ hundred; the two tables are internally consistent and should not be read across.
   statistics of a slice, not whether the slice is a plane.</figcaption>
 </figure>
 
-<h4>4.1.10&ensp;The comparison in one table</h4>
+<h4>4.1.11&ensp;The comparison in one table</h4>
 
 <p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
 or marked where the quantity does not exist for that representation. A cut-face residual and a cut-area error need a cut-face
@@ -3688,7 +3732,7 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 <tr><td>collision: one occupancy query over the particle set</td><td>179.0&nbsp;ms</td>
     <td><strong>4,902,612 queries/s</strong></td></tr>
 <tr><td>reference alignment: six angular profiles and their cross-correlations</td><td>126&nbsp;ms</td><td class="mut">once per object, equation&nbsp;(11)</td></tr>
-<tr><td>the joint phase and assignment solve of section 4.1.8</td><td>166,000&nbsp;ms</td><td class="mut">once, offline; not in the pipeline</td></tr>
+<tr><td>the joint phase and assignment solve of section 4.1.9</td><td>166,000&nbsp;ms</td><td class="mut">once, offline; not in the pipeline</td></tr>
 <tr><td>peak device memory during training</td><td>5.2 to 5.9&nbsp;GB</td><td class="mut">one card, at the settings of section 3.1.2</td></tr>
 <tr><td>triangles emitted by one cut</td><td>85,960 to 112,753 distinct</td><td class="mut">doubled to 171,920&ndash;225,506 by two-sided emission</td></tr>
 </tbody></table></div>
