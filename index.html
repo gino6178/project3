@@ -560,15 +560,33 @@ $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
 
 <h3>3.1.3&ensp;The boundary as a dual grid</h3>
 
-<p> It is also necessary rather
-than convenient: a Gaussian shell covers only 7 to 20% of the frame at alpha above one half, so
-at the silhouette a cut face shows through from the side it should be hidden on.</p>
+<p>Converting the boundary to a dual grid is necessary rather than convenient: a Gaussian shell
+covers only 7 to 20% of the frame at alpha above one half, so at the silhouette a cut face shows
+through from the side it should be hidden on.</p>
 
 <p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
 two renderers, a depth convention and a compositing step necessary. Converting the exterior as
 well removes the seam instead of managing it. The occupancy already holds the volume, so the exterior <em>is</em> its boundary, every face of an occupied cell whose neighbour is empty, and the same dual-grid encoder that handles the cut face takes the staircase off it.</p>
 
 
+
+<figure id="compositing">
+  <img src="assets/compositing.png" alt="Exterior Gaussians, cut surface and composite, in four viewing conditions">
+  <figcaption><strong>Why the two renderers need a depth convention rather than an ordering rule.</strong>
+  Each row is one piece seen from one side: the exterior Gaussians alone, the cut surface alone, and the
+  composite. When the cut faces the camera it takes 98.0% and 74.9% of the contested pixels; when it
+  points away it takes 0.4% and 0.0%. A rule that always drew one buffer over the other would be wrong
+  in two of these four cases, and the two that fail are not the two a silhouette test would predict.</figcaption>
+</figure>
+
+<figure id="exteriorovox">
+  <img src="assets/exterior_ovoxel.png" alt="The O-Voxel exterior mesh beside the Gaussian exterior it replaces">
+  <figcaption><strong>The exterior as a dual grid, against the Gaussians it replaces.</strong> Six views
+  of the orange: the left three are the O-Voxel boundary drawn as its own mesh, 934,520 triangles; the
+  right three are the Gaussian exterior at the same poses. Converting it removes the seam rather than
+  managing it, and the peel texture survives the conversion &mdash; the difference the figure does show
+  is at the terminator, where the mesh shades and the splats do not.</figcaption>
+</figure>
 
 <h4>3.1.4&ensp;Adaptive collapse</h4>
 
@@ -2133,6 +2151,33 @@ about before it is trusted.</p>
 
 <h3>3.4&ensp;Discrete topology and fragment labelling</h3>
 
+<figure id="cutstages">
+  <img src="assets/cutstages.png" alt="The four states of one cut on the orange's lattice">
+  <figcaption><strong>One cut on the orange, in the four states the operator passes through.</strong>
+  <strong>(a)</strong> the 758,721 coarse cells of a slab one cell thick, and the line in which the
+  plane \(\Pi\) meets that slab. <strong>(b)</strong> one crossed cell: a filled corner is
+  \(\mathbf{n}\cdot\mathbf{x} + d &gt; 0\), the six thick edges are those whose endpoints disagree,
+  and \(\mathcal{P}_c\) is the hexagon on them with vertices \(\mathbf{v}_1 \ldots \mathbf{v}_6\)
+  ordered by angle about their centroid. <strong>(c)</strong> the same slab coloured by the component
+  the global sign code assigns; the plane produces 45 on this object, of which two hold all but a
+  handful of cells. <strong>(d)</strong> the 16,617 polygons in the plane's own basis, which is the
+  exposed face. Of those polygons 8,203 are triangles, 3,917 quadrilaterals, 798 pentagons and 3,699
+  hexagons. Every coordinate is computed, not drawn: the 560 specks of the raw occupancy, 510 of them
+  single cells and 0.08% of the object, are dropped first so that (c) shows what the plane
+  separates rather than what the scan left behind.</figcaption>
+</figure>
+
+
+<figure id="multicut">
+  <video src="assets/multicut.mp4" autoplay loop muted playsinline preload="metadata"></video>
+  <figcaption><strong>Three planes on one object, and the pieces the labelling separates.</strong>
+  The pieces are drawn apart along their own centroids and returned. Applying the three planes one
+  after another and applying them at once give the same eight pieces, and the leaf set folds back to
+  what it was before the first cut; cuts 2 and 3 add 101,052 and 108,591 leaves to the band while
+  they are open. Eight is after slivers are rejoined to the neighbour they share the most faces
+  with, which takes the doughnut's three cuts from 18 raw pieces to 8.</figcaption>
+</figure>
+
 <h4>3.4.1&ensp;The cost of a cut, and adjacency as arithmetic</h4>
 
 <p>A cut costs what it touches. Refinement is already local, and so is the rest of it, because a
@@ -2632,7 +2677,7 @@ Gaussian set pays little for coverage. So this is not yet a comparison between a
 Gaussian: at this image size every row is a Gaussian render inside the window where a Gaussian set
 pays little for coverage, and no claim about a cube's support can rest on it.</p>
 
-<h5>And over resolution, which is where it separates</h5>
+<h5>Over resolution, which is where it separates</h5>
 
 <p>A coverage number at one pixel count says nothing. Swept over resolution, on the watermelon, six transverse
 cuts per cell, with the cube volume rendered by cube lookup rather than by splatting and with
@@ -2819,7 +2864,7 @@ blends or merely covers is the same experiment on their primitive sets and is no
 actually about, and it is a trade about count rather than about support: a cube's support is its
 cell, so it covers exactly, at any resolution, with no window to find and no parameter to set.</p>
 
-<h4>4.1.2.2&ensp;And under compression</h4>
+<h4>4.1.2.2&ensp;Under compression</h4>
 
 <p>Counting fields at float32 measures a file format rather than a representation, and the obvious
 objection is that a codec would close the gap. It does not. Every arm below goes through the same
@@ -2862,21 +2907,21 @@ was quantised from scored beside it in the same batch.</p>
 <th>FruitNinja, released</th><th class="mut">the photographs against each other</th>
 <th class="mut">references</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td><strong>0.070</strong></td><td>0.129</td><td class="mut">0.042</td>
+<tr><td>orange</td><td><strong>0.0700</strong></td><td>0.1290</td><td class="mut">0.0424</td>
     <td class="mut">6 h + 6 v</td></tr>
-<tr><td>watermelon</td><td><strong>0.178</strong></td><td>0.233</td><td class="mut">0.067</td>
+<tr><td>watermelon</td><td><strong>0.1783</strong></td><td>0.2328</td><td class="mut">0.0670</td>
     <td class="mut">20 h + 23 v</td></tr>
-<tr><td>apple</td><td><strong>0.287</strong></td><td>0.382</td><td class="mut">0.165</td>
+<tr><td>apple</td><td><strong>0.2951</strong></td><td>0.3823</td><td class="mut">0.1653</td>
     <td class="mut">9 h + 3 v</td></tr>
-<tr><td>pomegranate</td><td><strong>0.250</strong></td><td>0.299</td><td class="mut">0.132</td>
+<tr><td>pomegranate</td><td><strong>0.2508</strong></td><td>0.2985</td><td class="mut">0.1324</td>
     <td class="mut">3 h + 5 v</td></tr>
-<tr><td>bread</td><td><strong>0.369</strong></td><td>0.495</td><td class="mut">0.187</td>
+<tr><td>bread</td><td><strong>0.3685</strong></td><td>0.4949</td><td class="mut">0.1873</td>
     <td class="mut">5 transverse only</td></tr>
-<tr><td>cake</td><td>0.495</td><td><strong>0.343</strong></td><td class="mut">0.268</td>
+<tr><td>cake</td><td>0.2816</td><td><strong>0.2669</strong></td><td class="mut">0.2677</td>
     <td class="mut">3 longitudinal only</td></tr>
 </tbody></table></div>
 
-<p class="mut">Rendered as one batch: 40 cuts per object, every arm and its baseline together at the same depths. DreamSim values in this paper come from three render batches taken at different times; a value is comparable with others in its own table and differs by up to 0.006 from the same arm quoted elsewhere.</p>
+<p class="mut">Rendered as one batch: 40 cuts per object, every arm and its baseline together at the same depths, and every arm re-rendered for this table so no value in it comes from an earlier batch. Three of these objects had references on a dark backdrop; the whole set was measured again after they were put on white, because the released model renders on white and was being scored against a black frame. Values elsewhere in this paper come from other batches and differ by up to 0.006 from the same arm here.</p>
 
 <p>Five of six, by 1.2 to 1.8 times, and the cake goes the other way. The three we expected to be
 hardest are the three that decide what this table is worth. The pomegranate has three transverse references, half the orange's, and an
@@ -2886,7 +2931,7 @@ along the other axis &mdash; a cinnamon swirl is a spiral across the loaf and st
 a layer cake is stripes lengthwise and a single-colour disc across &mdash; so what the volume
 produces in the family it never saw is a prediction rather than a fit.</p>
 
-<p>The cake is the one this work loses, and it loses to the arm it is supposed to beat. Three
+<p>The cake is the one this work loses, by 0.015, and it loses to the arm it is supposed to beat &mdash; which on this object sits at the photographs' own agreement with each other, 0.2669 against 0.2677, so there is little room above it to be had. Three
 longitudinal photographs are the entire supervision, the interior is a stack of horizontal layers,
 and a transverse cut &mdash; which is what this column scores &mdash; is the one section those
 photographs never show. What the lattice produces there is an extrapolation from three images of a
@@ -3592,11 +3637,9 @@ from speculation. First, the volume already reconciles contradictory supervision
 detail, which means the remaining gain is <em>upstream</em>: the conflict is created by drawing each
 section independently, and conditioning each new reference on what the volume already holds along
 its intersections with the references drawn so far would remove it at source rather than average it
-away. Second, that has to be done carefully, because we tried the downstream version and it
-failed: reconciling two targets by averaging them along their intersection line cost 0.012 DreamSim
-against a control, forty times the run-to-run spread, since averaging destroys exactly the discrete
-features &mdash; a seed averaged with no seed is a smudge &mdash; and any consistency term must
-therefore be paired with one that penalises flattening. Third, the field needs better instruments
+away. Second, that has to be done carefully: the downstream version was tried and failed by the
+0.012 DreamSim of section 3.2.4, so any consistency term must be paired with one that
+penalises flattening. Third, the field needs better instruments
 at this sample size: two identical runs of ours differ by 5.0 FID and 0.0003 DreamSim, so a table
 turning on four points of FID is reporting its seed, and a forced-choice study against human
 observers is what would actually settle cut-face realism.</p>
