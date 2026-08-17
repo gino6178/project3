@@ -169,8 +169,7 @@ first thing below.</p>
   <li><strong>The interior features are not retrained.</strong> The per-cell features are still
       the ones the Gaussian run learned; refitting them for the cube renderer flattened the
       orange's segment walls twice, and the criterion for "the walls survived", the angular oscillation of a section over its middle radii, is in place but the fit is not.</li>
-  <li><strong>Cutting is not fast.</strong> Thirteen seconds to refine the band and label the
-      pieces, fourteen to build the exact face, on 877,494 cells. Where we call the cut
+  <li><strong>Cutting is not fast.</strong> Eleven to fifteen seconds depending on which stage and which lattice; the paper's section 4.3.3 sets the four timings side by side. Where we call the cut
       cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
       design asked for a GPU-friendly band subdivision, which is not what was built.</li>  <li><strong>Resolution bounds what the representation can hold.</strong> Occupancy is a
       decision per cell, so a feature narrower than a cell is either absorbed into its neighbours

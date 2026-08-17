@@ -2823,7 +2823,7 @@ was quantised from scored beside it in the same batch.</p>
 <tr><td>orange</td><td><strong>0.070</strong></td><td>0.129</td><td class="mut">0.042</td>
     <td class="mut">6 h + 6 v</td></tr>
 <tr><td>watermelon</td><td><strong>0.178</strong></td><td>0.233</td><td class="mut">0.067</td>
-    <td class="mut">20 h + 20 v</td></tr>
+    <td class="mut">20 h + 23 v</td></tr>
 <tr><td>apple</td><td><strong>0.287</strong></td><td>0.382</td><td class="mut">0.165</td>
     <td class="mut">9 h + 3 v</td></tr>
 <tr><td>pomegranate</td><td><strong>0.250</strong></td><td>0.299</td><td class="mut">0.132</td>
@@ -3397,6 +3397,29 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
     <td><strong>4,902,612 queries/s</strong></td></tr>
 </tbody></table></div>
 
+<p><strong>Which cut is which.</strong> Three timings of "a cut" appear in this paper and they
+are three different operations on three different lattices, so they are set out together rather
+than left to be reconciled.</p>
+
+<div class="tw"><table>
+<thead><tr><th>what was timed</th><th>lattice</th><th>seconds</th><th>where</th></tr></thead>
+<tbody>
+<tr><td>refine the band and label the pieces, adjacency rebuilt over every leaf</td>
+    <td>894,304 cells</td><td>13.76</td><td class="mut">section 3.4.1</td></tr>
+<tr><td>the same, adjacency outside the band reused</td><td>894,304 cells</td><td><strong>2.91</strong></td>
+    <td class="mut">section 3.4.1</td></tr>
+<tr><td>refine and label, as the pipeline runs it</td><td>848,021 cells</td><td>4.88</td>
+    <td class="mut">this section</td></tr>
+<tr><td>emit the exact polygons</td><td>848,021 cells</td><td>6.21</td><td class="mut">this section</td></tr>
+<tr><td class="mut">both, end to end</td><td class="mut">848,021 cells</td><td class="mut">11.1</td>
+    <td class="mut">this section</td></tr>
+</tbody></table></div>
+
+<p>The 2.91&nbsp;s figure is the labelling alone with the adjacency reuse in place, on a lattice
+5% larger; the 4.88 is the same stage timed inside the pipeline, where the reuse is not wired in.
+Nothing in this paper is an interactive cut, and the two levers on the remaining cost are named at
+the end of this section.</p>
+
 <p><strong>What the cost scales with.</strong> The labelling itself is linear in the leaves the cut touches, but the implementation is not: adjacency is rebuilt and the component structure allocated over every leaf, so the measured cost follows the object rather than the band. On balls of 17k, 58k, 137k and 268k cells cut by one oblique plane, the time per thousand cells is 0.0091, 0.0059, 0.0054 and 0.0056&nbsp;ms while the time per thousand band leaves rises from 0.0185 to 0.0286 &mdash; flat against the total, rising against the band. Reusing the adjacency outside the band is what took a cut on the orange from 13.76 to 2.91&nbsp;s, and taking the rest of the way to a cost proportional to the band is open.</p>
 
 <p>The two halves of the claim come apart here and both are reported. Contact is cheap as claimed:
@@ -3474,8 +3497,7 @@ far the results should be carried.</p>
       published result. That is enough to show a property holds or that a
       claimed one fails; it is not enough to say a margin generalises to fruit, to food, or to
       objects at large.</li>
-  <li><strong>Cutting is not interactive.</strong> A cut is about eleven seconds at the resolution
-      used here, 4.9 for the band and the labelling and 6.2 for the polygons. Nothing in this paper
+  <li><strong>Cutting is not interactive.</strong> A cut is about eleven seconds as the pipeline runs it, 4.9 for the band and the labelling and 6.2 for the polygons; section 4.3.3 sets out which timing belongs to which operation and lattice, including the 2.91&nbsp;s the labelling reaches with the adjacency reuse in place. Nothing in this paper
       is a real-time result. The geometry is linear in the crossed cells and the implementation's constant is
       large; the adaptive criterion and a GPU formulation of the same passes are the two levers,
       and neither is benchmarked.</li>
