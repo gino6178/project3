@@ -2893,20 +2893,20 @@ was quantised from scored beside it in the same batch.</p>
 <div class="tw"><table>
 <thead><tr><th>DreamSim to the nearest photograph &darr;</th><th>this work</th>
 <th>FruitNinja, released</th><th class="mut">the photographs against each other</th>
-<th class="mut">references</th></tr></thead>
+<th class="mut">supervised by</th><th class="mut">scored against</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td><strong>0.0700</strong></td><td>0.1290</td><td class="mut">0.0424</td>
-    <td class="mut">6 h + 6 v</td></tr>
+    <td class="mut">6 h + 6 v</td><td class="mut">the same 6 + 6</td></tr>
 <tr><td>watermelon</td><td><strong>0.1783</strong></td><td>0.2328</td><td class="mut">0.0670</td>
-    <td class="mut">20 h + 23 v</td></tr>
+    <td class="mut"><strong>1 h + 1 v</strong></td><td class="mut">20 h + 23 v <strong>(19 of 20 unseen)</strong></td></tr>
 <tr><td>apple</td><td><strong>0.2951</strong></td><td>0.3823</td><td class="mut">0.1653</td>
-    <td class="mut">9 h + 3 v</td></tr>
+    <td class="mut">9 h + 3 v</td><td class="mut">the same 9 + 3</td></tr>
 <tr><td>pomegranate</td><td><strong>0.2508</strong></td><td>0.2985</td><td class="mut">0.1324</td>
-    <td class="mut">3 h + 5 v</td></tr>
+    <td class="mut">3 h + 5 v</td><td class="mut">the same 3 + 5</td></tr>
 <tr><td>bread</td><td><strong>0.3685</strong></td><td>0.4949</td><td class="mut">0.1873</td>
-    <td class="mut">5 transverse only</td></tr>
+    <td class="mut">5 h + 5 v</td><td class="mut">the same 5 + 5</td></tr>
 <tr><td>cake</td><td>0.2816</td><td><strong>0.2669</strong></td><td class="mut">0.2677</td>
-    <td class="mut">3 longitudinal only</td></tr>
+    <td class="mut">3 h + 3 v</td><td class="mut">the same 3 + 3</td></tr>
 </tbody></table></div>
 
 <p><strong>Three checks that were run to break this table, and what they returned.</strong></p>
@@ -2946,6 +2946,8 @@ full forty and sit within 0.008 of the corresponding entries above.</p>
 <p class="mut"><strong>What "held out" means here, and what it does not.</strong> The cuts are drawn uniformly from the middle of the object, at depths \(f \in [0.30, 0.70]\) of its extent. This is not a region the trainer never reaches. The depth walk takes twenty-four steps and the trainer supervises centres 4 through 19, and at \(J = 0.5\) each slot's jitter window is exactly one step wide, so the windows tile: training covers \([0.146, 0.813]\) continuously and every depth scored here falls inside it. What is held out is the particular plane, not the depth &mdash; no evaluation plane coincides with a training sample, but the model has seen planes arbitrarily near it. The study in which something is genuinely unseen is the leave-one-out of section 4.1.2, which holds out a <em>photograph</em>.</p>
 
 <p class="mut">Rendered as one batch: 40 cuts per object, every arm and its baseline together at the same depths, and every arm re-rendered for this table so no value in it comes from an earlier batch. Three of these objects had references on a dark backdrop; the whole set was measured again after they were put on white, because the released model renders on white and was being scored against a black frame. Values elsewhere in this paper come from other batches and differ by up to 0.006 from the same arm here.</p>
+
+<p>The last two columns are not the same quantity and the watermelon is why. Its interior was supervised by a single transverse photograph and a single longitudinal one, and scored against the twenty and twenty-three the repository holds; nineteen of those twenty were never seen. Every other object was scored against the set that supervised it, which is stated below. So the watermelon's row is the one number here that is almost entirely out-of-sample, and it is a win by 1.31&times;.</p>
 
 <p>Five of six, by 1.2 to 1.8 times, and the cake goes the other way. The three we expected to be
 hardest are the three that decide what this table is worth. The pomegranate has three transverse references, half the orange's, and an
