@@ -1,18 +1,23 @@
 # The method, and only what it needs
 
-Everything here produced the three published models. The repository around it holds a few hundred
-files from experiments that did not survive; nothing in this folder depends on them.
+Everything here produced the published models.
 
-Paths inside the scripts are absolute and point at the repository root, so run them from there —
-the scripts run from there and this folder holds the method's own code. The shared machinery
-they import (`utils/`, `scene/`, `mpm_solver_warp/`, `voxel_pipeline/`, `gaussian-splatting/`)
-stays where it is, as do the configurations in `config/` and the references in `secref_*/`.
+Paths inside the scripts resolve against `FN_ROOT`, which is the worktree `six/setup.sh` builds —
+this repository's `code/` and `data/` laid out as one tree beside a FruitNinja checkout. They used
+to be absolute and point at one machine; each such path was written three times per script, two
+`sys.path` entries and a `chdir`, and every one of them silently pinned the file. `FN_ROOT`
+defaults to the development machine's path so nothing changes there, and setting it is the whole
+of what porting a script now costs.
 
-The repository was cleaned to match: four scripts nothing imports were removed, and the 134
-`run_*.sh` at the root went with them — what produced the published models is here, as three
-scripts instead of a hundred and thirty-four. `blend_paint.py` stayed because `voxel_pipeline/pipeline/paint_skin_seq.py` imports
-it, and `train_orange_demo.py` stayed because it is the published method's own training entry
-point and the comparison needs it.
+The shared machinery they import — `utils/`, `scene/`, `mpm_solver_warp/`, `particle_filling/`,
+`gaussian-splatting/` — is FruitNinja's and arrives through that checkout, as do the released
+reconstructions. The configurations in `config/` and the references in `secref_*/` and
+`refs_white/` are this repository's `data/`.
+
+The trainer and the five modules it imports live at the top of `code/`, not under this folder:
+`stages.sh` `cd`s to `FN_ROOT` and calls `train_voxel.py`, `fid_eval.py` and `clip_eval.py` by
+bare name. There were second copies of all eight under `common/train/` and `common/eval/`, and two
+of them had fallen a revision behind the files that actually run; they are gone.
 
 ## Running it
 
@@ -26,14 +31,21 @@ GPU=1 bash method/run.sh orange        # on the second card
 bash method/run.sh orange eval         # just re-score a model that already exists
 ```
 
-**Adding an object is writing `objects/<name>.conf`.** Nothing else changes. The three that
-exist differ only in that file:
+**Adding an object is writing `objects/<name>.conf`.** Nothing else changes. Seventeen exist and
+they differ only in that file — the six the table reports, the doughnut, and the ten fold and
+ablation variants of the orange that sections 4.1.2 and 4.1.5 measure. The three the method README
+was first written around:
 
 | | orange | watermelon | doughnut |
 |---|---|---|---|
 | `SRC` | released model | released model | a lattice |
 | `SCORE` | `fid` | `fid` | `topology` |
 | `ITERS` | 200 | 200 | 30 |
+
+The ten variants of the orange point at reference directories that are not in this repository —
+`fold0_htr`, `fewn2_h` and their siblings are subsets and perturbations of `secref_orraw_*sep`,
+built for one study each. The confs are published because the paper's numbers are read off them;
+`run.sh orange_f0` will stop at the missing directory.
 
 Everything runs on a lattice. `SRC` says where that lattice comes from, and **its kind is read
 off the file rather than chosen**: a directory that already holds one is used as it is, a mesh
@@ -60,7 +72,7 @@ to `eval_<object>/`.
 | step | script | what it does |
 |---|---|---|
 | 1 | `common/pipeline/voxelize.py` or `mesh_to_voxel.py` | Make the two-level lattice. `refine` **must be 2**: the published models were built at 1 — coarse and fine spacing equal, no refinement at all — and that alone cost the watermelon 43 points of FID. |
-| 2 | `common/train/train_voxel.py` | Training. |
+| 2 | `train_voxel.py` | Training. Run from `FN_ROOT`, which is where `stages.sh` calls it from. |
 | 3 | `common/eval/random_cuts.py` → `fid_eval.py` | Held-out cuts at depths training never sampled, scored against the photographs. |
 
 Three stages, not five. `extract_shell.py`, `internal_filling.py` and `close_shell.py` are kept
@@ -104,7 +116,7 @@ transverse FID between 238 and 266, against the 195.5 that refining the skin pro
 | estimating the map's radii robustly instead of smoothing them | 251.3 |
 | giving the appearance a view direction and letting the sections supervise the shell | 266.0 |
 
-Two defects found along the way are fixed in `train/section_match.py` and are worth knowing about,
+Two defects found along the way are fixed in `section_match.py` and are worth knowing about,
 because both were invisible in the configuration and both only ever hurt *generated* references:
 
 * the flood fill that finds a reference's silhouette had no `FIXED_RANGE`, so its tolerance was a
@@ -120,8 +132,9 @@ Both looked convincing on the object they were developed on and inverted on the 
 * **Shell cells inside a 3-D slab.** Estimates the radius from a random subsample, then counts
   inside a slab a few percent thick. Three lattices of the same family reported 7,796, 3,090 and
   455.
-* **Rind-to-interior colour separation in the rendered rim** (`report/rim_probe.py`). Ordered the
-  watermelon exactly as FID did, and on the orange put our winning model last and the model with a
-  hole through its middle near the references.
+* **Rind-to-interior colour separation in the rendered rim.** Ordered the watermelon exactly as FID
+  did, and on the orange put our winning model last and the model with a hole through its middle
+  near the references. The script is not in this repository; it is described rather than shipped
+  precisely because it should not be rebuilt.
 
 The only trustworthy signals here are held-out FID/KID against the photographs, and the image.

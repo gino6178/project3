@@ -1,7 +1,8 @@
 # The six-object pipeline
 
 FruitNinja releases six reconstructions. This directory takes all six from the released `.ply` to
-the DreamSim table and the comparison figure, in four steps that run in order:
+the DreamSim table and the comparison figure, in five steps that run in order, after `setup.sh` has
+built the worktree and `fetch.sh` has pulled the reconstructions:
 
     python3 six/objects.py          # 1. write method/objects/<name>.conf for each object
     python3 six/prep.py             # 2. put every reference on white, repoint the confs
@@ -29,7 +30,8 @@ values drift by up to 0.006 between batches.
 steps, `H_LO:H_HI` supervises centres 4..19, and at `JITTER=0.5` each slot's window is exactly one
 step wide, so the windows tile and training covers f in [0.146, 0.813] continuously. What is held
 out is the particular plane, not the depth. The only genuinely unseen quantity in this project is
-the left-out photograph of the leave-one-out folds (`mkfolds.py`).
+the left-out photograph of the leave-one-out folds, which are the `method/objects/orange_f*.conf`
+runs of section 4.1.2 rather than anything this directory does.
 
 ## Results, as of the batch this directory produces
 

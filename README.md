@@ -24,15 +24,27 @@ README.md                           this
 ```
 code/method/run.sh                 one entry point, any object:  bash method/run.sh orange
 code/method/objects/*.conf         one file per object. Adding an object is writing one of these.
+code/method/common/pipeline/       the two routes to a lattice: quantise, or generate
 code/method/common/cube/           the lattice: subdivision, cutting, dual grid, compositing
 code/method/common/eval/           held-out cuts, DreamSim/FID/CLIP scoring
-code/method/common/train/          the training loop's pieces
+code/method/common/demo/           the page's videos
 code/six/                          the six-object pipeline, five steps (its own README)
 code/train_voxel.py                the trainer
+code/anchor_decoder.py             the per-cell feature and the shared decoder
 code/sds_demo.py                   section supervision: photographs, warp, plane schedule
+code/section_match.py              silhouette fit and warp; code/section_consistency.py, the
+                                   agreement between the two section families
+code/cross_section.py              the cutting plane and the plane filter
 code/fid_eval.py code/clip_eval.py scoring
+code/voxel_pipeline/pipeline/      route 2 only: the six cube references, and the skin painted
+                                   from them onto a generated shell
+code/report/                       the material field and the unsupervised decomposition
 code/site_tools/                   scripts that build page assets, not part of the method
 ```
+
+The trainer and the pieces it imports sit at the top of `code/` rather than under `method/`, because
+that is where `method/common/stages.sh` runs them from: it `cd`s to `FN_ROOT` and calls
+`train_voxel.py`, `fid_eval.py` and `clip_eval.py` by bare name.
 
 ## Running it
 
@@ -65,12 +77,25 @@ else reproduces every row of the table below.
 `WANT="released trained lattices" bash code/six/fetch.sh` adds the quantised lattices, ~640 MB,
 which `method/run.sh` would otherwise rebuild from the reconstructions in minutes per object.
 
-The renderer and the MPM solver are FruitNinja's and are not vendored here, so `setup.sh` takes a
-[FruitNinja3DInterior](https://github.com/fanguw/FruitNinja3DInterior) checkout as its second
-argument and links in every top-level entry this repository does not already provide — `utils/`,
-`scene/`, `mpm_solver_warp/`, `gaussian_renderer/`, the built `gaussian-splatting` rasteriser and
-whatever else it carries. It reports what is still missing rather than failing later inside a
-render. You also need one CUDA GPU; peak device memory during training is 5.2 to 5.9 GB.
+The renderer, the MPM solver and the particle filler are FruitNinja's and are not vendored here, so
+`setup.sh` takes a [FruitNinja3DInterior](https://github.com/fanguw/FruitNinja3DInterior) checkout
+as its second argument and links in every top-level entry this repository does not already provide
+— `utils/`, `scene/`, `mpm_solver_warp/`, `gaussian_renderer/`, `particle_filling/`, the built
+`gaussian-splatting` rasteriser and whatever else it carries. It reports what is still missing
+rather than failing later inside a render.
+
+That checkout carries its own third-party code the same way, as git submodules, so clone it the way
+FruitNinja says to — `gaussian-splatting` is one of them and the rasteriser is built from it:
+
+```bash
+git clone --recurse-submodules https://github.com/fanguw/FruitNinja3DInterior
+```
+
+Nothing of anyone else's is copied into this repository. `code/` holds only files written for this
+work; everything else arrives through that checkout, which is why the link step is not a list of
+four directories — the first attempt was, and the render died on a fifth.
+
+You also need one CUDA GPU; peak device memory during training is 5.2 to 5.9 GB.
 
 Any object on its own:
 

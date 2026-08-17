@@ -20,7 +20,7 @@ Closing is the right operator rather than hole-filling by connectivity: a hole i
 the inside to the outside, so a flood fill from outside reaches straight through it and finds
 nothing enclosed to fill.
 
-    python voxel_pipeline/pipeline/close_shell.py vox_in vox_out [radius]
+    python method/common/pipeline/close_shell.py vox_in vox_out [radius]
 """
 import os as _os
 # The repository root, so the same file runs here and on the remote box. It was written three

@@ -50,7 +50,13 @@ echo "worktree at $DEST"
 missing=0
 # What the render actually resolves at import time. gaussian_renderer is not among them: it lives
 # inside the gaussian-splatting build, and naming it here reported a failure on a tree that ran.
-for d in prefilled/trained_gs utils scene mpm_solver_warp gaussian-splatting; do
+#
+# particle_filling is FruitNinja's and is checked here because `train_voxel.py` imports it at
+# module level, on line 25, before anything is parsed -- so without it the trainer dies at import
+# with no clue as to why. It used to be a symlink committed into code/ pointing at an absolute
+# path on the machine this was developed on, which was worse than missing: the name then existed
+# in `ours` above, so the loop below skipped it and the real one in the checkout was never linked.
+for d in prefilled/trained_gs utils scene mpm_solver_warp particle_filling gaussian-splatting; do
   if [ -e "$DEST/$d" ]; then echo "  have    $d"; else echo "  MISSING $d"; missing=1; fi
 done
 [ "$missing" = 1 ] && { echo; echo "Fetch the reconstructions:  bash code/six/fetch.sh $DEST"; }

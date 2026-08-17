@@ -41,8 +41,9 @@ def vertical_axis(x):
     """The axis the object is sliced along -- shape-derived, or the world's if it has none.
 
     Least-variance PCA on a ball returns a confident-looking direction built from sampling
-    noise: the generated sphere gave [1, 0, 0] here while make_config, applying its own
-    near-spherical fallback, wrote [0, -1, 0] into the physics config. The two are
+    noise: the generated sphere gave [1, 0, 0] here while the hand-written config generator
+    this file replaced, applying its own near-spherical fallback, wrote [0, -1, 0] into the
+    physics config -- the reason that generator is gone is in this docstring. The two are
     orthogonal, so the interior pattern was extruded along one axis and every rendered and
     supervised section cut across the other -- an extrusion seen end-on, which is the
     diagonal band that appeared across the orange and the watermelon instead of segments.

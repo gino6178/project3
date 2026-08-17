@@ -87,9 +87,10 @@ def main(lattice_dir, cfg, demo, ref_dir, out_dir, size=512):
     # from the axis and a tube radius up from it, so the direction from the centre is nearly
     # horizontal and `up` weighs about 0.3 against the side views' larger values. The icing then
     # gets smeared onto the sides -- which is exactly what it did here, and exactly the failure
-    # this project already diagnosed once today in paint_skin_seq. That file solved it by taking
-    # the normal from the occupancy and blending it with the analytic one where they agree; there
-    # is no reason to derive it a second time.
+    # the sequential skin painter this file replaced had already diagnosed once. It solved it by
+    # taking the normal from the occupancy and blending it with the analytic one where they agree;
+    # there is no reason to derive it a second time, which is why the normal is read from the
+    # lattice below rather than recomputed.
     lat_pt = torch.load(_os.path.join(lattice_dir, "lattice.pt"))
     npath = _os.path.join(lattice_dir, "cell_normal.pt")
     if _os.path.exists(npath):
