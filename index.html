@@ -3018,7 +3018,8 @@ both arms rendered in one batch on the same planes, and worse than the released 
 fine-tuned on these photographs at 0.1290 in that same batch. Thirteen times the cost of the
 widest jitter setting, whose furthest arm sits 0.0050 from its own control. A cell shared by two planes is then pulled towards a different pair
 of images on every pass, and the target it converges to is their average, which is the failure
-measured directly in section 3.2.4. This is also why the jitter sweep is flat: jitter moves the
+measured directly in section 3.2.4. Supplement S2.12 records what that
+does to variation between depths, which is the reason the arm was run. This is also why the jitter sweep is flat: jitter moves the
 plane but not the photograph the plane is assigned, so it varies geometry at fixed content, and
 the content is what the result turns on.</p>
 

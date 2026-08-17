@@ -818,6 +818,56 @@ target to 0.0000, and the target is neither the render (0.0251 away) nor the raw
 behaves this way. The numbers below therefore cannot be attributed to the supervision the section
 names, and the arm has to be rebuilt before anything is claimed from it.</p>
 
+<h4>S2.12&ensp;Random photograph-to-plane assignment, and variation with depth</h4>
+
+<p>The assignment \(k(j)\) ties a plane to one photograph for the whole run. Drawing the
+photograph uniformly at random on every iteration instead, and changing nothing else, costs
+<strong>0.067</strong> of DreamSim on held-out transverse cuts of the orange: 0.1367 against
+0.0700 for the fixed rule, both arms rendered in one batch on the same planes, against a released
+model at 0.1290 in that batch. The paper reports the number in section 4.1.4. What follows is the
+reason it was run and what the renders show, which the number alone does not carry.</p>
+
+<p>The motivation was that a fixed assignment might be why the interior is smoother than a real
+one. A real fruit is not the same at every depth, and if each plane is pinned to a single image
+for two hundred iterations then the volume has no reason to differ from place to place except
+where the six images differ. Randomising the assignment raises the variety of targets a given
+plane sees, so the expectation was more variation from depth to depth, and something closer to a
+real interior. The measurement says the opposite.</p>
+
+<figure>
+  <img src="assets/depthsweep.png" alt="Six pinned depths under the fixed and the random assignment">
+  <figcaption><strong>Six transverse planes at pinned depths, the same six for both arms.</strong>
+  The renderer maps a depth fraction to one of twenty-four discrete plane centres, so a depth is
+  pinned by asking for \(f = k/23\); these are \(k = 6, 8, 10, 12, 14, 16\). Top row the fixed
+  rule, bottom row the random draw. Both arms carry the same lattice and the same occupancy, so
+  the silhouette's change with depth is identical between the rows and cancels in any comparison
+  of them.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>orange, transverse</th><th>DreamSim between neighbouring depths &uarr;</th><th>per step</th></tr></thead>
+<tbody>
+<tr><td>fixed assignment \(k(j)\)</td><td><strong>0.0258</strong></td><td class="mut">0.0225, 0.0167, 0.0229, 0.0270, 0.0397</td></tr>
+<tr><td>photograph drawn at random each iteration</td><td>0.0191</td><td class="mut">0.0325, 0.0097, 0.0108, 0.0187, 0.0238</td></tr>
+</tbody></table></div>
+
+<p>The arrow is up because more change between neighbouring depths is what a real interior has.
+The random draw produces <strong>26% less</strong> of it, and is lower on three of the five steps.
+The renders show the same thing: the top row's radial fibres and pith change direction and shape
+from depth to depth, and the bottom row is six sizes of one picture.</p>
+
+<p>The mechanism is the one section 3.2.4 measures for explicit averaging. Under the random draw
+a plane is pulled towards a different photograph on every pass, so what it converges to is their
+mean; every plane is pulled towards the same mean, so the planes become more alike. Randomising
+the assignment raises the variance of the target a single position sees and lowers the variance
+<em>between</em> positions, and it is the second that a real interior has. The lever for more
+variation between positions is therefore not the assignment rule but the reference set: more
+photographs that differ from each other in a family, or different specimens at different depths.
+The orange has six transverse references and the watermelon twenty.</p>
+
+<p class="mut">This is a negative result on a design that was not adopted, kept here because the
+reasoning that motivated it is the reasoning a reader is likely to repeat.</p>
+
 <h3>A.1&ensp;Reproduction without a fine-tuned diffusion model &mdash; withdrawn</h3>
 
 <p>FruitNinja supervises the interior with depth-conditioned diffusion on cross-sections, and its
