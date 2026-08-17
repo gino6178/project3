@@ -89,7 +89,7 @@
 
 <header>
   <h1>Decoupling Surface and Interior: Explicit Volumetric Occupancy from Unaligned Slices for Exact Planar Cutting</h1>
-  <p class="sub">A two-level occupancy lattice supervised by a dozen cross-section photographs of different specimens, with no camera pose and no registration</p>
+  <p class="sub">A two-level occupancy lattice supervised by cross-section photographs of different specimens, with no camera pose and no registration</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
   <div class="links">
@@ -249,8 +249,8 @@ scope leaves out.</p>
       <strong>7.0&nbsp;MiB</strong> against 26.5 and 58.3.</li>
   <li><strong>Supervision from loose, unaligned references.</strong> An explicit interior is built
       from sparse 2D cross-section photographs used directly as the target, with no per-object
-      fine-tuning and no score distillation. The references need not agree with each other: the
-      twelve per object are of different specimens at different depths, unregistered, with no known
+      fine-tuning and no score distillation. The references need not agree with each other: an
+      object's are of different specimens at different depths, unregistered, with no known
       camera. Under leave-one-out over the six transverse references, scored against the photograph
       its own run never saw, <strong>0.0979 DreamSim against 0.1498</strong> for a released model
       whose generator <em>was</em> fine-tuned on that photograph &mdash; ahead on all six folds,
@@ -461,7 +461,7 @@ rendering primitive is stored in the interior.</p>
 <p><strong>The cut.</strong> A plane \(\Pi = \{\mathbf{x} : \mathbf{n}\cdot\mathbf{x} + d = 0\}\)
 partitions \(\mathcal{V}\) by the sign of \(\mathbf{n}\cdot\mathbf{x_k} + d\), which answers Q2 by
 connected components of face adjacency; and it meets each crossed cell \(c\) in a convex polygon
-\(\Pi_c\), so Q3 is answered by \(\mathcal{P} = \bigcup_{c} \Pi_c\) with every vertex satisfying the
+\(\mathcal{P}_c\), so Q3 is answered by \(\mathcal{P} = \bigcup_{c} \mathcal{P}_c\) with every vertex satisfying the
 plane equation by construction. The crossed set is measured at 4.0 to 10.7% of the cells here, consistent with \(K = O(N^{2/3})\) without establishing the rate for \(N\)
 cells, and section 3.3.1 gives the construction and section 4.3.3 the measured cost.</p>
 
@@ -492,7 +492,7 @@ there is no threshold whose setting could change how many pieces the cut produce
 <tr><td>\(\mathbf{f_k}\)</td><td>a cell's feature</td><td>\(\mathbb{R}^{8}\)</td></tr>
 <tr><td>\(\Pi = (\mathbf{n}, d)\)</td><td>a cutting plane</td><td>\(\|\mathbf{n}\| = 1\)</td></tr>
 <tr><td>\(K\)</td><td>cells a plane crosses</td><td>4.0&ndash;10.7% of \(|\mathcal{V}|\)</td></tr>
-<tr><td>\(\mathcal{P}\)</td><td>the cut surface, \(\bigcup_c \Pi_c\)</td><td>a 2-manifold with boundary</td></tr>
+<tr><td>\(\mathcal{P}\)</td><td>the cut surface, \(\bigcup_c \mathcal{P}_c\)</td><td>a 2-manifold with boundary</td></tr>
 <tr><td>\(\mathcal{G}\)</td><td>the pieces, \(\mathcal{V}/\!\sim_{\mathcal{E}}\)</td><td>\(|\mathcal{G}| = 8\) for three planes</td></tr>
 <tr><td>\(\mathcal{M} = (\mathcal{N}, \mathcal{E})\)</td><td>the dual-grid boundary</td><td>one node per boundary cell</td></tr>
 <tr><td>\(\mathcal{R}\)</td><td>rendering the lattice at a plane</td><td>\((\mathcal{F}, \theta; \Pi) \mapsto\) image, alpha</td></tr>
@@ -580,7 +580,7 @@ $$ Q(\mathbf{x}) = \sum_i \left(\mathbf{n}_i^\top\mathbf{x} - d_i\right)^2
    A = \sum_i \mathbf{n}_i\mathbf{n}_i^\top,\;
    \mathbf{b} = \sum_i d_i\mathbf{n}_i,\;
    c = \sum_i d_i^2 $$
-</div><div class="num">(12)</div></div>
+</div><div class="num">(4)</div></div>
 
 <p>so a quadric is ten numbers. The property everything rests on is that it is additive over the
 set of planes, \(Q_{\text{parent}} = \sum Q_{\text{child}}\), exactly and with no reference to the
@@ -598,9 +598,9 @@ the same solid:</p>
 $$ v^{*} \;=\; \arg\min_{v}\; \sum_{p \in \mathcal{H}(c)} \bigl( \mathbf{n}_p^\top v - d_p \bigr)^2
    \quad \text{s.t.}\quad \;\;
    \partial \mathcal{M} = \partial \mathcal{M}_0 $$
-</div><div class="num">(13)</div></div>
+</div><div class="num">(5)</div></div>
 
-<p>The objective is the quadric of equation&nbsp;(12), additive over the planes a block covers, so
+<p>The objective is the quadric of equation&nbsp;(4), additive over the planes a block covers, so
 the sum is ten numbers added per child and the minimiser is one \(3\times3\) solve. The constraint
 is what keeps a collapse changing the resolution rather than the object: the boundary curve set is held at its uncollapsed value and no merge removes an edge or a face, because connectivity is the occupancy's and a collapse moves a node without changing which cells are adjacent. That is enforced structurally, not by a penalty. No Euler characteristic is computed anywhere in this work and none is claimed. A dual grid's connectivity comes from the occupancy and not from where its vertices
 sit, so a collapse merges vertices and never edges or faces, and a merge is refused when it would
@@ -610,7 +610,7 @@ indexed by the same cells, and the seam is exactly the boundary cells the plane 
 
 <div class="eq"><div class="body">
 $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
-</div><div class="num">(14)</div></div>
+</div><div class="num">(6)</div></div>
 
 <figure>
   <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
@@ -620,7 +620,7 @@ $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
 
 <h4>3.1.5&ensp;Collapse tolerance against surface error</h4>
 
-<p>The collapse has one parameter, \(\tau_c\) in equation (14), and what it buys has to be read
+<p>The collapse has one parameter, \(\tau_c\) in equation (6), and what it buys has to be read
 against what it costs. Sweeping it on the orange's own dual grid gives both at once: the node
 count that survives, and how far the surface moved to reach it. The distances are to the
 uncollapsed grid and not to an analytic surface, so this is a self-consistency measure of what the
@@ -680,7 +680,7 @@ cell that contains it, and the set of cells that received at least one is the oc
 <div class="eq"><div class="body">
 $$ \mathbf{k}(\mathbf{p}) = \left\lfloor \frac{\mathbf{p} - \mathbf{o}}{h_\ell} \right\rfloor,
    \qquad \mathcal{O} = \bigl\{\, \mathbf{k}(\mathbf{p}_i) \;:\; i = 1 \dots N \,\bigr\} $$
-</div><div class="num">(4)</div></div>
+</div><div class="num">(7)</div></div>
 
 <p>The half-cell offset in equation&nbsp;(1) is written with \(h_f\), which is what makes
 equation&nbsp;(3)'s parent relation hold with one shared origin. Two scripts offset by
@@ -705,7 +705,7 @@ connectivity [9] &mdash;</p>
 <div class="eq"><div class="body">
 $$ \mathcal{O}^{\bullet} = \complement\, \mathcal{C}_{\partial}
    \bigl( \complement\, ( \mathcal{O} \oplus B \ominus B ) \bigr) $$
-</div><div class="num">(5)</div></div>
+</div><div class="num">(8)</div></div>
 
 <p>where \(B\) is the one-cell structuring element and \(\mathcal{C}_{\partial}\) is the
 component of the complement that reaches the bounding box. What is left is inside by
@@ -732,7 +732,7 @@ two paths, and which one it took is not recoverable downstream: cutting, the sur
 physics and the material field all read a lattice and none of them asks where it came from. The two
 paths are how the lattice gets populated rather than the claim being made; the supplement measures the independence and section 4.1 the claims that rest on the lattice itself.</p>
 
-<p>Each of its steps replaces an inference with something exact.</p>
+<p>Each step of route 2 replaces an inference with something exact.</p>
 
 <div class="tw"><table>
 <thead><tr><th>step</th><th>what it does</th><th>what it replaces</th></tr></thead>
@@ -765,7 +765,7 @@ $$ \mathcal{V}_0 = \bigl\{ \mathbf{k} : \phi(\mathbf{x}_{\mathbf{k}}) < 0 \bigr\
    \qquad
    \mathbf{n}_{\mathbf{k}} = \frac{\nabla \phi(\mathbf{x}_{\mathbf{k}})}
                                   {\lVert \nabla \phi(\mathbf{x}_{\mathbf{k}}) \rVert} $$
-</div><div class="num">(6)</div></div>
+</div><div class="num">(9)</div></div>
 
 <p>Colour reaches the skin cells by projection, by the standard construction: incidence-weighted
 blending of registered views is view-dependent texture mapping [37, 38], and iterative six-view
@@ -783,7 +783,7 @@ $$ \mathbf{c}_{\mathbf{k}} = \frac{\sum_{i=1}^{6} w_{i\mathbf{k}}\,
    w_{i\mathbf{k}} = \mathbb{1}\bigl[\, \mathbf{k} \in \mathcal{S},\ \text{visible in } i \,\bigr]
    \; \max\bigl( \mathbf{n}_{\mathbf{k}} \cdot \mathbf{d}_i,\, 0 \bigr)^{\gamma},
    \quad \gamma = 4 $$
-</div><div class="num">(7)</div></div>
+</div><div class="num">(10)</div></div>
 
 <p>The camera is known because it produced the view, so there is no
 saturating map from a cell's direction to a reference radius and no rim light to correct for.</p>
@@ -818,17 +818,21 @@ diffusion model fine-tuned on those same photographs, and the margin in section 
 attributable to the target as much as to the lattice &mdash; which is why that section compares
 against released models and does not present the substitution as controlled.</p>
 
-<p><p><strong>The warp, written down.</strong> Two operators stand between a photograph and the
+<p><strong>The warp, written down.</strong> Two operators stand between a photograph and the
 loss, and both are stated here because their form decides what the optimisation is. Neither carries
 a parameter.</p>
 
-<p>The first acts once per reference and only on the transverse family. Let \(a_k(\phi)\) be the
-angular intensity profile of \(\mathbf{I}_k\) about its own centroid. The family is brought to a
-common phase by the shift that maximises circular cross-correlation against a fixed member,</p>
+<p>The first acts once per reference and only on the transverse family. Let \(a_k(\varphi)\) be the
+angular intensity profile of \(\mathbf{I}_k\) about its own centroid, sampled at \(P = 360\)
+bins, and \(\hat{a}_k\) its discrete Fourier transform. The fixed member \(a_0\) is the first
+reference of the family. The family is brought to a common phase by the shift that maximises
+circular cross-correlation against that member,</p>
 
-<div class="eq">\[ \delta_k = \frac{2\pi}{P}\,\arg\max_{m}\;
-\mathcal{F}^{-1}\!\bigl[\, \hat{a}_0 \overline{\hat{a}_k} \,\bigr](m), \qquad
-\tilde{\mathbf{I}}_k = \mathrm{Rot}_{-\delta_k} \mathbf{I}_k \]</div>
+<div class="eq"><div class="body">
+$$\delta_k = \frac{2\pi}{P}\,\arg\max_{m}\;
+\mathrm{DFT}^{-1}\!\bigl[\, \hat{a}_0 \overline{\hat{a}_k} \,\bigr](m), \qquad
+\tilde{\mathbf{I}}_k = \mathrm{Rot}_{-\delta_k} \mathbf{I}_k $$
+</div><div class="num">(11)</div></div>
 
 <p>with \(\mathrm{Rot}\) an image rotation and \(P\) the number of angular bins. The second acts
 per plane, per rebuild. Given the alpha \(\alpha_j\) the plane's own render produces, write
@@ -836,10 +840,12 @@ per plane, per rebuild. Given the alpha \(\alpha_j\) the plane's own render prod
 the similarity transform that takes one silhouette onto the other &mdash; isotropic scale and
 translation, no rotation and no shear:</p>
 
-<div class="eq">\[ s_j = \frac{r(\alpha_j)}{r(\tilde{\mathbf{I}}_{k(j)})}, \qquad
+<div class="eq"><div class="body">
+$$s_j = \frac{r(\alpha_j)}{r(\tilde{\mathbf{I}}_{k(j)})}, \qquad
 \mathbf{t}_j = c(\alpha_j) - s_j\, c(\tilde{\mathbf{I}}_{k(j)}), \qquad
 \mathbf{T}_j(\mathbf{u}) = \tilde{\mathbf{I}}_{k(j)}\!\left( \frac{\mathbf{u} -
-\mathbf{t}_j}{s_j} \right) \]</div>
+\mathbf{t}_j}{s_j} \right) $$
+</div><div class="num">(12)</div></div>
 
 <p>\(\Phi\) is therefore fixed by the first and second moments of two silhouettes and by nothing
 learned. It is also where the two halves of the system meet, and they meet like this: \(\alpha_j\) is produced by the current \(\mathcal{F}\) and
@@ -847,9 +853,11 @@ learned. It is also where the two halves of the system meet, and they meet like 
 through that dependence. The target is rebuilt from the current render and then held constant while
 the parameters move,</p>
 
-<div class="eq">\[ \min_{\mathcal{F},\,\theta}\; \sum_j \mathcal{L}_j\bigl(\,
+<div class="eq"><div class="body">
+$$\min_{\mathcal{F},\,\theta}\; \sum_j \mathcal{L}_j\bigl(\,
 \mathcal{R}(\mathcal{F}, \theta;\, \Pi_j),\; \mathrm{sg}\bigl[\Phi(\tilde{\mathbf{I}}_{k(j)},
-\alpha_j)\bigr] \,\bigr) \]</div>
+\alpha_j)\bigr] \,\bigr) $$
+</div><div class="num">(13)</div></div>
 
 <p>so the scheme is alternating rather than joint: the warp is recomputed each iteration from the
 render as it stands, the parameters then descend against a fixed target, and neither step
@@ -860,14 +868,15 @@ by fitting, there is no configuration of it that the optimiser could exploit to 
 without changing the volume.</p>
 
 <p><strong>Which photograph a plane gets, and for how long.</strong> The assignment
-\(k(j)\) is a function of the plane's index alone: \(k = \lfloor j\,M/N \rfloor \bmod M\) for
-\(M\) photographs and \(N\) planes in that family. It does not depend on the iteration. Plane
+\(k(j)\) is a function of the plane's index alone: \(k = \lfloor j\,M_f/N_f \rfloor \bmod M_f\) for
+\(M_f\) photographs and \(N_f\) planes in the plane
+family \(f\), not the \(M = 12\) and \(N\) of the notation table. It does not depend on the iteration. Plane
 \(j\) therefore sees the same photograph on every pass of the run &mdash; six transverse images
 divided among twenty-four planes, so each image serves about four adjacent depths, and six
 longitudinal among ten. Two consequences follow that a reader cannot otherwise infer. The conflict
 on a shared cell is not an occasional collision between whichever images happened to be drawn; it
 is the same two images pulling the same cells in the same directions on every iteration, which is
-why an assignment is a variable worth optimising at all (section 4.1.6). And the jitter moves the
+why an assignment is a variable worth optimising at all (section 4.1.7). And the jitter moves the
 plane without changing what supervises it: a cell's target comes from the same photograph wherever
 the plane lands inside its slot, so the sweep varies geometry and not content.</p>
 
@@ -875,24 +884,38 @@ the plane lands inside its slot, so the sweep varies geometry and not content.</
 iteration from a distribution centred on a fixed schedule. The transverse family takes a depth
 uniformly about its slot, the longitudinal family an azimuth uniformly about its own,</p>
 
-<div class="eq">\[ d_j \sim \mathcal{U}\bigl(c_i - J\Delta,\; c_i + J\Delta\bigr), \qquad
-a_j \sim \mathcal{U}\Bigl(\tfrac{180^\circ}{N_v}(i - J),\; \tfrac{180^\circ}{N_v}(i + J)\Bigr)
-\]</div>
+<div class="eq"><div class="body">
+$$d_j \sim \mathcal{U}\bigl(c_i - J\Delta,\; c_i + J\Delta\bigr), \qquad
+a_j \sim \mathcal{U}\Bigl(\tfrac{180^\circ}{N_v}(i - J),\; \tfrac{180^\circ}{N_v}(i + J)\Bigr) $$
+</div><div class="num">(14)</div></div>
+
+<p>Because the plane is drawn rather than chosen, equation&nbsp;(13) is the estimator of an
+objective over the plane distribution \(p(\Pi)\) that (14) defines,</p>
+
+<div class="eq"><div class="body">
+$$ \min_{\mathcal{F},\,\theta}\; \mathbb{E}_{\Pi \sim p(\Pi)}
+   \Bigl[\, \mathcal{L}\bigl(\, \mathcal{R}(\mathcal{F}, \theta;\, \Pi),\;
+   \mathrm{sg}\bigl[\Phi(\tilde{\mathbf{I}}_{k(\Pi)}, \alpha_\Pi)\bigr] \,\bigr) \,\Bigr] $$
+</div><div class="num">(15)</div></div>
+
+<p>and the sum over \(j\) in (13) is its Monte-Carlo estimate at one sample per plane per
+iteration. The distinction is not decorative: a finite set of planes leaves the cells between
+them unconstrained, whereas (15) has support wherever \(p(\Pi)\) does, so a cell no fixed plane
+would touch still carries gradient in expectation.</p>
 
 <p>with \(\Delta\) the spacing between slots, \(J = 0.5\) and \(N_v = 10\) in every run reported
 here. At \(J = 0.5\) the slots tile the interval exactly: no depth is sampled twice and none is
 unreachable. This is the reason the 66% of cells no fixed plane would touch are not a hole to be
-filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.8 reports what
+filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.4 reports what
 happens at \(J = 0\), \(0.25\) and \(1\).</p>
 
 <p><strong>What is optimised and what is not.</strong> The objection to supervising from
 photographs with no camera is that the slice pose is unknown, so it must either be recovered or the
 gradient cannot be formed. Neither happens here. The optimisation is over the per-cell features \(\mathcal{F} = \{\mathbf{f}_i\}\) and
-the shared decoder \(\theta\), and over nothing else:</p>
+the shared decoder \(\theta\) of equation&nbsp;(13), and over nothing else. The plane \(\Pi_j\) is
+sampled rather than learned.</p>
 
-<div class="eq">\[ \min_{\mathcal{F},\,\theta} \; \sum_{j} \mathcal{L}_j
-\bigl(\, \mathcal{R}(\mathcal{F}, \theta;\, \Pi_j), \; \Phi(\mathbf{I}_{k(j)}, \alpha_j) \,\bigr),
-\qquad \Pi_j \ \text{sampled, not learned} \]</div>
+
 
 <p>There is no plane pose \(P_j = [\,R_j \mid \mathbf{t}_j\,]\) among the parameters and no
 gradient flows to \(\Pi_j\), because \(\Pi_j\) is not an estimate of where a photograph was
@@ -922,11 +945,13 @@ them through the shared decoder \(g_\theta\), giving an image \(\hat{\mathbf{C}}
 \(\mathbf{T}_j = \Phi(\mathbf{I}_{k(j)}, \alpha_j)\). The objective is a structural and a
 photometric term over \(N_c\) random crops of side \(w\), with a per-crop band statistic:</p>
 
-<div class="eq">\[ \mathcal{L}_j = \frac{1}{N_c}\sum_{c=1}^{N_c}
+<div class="eq"><div class="body">
+$$\mathcal{L}_j = \frac{1}{N_c}\sum_{c=1}^{N_c}
 \Bigl[\, 0.7\,\bigl(1 - \mathrm{SSIM}(\hat{\mathbf{C}}_j^{c}, \mathbf{T}_j^{c})\bigr)
 + 0.3\,\bigl\lVert \hat{\mathbf{C}}_j^{c} - \mathbf{T}_j^{c} \bigr\rVert_2^2
 + \lambda_{\mathrm{b}}\, \mathcal{L}_{\mathrm{band}}(\hat{\mathbf{C}}_j^{c},
-\mathbf{T}_j^{c}) \,\Bigr] \]</div>
+\mathbf{T}_j^{c}) \,\Bigr] $$
+</div><div class="num">(16)</div></div>
 
 <p class="mut">with \(w = 128\), \(N_c = 6\) and \(\lambda_{\mathrm{b}} = 0.3\) in every run
 reported here. Three things are absent and their absence is the point: no score, no diffusion model
@@ -1894,10 +1919,10 @@ that generates,</p>
 </svg>
 <figcaption><strong>The closed-form cut, drawn from the geometry that computes it.</strong>
 <strong>(a)</strong> a lattice sectioned by \(\Pi\), cells filled by the sign of
-\(\mathbf{n}\cdot\mathbf{x}+d\) and the crossed band outlined by the corner test of (9).
+\(\mathbf{n}\cdot\mathbf{x}+d\) and the crossed band outlined by the corner test of (18).
 <strong>(b)</strong> one cell at three orientations, left to right: all twelve edges, the eight
 corner signs (filled positive, hollow negative), the crossings \(\mathbf{v}_j\) solved on the edges
-that change sign, and the polygon \(\Pi_c\) they order into. A cube admits three to six crossings;
+that change sign, and the polygon \(\mathcal{P}_c\) they order into. A cube admits three to six crossings;
 four, four and three are drawn. <strong>(c)</strong> that polygon in the plane's own basis, vertices numbered
 by angle about the centroid, then fanned. <strong>(d)</strong> the union over the band. Every
 vertex satisfies \(\mathbf{n}\cdot\mathbf{v}+d=0\) by construction, so the plane residual is at
@@ -1913,13 +1938,13 @@ $$ q(\mathbf{k}) = \operatorname{sgn}\!\left(\mathbf{n}\cdot\mathbf{x}_{\mathbf{
    q(\mathbf{k}) = q(\mathbf{k}') \bigr\},
    \qquad
    \mathcal{G} = \mathcal{V} / \!\sim_{\mathcal{E}} $$
-</div><div class="num">(8)</div></div>
+</div><div class="num">(17)</div></div>
 
 <div class="eq"><div class="body">
 $$ \left|\mathbf{n}\cdot\mathbf{x} + d\right| \;\le\; \tfrac{1}{2}\,h \textstyle\sum_a \left|n_a\right| $$
-</div><div class="num">(9)</div></div>
+</div><div class="num">(18)</div></div>
 
-<p>Here \(\mathcal{A}\) is face adjacency on the leaves, \(\mathcal{E}\) the pairs the plane does not separate, and \(\mathcal{G}\) the pieces &mdash; the quotient of the leaf set by connectivity under \(\mathcal{E}\). The cut surface itself is \(\mathcal{P}\), defined in section 3.1.1 and constructed in section 3.3.1. A cut here is an unbounded plane, and that is a property of the representation rather than of the implementation. A piece is an equivalence class of face adjacency under a global sign code, one
+<p>Here \(\mathcal{A}\) is face adjacency on the leaves, \(\mathcal{E}\) the pairs the plane does not separate, and \(\mathcal{G}\) the pieces &mdash; the quotient of the leaf set by connectivity under \(\mathcal{E}\). The cut surface itself is \(\mathcal{P}\), defined in section 3.1.1 and constructed above. A cut here is an unbounded plane, and that is a property of the representation rather than of the implementation. A piece is an equivalence class of face adjacency under a global sign code, one
 sign per plane, so the cut has no extent: an incision that enters, travels and stops has no
 expression, because it would need the same pair of cells severed inside the incision's footprint
 and adjacent beyond its end. A curved cut approximated by \(Q\) planes generates up to \(2^Q\)
@@ -1971,12 +1996,12 @@ make statements about, on an asset that began as photographs, has not previously
 
 <p>Two degeneracies have to be handled for the closed-form face to be stable, and both are handled
 by construction rather than by a tolerance. When the plane passes exactly through a cell vertex, the
-edge parameter of equation&nbsp;(10) evaluates to 0 or 1 on the two edges meeting there and the same
+edge parameter of equation&nbsp;(19) evaluates to 0 or 1 on the two edges meeting there and the same
 point is emitted twice; the merge that follows collapses vertices within \(10^{-6}h\), so the
 duplicate disappears and the polygon loses a degenerate edge rather than gaining a zero-area
 triangle. When the plane is coplanar with a cell face, every edge of that face has
 \(\mathbf{n}\cdot(\mathbf{b}-\mathbf{a}) = 0\) and no intersection is emitted at all: the face
-is not a crossing, both cells on either side take a definite sign from equation&nbsp;(8), and the
+is not a crossing, both cells on either side take a definite sign from equation&nbsp;(17), and the
 cut runs along the boundary already between them. Neither case needs an epsilon on the plane
 distance, because the sign that decides membership is evaluated at cell centres, which a plane
 through a vertex or along a face never touches.</p>
@@ -1989,14 +2014,14 @@ through a vertex or along a face never touches.</p>
 <pre>  precompute once per object      E<sub>0</sub> &larr; adjacency(C)                              O(N log N)
 
   cut(C, E<sub>0</sub>, &Pi;, h<sub>target</sub>)
-1   B &larr; { c &isin; C : |n&middot;x<sub>c</sub> + d| &le; &frac12;h &Sigma;<sub>a</sub>|n<sub>a</sub>| }        crossed cells, eq. (9)      O(N)*
+1   B &larr; { c &isin; C : |n&middot;x<sub>c</sub> + d| &le; &frac12;h &Sigma;<sub>a</sub>|n<sub>a</sub>| }        crossed cells, eq. (18)      O(N)*
 2   L &larr; refine(B) until h<sub>&ell;</sub> &le; h<sub>target</sub>; L &larr; L &cup; (C \ B)      leaves                      O(K)
 3   E &larr; { (u,v) &isin; E<sub>0</sub> : u,v unrefined } &cup; adjacency(L|<sub>B&cup;&part;B</sub>)   reuse outside the band      O(K)
-4   q(&ell;) &larr; sgn(n&middot;x<sub>&ell;</sub> + d)  for &ell; &isin; L                          side, eq. (8)               O(K)
+4   q(&ell;) &larr; sgn(n&middot;x<sub>&ell;</sub> + d)  for &ell; &isin; L                          side, eq. (17)               O(K)
 5   E' &larr; { (u,v) &isin; E : q(u) = q(v) }                            drop the crossings          O(|E|)
-6   P &larr; connected_components(L, E')                            pieces, eq. (9)             O(|E| &alpha;)
-7   <b>for</b> c &isin; B <b>do</b>  &Pi;<sub>c</sub> &larr; Poly(c &cap; &Pi;)  by eq. (10)                   the cut face                O(K)
-8   <b>return</b>  P,  &#x1D4AB; = &cup;<sub>c&isin;B</sub> &Pi;<sub>c</sub></pre>
+6   P &larr; connected_components(L, E')                            pieces, eq. (17)             O(|E| &alpha;)
+7   <b>for</b> c &isin; B <b>do</b>  &#x1D4AB;<sub>c</sub> &larr; Poly(c &cap; &Pi;)  by eq. (19)                   the cut face                O(K)
+8   <b>return</b>  P,  &#x1D4AB; = &cup;<sub>c&isin;B</sub> &#x1D4AB;<sub>c</sub></pre>
 <div class="algo-f">* step 1 is a predicate over cells and is the only \(O(N)\) term; it is a single
 vectorised comparison and is not what a cut spends its time on. Steps 2 to 4 and 7 touch only the
 band. \(|E|\) is bounded by \(3|L|\) on a face-adjacency graph.</div>
@@ -2008,14 +2033,14 @@ boundary, so it is a convex polygon and it is the convex hull of the plane's cro
 cell's twelve edges,</p>
 
 <div class="eq"><div class="body">
-$$ \Pi_c \;=\; \operatorname{conv}\bigl\{\, \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e)
+$$ \mathcal{P}_c \;=\; \operatorname{conv}\bigl\{\, \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e)
    \;:\; e \in E_c^{\pm} \,\bigr\}, \qquad
    t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)}
    \in [0,1] $$
-</div><div class="num">(10)</div></div>
+</div><div class="num">(19)</div></div>
 
 <p>with \(E_c^{\pm} \subseteq E_c\) the edges whose endpoints carry opposite signs, three to six of the twelve for a cube. The hull is the polygon; without it the set is the crossed edges' points and not a face. The cut surface of the whole object is the union,
-\(\mathcal{P} = \bigcup_{c \in \mathcal{B}} \Pi_c\). Every vertex of \(\Pi_c\) satisfies
+\(\mathcal{P} = \bigcup_{c \in \mathcal{B}} \mathcal{P}_c\). Every vertex of \(\mathcal{P}_c\) satisfies
 \(\mathbf{n}\cdot\mathbf{x} + d = 0\) by construction rather than by fitting, so \(\mathcal{P}\)
 is planar to whatever the arithmetic leaves and carries no approximation term. Ordering the
 crossings by angle about their centroid in the plane's own basis gives the polygon; three to six
@@ -2037,7 +2062,7 @@ A leaf is handed whole to one side of the plane, so its error is everything on t
 
 <div class="eq"><div class="body">
 $$ e(c) \;=\; h_\ell^3 \;-\; \max_{k} \operatorname{vol}\bigl( c \cap H_k \bigr) $$
-</div><div class="num">(11)</div></div>
+</div><div class="num">(20)</div></div>
 
 <p>with \(H_k\) the half-spaces the planes cut \(c\) into. Refining while \(e\) exceeds a tolerance
 turns the level from a depth into a ceiling. The criterion has to be cheaper than what it saves,
@@ -2103,7 +2128,7 @@ two pieces; only the work differs. Checked on every synthetic case above as well
 the band-local result matches the full pass in piece count and edge count exactly. What remains at
 2.91&nbsp;s is the refinement itself and the component pass, not the adjacency.</p>
 
-<p>Equation (9) is the standard box-plane separating-axis test [39], and it is used twice. A cell of side \(h\) centred at
+<p>Equation (18) is the standard box-plane separating-axis test [39], and it is used twice. A cell of side \(h\) centred at
 \(\mathbf{x}\) is cut by the plane exactly when its centre lies within half the cell's diagonal
 extent along \(\mathbf{n}\), which is the right-hand side; that decides which cells are refined.
 It also bounds how far a point inside a cell can be from the plane, which is what section 4.2.5
@@ -2149,12 +2174,12 @@ refined.</p>
 <div class="eq"><div class="body">
 $$ \operatorname{occ}_P(\mathbf{x}) \;=\;
    \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr] \;\wedge\;   \bigl[\, q_P \left(\mathbf{n}\cdot\mathbf{x} + d\right) > 0 \,\bigr] $$
-</div><div class="num">(15)</div></div>
+</div><div class="num">(21)</div></div>
 
 <p>\(q_P \in \{+1, -1\}\) is the side of the plane piece \(P\) lies on, taken as the sign
-that the majority of its leaves carry under equation&nbsp;(8); \(\operatorname{leaf}(\mathbf{x})\)
-is the leaf containing \(\mathbf{x}\), found by the floor division of equation&nbsp;(4). The sign
-test is applied only to points inside the band of equation&nbsp;(9), which is where a leaf can
+that the majority of its leaves carry under equation&nbsp;(17); \(\operatorname{leaf}(\mathbf{x})\)
+is the leaf containing \(\mathbf{x}\), found by the floor division of equation&nbsp;(7). The sign
+test is applied only to points inside the band of equation&nbsp;(18), which is where a leaf can
 straddle the plane at all; a point further from the plane than half a leaf's diagonal extent is
 inside or outside on the strength of its leaf alone. That restriction is what makes the at-rest
 result below a consequence rather than a coincidence, and applying the test unconditionally would
@@ -2174,7 +2199,7 @@ rather than the absolute value is the claim,</p>
 <div class="eq"><div class="body">
 $$ u_j = 0.65\,\beta_j + 0.35\,\operatorname{rank}(L)_j,
    \qquad   E_j = E_{\min} + \operatorname{rank}(u)_j \,\bigl( E_{\max} - E_{\min} \bigr) $$
-</div><div class="num">(16)</div></div>
+</div><div class="num">(22)</div></div>
 
 <p>where \(\beta_j\) is the fraction of class \(j\)'s cells in the skin band, \(L_j\) its
 mean luminance, \(\operatorname{rank}(\cdot)\) the rank normalised to \([0, 1]\), and
@@ -2193,9 +2218,9 @@ $$ \tau_s = \frac{t_{\text{shell}} / L}{\Delta x}, \qquad
    \Delta x = \frac{\text{grid\_lim}}{n_{\text{grid}}}, \qquad
    t_{\text{shell}} = P_{90}\Bigl( \min_{\mathbf{k}' \notin \mathcal{S}}
        \lVert \mathbf{x}_{\mathbf{k}} - \mathbf{x}_{\mathbf{k}'} \rVert \Bigr)       + \tfrac{1}{2} h_f $$
-</div><div class="num">(17)</div></div>
+</div><div class="num">(23)</div></div>
 
-<p>The percentile in (17) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
+<p>The percentile in (18) is over the shell cells \(\mathbf{k} \in \mathcal{S}\).</p>
 
 <p>where \(L\) is the object's own extent, because the solver normalises the object into its grid
 box and a world length only reaches \(\Delta x\) through that scaling.</p>
@@ -2212,7 +2237,7 @@ h_f\). Section 4.2 measures
 what the solver does on either side of the threshold.</p>
 
 <p>A cut face and the exterior surface meet at a seam, and the two are produced by different
-constructions: the face is the planar polygon of equation&nbsp;(10) and the exterior is the dual grid of equation&nbsp;(13). They are joined rather than blended. Both are indexed by the same
+constructions: the face is the planar polygon of equation&nbsp;(10) and the exterior is the dual grid of equation&nbsp;(19). They are joined rather than blended. Both are indexed by the same
 cells, so the seam is exactly the set of boundary cells the plane crosses, and each contributes one
 polygon and one dual vertex whose positions already agree to within the cell. The normal is
 deliberately discontinuous across it: a cut is a crease in the object, and smoothing the normal
@@ -2228,7 +2253,7 @@ its own piece's \(k\) nearest particles with weights fixed at bind time,</p>
 <div class="eq"><div class="body">
 $$ \mathbf{x}_v(t) = \sum_{j \in \mathcal{N}_k(v)} w_{vj}\,\mathbf{x}_j(t),
    \qquad \sum_j w_{vj} = 1 $$
-</div><div class="num">(18)</div></div>
+</div><div class="num">(24)</div></div>
 
 <p>The weights are a smooth kernel over the \(k\) nearest particles, whose support is the
 \(k\)-th distance itself, so a vertex in a dense region binds tightly and one in a sparse region
@@ -2238,7 +2263,7 @@ reaches further without a length scale being chosen anywhere,</p>
 $$ w_{vj} = \frac{\tilde{w}_{vj}}{\sum_{j'} \tilde{w}_{vj'}}, \qquad
    \tilde{w}_{vj} = \Bigl( 1 - r_{vj}^2 \Bigr)_{\!+}^{3} + \varepsilon, \qquad   r_{vj} = \frac{\lVert \mathbf{x}_v(0) - \mathbf{x}_j(0) \rVert}
                  {\max_{j' \in \mathcal{N}_k(v)} \lVert \mathbf{x}_v(0) - \mathbf{x}_{j'}(0) \rVert} $$
-</div><div class="num">(19)</div></div>
+</div><div class="num">(25)</div></div>
 
 <p>\(\varepsilon = 10^{-12}\), which only keeps the outermost weight from being exactly zero.
 Because the weights sum to one and are fixed at bind time, any affine motion of the particles is
@@ -2431,7 +2456,7 @@ two ways of spending the same six images and not between one method that has see
 that has not, and the leave-one-out study above has already removed it from our side alone.</p>
 
 
-<p>And it does not survive every instrument, and is stated with it. FID at six
+<p>One instrument does not support the result, and it is reported with the rest. FID at six
 references is dominated by its own bias, so we scored the same renders three ways:</p>
 
 <div class="tw"><table>
@@ -2475,8 +2500,6 @@ reverses the one result that had gone against this work:</p>
 <tr><td><strong>this work, route 2</strong></td><td><strong>0.0794</strong></td>
     <td><strong>0.1674</strong></td><td><strong>0.1145</strong></td></tr>
 <tr><td><strong>this work, route 1</strong></td><td>0.0759</td><td>0.1750</td><td>0.1178</td></tr>
-<tr><td>this work, route 2</td><td><strong>0.0794</strong></td>
-    <td class="mut">not run</td><td class="mut">not run</td></tr>
 <tr><td>FruitNinja, released</td><td>0.1326</td><td>0.2211</td><td class="mut">no released model</td></tr>
 <tr><td>GaussianFluent, released</td><td class="mut">no orange released</td><td>0.3278</td>
     <td class="mut">no released model</td></tr>
@@ -2861,7 +2884,7 @@ is why DreamSim, which is a distance between pairs, is the column reported.</p>
 
 <h4>4.1.4&ensp;What the jitter and the second level are worth</h4>
 
-<p class="mut">Every arm in this section is scored against the six photographs that supervised it, as is the control at 0.0738. The comparison is between arms that share that condition, not against a held-out reference; section 4.1.2 is the study that holds one out.</p>
+<p class="mut">The sweeps in sections 4.1.4 to 4.1.7 are scored against the six photographs that supervised them, as is the control at 0.0738. Each comparison is between arms that share that condition, not against a held-out reference; section 4.1.2 is the study that holds one out.</p>
 
 <p>Two design choices are swept here because each is a parameter the paper had reported a role for
 without measuring it.</p>
@@ -2927,7 +2950,7 @@ it does not, on the three sets measured here, rank them the way the trained mode
 
 <h4>4.1.6&ensp;How much misalignment the references may carry</h4>
 
-<p class="mut">Every arm in this section is scored against the six photographs that supervised it, as is the control at 0.0738. The comparison is between arms that share that condition, not against a held-out reference; section 4.1.2 is the study that holds one out.</p>
+
 
 <p>The claim that references need not be registered invites the obvious question of how far that
 goes. Each reference is rotated by an angle drawn uniformly from \(\pm\psi\), independently
@@ -2947,7 +2970,7 @@ an angle the rest of the family does not share.</p>
 </tbody></table></div>
 
 <p>The curve is nearly flat to fifteen degrees and costs fifteen per cent at thirty, which is a
-third of a right angle; at every setting the worst setting is 0.0850 against the fine-tuned baseline's 0.1326, which had no noise injected. Two mechanisms produce that and they should not be conflated. The
+third of a right angle; the worst setting, 0.0850, is still ahead of the fine-tuned baseline's 0.1326, which had no noise injected. Two mechanisms produce that and they should not be conflated. The
 first is the transverse family's phase alignment, which rotates each reference to the family's
 common angular phase and therefore undoes part of an injected rotation before the loss sees it &mdash;
 this is why five and fifteen degrees are indistinguishable. The second is the lattice, which resolves
@@ -2957,7 +2980,7 @@ mechanism.</p>
 
 <h4>4.1.7&ensp;Choosing the references' phases against the geometry they share</h4>
 
-<p class="mut">Every arm in this section is scored against the six photographs that supervised it, as is the control at 0.0738. The comparison is between arms that share that condition, not against a held-out reference; section 4.1.2 is the study that holds one out.</p>
+
 
 <p>The transverse and longitudinal families meet in known lines, so the disagreement between them
 is a function of the phases alone and can be minimised before training. Where a transverse section
@@ -2965,9 +2988,11 @@ at height \(z\), rotated by \(\delta\), is met by a longitudinal plane at azimut
 shared line is that section's diameter at angle \(a + \delta\) and that longitudinal section's row
 at height \(z\). Both are one-dimensional signals of one physical line, so</p>
 
-<div class="eq">\[ \min_{\pi,\;\{\delta_k\}} \;\sum_{j,\,j'} \bigl\lVert\,
+<div class="eq"><div class="body">
+$$\min_{\pi,\;\{\delta_k\}} \;\sum_{j,\,j'} \bigl\lVert\,
 \mathbf{T}_{\pi(j)}^{\delta} - \mathbf{T}_{\pi(j')}^{\delta} \,\bigr\rVert_{\,\Pi_j \cap
-\Pi_{j'}} \]</div>
+\Pi_{j'}} $$
+</div><div class="num">(26)</div></div>
 
 <p>is a mixed discrete&ndash;continuous problem small enough to solve to a coordinate-wise optimum: the phases by
 coordinate descent over 72 candidate angles, which is exhaustive per coordinate and therefore
@@ -3213,7 +3238,7 @@ cells and a much larger skin fraction, so at \(8.0\times10^6\ \mathrm{Pa}\) in t
 extents rise between the two settings, which is the signature of a stiffer object rather than of a
 resolved shell. The control that separates these is the uniform preset at both \(\beta\), which the material
 code ships for exactly this purpose. It has now been run, with the level labels present so that the
-same per-level extent is recorded, and only the stiffness made uniform. The field swept here is not equation&nbsp;(16). It is a two-rule preset that assigns a shell and an interior stiffness directly, and its shell value of \(8.0\times10^6\ \mathrm{Pa}\) is above equation&nbsp;(16)'s ceiling of \(5\times10^6\). What the sweep tests is whether a stiffness contrast survives the transfer at a given band width, not the mapping of section 3.5.</p>
+same per-level extent is recorded, and only the stiffness made uniform. The field swept here is not equation&nbsp;(22). It is a two-rule preset that assigns a shell and an interior stiffness directly, and its shell value of \(8.0\times10^6\ \mathrm{Pa}\) is above equation&nbsp;(22)'s ceiling of \(5\times10^6\). What the sweep tests is whether a stiffness contrast survives the transfer at a given band width, not the mapping of section 3.5.</p>
 
 <div class="tw"><table>
 <thead><tr><th>doughnut, extent gap (interior &minus; skin) at the last frame</th>
@@ -3270,14 +3295,14 @@ the extent of the quantitative physics in this paper.</p>
 
 <h4>4.2.5&ensp;Collision</h4>
 
-<p>Equation (15) is two tests, and the second is the one that earns its place. At rest, with the
+<p>Equation (21) is two tests, and the second is the one that earns its place. At rest, with the
 two halves exactly as the cut left them, occupancy alone reports 2,698 particles of the orange
 inside the other piece, 2,699 of the watermelon and 943 of the doughnut; the sign test takes all
 three to zero.</p>
 
 <p>That zero is a consequence: A leaf
 assigned to piece B has its centre on B's side, so a point on A's side that falls inside a B leaf
-must lie within the leaf's half-diagonal of the plane, which is the bound of equation (9), and the
+must lie within the leaf's half-diagonal of the plane, which is the bound of equation (18), and the
 sign test removes exactly that band. The at-rest column is therefore a check that the indexing has
 no aliasing bug, not evidence about contact. The evidence is the push column: penetration has to
 grow with separation and nothing in the construction forces it to.</p>
@@ -3296,7 +3321,7 @@ grow with separation and nothing in the construction forces it to.</p>
 </figure>
 
 <div class="tw"><table>
-<thead><tr><th>object</th><th>particles</th><th>solid cells</th><th>at rest, occupancy alone</th>
+<thead><tr><th>object</th><th>particles <span class="mut">(one per route&nbsp;2 cell)</span></th><th>solid cells <span class="mut">(route&nbsp;1)</span></th><th>at rest, occupancy alone</th>
 <th>with the plane test</th><th>pushed 1 / 2 / 4 cells in</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td>1,231,312</td><td>894,304</td><td>2,698 of 610,723</td>
@@ -3313,7 +3338,7 @@ and it does, on every object. </p>
 
 <h4>4.2.6&ensp;Surface binding</h4>
 
-<p>Collision moves pieces; binding is what carries the visible surface with them. Equation (18)
+<p>Collision moves pieces; binding is what carries the visible surface with them. Equation (24)
 fixes each surface vertex to its own piece's nearest particles at bind time, so the surface follows
 whatever the solver does to them, including deformations no rigid transform can express.</p>
 
@@ -3355,7 +3380,7 @@ quantities, so neither can be reported for it.</p>
     <td class="mut">\(4\pi Rr\) = 879.6</td><td class="mut">1.3%</td><td class="mut">0.00e+00</td></tr>
 </tbody></table></div>
 
-<p>This is the decomposition demonstrated rather than asserted. The area error falls roughly as
+<p>The area error falls roughly as
 \(h\) with resolution, from about 1% at six cells to 0.06 to 0.09% at forty-eight, which is what
 a voxelised silhouette should do and what a plane approximated by primitives would not. The
 residual of the plane itself does not fall and does not need to: it is 0.00e+00 for an
@@ -3389,7 +3414,7 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 <tr><td>single cut: refine the band, label the pieces</td><td><strong>4,883.9&nbsp;ms</strong></td><td></td></tr>
 <tr><td>cut face: the exact polygons</td><td><strong>6,206.2&nbsp;ms</strong></td><td></td></tr>
 <tr><td>collision index: build it</td><td>156.9&nbsp;ms</td><td class="mut">once per cut</td></tr>
-<tr><td>collision: label every particle by piece</td><td>556.6&nbsp;ms</td><td>1,576,452 particles/s</td></tr>
+<tr><td>collision: label every particle by piece <span class="mut">(877,494 particles, one per route&nbsp;1 cell)</span></td><td>556.6&nbsp;ms</td><td>1,576,452 particles/s</td></tr>
 <tr><td>collision: one occupancy query over the particle set</td><td>179.0&nbsp;ms</td>
     <td><strong>4,902,612 queries/s</strong></td></tr>
 </tbody></table></div>
@@ -3423,7 +3448,7 @@ the end of this section.</p>
 a floor division and a table lookup run at 4.9 million queries per second against the solver's own
 particle set, which is what makes physics on this representation practical. <strong>Cutting is
 not interactive.</strong> A cut costs about eleven seconds end to end at this resolution, dominated
-by refining the band and by emitting one polygon per crossed cell. The geometry is linear in the crossed cells; the implementation's total cost is not, and section 4.3.3 measures which; section 3.3.2's adaptive criterion and a GPU formulation of the same passes are the two levers on it.</p>
+by refining the band and by emitting one polygon per crossed cell. The geometry is linear in the crossed cells; the implementation's total cost is not, and the scaling measurement below separates the two; section 3.3.2's adaptive criterion and a GPU formulation of the same passes are the two levers on it.</p>
 
 <h4>4.3.4&ensp;Storage, static and during a cut</h4>
 

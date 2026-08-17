@@ -598,7 +598,7 @@ $$ \hat{c}(\mathbf{x}) = \sum_{\mathbf{\delta} \in \{0,1\}^3}
    w_{\mathbf{\delta}}(\mathbf{x})\, c_{\mathbf{k}_0 + \mathbf{\delta}}, \qquad
    w_{\mathbf{\delta}} = \prod_{a} \bigl[ \delta_a t_a + (1-\delta_a)(1-t_a) \bigr], \qquad
    \mathbf{t} = \frac{\mathbf{x} - \mathbf{o}}{h_\ell} - \tfrac{1}{2} - \mathbf{k}_0 $$
-</div><div class="num">(18)</div></div>
+</div><div class="num">(S1)</div></div>
 
 <h4>4.5.5&ensp;Runtime</h4>
 
@@ -633,7 +633,7 @@ table lookup should cost, while thirteen seconds to label the pieces is not inte
 the surface has to be rebuilt, 17.6&nbsp;s of conversion sits on top of the 13.8&nbsp;s to refine
 and label and the 15.0&nbsp;s to build the face, on 894,304 solid cells producing 277,525 active
 voxels and 555,744 triangles. A cut that only exposes a new interior face does not pay it, because
-the cut face is the polygon of equation&nbsp;(10) and needs no conversion at all.</p>
+the cut face is the polygon of equation&nbsp;(19) and needs no conversion at all.</p>
 
 <p>The third representation, the dual-grid exterior, is the one the method draws a whole object
 with, and it had no number here. It has one now, and it does not rescue the runtime story. There is
@@ -789,7 +789,7 @@ photographs, it does not look more like them for it.</div>
 
 <h4>4.4.2&ensp;Reference-based metrics</h4>
 
-<p>PSNR, SSIM and LPIPS on the same cuts are in section 4.1.6, computed on a hundred planes rather
+<p>PSNR, SSIM and LPIPS on the same cuts are in section 4.1.8, computed on a hundred planes rather
 than six and against the same references. They are not repeated here: at six renders the four route
 and renderer combinations differ by 0.29&nbsp;dB, 0.010 SSIM and 0.019 LPIPS on the orange and by
 less than half that on the watermelon, and all four sit about 4.5&nbsp;dB and 0.21 LPIPS below the
@@ -971,9 +971,9 @@ asymptotic hope: reusing the object's adjacency outside the band takes a cut fro
 2.9&nbsp;s with an identical result. That is still not interactive, and section 3.3.1 says where the
 remaining time goes.</p>
 
-<p>Three things about that field. It is not equation&nbsp;(16): it is the weak two-rule field of <code>material_field.py</code>, level deciding
+<p>Three things about that field. It is not equation&nbsp;(22): it is the weak two-rule field of <code>material_field.py</code>, level deciding
 skin from interior and lightness grading the interior, which is the version a learned decomposition
-has to beat rather than the clustered one equation&nbsp;(16) defines. Its numbers are the
+has to beat rather than the clustered one equation&nbsp;(22) defines. Its numbers are the
 <code>orange</code> preset, 8.0e6 against 6.0e5, applied to the doughnut. And the interior is
 graded rather than constant, spanning 6.0e5 to 6.0e6, so the contrast between the shell and the
 stiffest interior is 1.33&times; and not the 13&times; a shell-against-softest reading gives. A 1.33&times; contrast is a weak thing to look for a threshold with, and it is part of why the effect
