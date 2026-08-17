@@ -2160,8 +2160,9 @@ about before it is trusted.</p>
   \(\mathbf{n}\cdot\mathbf{x} + d &gt; 0\), the six thick edges are those whose endpoints disagree,
   and \(\mathcal{P}_c\) is the hexagon on them with vertices \(\mathbf{v}_1 \ldots \mathbf{v}_6\)
   ordered by angle about their centroid. <strong>(c)</strong> the same slab coloured by the component
-  the global sign code assigns; the plane produces 45 on this object, of which two hold all but a
-  handful of cells. <strong>(d)</strong> the 16,617 polygons in the plane's own basis, which is the
+  the global sign code assigns; the plane produces 45 on this object, of which two hold
+  388,569 and 370,104 leaves &mdash; 99.994% between them &mdash; and the other 43 hold 48
+  leaves in total, the largest of them three cells. <strong>(d)</strong> the 16,617 polygons in the plane's own basis, which is the
   exposed face. Of those polygons 8,203 are triangles, 3,917 quadrilaterals, 798 pentagons and 3,699
   hexagons. Every coordinate is computed, not drawn: the 560 specks of the raw occupancy, 510 of them
   single cells and 0.08% of the object, are dropped first so that (c) shows what the plane
@@ -2990,8 +2991,8 @@ nothing at a distance.</p>
 <p><strong>The assignment is the parameter that matters, not the jitter.</strong> Replacing the
 fixed rule \(k(j)\) with a photograph drawn uniformly at random on every iteration, and changing
 nothing else, costs <strong>0.063 of DreamSim</strong> &mdash; 0.1367 against the control's 0.0738,
-and worse than the released model fine-tuned on these photographs at 0.1326. Twenty times the cost
-of the widest jitter setting. A cell shared by two planes is then pulled towards a different pair
+and worse than the released model fine-tuned on these photographs at 0.1326. Thirteen times the cost of the
+widest jitter setting, whose furthest arm sits 0.0050 from the same control. A cell shared by two planes is then pulled towards a different pair
 of images on every pass, and the target it converges to is their average, which is the failure
 measured directly in section 3.2.4. This is also why the jitter sweep is flat: jitter moves the
 plane but not the photograph the plane is assigned, so it varies geometry at fixed content, and
