@@ -888,7 +888,7 @@ longitudinal among ten. Two consequences follow that a reader cannot otherwise i
 on a shared cell is not an occasional collision between whichever images happened to be drawn; it
 is the same two images pulling the same cells in the same directions on every iteration, which is
 why an assignment is a variable worth optimising at all (section 4.1.7) and why drawing one at random
-instead costs 0.063 of DreamSim (section 4.1.4). And the jitter moves the
+instead costs 0.067 of DreamSim (section 4.1.4). And the jitter moves the
 plane without changing what supervises it: a cell's target comes from the same photograph wherever
 the plane lands inside its slot, so the sweep varies geometry and not content.</p>
 
@@ -2998,7 +2998,7 @@ without measuring it.</p>
 <tr><td>\(J = 0.5\), the setting used throughout</td><td>0.0738</td><td>0.1955</td><td>0.02942</td></tr>
 <tr><td>\(J = 1\)</td><td>0.0704</td><td>0.1873</td><td>0.03026</td></tr>
 <tr><td>single level, \(h_f = h_c\)</td><td>0.0961</td><td class="mut">&mdash;</td><td class="mut">&mdash;</td></tr>
-<tr><td>photograph drawn at random each iteration</td><td>0.1367</td><td class="mut">&mdash;</td><td class="mut">&mdash;</td></tr>
+<tr><td>photograph drawn at random each iteration <span class="mut">(against 0.0700 for the fixed rule in that batch, not the 0.0738 above)</span></td><td>0.1367</td><td class="mut">&mdash;</td><td class="mut">&mdash;</td></tr>
 </tbody></table></div>
 
 <p>What either parameter could be worth is bounded by a property of the object rather than of
@@ -3013,9 +3013,10 @@ nothing at a distance.</p>
 
 <p><strong>The assignment is the parameter that matters, not the jitter.</strong> Replacing the
 fixed rule \(k(j)\) with a photograph drawn uniformly at random on every iteration, and changing
-nothing else, costs <strong>0.063 of DreamSim</strong> &mdash; 0.1367 against the control's 0.0738,
-and worse than the released model fine-tuned on these photographs at 0.1326. Thirteen times the cost of the
-widest jitter setting, whose furthest arm sits 0.0050 from the same control. A cell shared by two planes is then pulled towards a different pair
+nothing else, costs <strong>0.067 of DreamSim</strong> &mdash; 0.1367 against 0.0700 for the fixed rule,
+both arms rendered in one batch on the same planes, and worse than the released model
+fine-tuned on these photographs at 0.1290 in that same batch. Thirteen times the cost of the
+widest jitter setting, whose furthest arm sits 0.0050 from its own control. A cell shared by two planes is then pulled towards a different pair
 of images on every pass, and the target it converges to is their average, which is the failure
 measured directly in section 3.2.4. This is also why the jitter sweep is flat: jitter moves the
 plane but not the photograph the plane is assigned, so it varies geometry at fixed content, and
