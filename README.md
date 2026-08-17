@@ -59,6 +59,9 @@ two archives by default:
 - `trained.tar` — the six models this work trained, ~320 MB. With them `six/eval.sh` reproduces
   the table without retraining. Without them run `six/train.sh` first, which is hours on one card.
 
+Verified: a clean clone, `setup.sh` against a FruitNinja checkout, those two archives and nothing
+else reproduces every row of the table below.
+
 `WANT="released trained lattices" bash code/six/fetch.sh` adds the quantised lattices, ~640 MB,
 which `method/run.sh` would otherwise rebuild from the reconstructions in minutes per object.
 
@@ -112,6 +115,20 @@ objects are all parameters rather than branches: `SRC` (where the lattice comes 
 holding one, a mesh, or a point cloud; the kind is read off the file), `COARSE_DX`, the reference
 directories, and `SCORE` (`fid` for objects with several references, `topology` for objects with
 too few).
+
+## The six-object table
+
+| object | this work | FruitNinja released | photographs to each other |
+|---|---|---|---|
+| orange | **0.0700** | 0.1290 | 0.0424 |
+| watermelon | **0.1783** | 0.2328 | 0.0670 |
+| apple | **0.2951** | 0.3823 | 0.1653 |
+| pomegranate | **0.2508** | 0.2985 | 0.1324 |
+| bread | **0.3685** | 0.4949 | 0.1873 |
+| cake | 0.2816 | **0.2669** | 0.2677 |
+
+DreamSim to the nearest reference, lower is better. Five of six, by 1.19x to 1.84x. The cake loses
+by 0.015, to a baseline that on that object sits at the photographs' own agreement with each other.
 
 ## What the numbers were measured on
 

@@ -48,7 +48,9 @@ fi
 
 echo "worktree at $DEST"
 missing=0
-for d in prefilled/trained_gs utils scene mpm_solver_warp gaussian_renderer; do
+# What the render actually resolves at import time. gaussian_renderer is not among them: it lives
+# inside the gaussian-splatting build, and naming it here reported a failure on a tree that ran.
+for d in prefilled/trained_gs utils scene mpm_solver_warp gaussian-splatting; do
   if [ -e "$DEST/$d" ]; then echo "  have    $d"; else echo "  MISSING $d"; missing=1; fi
 done
 [ "$missing" = 1 ] && { echo; echo "Fetch the reconstructions:  bash code/six/fetch.sh $DEST"; }
