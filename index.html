@@ -571,27 +571,6 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 
 
 
-<figure id="compositing">
-  <img src="assets/compositing.png" alt="Exterior Gaussians, cut surface and composite, in four viewing conditions">
-  <figcaption><strong>Why the two renderers need a depth convention rather than an ordering rule.</strong>
-  Each row is one piece from one viewpoint. Left: the exterior Gaussians alone. Middle: the cut-surface
-  buffer alone, drawn without reference to the exterior, which is why the face is visible in all four
-  rows including the two where it ends up hidden. Right: the composite, where the two buffers are
-  resolved against each other by depth. Piece&nbsp;1 is the lower half, so its face points up. Of the
-  pixels the two buffers contest, the cut takes 98.0% and 74.9% in the rows where it faces the camera
-  and 0.4% and 0.0% in the rows where it points away. A fixed ordering &mdash; always drawing one
-  buffer over the other &mdash; reproduces one of those two pairs and inverts the other.</figcaption>
-</figure>
-
-<figure id="exteriorovox">
-  <img src="assets/exterior_ovoxel.png" alt="The O-Voxel exterior mesh beside the Gaussian exterior it replaces">
-  <figcaption><strong>The exterior as a dual grid, against the Gaussians it replaces.</strong> Six views
-  of the orange: the left three are the O-Voxel boundary drawn as its own mesh, 934,520 triangles; the
-  right three are the Gaussian exterior at the same poses. Converting it removes the seam rather than
-  managing it, and the peel texture survives the conversion. Both columns carry dark regions in the
-  lower row and they fall in different places; what produces them is not established here.</figcaption>
-</figure>
-
 <h4>3.1.4&ensp;Adaptive collapse</h4>
 
 <p>What follows is Ju et al.'s adaptive dual contouring [5] applied to the Flexible Dual Grid:
