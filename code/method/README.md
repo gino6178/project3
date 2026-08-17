@@ -25,8 +25,8 @@ One path, any object:
 
 ```
 bash method/run.sh orange              # ~1 hour
-bash method/run.sh watermelon          # ~1.5 hours, the fill is the slow part
-bash method/run.sh doughnut            # ~20 minutes
+bash method/run.sh watermelon          # ~1.5 hours
+bash method/run.sh doughnut            # its lattice is not in this repository -- see below
 GPU=1 bash method/run.sh orange        # on the second card
 bash method/run.sh orange eval         # just re-score a model that already exists
 ```
@@ -40,12 +40,14 @@ was first written around:
 |---|---|---|---|
 | `SRC` | released model | released model | a lattice |
 | `SCORE` | `fid` | `fid` | `topology` |
-| `ITERS` | 200 | 200 | 30 |
+| `ITERS` | 200 | 200 | 200 |
 
-The ten variants of the orange point at reference directories that are not in this repository —
-`fold0_htr`, `fewn2_h` and their siblings are subsets and perturbations of `secref_orraw_*sep`,
-built for one study each. The confs are published because the paper's numbers are read off them;
-`run.sh orange_f0` will stop at the missing directory.
+Two kinds of conf here will not run from a fresh clone, and both are published anyway because the
+paper's numbers are read off them. The ten variants of the orange point at reference directories
+that are not in this repository — `fold0_htr`, `fewn2_h` and their siblings are subsets and
+perturbations of `secref_orraw_*sep`, built for one study each. And the doughnut's `SRC=INIT_dn5`
+is a lattice whose source mesh is no longer on disk, so it is neither in the repository nor in a
+release asset. Each stops at the missing input rather than producing a wrong number.
 
 Everything runs on a lattice. `SRC` says where that lattice comes from, and **its kind is read
 off the file rather than chosen**: a directory that already holds one is used as it is, a mesh
@@ -60,8 +62,11 @@ and the only one that fails silently: a hollow fill trains to a white hole throu
 scores FID 693.
 
 `SCORE` says what the object can be judged on. `fid` is held-out cuts against the photographs.
-`topology` is for the doughnut, which has one reference image per family — too few for FID or
-KID — and which is here to show that every held-out transverse section still reads as an annulus.
+`topology` is for objects with too few references for a distribution metric: the doughnut, which
+has one image per family and is here to show that every held-out transverse section still reads as
+an annulus, and the cake, whose three photographs are all longitudinal. Note that `six/eval.sh`
+ignores `SCORE` entirely — it scores every object with DreamSim, which is a distance between pairs
+and does not need a distribution. `SCORE` only decides what `method/run.sh <object> eval` does.
 
 Every stage skips itself if its output is already there, so re-running resumes rather than
 restarts. Intermediates go to `build_<object>/`, the model to `<object>/`, the held-out renders

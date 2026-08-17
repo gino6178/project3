@@ -50,13 +50,20 @@ echo "worktree at $DEST"
 missing=0
 # What the render actually resolves at import time. gaussian_renderer is not among them: it lives
 # inside the gaussian-splatting build, and naming it here reported a failure on a tree that ran.
+# `scene` is the same and was on this list anyway: every script appends `$FN_ROOT/gaussian-splatting`
+# to sys.path, and `scene/` is a directory of that build, so `from scene.gaussian_model import ...`
+# resolves whether or not anything links it at the top level. A FruitNinja3DInterior checkout has
+# no top-level scene/, so the list was telling anyone who followed the README that a working tree
+# was broken and sending them to fetch.sh, which does not carry it either. The development tree
+# this was written on happened to have a hand-made scene -> gaussian-splatting/scene link, which
+# is exactly why the false alarm was invisible here.
 #
 # particle_filling is FruitNinja's and is checked here because `train_voxel.py` imports it at
 # module level, on line 25, before anything is parsed -- so without it the trainer dies at import
 # with no clue as to why. It used to be a symlink committed into code/ pointing at an absolute
 # path on the machine this was developed on, which was worse than missing: the name then existed
 # in `ours` above, so the loop below skipped it and the real one in the checkout was never linked.
-for d in prefilled/trained_gs utils scene mpm_solver_warp particle_filling gaussian-splatting; do
+for d in prefilled/trained_gs utils mpm_solver_warp particle_filling gaussian-splatting; do
   if [ -e "$DEST/$d" ]; then echo "  have    $d"; else echo "  MISSING $d"; missing=1; fi
 done
 [ "$missing" = 1 ] && { echo; echo "Fetch the reconstructions:  bash code/six/fetch.sh $DEST"; }
