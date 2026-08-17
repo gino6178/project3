@@ -482,7 +482,16 @@ there is no threshold whose setting could change how many pieces the cut produce
 
 <h4>3.1.2&ensp;The two-level lattice</h4>
 
-<p class="mut"><strong>The orange, counted once.</strong> The lattice as route 1 builds it is <strong>877,494</strong> cells &mdash; 759,353 coarse and 118,141 fine. Route 2 builds 1,231,312 for the same fruit, 892,808 coarse and 338,504 fine, because its skin band is set rather than inherited. The single-level ablation is 801,929. Where a third figure appears against a timing or a cut it names the run it was taken from; 848,021 is the occupancy after closing and filling in one earlier build and 894,304 an earlier route 1 lattice, neither of which is the configuration reported here.</p>
+<p class="mut"><strong>The orange, counted once.</strong> Four cell counts for this fruit appear
+in this paper and they are four different quantities, so they are set out here rather than left to
+be reconciled. The lattice as route&nbsp;1 builds it is <strong>877,494</strong> cells &mdash;
+759,353 coarse and 118,141 fine &mdash; and this is the configuration every appearance number is
+measured on. Route&nbsp;2 builds 1,231,312 for the same fruit, 892,808 coarse and 338,504 fine,
+because its skin band is set rather than inherited. The single-level ablation is 801,929. The
+remaining two are the coarse level after closing: <strong>848,021</strong> is what the closing of
+section&nbsp;3.2.2 produces from 759,353, and 894,304 is the same quantity in a build whose fine
+level differs; the geometry tables below say which of the two each timing was taken on. No
+appearance result depends on the difference.</p>
 
 <div class="tw"><table>
 <thead><tr><th>symbol</th><th>meaning</th><th>value or domain</th></tr></thead>
@@ -876,7 +885,8 @@ divided among twenty-four planes, so each image serves about four adjacent depth
 longitudinal among ten. Two consequences follow that a reader cannot otherwise infer. The conflict
 on a shared cell is not an occasional collision between whichever images happened to be drawn; it
 is the same two images pulling the same cells in the same directions on every iteration, which is
-why an assignment is a variable worth optimising at all (section 4.1.7). And the jitter moves the
+why an assignment is a variable worth optimising at all (section 4.1.7) and why drawing one at random
+instead costs 0.063 of DreamSim (section 4.1.4). And the jitter moves the
 plane without changing what supervises it: a cell's target comes from the same photograph wherever
 the plane lands inside its slot, so the sweep varies geometry and not content.</p>
 
@@ -2899,6 +2909,7 @@ without measuring it.</p>
 <tr><td>\(J = 0.5\), the setting used throughout</td><td>0.0738</td><td>0.1955</td><td>0.02942</td></tr>
 <tr><td>\(J = 1\)</td><td>0.0704</td><td>0.1873</td><td>0.03026</td></tr>
 <tr><td>single level, \(h_f = h_c\)</td><td>0.0961</td><td class="mut">&mdash;</td><td class="mut">&mdash;</td></tr>
+<tr><td>photograph drawn at random each iteration</td><td>0.1367</td><td class="mut">&mdash;</td><td class="mut">&mdash;</td></tr>
 </tbody></table></div>
 
 <p>What either parameter could be worth is bounded by a property of the object rather than of
@@ -2910,6 +2921,16 @@ something false. This is why the quantities measured below are coherence between
 within them, and not similarity between distant parts of one volume &mdash; and it bounds what a
 sweeping plane family could contribute in the first place: continuity where cells are shared, and
 nothing at a distance.</p>
+
+<p><strong>The assignment is the parameter that matters, not the jitter.</strong> Replacing the
+fixed rule \(k(j)\) with a photograph drawn uniformly at random on every iteration, and changing
+nothing else, costs <strong>0.063 of DreamSim</strong> &mdash; 0.1367 against the control's 0.0738,
+and worse than the released model fine-tuned on these photographs at 0.1326. Twenty times the cost
+of the widest jitter setting. A cell shared by two planes is then pulled towards a different pair
+of images on every pass, and the target it converges to is their average, which is the failure
+measured directly in section 3.2.4. This is also why the jitter sweep is flat: jitter moves the
+plane but not the photograph the plane is assigned, so it varies geometry at fixed content, and
+the content is what the result turns on.</p>
 
 <p>The second level earns its place: collapsing it costs 0.022 of DreamSim, seventy times the
 spread between two runs of one configuration. The jitter does not. Every setting including
@@ -3419,9 +3440,9 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
     <td><strong>4,902,612 queries/s</strong></td></tr>
 </tbody></table></div>
 
-<p><strong>Which cut is which.</strong> Three timings of "a cut" appear in this paper and they
-are three different operations on three different lattices, so they are set out together rather
-than left to be reconciled.</p>
+<p><strong>Which cut is which.</strong> Timings of "a cut" appear in this paper and in the
+supplement, and they are different operations on different lattices, so every one of them is
+set out together here rather than left to be reconciled.</p>
 
 <div class="tw"><table>
 <thead><tr><th>what was timed</th><th>lattice</th><th>seconds</th><th>where</th></tr></thead>
@@ -3433,6 +3454,8 @@ than left to be reconciled.</p>
 <tr><td>refine and label, as the pipeline runs it</td><td>848,021 cells</td><td>4.88</td>
     <td class="mut">this section</td></tr>
 <tr><td>emit the exact polygons</td><td>848,021 cells</td><td>6.21</td><td class="mut">this section</td></tr>
+<tr><td>refine the band and label the pieces, as the supplement times it</td><td>877,494 cells</td><td>12.96</td><td class="mut">supplement 4.5.5</td></tr>
+<tr><td>emit the exact polygons, as the supplement times it</td><td>877,494 cells</td><td>14.25</td><td class="mut">supplement 4.5.5</td></tr>
 <tr><td class="mut">both, end to end</td><td class="mut">848,021 cells</td><td class="mut">11.1</td>
     <td class="mut">this section</td></tr>
 </tbody></table></div>
