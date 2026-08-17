@@ -559,7 +559,7 @@ $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
    \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \lfloor \mathbf{k}_1 / 2 \rfloor \bigr\} $$
 </div><div class="num">(3)</div></div>
 
-<h3>3.1.3&ensp;The boundary as a dual grid</h3>
+<h4>3.1.3&ensp;The boundary as a dual grid</h4>
 
 <p>Converting the boundary to a dual grid is necessary rather than convenient: a Gaussian shell
 covers only 7 to 20% of the frame at alpha above one half, so at the silhouette a cut face shows
@@ -574,10 +574,13 @@ well removes the seam instead of managing it. The occupancy already holds the vo
 <figure id="compositing">
   <img src="assets/compositing.png" alt="Exterior Gaussians, cut surface and composite, in four viewing conditions">
   <figcaption><strong>Why the two renderers need a depth convention rather than an ordering rule.</strong>
-  Each row is one piece seen from one side: the exterior Gaussians alone, the cut surface alone, and the
-  composite. When the cut faces the camera it takes 98.0% and 74.9% of the contested pixels; when it
-  points away it takes 0.4% and 0.0%. A rule that always drew one buffer over the other would be wrong
-  in two of these four cases, and the two that fail are not the two a silhouette test would predict.</figcaption>
+  Each row is one piece from one viewpoint. Left: the exterior Gaussians alone. Middle: the cut-surface
+  buffer alone, drawn without reference to the exterior, which is why the face is visible in all four
+  rows including the two where it ends up hidden. Right: the composite, where the two buffers are
+  resolved against each other by depth. Piece&nbsp;1 is the lower half, so its face points up. Of the
+  pixels the two buffers contest, the cut takes 98.0% and 74.9% in the rows where it faces the camera
+  and 0.4% and 0.0% in the rows where it points away. A fixed ordering &mdash; always drawing one
+  buffer over the other &mdash; reproduces one of those two pairs and inverts the other.</figcaption>
 </figure>
 
 <figure id="exteriorovox">
@@ -585,8 +588,8 @@ well removes the seam instead of managing it. The occupancy already holds the vo
   <figcaption><strong>The exterior as a dual grid, against the Gaussians it replaces.</strong> Six views
   of the orange: the left three are the O-Voxel boundary drawn as its own mesh, 934,520 triangles; the
   right three are the Gaussian exterior at the same poses. Converting it removes the seam rather than
-  managing it, and the peel texture survives the conversion &mdash; the difference the figure does show
-  is at the terminator, where the mesh shades and the splats do not.</figcaption>
+  managing it, and the peel texture survives the conversion. Both columns carry dark regions in the
+  lower row and they fall in different places; what produces them is not established here.</figcaption>
 </figure>
 
 <h4>3.1.4&ensp;Adaptive collapse</h4>
@@ -2946,10 +2949,11 @@ the structure, and the cake is the case where they do not.</p>
        real cut of that kind, this work, and the released model each was quantised from">
   <figcaption>Every object the prior method released, one held-out plane each, all three columns
   rendered in one batch at the same depths and with the same settings. The left column is a
-  photograph of a real cut of that kind of thing and is not that plane, since no photograph is. The
-  cake, bottom right, is the row this work loses: its supervision is three longitudinal
-  photographs and the plane scored here is transverse, which those photographs never show.
-  </figcaption>
+  photograph of a real cut of that kind of thing and is not that plane, since no photograph is;
+  it is each object's own <code>EVAL_REF</code>, so the cake, the pomegranate and the apple show
+  the references after they were moved off the dark backdrop they had been shot on. The cake is
+  the row this work loses, by 0.015: its supervision is three longitudinal photographs and the
+  plane scored here is transverse, which those photographs never show.</figcaption>
 </figure>
 
 <p class="mut">Every row here is in-sample: each model is scored against the photographs that
