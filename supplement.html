@@ -877,6 +877,31 @@ sixteen planes spanning \(f \in [0.174, 0.826]\) they fall at \(f =\) 0.290, 0.4
 and 0.754. A real interior has no reason to change at those depths rather than any other: a seed
 spans several sections, and nothing in the fruit knows where the photographs were dealt.</p>
 
+<figure id="depthstep">
+  <img src="assets/depthstep_watermelon.png" alt="Watermelon sections, five neighbouring depths and three across the object">
+  <img src="assets/depthstep_orange.png" alt="Orange sections, the same arrangement"
+       style="margin-top:12px">
+  <figcaption><strong>The claim as a picture, on both objects.</strong> Left, five consecutive
+  depths \(0.02\) apart, which a real interior crosses with little change. Right, three depths
+  spread across the object, which it does not. Top row of each pair is the block assignment, bottom
+  row the continuous one. \(f = 0.52\) is one of the five depths at which the block rule changes
+  reference, and in the watermelon's top row the seeds are present at \(0.52\) and largely gone at
+  \(0.54\); the bottom row crosses the same depth without that. Both objects use six photographs
+  over sixteen planes, so both have their boundaries at \(f =\) 0.290, 0.406, 0.522, 0.638 and
+  0.754.</figcaption>
+</figure>
+
+<figure id="depthsweep-arms">
+  <img src="assets/depthsweep_arms.png" alt="Twenty-one consecutive watermelon sections under four supervision settings">
+  <figcaption><strong>Twenty-one consecutive sections of the watermelon, \(f = 0.30\) to \(0.70\).</strong>
+  Rows: the block rule and the continuous rule at \(J = 0.5\), then both at \(J = 2.0\). Widening
+  the jitter raises the share of cells two neighbouring planes have in common from 0.087 to 0.617
+  and is the other way to couple them, but the seeds go with it &mdash; the two lower rows have
+  lost the dark points the upper two keep &mdash; so that route was not pursued. These renders are
+  at a depth resolution of 1/599 with the slab held at the width the default walk gives; before
+  those were separated, asking for a finer depth thinned every section to 5.8% of the frame.</figcaption>
+</figure>
+
 <p>Twenty-one sections were rendered from \(f = 0.30\) to \(0.70\) in steps of 0.02, on the
 watermelon and on the orange, which have the same six-photograph, sixteen-plane arrangement and so
 the same five boundaries. Each statistic is reduced the same way &mdash; the mean step between
