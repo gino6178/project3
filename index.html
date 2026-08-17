@@ -3065,6 +3065,19 @@ mechanism.</p>
 
 <h4>4.1.7&ensp;Choosing the references' phases against the geometry they share</h4>
 
+<figure id="chords">
+  <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
+  <figcaption><strong>The line two references share, and what the phase choice does to it.</strong>
+  <strong>(a)</strong> a transverse reference, with the diameter a longitudinal plane at azimuth
+  \(a\) cuts it along, at angle \(a + \delta_k\). <strong>(b)</strong> the longitudinal reference
+  at that azimuth, with the row at height \(z\) the transverse plane cuts it along. The two are
+  one-dimensional signals of the same physical line. <strong>(c)</strong> the pair under the greedy
+  phase of equation&nbsp;(11), which consults only the transverse family: mean absolute disagreement
+  <strong>0.1190</strong>. <strong>(d)</strong> the same pair under phases chosen jointly against
+  both families, <strong>0.0636</strong>. Both signals are read from the photographs alone, before
+  any gradient is taken.</figcaption>
+</figure>
+
 
 
 <p>The transverse and longitudinal families meet in known lines, so the disagreement between them
@@ -3432,8 +3445,9 @@ whatever the solver does to them, including deformations no rigid transform can 
   <figcaption>One piece under a non-affine deformation, its surface bound to the particles, and
   the same particles driving it two ways: a per-piece rigid fit on the left, which is the best a
   single transform can do, and the particle binding on the right, both coloured by how far
-  each vertex has left its material on one shared scale. The rigid panel goes red and stays
-  undeformed; the bound panel bends and stays at 0.00. The bind residual
+  each vertex has left its material on one shared scale: blue at 0.00 fine cells, red at 2.00 and
+  above, linear between. The rigid panel saturates the scale and stays undeformed; the bound panel
+  bends and stays at 0.00. The bind residual
   is 0.34 to 0.45 of a fine cell in the mean and 1.02 to 1.23 at the 95th, over 480,344, 419,404
   and 442,956 surface vertices carried on 1.23M, 1.07M and 0.94M particles. The surface is the whole O&#8209;Voxel exterior now rather than a cut patch, so what is bound is every
   visible vertex the object has.</figcaption>
