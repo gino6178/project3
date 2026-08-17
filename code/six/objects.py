@@ -84,6 +84,11 @@ def main():
         dx = L / CELLS_ACROSS
         nh = len([q for q in glob.glob(os.path.join(ROOT, o["h"], "*.png")) if "depth" not in q]) if o["h"] else 0
         nv = len([q for q in glob.glob(os.path.join(ROOT, o["v"], "*.png")) if "depth" not in q]) if o["v"] else 0
+        # Writing a conf that points at an empty directory produces a run that trains against
+        # nothing and says so only as "refs 0h + 0v" in a line nobody reads.
+        if nh + nv == 0:
+            raise SystemExit(f"{name}: no photographs at {o['h'] or o['v']!r}. "
+                             f"Run six/setup.sh first, and set FN_ROOT.")
         note = ""
         if not o["h"] or not o["v"]:
             fam = "transverse" if o["h"] else "longitudinal"

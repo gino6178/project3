@@ -1,0 +1,40 @@
+{
+ "opacity_threshold": 0.1,
+ "rotation_degree": [
+  0.0
+ ],
+ "rotation_axis": [
+  0
+ ],
+ "grid_lim": 1.0,
+ "init_radius": 7.7738,
+ "mpm_space_vertical_upward_axis": [
+  0.207683,
+  0.960326,
+  -0.186121
+ ],
+ "mpm_space_viewpoint_center": [
+  1.0032,
+  1.0173,
+  0.9917
+ ],
+ "particle_filling": {
+  "n_grid": 100,
+  "density_threshold": 1.0,
+  "search_threshold": 1,
+  "search_exclude_direction": 2,
+  "ray_cast_direction": 3,
+  "max_particles_num": 19000000,
+  "max_partciels_per_cell": 1,
+  "smooth": true,
+  "visualize": true,
+  "boundary": [
+   0.4819,
+   1.5181,
+   0.547,
+   1.453,
+   0.48,
+   1.52
+  ]
+ }
+}

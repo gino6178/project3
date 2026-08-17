@@ -147,6 +147,16 @@ def repoint(obj, keys, rel):
 
 
 def main(check_only=False):
+    # A missing reference tree is not a clean audit. The clean-clone test reported "0 references are
+    # not on white" on a working tree that had no data_finetune_images at all.
+    root = os.path.join(ROOT, "data_finetune_images")
+    if not os.path.isdir(root):
+        raise SystemExit(f"no reference tree at {root}. Run six/setup.sh first, and set FN_ROOT.")
+    n = len(sum((photos(d) for d in glob.glob(os.path.join(root, "*")) +
+                 glob.glob(os.path.join(root, "*", "*")) if os.path.isdir(d)), []))
+    if n == 0:
+        raise SystemExit(f"{root} exists but holds no photographs")
+    print(f"{n} reference photographs under data_finetune_images/")
     bad = audit()
     print(f"{len(bad)} references are not on white:")
     for rel, c, f in bad:

@@ -10,12 +10,12 @@ score distillation.
 detail behind it. Numbers on the page are measured under one protocol on one machine and include
 the results that did not work.
 
-This repository holds three things and nothing else: the page, the code that produced it, and this
-file.
+This repository holds the page, the code that produced it, the inputs that fit, and this file.
 
 ```
 index.html supplement.html assets/   the page. Serving it is a git push; there is no build step.
 code/                               the method
+data/                               every input small enough to keep in a git repository
 README.md                           this
 ```
 
@@ -36,18 +36,39 @@ code/site_tools/                   scripts that build page assets, not part of t
 
 ## Running it
 
-The method is a stage on top of FruitNinja's released reconstructions and its renderer, which are
-not vendored here. You need:
+```bash
+git clone https://github.com/gino6178/project3.git
+cd project3
+bash code/six/setup.sh  ./worktree      # lay code/ and data/ out as one tree
+bash code/six/fetch.sh  ./worktree      # the binaries too large for a git repo
+export FN_ROOT=$PWD/worktree
+cd worktree
+bash six/eval.sh                        # reproduces the six-object table
+```
 
-- [FruitNinja3DInterior](https://github.com/fanguw/FruitNinja3DInterior) and its
-  `gaussian-splatting` submodule, for `utils/`, `scene/` and the rasteriser
-- its released `.ply` reconstructions, in `prefilled/trained_gs/`
-- one CUDA GPU. Peak device memory during training is 5.2 to 5.9 GB.
+`data/` holds every input small enough to keep in the repository: the solver and demo configs, all
+84 reference photographs, the whitened set, and the six exterior views. Nothing has to be hunted
+down elsewhere.
 
-Put `code/` alongside that checkout so `method/`, `six/` and `train_voxel.py` sit at its root, then:
+`fetch.sh` gets what cannot be kept here. GitHub rejects any file over 100 MB on push and five of
+the six released reconstructions are 158 to 541 MB, so they are release assets instead. It pulls
+two archives by default:
+
+- `released.tar` — the six reconstructions FruitNinja published, ~1.6 GB. Needed for the baseline
+  column and, if you retrain, for the lattice.
+- `trained.tar` — the six models this work trained, ~320 MB. With them `six/eval.sh` reproduces
+  the table without retraining. Without them run `six/train.sh` first, which is hours on one card.
+
+`WANT="released trained lattices" bash code/six/fetch.sh` adds the quantised lattices, ~640 MB,
+which `method/run.sh` would otherwise rebuild from the reconstructions in minutes per object.
+
+You also need one CUDA GPU. Peak device memory during training is 5.2 to 5.9 GB. The rasteriser
+comes from FruitNinja's `gaussian-splatting` submodule; `setup.sh` reports it as missing if the
+checkout is not beside you, and `fetch.sh` does not supply it because it is a build, not a file.
+
+Any object on its own:
 
 ```bash
-export FN_ROOT=/path/to/checkout
 bash method/run.sh orange            # lattice, train, score
 GPU=1 bash method/run.sh watermelon  # on the second card
 bash method/run.sh orange eval       # re-score an existing model
