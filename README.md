@@ -39,8 +39,8 @@ code/site_tools/                   scripts that build page assets, not part of t
 ```bash
 git clone https://github.com/gino6178/project3.git
 cd project3
-bash code/six/setup.sh  ./worktree      # lay code/ and data/ out as one tree
-bash code/six/fetch.sh  ./worktree      # the binaries too large for a git repo
+bash code/six/setup.sh ./worktree /path/to/FruitNinja3DInterior
+bash code/six/fetch.sh ./worktree       # the binaries too large for a git repo
 export FN_ROOT=$PWD/worktree
 cd worktree
 bash six/eval.sh                        # reproduces the six-object table
@@ -62,9 +62,12 @@ two archives by default:
 `WANT="released trained lattices" bash code/six/fetch.sh` adds the quantised lattices, ~640 MB,
 which `method/run.sh` would otherwise rebuild from the reconstructions in minutes per object.
 
-You also need one CUDA GPU. Peak device memory during training is 5.2 to 5.9 GB. The rasteriser
-comes from FruitNinja's `gaussian-splatting` submodule; `setup.sh` reports it as missing if the
-checkout is not beside you, and `fetch.sh` does not supply it because it is a build, not a file.
+The renderer and the MPM solver are FruitNinja's and are not vendored here, so `setup.sh` takes a
+[FruitNinja3DInterior](https://github.com/fanguw/FruitNinja3DInterior) checkout as its second
+argument and links in every top-level entry this repository does not already provide — `utils/`,
+`scene/`, `mpm_solver_warp/`, `gaussian_renderer/`, the built `gaussian-splatting` rasteriser and
+whatever else it carries. It reports what is still missing rather than failing later inside a
+render. You also need one CUDA GPU; peak device memory during training is 5.2 to 5.9 GB.
 
 Any object on its own:
 

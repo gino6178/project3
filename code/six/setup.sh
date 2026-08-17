@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
-# Build a working tree from this repository, so the pipeline can run.
+# Build a working tree from this repository plus a FruitNinja checkout.
 #
-#   bash code/six/setup.sh /path/to/worktree
+#   bash code/six/setup.sh WORKTREE [FRUITNINJA_CHECKOUT]
 #
 # The confs address their inputs relative to FN_ROOT -- `config/orange_physics.json`,
-# `secref_orraw_hsep`, `data_finetune_images/...` -- so the repository's code/ and data/ have to be
-# laid out as one tree before anything runs. This makes that tree out of symlinks, so it costs
-# nothing and editing a file in the tree edits it in the repository.
+# `secref_orraw_hsep`, `data_finetune_images/...` -- so code/ and data/ have to be laid out as one
+# tree before anything runs. Everything here is a symlink, so it costs nothing and editing a file
+# in the tree edits it in the repository.
 #
-# The released reconstructions are not in the repository: five of the six are 158 to 541 MB and
-# GitHub refuses any file over 100 MB. Run six/fetch.sh to get them.
+# The renderer and the solver are FruitNinja's, not ours, and are not vendored: give the checkout
+# as the second argument and every top-level entry this repository does not already provide is
+# linked in. That is deliberately not a list -- the first attempt named four directories and the
+# render died on a fifth, mpm_solver_warp, that the list had not thought of.
 set -eu
 
-HERE=$(cd "$(dirname "$0")/../.." && pwd)          # the repository root
+HERE=$(cd "$(dirname "$0")/../.." && pwd)
 DEST=${1:-$HERE/worktree}
+FN=${2:-${FN_CHECKOUT:-}}
 mkdir -p "$DEST"
 
 for p in "$HERE"/code/*; do
@@ -24,17 +27,30 @@ done
 for p in "$HERE"/data/*; do
   ln -sfn "$p" "$DEST/$(basename "$p")"
 done
+ours=$(ls "$DEST")
+
+if [ -n "$FN" ]; then
+  [ -d "$FN" ] || { echo "no such checkout: $FN"; exit 1; }
+  n=0
+  for p in "$FN"/* "$FN"/.??*; do
+    [ -e "$p" ] || continue
+    b=$(basename "$p")
+    case " $ours " in *" $b "*) continue;; esac
+    case "$b" in .git|.gitmodules|worktree) continue;; esac
+    ln -sfn "$p" "$DEST/$b"
+    n=$((n + 1))
+  done
+  echo "linked $n entries from $FN"
+else
+  echo "no FruitNinja checkout given; the renderer and solver will be missing"
+  echo "  usage: bash code/six/setup.sh $DEST /path/to/FruitNinja3DInterior"
+fi
 
 echo "worktree at $DEST"
-echo "  code:  $(ls "$DEST" | grep -c . ) entries"
 missing=0
-for d in prefilled/trained_gs utils scene gaussian-splatting; do
-  if [ -e "$DEST/$d" ]; then echo "  have   $d"; else echo "  MISSING $d"; missing=1; fi
+for d in prefilled/trained_gs utils scene mpm_solver_warp gaussian_renderer; do
+  if [ -e "$DEST/$d" ]; then echo "  have    $d"; else echo "  MISSING $d"; missing=1; fi
 done
-if [ "$missing" = 1 ]; then
-  echo
-  echo "Fetch what is missing:"
-  echo "  bash code/six/fetch.sh $DEST"
-fi
+[ "$missing" = 1 ] && { echo; echo "Fetch the reconstructions:  bash code/six/fetch.sh $DEST"; }
 echo
 echo "Then:  export FN_ROOT=$DEST"
