@@ -514,13 +514,14 @@ appearance result depends on the difference.</p>
 
 
 <p class="mut"><strong>Settings, in one place.</strong> Two levels, refinement factor 2, so
-\(h_f = h_c/2\). Coarse spacing \(h_c\) is the object's longest extent over 125: 0.01180 orange,
-0.01722 watermelon, 0.01230 apple, 0.02070 pomegranate, 0.01310 bread, 0.01616 cake. Feature
+\(h_f = h_c/2\). Coarse spacing \(h_c\) is the object's longest extent over 125 &mdash; 0.01180 orange, 0.01722
+watermelon, 0.01230 apple, 0.02070 pomegranate, 0.01310 bread, 0.01616 cake, 0.00832 doughnut.
+Feature
 dimension \(F = 8\), one Gaussian decoded per cell. Two hundred outer iterations, feature learning
 rate \(10^{-3}\). Twenty-four transverse and \(N_v = 10\) longitudinal planes per iteration,
 drawn with \(J = 0.5\); six 128-pixel crops per plane and a band weight of 0.3; the skin held
 fixed and the outer 10% by radius left to the exterior views. Peak device memory 5.2 to
-5.9&nbsp;GB on one card. The doughnut is 0.00832. Values for the orange, the watermelon and the doughnut are read from the object configurations in the repository; the four objects added later were configured on the training machine and their files are not in the published repository yet.</p>
+5.9&nbsp;GB on one card. Values for the orange, the watermelon and the doughnut are read from the object configurations in the repository; every object's configuration file is published under <code>configs/</code>, including the ten fold and ablation variants of the orange.</p>
 
 <p><strong>Explicit where a query needs an answer, implicit where appearance needs one.</strong>
 The representation is not a voxel grid of colours and the distinction matters for what it can do.
@@ -3492,7 +3493,16 @@ face carries no error term that resolution has to chase; the silhouette does.</p
 <p>Three properties are claimed for the face and each has a number. Planarity: every vertex is an
 edge&ndash;plane intersection solved from the plane equation, so the residual
 \(|\mathbf{n}\cdot\mathbf{v}+d|\) is at machine precision on an oblique off-grid plane rather
-than at a tolerance. Area: the error against the closed form falls from 0.97% at six cells of radius to 0.09% at forty-eight. Gaps and manifoldness: a cut face is a 2-manifold <em>with boundary</em> &mdash; a disc for a convex object, an annulus for the doughnut cut across its axis &mdash; interior edges shared by exactly two triangles, and a rim of edges belonging to one. On the orange, cut axis-aligned and obliquely, that is what it is: of 85,960 and 112,753 distinct triangles, <strong>no edge is used by more than two</strong>, 128,430 and 168,570 are used by exactly two, and the 1,020 and 1,119 used once form the rim &mdash; a count consistent with the silhouette's own length divided by the leaf size. There are no non-manifold edges and no interior gaps. This is measured under uniform refinement of the band, which is the precondition section 3.3.1 states: polygons meet edge to edge because every crossed cell is at the same level. Under the adaptive criterion of section 3.3.2 that precondition does not hold, and the measurement has not been repeated there. (The mesh is emitted double-sided, one triangle per winding, so the counts above are taken after reducing each face to one instance; counting on the emitted mesh doubles every edge and hides the rim.)</p>
+than at a tolerance. Area: the error against the closed form falls from 0.97% at six cells of radius to 0.09% at forty-eight. Gaps and manifoldness: a cut face is a 2-manifold <em>with boundary</em> &mdash; a disc for a convex object, an annulus for the doughnut cut across its axis &mdash; interior edges shared by exactly two triangles, and a rim of edges belonging to one. On the orange, cut axis-aligned and obliquely, that is what it is:</p>
+
+<div class="tw"><table>
+<thead><tr><th>orange, one cut</th><th>distinct triangles</th><th>edges used twice</th><th>edges used once</th><th>edges used more than twice</th></tr></thead>
+<tbody>
+<tr><td>axis-aligned</td><td>85,960</td><td>128,430</td><td>1,020</td><td><strong>0</strong></td></tr>
+<tr><td>oblique, off-grid</td><td>112,753</td><td>168,570</td><td>1,119</td><td><strong>0</strong></td></tr>
+</tbody></table></div>
+
+<p>The edges used once form the rim &mdash; a count consistent with the silhouette's own length divided by the leaf size. There are no non-manifold edges and no interior gaps. This is measured under uniform refinement of the band, which is the precondition section 3.3.1 states: polygons meet edge to edge because every crossed cell is at the same level. Under the adaptive criterion of section 3.3.2 that precondition does not hold, and the measurement has not been repeated there. (The mesh is emitted double-sided, one triangle per winding, so the counts above are taken after reducing each face to one instance; counting on the emitted mesh doubles every edge and hides the rim.)</p>
 
 <p>Peak device memory during training is 5.2 to 5.9&nbsp;GB at the settings used here, on one
 card.</p>
@@ -3547,7 +3557,18 @@ set out together here rather than left to be reconciled.</p>
 Nothing in this paper is an interactive cut, and the two levers on the remaining cost are named at
 the end of this section.</p>
 
-<p><strong>What the cost scales with.</strong> The labelling itself is linear in the leaves the cut touches, but the implementation is not: adjacency is rebuilt and the component structure allocated over every leaf, so the measured cost follows the object rather than the band. On balls of 17k, 58k, 137k and 268k cells cut by one oblique plane, the time per thousand cells is 0.0091, 0.0059, 0.0054 and 0.0056&nbsp;ms while the time per thousand band leaves rises from 0.0185 to 0.0286 &mdash; flat against the total, rising against the band. Reusing the adjacency outside the band is what took a cut on the orange from 13.76 to 2.91&nbsp;s, and taking the rest of the way to a cost proportional to the band is open.</p>
+<p><strong>What the cost scales with.</strong> The labelling itself is linear in the leaves the cut touches, but the implementation is not: adjacency is rebuilt and the component structure allocated over every leaf, so the measured cost follows the object rather than the band. The cost is flat against the total and rises against the band:</p>
+
+<div class="tw"><table>
+<thead><tr><th>ball, cells</th><th>ms per 1000 cells</th><th>ms per 1000 band leaves</th></tr></thead>
+<tbody>
+<tr><td>17k</td><td>0.0091</td><td>0.0185</td></tr>
+<tr><td>58k</td><td>0.0059</td><td class="mut">&mdash;</td></tr>
+<tr><td>137k</td><td>0.0054</td><td class="mut">&mdash;</td></tr>
+<tr><td>268k</td><td>0.0056</td><td>0.0286</td></tr>
+</tbody></table></div>
+
+<p>Each ball is cut by one oblique plane. Reusing the adjacency outside the band is what took a cut on the orange from 13.76 to 2.91&nbsp;s, and taking the rest of the way to a cost proportional to the band is open.</p>
 
 <p>The two halves of the claim come apart here and both are reported. Contact is cheap as claimed:
 a floor division and a table lookup run at 4.9 million queries per second against the solver's own
