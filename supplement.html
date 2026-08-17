@@ -543,12 +543,14 @@ swept through each object, every pixel resolved by cube lookup rather than by an
 </figure>
 
 <div class="tw"><table>
-<thead><tr><th>object</th><th>cells after filling</th><th>holes, before</th><th>holes, after</th></tr></thead>
+<thead><tr><th>object</th><th>all cells, before &rarr; after filling</th><th>holes, before</th><th>holes, after</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td>877,494 &rarr; 1,059,348</td><td>14.9% / 8.7% / 6.6%</td><td><strong>0.28% / 0.02% / 0.00%</strong></td></tr>
 <tr><td>watermelon</td><td>1,741,169 &rarr; 2,534,444</td><td>9.2% / 9.5% / 11.4%</td><td><strong>0.08% / 0.05% / 0.10%</strong></td></tr>
 <tr><td>doughnut</td><td>797,838 &rarr; 809,318</td><td>10.6% / 10.7% / 11.4%</td><td>9.5% / 8.7% / 10.2%</td></tr>
 </tbody></table></div>
+
+<p class="mut">This table counts every cell at both levels. Section 3.2.2 of the paper counts the coarse level alone, 759,353 to 848,021, which is why its percentage is smaller.</p>
 
 <p>The fraction of each section's own area the renderer leaves unpainted, before and after the
 occupancy is made solid. A cube's support is exactly its cell, so a gap is a hole in the occupancy

@@ -485,6 +485,8 @@ there is no threshold whose setting could change how many pieces the cut produce
 
 <h4>3.1.3&ensp;The two-level lattice</h4>
 
+<p class="mut"><strong>The orange, counted once.</strong> The lattice as route 1 builds it is <strong>877,494</strong> cells &mdash; 759,353 coarse and 118,141 fine. Route 2 builds 1,231,312 for the same fruit, 892,808 coarse and 338,504 fine, because its skin band is set rather than inherited. The single-level ablation is 801,929. Where a third figure appears against a timing or a cut it names the run it was taken from; 848,021 is the occupancy after closing and filling in one earlier build and 894,304 an earlier route 1 lattice, neither of which is the configuration reported here.</p>
+
 <div class="tw"><table>
 <thead><tr><th>symbol</th><th>meaning</th><th>value or domain</th></tr></thead>
 <tbody>
@@ -2380,6 +2382,8 @@ same held-out photograph.</p>
 <tr><td>FruitNinja, released</td><td>13.60 dB</td><td>0.7472</td><td>0.4919</td><td>0.1498</td></tr>
 </tbody></table></div>
 
+<p class="mut">Rendered as the leave-one-out batch: 40 cuts per fold, each fold scored against the one photograph its own run never saw. DreamSim values in this paper come from three render batches taken at different times; a value is comparable with others in its own table and differs by up to 0.006 from the same arm in another.</p>
+
 <p>All four agree in direction, and the size of each margin follows from what each instrument
 compares. PSNR and SSIM are pixel-aligned comparisons, and a
 held-out cutting plane is not a photograph of any particular slice: there is no correspondence
@@ -2824,6 +2828,8 @@ was quantised from scored beside it in the same batch.</p>
     <td class="mut">3 longitudinal only</td></tr>
 </tbody></table></div>
 
+<p class="mut">Rendered as one batch: 40 cuts per object, every arm and its baseline together at the same depths. DreamSim values in this paper come from three render batches taken at different times; a value is comparable with others in its own table and differs by up to 0.006 from the same arm quoted elsewhere.</p>
+
 <p>Five of six, by 1.2 to 1.8 times, and the cake goes the other way. The three we expected to be
 hardest are the three that decide what this table is worth. The pomegranate has three transverse references, half the orange's, and an
 interior of packed arils that has no repeating angular pattern for the phase alignment to exploit.
@@ -3211,7 +3217,7 @@ cells and a much larger skin fraction, so at \(8.0\times10^6\ \mathrm{Pa}\) in t
 extents rise between the two settings, which is the signature of a stiffer object rather than of a
 resolved shell. The control that separates these is the uniform preset at both \(\beta\), which the material
 code ships for exactly this purpose. It has now been run, with the level labels present so that the
-same per-level extent is recorded, and only the stiffness made uniform.</p>
+same per-level extent is recorded, and only the stiffness made uniform. The field swept here is not equation&nbsp;(16). It is a two-rule preset that assigns a shell and an interior stiffness directly, and its shell value of \(8.0\times10^6\ \mathrm{Pa}\) is above equation&nbsp;(16)'s ceiling of \(5\times10^6\). What the sweep tests is whether a stiffness contrast survives the transfer at a given band width, not the mapping of section 3.5.</p>
 
 <div class="tw"><table>
 <thead><tr><th>doughnut, extent gap (interior &minus; skin) at the last frame</th>
