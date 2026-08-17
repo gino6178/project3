@@ -692,7 +692,7 @@ what its paper states.</p>
     <td><strong>FID 378.7 / 511.6</strong> <span class="mut">(our reproduction)</span></td>
     <td class="mut">needs none</td>
     <td class="mut">the arm once entered here at FID 90.1 / 213.5 is photograph-supervised;
-        see the paper's section 4.1.8</td></tr>
+        see the paper's section 4.1.9</td></tr>
 <tr><td>breaking into pieces</td><td class="mut">not addressed</td>
     <td>fracture by continuum damage</td>
     <td>connected components on face adjacency, one solver per piece</td></tr>
@@ -795,7 +795,7 @@ photographs, it does not look more like them for it.</div>
 
 <h4>S2.11&ensp;Reference-based metrics</h4>
 
-<p>PSNR, SSIM and LPIPS on the same cuts are in section 4.1.8, computed on a hundred planes rather
+<p>PSNR, SSIM and LPIPS on the same cuts are in section 4.1.9, computed on a hundred planes rather
 than six and against the same references. They are not repeated here: at six renders the four route
 and renderer combinations differ by 0.29&nbsp;dB, 0.010 SSIM and 0.019 LPIPS on the orange and by
 less than half that on the watermelon, and all four sit about 4.5&nbsp;dB and 0.21 LPIPS below the
@@ -824,7 +824,7 @@ names, and the arm has to be rebuilt before anything is claimed from it.</p>
 photograph uniformly at random on every iteration instead, and changing nothing else, costs
 <strong>0.067</strong> of DreamSim on held-out transverse cuts of the orange: 0.1367 against
 0.0700 for the fixed rule, both arms rendered in one batch on the same planes, against a released
-model at 0.1290 in that batch. The paper reports the number in section 4.1.4. What follows is the
+model at 0.1290 in that batch. The paper reports the number in section 4.1.5. What follows is the
 reason it was run and what the renders show, which the number alone does not carry.</p>
 
 <p>The motivation was that a fixed assignment might be why the interior is smoother than a real
@@ -1042,7 +1042,7 @@ segment walls turn into a crust, because the stock checkpoint has no idea what t
 fruit looks like inside and the Gaussian supervision has nothing else to lean on.</p>
 
 
-<h3>A.2&ensp;Section 4.1.8, the reasoning around the tables</h3>
+<h3>A.2&ensp;Section 4.1.9, the reasoning around the tables</h3>
 
 <p>The tables stayed in the paper and the argument around them came here. </p>
 

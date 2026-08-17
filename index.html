@@ -887,8 +887,8 @@ divided among sixteen planes, so each image serves two or three adjacent depths,
 longitudinal among ten. Two consequences follow that a reader cannot otherwise infer. The conflict
 on a shared cell is not an occasional collision between whichever images happened to be drawn; it
 is the same two images pulling the same cells in the same directions on every iteration, which is
-why an assignment is a variable worth optimising at all (section 4.1.7) and why drawing one at random
-instead costs 0.067 of DreamSim (section 4.1.4). And the jitter moves the
+why an assignment is a variable worth optimising at all (section 4.1.8) and why drawing one at random
+instead costs 0.067 of DreamSim (section 4.1.5). And the jitter moves the
 plane without changing what supervises it: a cell's target comes from the same photograph wherever
 the plane lands inside its slot, so the sweep varies geometry and not content.</p>
 
@@ -947,7 +947,7 @@ would touch still carries gradient in expectation.</p>
 <p>with \(\Delta\) the spacing between slots, \(J = 0.5\) and \(N_v = 10\) in every run reported
 here. At \(J = 0.5\) the slots tile the interval exactly: no depth is sampled twice and none is
 unreachable. This is the reason the 66% of cells no fixed plane would touch are not a hole to be
-filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.4 reports what
+filled &mdash; the family sweeps them over iterations &mdash; and section 4.1.5 reports what
 happens at \(J = 0\), \(0.25\) and \(1\).</p>
 
 <p><strong>What is optimised and what is not.</strong> The objection to supervising from
@@ -1051,7 +1051,7 @@ reference is given is a free parameter, and the pipeline sets it by cross-correl
 photograph against the first of its family. That makes one family internally coherent and says
 nothing about the other. Since the two families meet in lines that are known before training, the
 phases can instead be chosen against the disagreement they produce there, which is a mixed discrete&ndash;continuous problem over a permutation and a set of angles, solved to a coordinate-wise optimum in seconds.
-Section 4.1.7 gives the formulation and what it measures: it lowers cross-family disagreement, most
+Section 4.1.8 gives the formulation and what it measures: it lowers cross-family disagreement, most
 visibly on cuts at orientations neither family supervised, and does not change similarity to the
 photographs.</p>
 
@@ -3012,9 +3012,62 @@ them. The orange is the one object with a leave-one-out study, in section 4.1.2.
 counts differ by object and are given because a distribution metric on three images is not one; that
 is why DreamSim, which is a distance between pairs, is the column reported.</p>
 
-<h4>4.1.4&ensp;What the jitter and the second level are worth</h4>
+<h4>4.1.4&ensp;What happens when the references disagree, and whether the fit can stall</h4>
 
-<p class="mut">The sweeps in sections 4.1.4 to 4.1.7 are scored against the six photographs that supervised them, as is the control at 0.0738. Each comparison is between arms that share that condition, not against a held-out reference; section 4.1.2 is the study that holds one out.</p>
+<p>Supervising from photographs with no camera invites two objections. If the warp that places a
+reference on the render can go wrong, the optimisation might settle in a bad configuration and
+stay there; and if two references describe the same region differently, the volume might satisfy
+both by averaging them into a blur. The first is answered by what the warp is, the second by
+measurement.</p>
+
+<p><strong>No pose is optimised, so no pose can be stuck.</strong> \(\Phi\) has two degrees of
+freedom, an isotropic scale and a translation. Both are computed from the moments of the two
+silhouettes &mdash; the ratio of their radii and the difference of their centroids &mdash; not
+fitted, and both are recomputed from scratch every iteration. There is no parameter of the warp
+that gradient descent can move, so the warp has no local minimum, cannot drift, and cannot carry
+error from one iteration to the next. A difference of scale between two references is removed
+before either enters the loss, by the same construction: each is rescaled to the render's own
+silhouette, so the two are compared at one size whatever size they were photographed at.</p>
+
+<p><strong>The fit converges, and to the same place.</strong> Every run records the section loss
+and the warp residual for each plane at each iteration.</p>
+
+<div class="tw"><table>
+<thead><tr><th>run</th><th>loss, first</th><th>loss, last</th><th>fall</th><th>sd over the last 20</th><th class="mut">warp residual, first &rarr; last</th></tr></thead>
+<tbody>
+<tr><td>orange, block assignment</td><td>0.2591</td><td>0.1196</td><td>53.8%</td><td>0.0059</td><td class="mut">0.0061 &rarr; 0.0028</td></tr>
+<tr><td>orange, continuous</td><td>0.2334</td><td>0.1077</td><td>53.8%</td><td>0.0044</td><td class="mut">0.0050 &rarr; 0.0022</td></tr>
+<tr><td>watermelon, block assignment</td><td>0.3537</td><td>0.1502</td><td>57.5%</td><td>0.0050</td><td class="mut">0.0067 &rarr; 0.0025</td></tr>
+<tr><td>watermelon, continuous</td><td>0.3468</td><td>0.1447</td><td>58.3%</td><td>0.0048</td><td class="mut">0.0069 &rarr; 0.0026</td></tr>
+<tr><td>watermelon, rind profile</td><td>0.3610</td><td>0.1569</td><td>56.5%</td><td>0.0036</td><td class="mut">0.0072 &rarr; 0.0027</td></tr>
+<tr><td>watermelon, warped blend</td><td>0.3589</td><td>0.1432</td><td>60.1%</td><td>0.0038</td><td class="mut">0.0070 &rarr; 0.0027</td></tr>
+</tbody></table></div>
+
+<p>The loss falls by half to three fifths and its spread over the last twenty iterations is 3 to
+6% of the level it settles at, on six runs that differ in what supervises them. The residual
+column is reported but does not mean what it might appear to: it falls because the render's
+silhouette improves as the volume converges, not because the warp is being fitted. Two runs of one
+configuration differ by 0.0003 DreamSim and 5.0 FID, which is the spread any comparison in this
+section has to clear.</p>
+
+<p><strong>Blurring under conflict is real, and its cause is the assignment.</strong> The
+experiment that produces it is section 4.1.5's random draw: giving a plane a different photograph
+on every iteration is the strongest disagreement the reference set can express, and it does blur
+&mdash; the orange's radial structure flattens to an even wash and DreamSim goes from 0.0700 to
+0.1367. Under the fixed rule it does not, because a plane keeps one photograph and the target it
+converges to is that photograph rather than a mean. Where two planes genuinely share cells the
+conflict is small and was measured: the contested set is 2.9% of the cells, 96.5% of the variation
+between references survives in the volume, and reconciling the two targets by averaging them
+explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
+
+<p class="mut">What this does not cover: sensitivity to the volume's own initialisation. The
+references' initial pose is swept in section 4.1.7, where injected rotations of up to 30&deg;
+leave the worst arm at 0.0850 against the fine-tuned baseline's 0.1326, but every run in this
+paper starts from the same quantised reconstruction and no seed was varied.</p>
+
+<h4>4.1.5&ensp;What the jitter and the second level are worth</h4>
+
+<p class="mut">The sweeps in sections 4.1.5 to 4.1.7 are scored against the six photographs that supervised them, as is the control at 0.0738. Each comparison is between arms that share that condition, not against a held-out reference; section 4.1.2 is the study that holds one out.</p>
 
 <p>Two design choices are swept here because each is a parameter the paper had reported a role for
 without measuring it.</p>
@@ -3060,7 +3113,7 @@ spread between two runs of one configuration. The jitter does not. Every setting
 neither family supervised &mdash; where a sweeping plane family is the mechanism that would matter
 &mdash; the arm with no jitter has the smallest cross-family gap, and the most detail is at \(J = 1\). The ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather than an effect. The measurements here are whole-section: a spatially resolved test, binning coherence by distance to the nearest training plane, would separate a local effect from a global one and was not run. Blind cells sit a mean of 1.35 cells from a supervised one and change as much during training as supervised cells do; the supervision reaches them through the shared decoder, and the jitter is not what carries it. The assignment of section 3.2.4 says why: a plane keeps its photograph wherever it lands inside its slot, so jitter varies which cells are read and not what they are asked for.</p>
 
-<h4>4.1.5&ensp;How many references, and which</h4>
+<h4>4.1.6&ensp;How many references, and which</h4>
 
 <p>An interior is not consistent with itself across specimens. Six transverse photographs of six
 oranges show 9 to 19 segment walls, and the disagreement between them along a line they share,
@@ -3088,10 +3141,10 @@ for one answer to begin with.</p>
 
 <p class="mut">The practical reading is not "use fewer photographs". It is that a photograph is
 worth including when it agrees with the others about the cells they share, and the chordal
-disagreement of section 4.1.7 is computable before training for exactly that purpose &mdash; though
+disagreement of section 4.1.8 is computable before training for exactly that purpose &mdash; though
 it does not, on the three sets measured here, rank them the way the trained models rank.</p>
 
-<h4>4.1.6&ensp;How much misalignment the references may carry</h4>
+<h4>4.1.7&ensp;How much misalignment the references may carry</h4>
 
 
 
@@ -3121,7 +3174,7 @@ what alignment leaves. What the table measures is the system's tolerance, not th
 and an object whose sections have no shared angular phase to align to would not get the first
 mechanism.</p>
 
-<h4>4.1.7&ensp;Choosing the references' phases against the geometry they share</h4>
+<h4>4.1.8&ensp;Choosing the references' phases against the geometry they share</h4>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
@@ -3186,7 +3239,7 @@ slightly less self-consistent on the axis, 0.0520 to 0.0617, which follows from 
 &mdash; the transverse phases were free and the axis is where longitudinal sections meet each other,
 not where they meet the transverse family. Cross-family coherence and photographic similarity are separable, and this addresses the first.</p>
 
-<h4>4.1.8&ensp;Both methods through the same evaluator</h4>
+<h4>4.1.9&ensp;Both methods through the same evaluator</h4>
 
 
 
@@ -3280,7 +3333,7 @@ hundred; the two tables are internally consistent and should not be read across.
   statistics of a slice, not whether the slice is a plane.</figcaption>
 </figure>
 
-<h4>4.1.9&ensp;The comparison in one table</h4>
+<h4>4.1.10&ensp;The comparison in one table</h4>
 
 <p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
 or marked where the quantity does not exist for that representation. A cut-face residual and a cut-area error need a cut-face
@@ -3585,7 +3638,7 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 <tr><td>collision: one occupancy query over the particle set</td><td>179.0&nbsp;ms</td>
     <td><strong>4,902,612 queries/s</strong></td></tr>
 <tr><td>reference alignment: six angular profiles and their cross-correlations</td><td>126&nbsp;ms</td><td class="mut">once per object, equation&nbsp;(11)</td></tr>
-<tr><td>the joint phase and assignment solve of section 4.1.7</td><td>166,000&nbsp;ms</td><td class="mut">once, offline; not in the pipeline</td></tr>
+<tr><td>the joint phase and assignment solve of section 4.1.8</td><td>166,000&nbsp;ms</td><td class="mut">once, offline; not in the pipeline</td></tr>
 <tr><td>peak device memory during training</td><td>5.2 to 5.9&nbsp;GB</td><td class="mut">one card, at the settings of section 3.1.2</td></tr>
 <tr><td>triangles emitted by one cut</td><td>85,960 to 112,753 distinct</td><td class="mut">doubled to 171,920&ndash;225,506 by two-sided emission</td></tr>
 </tbody></table></div>
