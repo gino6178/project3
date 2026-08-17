@@ -464,7 +464,7 @@ rendering primitive is stored in the interior.</p>
 partitions \(\mathcal{V}\) by the sign of \(\mathbf{n}\cdot\mathbf{x_k} + d\), which answers Q2 by
 connected components of face adjacency; and it meets each crossed cell \(c\) in a convex polygon
 \(\Pi_c\), so Q3 is answered by \(\mathcal{P} = \bigcup_{c} \Pi_c\) with every vertex satisfying the
-plane equation by construction. The crossed set is measured at 2.7 to 10.7% of the cells here, consistent with \(K = O(N^{2/3})\) without establishing the rate for \(N\)
+plane equation by construction. The crossed set is measured at 4.0 to 10.7% of the cells here, consistent with \(K = O(N^{2/3})\) without establishing the rate for \(N\)
 cells, and section 3.3.1 gives the construction and section 4.3.3 the measured cost.</p>
 
 <p><strong>Why the labelling is the cheap part here and is not elsewhere.</strong> Face adjacency
@@ -2621,8 +2621,7 @@ are given so they are not read as one:</p>
 representation is resolution-dependent for every model including ours: at 256&nbsp;px they are all
 under two tenths of a percent and indistinguishable, and by 2048&nbsp;px GaussianFluent's section
 is 39% background (32.9 to 49.5 across the six cuts), FruitNinja's 2.4% (1.5 to 3.4) and our own
-splatted lattice's 3.3% (2.5 to 3.8), against the cube volume's 0.07% (0.06 to 0.09). The cube volume does not move,
-0.02% to 0.06% over three octaves, because a cell's support is the cell and a pixel either falls
+splatted lattice's 3.3% (2.5 to 3.8), against the cube volume's 0.07% (0.06 to 0.09). The cube volume does not move, 0.04% to 0.07% over three octaves, because a cell's support is the cell and a pixel either falls
 inside an occupied one or does not. What a Gaussian buys with enough primitives at a chosen zoom, a
 cube has by construction at every zoom, and that follows from what a cell is rather than from a
 number that happened to come out well. It is measured on one object at three image sizes, on six
@@ -2893,7 +2892,7 @@ nothing at a distance.</p>
 spread between two runs of one configuration. The jitter does not. Every setting including
 \(J = 0\) lands within 0.005 on held-out cuts of the supervised families, and on the 45&deg; cuts
 neither family supervised &mdash; where a sweeping plane family is the mechanism that would matter
-&mdash; the arm with no jitter at all has the smallest cross-family gap and the most detail. The ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather than an effect. The measurements here are whole-section: a spatially resolved test, binning coherence by distance to the nearest training plane, would separate a local effect from a global one and was not run. Blind cells sit a mean of 1.35 cells from a supervised one and change as much
+&mdash; the arm with no jitter has the smallest cross-family gap, and the most detail is at \(J = 1\). The ordering is not monotone in \(J\) either, which is what a run-to-run difference looks like rather than an effect. The measurements here are whole-section: a spatially resolved test, binning coherence by distance to the nearest training plane, would separate a local effect from a global one and was not run. Blind cells sit a mean of 1.35 cells from a supervised one and change as much
 during training as supervised cells do; the supervision reaches them through the shared decoder,
 and the jitter is not what carries it.</p>
 
@@ -3161,30 +3160,32 @@ cells thick does not survive that transfer. That failure has a number, and the n
 out before any simulation runs. MPM moves
 particle quantities to a background grid of spacing \(dx\) and back, so a feature thinner than
 about two grid cells is averaged with its neighbours on the way through and comes back as the
-average. The quantity that decides whether a hard shell is possible is therefore the shell's
-thickness <em>in MPM grid cells</em>, and it had never been measured:</p>
+average. The quantity that decides whether a hard shell is possible is therefore the shell's thickness in
+units of the <em>transfer</em> grid \(\Delta x = 3.2/80 = 0.04\), which is the grid momentum passes
+through &mdash; not the finer grid particles are seeded on, against which every value here would
+read four times larger:</p>
 
 <div class="tw"><table>
 <thead><tr><th>object</th><th>shell thickness</th><th>in fine cells</th><th>in MPM grid cells</th><th>a stiffness contrast is</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td>0.01910</td><td>3.2</td><td>2.00</td><td>exactly at the threshold</td></tr>
-<tr><td>watermelon</td><td>0.02571</td><td>3.0</td><td>1.25</td><td>not resolvable, needs 4.8 cells</td></tr>
-<tr><td>doughnut</td><td>0.01234</td><td>3.0</td><td>0.87</td><td>not resolvable, needs 6.8 cells</td></tr>
+<tr><td>orange</td><td>0.01910</td><td>3.2</td><td><strong>0.50</strong></td><td>not resolvable</td></tr>
+<tr><td>watermelon</td><td>0.02571</td><td>3.0</td><td><strong>0.31</strong></td><td>not resolvable</td></tr>
+<tr><td>doughnut</td><td>0.01234</td><td>3.0</td><td><strong>0.22</strong></td><td>not resolvable</td></tr>
 </tbody></table></div>
 
 <h4>4.2.2&ensp;Shell thickness as a parameter of route 2</h4>
 
 <p>That threshold is what route 2 can act on. It builds the lattice from a field, so the skin band \(\beta\) is a
-number passed to the builder rather than a property of someone else's model. The prediction above
-says the doughnut needs about seven fine cells. Building it at four settings:</p>
+number passed to the builder rather than a property of someone else's model. The criterion is evaluated against the grid the solver integrates on, \(\Delta x = 3.2/80\), not
+the finer grid particles are seeded on. Building the doughnut at four settings:</p>
 
 <div class="tw"><table>
 <thead><tr><th>\(\beta\), fine cells</th><th>cells</th><th>measured thickness</th><th>in MPM grid cells</th><th></th></tr></thead>
 <tbody>
-<tr><td>3 <span class="mut">(the default)</span></td><td>1,129,008</td><td>4.1</td><td>1.17</td><td>no</td></tr>
-<tr><td>5</td><td>1,486,904</td><td>5.5</td><td>1.57</td><td>no</td></tr>
-<tr><td><strong>7</strong></td><td>1,827,832 <span class="mut">(+62%)</span></td><td>7.2</td><td><strong>2.06</strong></td><td><strong>yes</strong></td></tr>
-<tr><td>9</td><td>2,148,936 <span class="mut">(+90%)</span></td><td>9.0</td><td>2.59</td><td>yes</td></tr>
+<tr><td>3 <span class="mut">(the default)</span></td><td>1,129,008</td><td>4.1</td><td><strong>0.29</strong></td><td>no</td></tr>
+<tr><td>5</td><td>1,486,904</td><td>5.5</td><td><strong>0.39</strong></td><td>no</td></tr>
+<tr><td><strong>7</strong></td><td>1,827,832 <span class="mut">(+62%)</span></td><td>7.2</td><td><strong>0.52</strong></td><td>no</td></tr>
+<tr><td>9</td><td>2,148,936 <span class="mut">(+90%)</span></td><td>9.0</td><td><strong>0.65</strong></td><td>no</td></tr>
 </tbody></table></div>
 
 <h4>4.2.3&ensp;Solver response across the threshold</h4>
@@ -3198,10 +3199,10 @@ question, not its size.</p>
 <div class="tw"><table>
 <thead><tr><th>doughnut, at deepest compression</th><th>shell, in grid cells</th><th>skin extent</th><th>interior extent</th><th>interior &minus; skin</th></tr></thead>
 <tbody>
-<tr><td>\(\beta = 3\), falling</td><td>1.17</td><td>0.9220</td><td>0.9259</td><td><strong>+0.0040</strong></td></tr>
-<tr><td>\(\beta = 7\), falling</td><td>2.06</td><td>0.9334</td><td>0.9318</td><td><strong>&minus;0.0016</strong></td></tr>
-<tr><td>\(\beta = 3\), falling and cut</td><td>1.17</td><td>0.9264</td><td>0.9333</td><td><strong>+0.0070</strong></td></tr>
-<tr><td>\(\beta = 7\), falling and cut</td><td>2.06</td><td>0.9280</td><td>0.9177</td><td><strong>&minus;0.0103</strong></td></tr>
+<tr><td>\(\beta = 3\), falling</td><td>0.29</td><td>0.9220</td><td>0.9259</td><td><strong>+0.0040</strong></td></tr>
+<tr><td>\(\beta = 7\), falling</td><td>0.52</td><td>0.9334</td><td>0.9318</td><td><strong>&minus;0.0016</strong></td></tr>
+<tr><td>\(\beta = 3\), falling and cut</td><td>0.29</td><td>0.9264</td><td>0.9333</td><td><strong>+0.0070</strong></td></tr>
+<tr><td>\(\beta = 7\), falling and cut</td><td>0.52</td><td>0.9280</td><td>0.9177</td><td><strong>&minus;0.0103</strong></td></tr>
 </tbody></table></div>
 
 
@@ -3237,8 +3238,7 @@ confirm the criterion does not confirm it.</p>
 <p>The four gaps are 0.16%, 0.40%, 0.70% and 1.03% of the object's extent, so the effect is a
 fraction of a percent at three of the four settings and reaches 1% at one. Each cell is a single
 deterministic run: there is no repeat, no seed variation and therefore no noise floor to compare
-the sign flip against. It is detectable in the solver's report and not in a render. What it establishes is that the diagnosis predicted a threshold and that crossing it
-reverses the sign of the response, on one object. Whether a contrast large enough to <em>look</em>
+the sign flip against. It is detectable in the solver's report and not in a render. What it establishes is smaller than that. On the grid the solver integrates, no build in the sweep crosses the threshold &mdash; \(\tau_s\) runs 0.29 to 0.65 against a kernel support of 1.5 &mdash; so the sign change across \(\beta\) is a response to band width and not to a resolvability threshold being crossed. The criterion is derived and computable before the first timestep; it is not confirmed here, because the sweep never left the unresolvable side. Whether a contrast large enough to <em>look</em>
 like a peel needs a thicker shell again, a finer solver grid or a different transfer is not
 answered here.</p>
 
@@ -3370,7 +3370,7 @@ face carries no error term that resolution has to chase; the silhouette does.</p
 edge&ndash;plane intersection solved from the plane equation, so the residual
 \(|\mathbf{n}\cdot\mathbf{v}+d|\) is at machine precision on an oblique off-grid plane rather
 than at a tolerance. Area: the error against the closed form is first order in the cell size and
-reaches 0.09%. Gaps and manifoldness: the cut face is a disc, so a correct one is a 2-manifold <em>with boundary</em> &mdash; interior edges shared by exactly two triangles, and a rim of edges belonging to one. On the orange, cut axis-aligned and obliquely, that is what it is: of 85,960 and 112,753 distinct triangles, <strong>no edge is used by more than two</strong>, 128,430 and 168,570 are used by exactly two, and the 1,020 and 1,119 used once form the rim &mdash; a count consistent with the silhouette's own length divided by the leaf size. There are no non-manifold edges and no interior gaps. (The mesh is emitted double-sided, one triangle per winding, so the counts above are taken after reducing each face to one instance; counting on the emitted mesh doubles every edge and hides the rim.)</p>
+reaches 0.09%. Gaps and manifoldness: a cut face is a 2-manifold <em>with boundary</em> &mdash; a disc for a convex object, an annulus for the doughnut cut across its axis &mdash; interior edges shared by exactly two triangles, and a rim of edges belonging to one. On the orange, cut axis-aligned and obliquely, that is what it is: of 85,960 and 112,753 distinct triangles, <strong>no edge is used by more than two</strong>, 128,430 and 168,570 are used by exactly two, and the 1,020 and 1,119 used once form the rim &mdash; a count consistent with the silhouette's own length divided by the leaf size. There are no non-manifold edges and no interior gaps. This is measured under uniform refinement of the band, which is the precondition section 3.3.1 states: polygons meet edge to edge because every crossed cell is at the same level. Under the adaptive criterion of section 3.3.2 that precondition does not hold, and the measurement has not been repeated there. (The mesh is emitted double-sided, one triangle per winding, so the counts above are taken after reducing each face to one instance; counting on the emitted mesh doubles every edge and hides the rim.)</p>
 
 <p>Peak device memory during training is 5.2 to 5.9&nbsp;GB at the settings used here, on one
 card.</p>
