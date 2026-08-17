@@ -2054,9 +2054,28 @@ $$ \mathcal{P}_c \;=\; \operatorname{conv}\bigl\{\, \mathbf{a}_e + t_e (\mathbf{
 \(\mathbf{n}\cdot\mathbf{x} + d = 0\) by construction rather than by fitting, so \(\mathcal{P}\)
 is planar to whatever the arithmetic leaves and carries no approximation term. Ordering the
 crossings by angle about their centroid in the plane's own basis gives the polygon; three to six
-crossings occur for a cube, and the two degenerate cases are handled as described below. The
-polygons meet edge to edge because every crossed cell is refined to the same depth, so
-\(\mathcal{P}\) is a manifold with boundary wherever the occupancy is.</p>
+crossings occur for a cube, and the two degenerate cases are handled as described below. </p>
+
+<p><strong>Proposition 1 (no T-junctions).</strong> Let every cell the plane crosses be refined to
+the same level \(\ell_b\), and let \(\mathcal{P} = \bigcup_c \mathcal{P}_c\) over those cells.
+Then every edge of every \(\mathcal{P}_c\) that does not lie on the boundary of the occupied
+region is shared, in full, by exactly one other polygon; \(\mathcal{P}\) has no T-junction and is
+a 2-manifold with boundary.</p>
+
+<p class="mut"><em>Proof.</em> An edge of \(\mathcal{P}_c\) joins two crossings on the boundary of
+cell \(c\), and by construction both lie on one face \(f\) of \(c\): the plane meets the face in a
+segment, and that segment is the edge. Because all crossed cells sit at level \(\ell_b\), they are
+congruent cubes on a common grid, so \(f\) is either on the boundary of the occupied region or is
+shared in full with exactly one neighbour \(c'\) &mdash; there is no half-face, which is the only
+way a T-junction could arise. In the second case the plane meets \(f\) in the same segment from
+either side, since the segment is a property of \(f\) and the plane alone, so that segment is an
+edge of \(\mathcal{P}_{c'}\) as well and the two polygons share it entirely. Each interior edge
+therefore lies in exactly two polygons and each boundary edge in one, which is the definition. The
+hypothesis is what fails under the adaptive criterion of section 3.3.2, where the band carries two
+levels and a coarse face meets four fine ones; section 4.3.2 measures the consequence.
+&#9633;</p>
+
+<p>
 
 <h4>3.3.2&ensp;Adaptive refinement of the cut band</h4>
 
@@ -2158,7 +2177,7 @@ is 0.00e+00 exactly, which is that plane's own accident, and for an oblique plan
 of \(\mathbf{a} + t(\mathbf{b}-\mathbf{a})\), a small multiple of the machine epsilon. There is no other error term: no primitive is
 asked to approximate the plane, so the only departure in a cut is the voxelisation of the
 silhouette. Every crossed cell is
-refined to the same depth, so cut polygons meet edge to edge and there are no T-junctions between
+refined to the same depth, so cut polygons meet edge to edge by Proposition 1 and there are no T-junctions between
 them.</p>
 <h3 id="physics">3.5&ensp;Direct grid interfacing for simulation</h3>
 
@@ -3438,6 +3457,10 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 <tr><td>collision: label every particle by piece <span class="mut">(877,494 particles, one per route&nbsp;1 cell)</span></td><td>556.6&nbsp;ms</td><td>1,576,452 particles/s</td></tr>
 <tr><td>collision: one occupancy query over the particle set</td><td>179.0&nbsp;ms</td>
     <td><strong>4,902,612 queries/s</strong></td></tr>
+<tr><td>reference alignment: six angular profiles and their cross-correlations</td><td>126&nbsp;ms</td><td class="mut">once per object, equation&nbsp;(11)</td></tr>
+<tr><td>the joint phase and assignment solve of section 4.1.7</td><td>166,000&nbsp;ms</td><td class="mut">once, offline; not in the pipeline</td></tr>
+<tr><td>peak device memory during training</td><td>5.2 to 5.9&nbsp;GB</td><td class="mut">one card, at the settings of section 3.1.3</td></tr>
+<tr><td>triangles emitted by one cut</td><td>85,960 to 112,753 distinct</td><td class="mut">doubled to 171,920&ndash;225,506 by two-sided emission</td></tr>
 </tbody></table></div>
 
 <p><strong>Which cut is which.</strong> Timings of "a cut" appear in this paper and in the
@@ -3454,8 +3477,8 @@ set out together here rather than left to be reconciled.</p>
 <tr><td>refine and label, as the pipeline runs it</td><td>848,021 cells</td><td>4.88</td>
     <td class="mut">this section</td></tr>
 <tr><td>emit the exact polygons</td><td>848,021 cells</td><td>6.21</td><td class="mut">this section</td></tr>
-<tr><td>refine the band and label the pieces, as the supplement times it</td><td>877,494 cells</td><td>12.96</td><td class="mut">supplement 4.5.5</td></tr>
-<tr><td>emit the exact polygons, as the supplement times it</td><td>877,494 cells</td><td>14.25</td><td class="mut">supplement 4.5.5</td></tr>
+<tr><td>refine the band and label the pieces, as the supplement times it</td><td>877,494 cells</td><td>12.96</td><td class="mut">supplement S2.8</td></tr>
+<tr><td>emit the exact polygons, as the supplement times it</td><td>877,494 cells</td><td>14.25</td><td class="mut">supplement S2.8</td></tr>
 <tr><td class="mut">both, end to end</td><td class="mut">848,021 cells</td><td class="mut">11.1</td>
     <td class="mut">this section</td></tr>
 </tbody></table></div>
