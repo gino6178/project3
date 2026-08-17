@@ -428,8 +428,7 @@ around.</p>
 
 <p>Let \(\Omega \subset \mathbb{R}^3\) be a closed solid with boundary \(\partial\Omega\), known
 only through photographs of its exterior. A <em>cuttable representation</em> of \(\Omega\) must
-support three queries, and we state them first because the rest of this section is their
-implementation:</p>
+support three queries, and they are stated first:</p>
 
 <div class="tw"><table>
 <thead><tr><th></th><th>query</th><th>signature</th></tr></thead>
@@ -555,8 +554,7 @@ $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
 
 <h3>3.1.4&ensp;The boundary as a dual grid</h3>
 
-<p>Converting only the cut face would require a second renderer and a per-pixel visibility rule
-between it and the first; converting the whole boundary removes both. It is also necessary rather
+<p> It is also necessary rather
 than convenient: a Gaussian shell covers only 7 to 20% of the frame at alpha above one half, so
 at the silhouette a cut face shows through from the side it should be hidden on.</p>
 
@@ -658,7 +656,7 @@ four voxels to the nodes that survived, and with nothing merged that reproduces 
 question about what exists before the pipeline starts.</p>
 
 <div class="tw"><table>
-<thead><tr><th>what you have</th><th>route</th><th>why</th></tr></thead>
+<thead><tr><th>what is available</th><th>route</th><th>why</th></tr></thead>
 <tbody>
 <tr><td>A reconstruction of a real object, with an interior already generated into it</td>
     <td><strong>Route 1</strong>, quantise</td>
@@ -790,7 +788,7 @@ $$ \mathbf{c}_{\mathbf{k}} = \frac{\sum_{i=1}^{6} w_{i\mathbf{k}}\,
    \quad \gamma = 4 $$
 </div><div class="num">(7)</div></div>
 
-<p>Nothing here is inferred. The camera is known because it produced the view, so there is no
+<p>The camera is known because it produced the view, so there is no
 saturating map from a cell's direction to a reference radius and no rim light to correct for.</p>
 
 <p>Solid by construction is the first payoff. A cell is inside when the field says so, so there is
@@ -1010,8 +1008,7 @@ about why that is acceptable. It is the property that decides what a user has to
 whose supervision must be mutually consistent needs registered views of one specimen; this one asks
 only for images of what the inside of such an object looks like, and the twelve used here are of
 different fruits, cut at different depths, photographed on different days, none of them taken with
-any of the others in mind. Each was taken of a different specimen at a different depth, and
-none was taken with any of the others in mind. Ten vertical training planes all contain the object's axis, so that axis is <em>the same line</em> in every one of them. They draw their targets from six photographs of six different fruits, none taken with any of the others in mind, so what the supervision says along that line is six unrelated answers presented ten times.</p>
+any of the others in mind.  Ten vertical training planes all contain the object's axis, so that axis is <em>the same line</em> in every one of them. They draw their targets from six photographs of six different fruits, none taken with any of the others in mind, so what the supervision says along that line is six unrelated answers presented ten times.</p>
 
 <p>That inconsistency is measurable and it is not small. Taking the axis column of each reference,
 restricted to rows where every section has material, and comparing the references pairwise:</p>
@@ -1062,8 +1059,7 @@ than assumed. It also locates where a better supervision would act. The volume c
 the conflict <em>after</em> the fact, by averaging ten answers into one field; the conflict itself
 is produced upstream, by generating each cross-section independently. A supervision that conditioned
 each new section on what the volume already holds along its intersections with the sections already
-drawn would remove the conflict at its source instead. That is not what this paper does, and the
-measurement above is what says it is worth doing.</p>
+drawn would remove the conflict at its source instead. That is not what this paper does, and the measurement above is what motivates it.</p>
 
 <h3>3.3&ensp;Closed-form planar cutting operator</h3>
 
@@ -2053,7 +2049,7 @@ the corners, so \(e\) is evaluated for every cell in the band at once with no hu
 tetrahedra. Checked against a convex hull on 300 random cubes and planes, the closed form agrees to
 \(2.4\times10^{-12}\) of a cell.</p>
 
-<p>This is the ablation the design asks for, on a ball cut by an oblique plane, comparing uniform
+<p>The ablation, on a ball cut by an oblique plane, comparing uniform
 refinement to adaptive refinement at matched error:</p>
 
 <div class="tw"><table>
@@ -2134,8 +2130,7 @@ refined to the same depth, so cut polygons meet edge to edge and there are no T-
 them.</p>
 <h3 id="physics">3.5&ensp;Direct grid interfacing for simulation</h3>
 
-<p>The path from a photograph to a simulated fragment runs without an intermediate mesh at any
-point, and the sequence is. Sparse 2D cross-sections optimise a feature
+<p>The path from a photograph to a simulated fragment runs without an intermediate mesh at any point: Sparse 2D cross-sections optimise a feature
 lattice; a plane is intersected with that lattice in closed form; the connected components of face
 adjacency are the fragments; and the fragments are handed to a material point solver as occupancy
 and per-cell material, which is the form it already wants. A reconstruction that begins as a
@@ -2257,8 +2252,7 @@ residual below is a statement about bending and not about drift.</p>
 
 <h2 id="results">4&ensp;Experiments</h2>
 
-<p>The validation is organised along four axes, and it is worth saying at the outset which of
-them this paper fills and which it does not. <strong>Perceptual fidelity</strong> under loose,
+<p>The validation is organised along four axes, and which of them this paper fills and which it does not. <strong>Perceptual fidelity</strong> under loose,
 unaligned references is section 4.1, and it is the axis the paper's main claim rests on.
 <strong>Geometric precision of the cut face</strong> &mdash; planarity, area error, unpainted
 fraction, absence of gaps &mdash; is sections 4.1.2 and 4.3.1. <strong>Storage and runtime</strong>
@@ -2309,7 +2303,7 @@ something: FruitNinja [3], which supervises the interior with depth-conditioned 
 GaussianFluent [23], which densifies it under generative guidance and then simulates fracture. They
 are compared here on four things: what the interior costs to hold, what it looks like on terms none
 of the three methods chose, what a held-out cut scores through one evaluator, and what each method
-depends on. The last is the axis. FruitNinja's published interiors come from a diffusion model
+depends on. FruitNinja's published interiors come from a diffusion model
 fine-tuned on the object's own photographs, and that model is not released; GaussianFluent needs no
 fine-tuned model, and neither does this work, so the reproduction anyone can perform is the one
 without it.</p>
@@ -2376,8 +2370,7 @@ that has not seen the image it is being measured against.</p>
     <td><strong>0.1498 &plusmn; 0.0165</strong></td><td class="mut">0.0936</td></tr>
 </tbody></table></div>
 
-<p><strong>The paired metrics on the same folds.</strong> A specification asks for PSNR, SSIM and
-LPIPS before it asks for anything else, so they are here, computed on the same six folds against the
+<p><strong>The paired metrics on the same folds.</strong> PSNR, SSIM and LPIPS are computed computed on the same six folds against the
 same held-out photograph.</p>
 
 <div class="tw"><table>
@@ -2497,7 +2490,7 @@ closer than GaussianFluent, which is the model that took the best FID on that ob
 seeds are elongated along one direction and whose pith reads thicker than in the photographs,
 features a distribution over sections is less sensitive to than a paired perceptual distance is.</p>
 
-<p>The doughnut gets an appearance number here for the first time. It has one reference photograph
+<p>The doughnut has one appearance number here. It has one reference photograph
 per family, which is why every distribution metric in this paper skips it and why its only previous
 score was a topological check that a featureless grey torus would also pass. A pairwise perceptual
 distance needs one reference, so the object the paper leans on for non-convex topology and for the
@@ -2533,7 +2526,7 @@ That is a factor of 550 against one baseline and 34 against the other, and it is
 result: a cell's support is the cell, so a pixel either falls inside an occupied one or it does
 not, at any zoom, with nothing to set.</p>
 
-<p>A splatted interior defines no cut-face planarity, area or extent, so none can be reported for it. A splatted interior does not define a cut face explicitly. It has the primitives that lie near the plane, so the surface a viewer
+<p>A splatted interior defines no cut-face planarity, area or extent, so none can be reported for it.  It has the primitives that lie near the plane, so the surface a viewer
 sees is a rendering artefact of their density and support, and no statement can be made about it:
 not that it is planar, not what its area is, not where its boundary lies. Here the face is the
 convex polygon of equation&nbsp;(10), one per crossed cell, and the statements follow by
@@ -3020,7 +3013,7 @@ floor is computed on those same targets. Every orange number below is therefore 
 of five rows and out-of-sample for three, and the ordering must not be read as a comparison. The
 watermelon does not have this problem: its training reference is <code>secref_wm_h1</code> and its
 evaluation set is <code>data_finetune_images/watermelon/</code>, which are disjoint. That asymmetry
-is the mechanism behind a result the earlier text called a puzzle, that every arm here beats
+is the mechanism behind a result, that every arm here beats
 FruitNinja on the orange and does not on the watermelon.</div>
 
 
@@ -3245,7 +3238,7 @@ answered here.</p>
 
 <h4>4.2.4&ensp;How the cut divides mass</h4>
 
-<p>A solver's dynamics are the solver's. What the lattice is answerable for is what it hands over:
+<p>What the lattice is answerable for is what it hands over:
 which material went to which piece and how much of it, and that has a closed form on a ball. A
 plane at signed distance \(t\) from the centre of a ball of radius \(R\) cuts a cap of volume
 \(\pi (R-t)^2 (2R+t)/3\); the lattice's answer is the leaves labelled to that side times their own
@@ -3262,7 +3255,7 @@ plane used elsewhere.</p>
     <td><strong>0.14%</strong></td><td>0.47%</td><td><strong>0.000%</strong></td></tr>
 </tbody></table></div>
 
-<p>Two readings. The error against the analytic cap falls with the spacing and is worst for the
+<p>The error against the analytic cap falls with the spacing and is worst for the
 thinnest cap, which is where a discretisation has least material to be right about &mdash; the same
 first-order behaviour the cut-area error shows, and for the same reason. Conservation is not
 approximate: the pieces sum to the whole to zero, at every offset and every spacing, because a leaf
