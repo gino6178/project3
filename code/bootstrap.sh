@@ -20,8 +20,6 @@ export PATH=$MC/bin:$PATH
 # symbol from the wrong interpreter. Clear the three variables REMOTE_ACCESS.md names.
 unset PYTHONHOME LD_LIBRARY_PATH || true
 export PYTHONPATH=
-export CONDA_NO_PLUGINS=true
-export CONDA_SOLVER=classic
 
 step () { echo; echo "=== $* ==="; date -u +%H:%M:%S; }
 
@@ -30,6 +28,18 @@ if [ ! -x "$MC/bin/conda" ]; then
   curl -sL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/mc.sh
   bash /tmp/mc.sh -b -p "$MC"
 fi
+
+# After the installer, never before it: the installer is itself a conda command -- `conda
+# constructor` -- and CONDA_NO_PLUGINS removes the subcommand it needs, so setting these at the
+# top makes miniconda fail to install on a machine that does not already have it. Which is every
+# machine this script is for.
+#
+#   CONDA_NO_PLUGINS  the plugin the anaconda channel hooks live in imports pydantic_core, and
+#                     that import fails in the installed base environment
+#   CONDA_SOLVER      libmamba is the configured default and lives in a plugin, so disabling
+#                     plugins leaves it unrecognised
+export CONDA_NO_PLUGINS=true
+export CONDA_SOLVER=classic
 
 if [ ! -d "$MC/envs/fn" ]; then
   step "python 3.10"
