@@ -21,100 +21,42 @@ README.md                           this
 
 ## What is in `code/`
 
+One entry point, four stages, and the seven objects the page reports. Nothing that is not on one
+of the two routes is in here.
+
 ```
-code/method/run.sh                 one entry point, any object:  bash method/run.sh orange
-code/method/objects/*.conf         one file per object. Adding an object is writing one of these.
-code/method/common/pipeline/       the two routes to a lattice: quantise, or generate
-code/method/common/cube/           the lattice: subdivision, cutting, dual grid, compositing
-code/method/common/eval/           held-out cuts, DreamSim/FID/CLIP scoring
-code/method/common/demo/           the page's videos
-code/six/                          the six-object pipeline, five steps (its own README)
-code/train_voxel.py                the trainer
-code/anchor_decoder.py             the per-cell feature and the shared decoder
-code/sds_demo.py                   section supervision: photographs, warp, plane schedule
-code/section_match.py              silhouette fit and warp; code/section_consistency.py, the
-                                   agreement between the two section families
-code/cross_section.py              the cutting plane and the plane filter
-code/fid_eval.py code/clip_eval.py scoring
-code/voxel_pipeline/pipeline/      route 2 only: the six cube references, and the skin painted
-                                   from them onto a generated shell
-code/report/                       the material field and the unsupervised decomposition
-code/site_tools/                   scripts that build page assets, not part of the method
+code/run.sh              bash code/run.sh orange   -- and the same for every other object
+code/stages.sh           lattice -> exterior -> train -> eval
+code/objects/*.conf      one file per object: source, spacing, configs, references, prompts
+code/src/                every line of the method, seventeen files
+code/inherited/          PhysGaussian's solver and filling, vendored unmodified
+code/setup.sh            lays code/ and data/ out as the one tree FN_ROOT has to be
+code/fetch.sh            the released reconstructions, too large for a git repository
+code/README.md           the two routes, and what each constant does
 ```
 
-The trainer and the pieces it imports sit at the top of `code/` rather than under `method/`, because
-that is where `method/common/stages.sh` runs them from: it `cd`s to `FN_ROOT` and calls
-`train_voxel.py`, `fid_eval.py` and `clip_eval.py` by bare name.
+Which route an object takes is a property of its source, not a flag: a `.ply` brings its own
+appearance, and anything else has six references projected onto it. Six objects take the first,
+the doughnut the second.
 
 ## Running it
 
 ```bash
-git clone https://github.com/gino6178/project3.git
-cd project3
-bash code/six/setup.sh ./worktree /path/to/FruitNinja3DInterior
-bash code/six/fetch.sh ./worktree       # the binaries too large for a git repo
+git clone https://github.com/gino6178/project3.git && cd project3
+bash code/setup.sh ./worktree
+bash code/fetch.sh ./worktree
+
 export FN_ROOT=$PWD/worktree
-cd worktree
-bash six/eval.sh                        # reproduces the six-object table
+export GS_ROOT=/path/to/gaussian-splatting   # built, with diff_gaussian_rasterization
+export FN_PY=/path/to/python                 # torch, taichi, warp
+
+bash code/run.sh orange
 ```
 
-`data/` holds every input small enough to keep in the repository: the solver and demo configs, all
-84 reference photographs, the whitened set, and the six exterior views. Nothing has to be hunted
-down elsewhere.
+Stages skip themselves when their output exists, so a run resumes by repeating the command, and
+`bash code/run.sh orange eval` scores a model that is already trained.
 
-`fetch.sh` gets what cannot be kept here. GitHub rejects any file over 100 MB on push and five of
-the six released reconstructions are 158 to 541 MB, so they are release assets instead. It pulls
-two archives by default:
-
-- `released.tar` — the six reconstructions FruitNinja published, ~1.6 GB. Needed for the baseline
-  column and, if you retrain, for the lattice.
-- `trained.tar` — the six models this work trained, ~320 MB. With them `six/eval.sh` reproduces
-  the table without retraining. Without them run `six/train.sh` first, which is hours on one card.
-
-Verified: a clean clone, `setup.sh` against a FruitNinja checkout, those two archives and nothing
-else reproduces every row of the table below.
-
-`WANT="released trained lattices" bash code/six/fetch.sh` adds the quantised lattices, ~640 MB,
-which `method/run.sh` would otherwise rebuild from the reconstructions in minutes per object.
-
-The renderer, the MPM solver and the particle filler are FruitNinja's and are not vendored here, so
-`setup.sh` takes a [FruitNinja3DInterior](https://github.com/fanguw/FruitNinja3DInterior) checkout
-as its second argument and links in every top-level entry this repository does not already provide
-— `utils/`, `scene/`, `mpm_solver_warp/`, `gaussian_renderer/`, `particle_filling/`, the built
-`gaussian-splatting` rasteriser and whatever else it carries. It reports what is still missing
-rather than failing later inside a render.
-
-That checkout carries its own third-party code the same way, as git submodules, so clone it the way
-FruitNinja says to — `gaussian-splatting` is one of them and the rasteriser is built from it:
-
-```bash
-git clone --recurse-submodules https://github.com/fanguw/FruitNinja3DInterior
-```
-
-Nothing of anyone else's is copied into this repository. `code/` holds only files written for this
-work; everything else arrives through that checkout, which is why the link step is not a list of
-four directories — the first attempt was, and the render died on a fifth.
-
-You also need one CUDA GPU; peak device memory during training is 5.2 to 5.9 GB.
-
-Any object on its own:
-
-```bash
-bash method/run.sh orange            # lattice, train, score
-GPU=1 bash method/run.sh watermelon  # on the second card
-bash method/run.sh orange eval       # re-score an existing model
-```
-
-Two interpreters are in play and mixing them is the most common way to lose an afternoon. The
-renderer needs the CUDA rasteriser and runs on the project's own Python; the analysis scripts need
-DreamSim, FID and CLIP and run on the system Python. Scripts that need one or the other launch it
-themselves. When calling one by hand, clear the inherited environment:
-
-```bash
-env -u LD_LIBRARY_PATH -u PYTHONPATH -u PYTHONHOME python3 six/prep.py
-```
-
-### The six-object pipeline
+## The six-object pipeline
 
 `code/six/` takes all six released objects from `.ply` to the comparison table, in five steps that
 run in order. `code/six/README.md` has the detail, including what `HELDOUT_BAND` does and does not
