@@ -19,6 +19,9 @@
 #   trained.tar         superseded: before the exterior was fixed at all. Both are kept so the
 #                       earlier numbers on the page can still be checked against the models
 #                       that produced them.
+#   gfluent             the GaussianFluent watermelon and cake, from the authors'
+#                       Hugging Face release rather than from here. Needed only by
+#                       code/evaluate/compare.py, and not fetched by default.
 #   lattices.tar        the six quantised lattices, ~640 MB. Only needed to skip the minutes
 #                       run.sh spends rebuilding them; trained_v2 carries the metadata alone.
 set -eu
@@ -31,6 +34,22 @@ WANT=${WANT:-released trained_v3}
 mkdir -p "$DEST"
 cd "$DEST"
 for a in $WANT; do
+  # Not ours to redistribute: the comparison arms come from the GaussianFluent authors' own
+  # release. Two of the eighteen objects they publish are also ours -- the watermelon and the
+  # cake -- and code/evaluate/arms.json addresses them here. arms.json used to name an absolute
+  # /workspace path that existed on one machine, which is no comparison anyone else could run.
+  if [ "$a" = gfluent ]; then
+    B=https://huggingface.co/hbpencil01/GaussianFluent/resolve/main
+    for o in watermelon cake; do
+      p="gfluent/model/$o/point_cloud/iteration_30000/point_cloud.ply"
+      [ -s "$DEST/$p" ] && { echo "== gfluent/$o already here"; continue; }
+      echo "== gfluent/$o"
+      mkdir -p "$DEST/$(dirname "$p")"
+      curl -fL --progress-bar "$B/model/$o/point_cloud/iteration_30000/point_cloud.ply" \
+           -o "$DEST/$p"
+    done
+    continue
+  fi
   url="https://github.com/$REPO/releases/download/$TAG/$a.tar"
   echo "== $a"
   if command -v curl >/dev/null; then

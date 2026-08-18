@@ -1,9 +1,15 @@
 {
+  "_comment": ["Every arm is a path under FN_ROOT. The GaussianFluent ones used to be an",
+               "absolute /workspace path that existed on one machine, so the comparison could",
+               "not be reproduced and did not survive that machine. code/fetch.sh WANT=gfluent",
+               "downloads them from the authors' Hugging Face release into gfluent/.",
+               "They publish eighteen objects and two of them are ours: watermelon and cake."],
   "orange":      {"fruitninja": "prefilled/trained_gs/orange.ply"},
   "watermelon":  {"fruitninja": "prefilled/trained_gs/watermelon.ply",
-                  "gaussianfluent": "/workspace/gfluent/model/watermelon/point_cloud/iteration_30000/point_cloud.ply"},
+                  "gaussianfluent": "gfluent/model/watermelon/point_cloud/iteration_30000/point_cloud.ply"},
   "apple":       {"fruitninja": "prefilled/trained_gs/apple.ply"},
   "bread":       {"fruitninja": "prefilled/trained_gs/bread.ply"},
-  "cake":        {"fruitninja": "prefilled/trained_gs/cake.ply"},
+  "cake":        {"fruitninja": "prefilled/trained_gs/cake.ply",
+                  "gaussianfluent": "gfluent/model/cake/point_cloud/iteration_30000/point_cloud.ply"},
   "pomegranate": {"fruitninja": "prefilled/trained_gs/pomegranate.ply"}
 }

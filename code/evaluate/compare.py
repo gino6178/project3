@@ -52,7 +52,7 @@ def sh(argv, py=None, log=None):
 
 
 res = {}
-objs = sys.argv[1:] or list(ARMS)
+objs = sys.argv[1:] or [k for k in ARMS if not k.startswith("_")]   # "_" keys are notes
 for obj in objs:
     c = conf(obj)
     ref = c.get("EVAL_REF", c.get("REF_H"))
