@@ -131,8 +131,8 @@
 Interactive 3D applications &mdash; such as virtual cutting, dissection and fracture simulation
 &mdash; require an explicit, realistic interior rather than a hollow shell. Existing solutions rely
 either on generative score distillation, which introduces severe low-pass blur across thin
-structural membranes, or on volumetric splatting, which suffers from fundamental trade-offs between
-hole artefacts and material bleeding.
+structural membranes, or on volumetric splatting, which trades hole artefacts against material bleeding
+along a window that has to be located for each primitive set.
 </p>
 
 <p class="lead">
@@ -198,10 +198,12 @@ volume through two distinct paradigms, each facing fundamental bottlenecks:</p>
       structural membranes. Restoring these details requires expensive per-object diffusion
       fine-tuning, creating non-reproducible models.</li>
   <li><strong>Volumetric splatting.</strong> Using 3D Gaussians for both continuous volume and
-      sharp boundaries forces an irreconcilable trade-off between the primitive support
+      sharp boundaries forces a trade-off between the primitive support
       \(\sigma\) and the cell spacing \(h\). A small ratio \(\rho = \sigma/h\) leaves severe
-      unpainted voids &mdash; 8.29% of a released splat model's cut face is empty at
-      2048&nbsp;px &mdash; while a large \(\rho\) leads to cross-boundary blending. Furthermore,
+      unpainted voids and a large \(\rho\) leads to cross-boundary blending. A window exists
+      &mdash; \(\rho\) near 0.25 leaves 0.0% holes on a fixed primitive set &mdash; but it has to
+      be located for each primitive set, and the released models do not sit in it: 8.29% of a
+      released splat model's cut face is empty at 2048&nbsp;px. Furthermore,
       splats carry no explicit surface, rendering cut-face planarity and area geometrically
       ill-defined.</li>
 </ul>
@@ -225,7 +227,8 @@ specimens &mdash; is sufficient. We decouple the hidden volume from exterior sur
 <p><strong>Exact closed-form cutting and a direct physics interface.</strong> Decoupling transforms
 arbitrary planar cutting into a closed-form geometric operation. Slicing through a cell yields an
 exact convex polygon via edge&ndash;plane intersections, ensuring machine-precision planarity and
-strict 2-manifold topological boundaries with only 0.06% unpainted area. Furthermore, because cell
+strict 2-manifold topological boundaries, with only 0.06% of the cut face left unpainted at
+2048&nbsp;px. Furthermore, because cell
 occupancy, adjacency and piece identity are managed as native integer lattice operations, separated
 fragments and contact points are resolved without intermediate Marching Cubes mesh extraction,
 providing a direct interface for material point method (MPM) solvers.</p>
@@ -2723,7 +2726,7 @@ cuts each, and the other two objects and the intervening sizes are not run.</p>
     <td><strong>62.6 MiB</strong></td></tr>
 <tr><td>higher-band SH coefficients</td><td>0</td><td>45 <span class="mut">(76% of its bytes)</span></td><td>0</td><td>0</td></tr>
 <tr><td><strong>stored at spherical-harmonic degree 0, matched fields</strong></td>
-    <td>425.1 MiB</td><td><strong>73.8 MiB</strong></td><td>163.5 MiB</td><td>62.6 MiB</td></tr>
+    <td>425.1 MiB</td><td><strong>73.8 MiB</strong></td><td>163.5 MiB</td><td>66.5 MiB</td></tr>
 <tr><td>support \(\sigma\) / cell \(h\)</td><td>1.11e&#8722;7</td><td>1.35e&#8722;9</td><td>0.0172</td><td>0.0172</td></tr>
 <tr><td>that, against one pixel in the slab figure</td><td>47,053&times; smaller</td>
     <td>5,067,762&times; smaller</td><td>3.3 pixels across</td><td>3.3 pixels</td></tr>
@@ -2870,16 +2873,16 @@ point cloud is not.</p>
 <tbody>
 <tr><td>FruitNinja, released</td><td>425.1 MiB</td><td>58.3 MiB</td><td>7.3&times;</td></tr>
 <tr><td>GaussianFluent, released</td><td>310.8 MiB</td><td>26.5 MiB</td><td>11.7&times;</td></tr>
-<tr><td>this work, route 1</td><td>76.4 MiB</td><td>11.6 MiB</td><td>6.6&times;</td></tr>
-<tr><td><strong>this work, route 2</strong></td><td>46.8 MiB</td><td><strong>7.0 MiB</strong></td><td>6.6&times;</td></tr>
+<tr><td><strong>this work, route 1</strong></td><td>66.5 MiB</td><td><strong>9.3 MiB</strong></td><td>7.1&times;</td></tr>
+<tr><td class="mut">this work, route 2, not retrained</td><td class="mut">46.8 MiB</td><td class="mut">7.0 MiB</td><td class="mut">6.6&times;</td></tr>
 </tbody></table></div>
 
 <p>The Gaussian models compress harder, which is expected and is the objection stated properly:
 FruitNinja's opacity has a single value across all 7,959,789 primitives, and its median anisotropy
 is 1.06, so the quaternion describes the orientation of a sphere. Removing what carries no
 information takes 425.1&nbsp;MiB to 58.3 before any entropy coding does its part. The lattice has
-less of that redundancy to give up and still ends smaller: <strong>3.8&times; smaller than
-GaussianFluent and 8.3&times; smaller than FruitNinja</strong> after every arm has been compressed
+less of that redundancy to give up and still ends smaller: <strong>2.9&times; smaller than
+GaussianFluent and 6.3&times; smaller than FruitNinja</strong> after every arm has been compressed
 the same way. The lattice figure is also an upper bound, because the per-cell feature is
 substituted here by white noise of the same shape, which is the least compressible object of that
 size; a learned feature can only do better.</p>
@@ -3414,7 +3417,7 @@ behalf.</p>
 <tbody>
 <tr><td>primitives or cells</td><td>7,959,789</td><td>1,381,100</td><td><strong>1,065,856</strong></td><td>4.1.1</td></tr>
 <tr><td>stored, all a method needs</td><td>425.1 MiB</td><td>310.8 MiB</td><td><strong>62.6 MiB</strong></td><td>4.1.1</td></tr>
-<tr><td><strong>stored, same codec</strong></td><td>58.3 MiB</td><td>26.5 MiB</td><td><strong>7.0 MiB</strong></td><td>4.1.2.2</td></tr>
+<tr><td><strong>stored, same codec</strong></td><td>58.3 MiB</td><td>26.5 MiB</td><td><strong>9.3 MiB</strong></td><td>4.1.2.2</td></tr>
 <tr><td>unpainted at 512&nbsp;px, own renderer</td><td>0.21%</td><td>0.10%</td><td><strong>0.00%</strong></td><td>4.1.2</td></tr>
 <tr><td><strong>unpainted at 2048&nbsp;px</strong></td><td>2.37%</td><td>38.73%</td><td><strong>0.07%</strong> <span class="mut">as a volume</span></td><td>4.1.2</td></tr>
 <tr><td>cut-face plane residual</td><td class="mut">no cut-face construction</td>
@@ -3423,10 +3426,10 @@ behalf.</p>
     <td class="mut">not measurable without one</td><td>0.97% &rarr; <strong>0.09%</strong> over an eightfold refinement</td><td>4.3.1</td></tr>
 <tr><td><strong>DreamSim to the photographs, watermelon</strong>
     <span class="mut">(0.067 between photographs)</span></td>
-    <td>0.221</td><td>0.328</td><td><strong>0.167</strong></td><td>4.1.2</td></tr>
+    <td>0.2292</td><td>0.4063</td><td><strong>0.1710</strong></td><td>4.1.2</td></tr>
 <tr><td><strong>DreamSim to the photographs, orange</strong>
     <span class="mut">(0.042 between photographs)</span></td>
-    <td>0.133</td><td class="mut">no orange released</td><td><strong>0.076</strong></td><td>4.1.2</td></tr>
+    <td>0.1301</td><td class="mut">no orange released</td><td><strong>0.0717</strong></td><td>4.1.2</td></tr>
 <tr><td>transverse FID, 100 held-out cuts, watermelon</td><td>182.0</td><td><strong>170.2</strong></td>
     <td>180.9</td><td>4.1.8</td></tr>
 <tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.1.1</td></tr>
@@ -3604,7 +3607,7 @@ grow with separation and nothing in the construction forces it to.</p>
 <tbody>
 <tr><td>orange</td><td>1,231,312</td><td>894,304</td><td>2,698 of 610,723</td>
     <td><strong>0</strong></td><td>8,888 / 20,386 / 43,648</td></tr>
-<tr><td>watermelon</td><td>1,065,856</td><td>748,248</td><td>2,699 of 527,791</td>
+<tr><td>watermelon</td><td>1,245,168</td><td>748,248</td><td>2,699 of 527,791</td>
     <td><strong>0</strong></td><td>8,978 / 20,373 / 43,781</td></tr>
 <tr><td>doughnut</td><td>942,840</td><td>567,448</td><td>943 of 473,192</td>
     <td><strong>0</strong></td><td>2,722 / 6,542 / 13,994</td></tr>
