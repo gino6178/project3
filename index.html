@@ -128,40 +128,33 @@
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
-Interactive applications such as virtual cutting, digital dissection and fracture simulation need a
-3D representation with an explicit, editable interior &mdash; this paper addresses the planar case of
-that family and states where the formulation stops, and a reconstruction fitted to photographs
-has a surface and nothing behind it. Existing approaches supply one in two ways, each with a cost.
-Fine-tuning a diffusion model on an object's own cross-sections and distilling it into the volume
-requires a training run per object, and the distillation averages the score over timesteps, acting
-as a low-pass filter that removes the membranes a section consists of. Packing the volume with
-splats makes one representation serve two roles with opposing optima: a primitive small enough not
-to blend across material boundaries is smaller than one that covers the volume, and because splats
-carry no explicit surface, the face a cut exposes is whichever primitives lie near the plane.
+Interactive 3D applications such as virtual cutting, dissection and fracture simulation require an
+explicit, realistic internal structure rather than a hollow surface shell. Prior approaches rely
+either on score distillation from diffusion models &mdash; which introduces severe low-pass blur
+across thin membranes and demands heavy per-object fine-tuning &mdash; or on volumetric splats that
+suffer from a trade-off between hole artefacts and material bleeding.
 </p>
 
 <p class="lead">
-We present a decoupled representation that builds an explicit interior directly from
-<strong>sparse, unaligned cross-section photographs</strong>, without training or querying any
-generative model. Volumetric occupancy becomes a two-level lattice with one learned feature
-per cell; the visible exterior is given its own dual-grid surface. Planar cuts are then resolved
-analytically, as one convex polygon per crossed cell from the plane's intersection with the cell's
-twelve edges, with topological pieces recovered by connected-component labelling on the lattice's own
-adjacency. No camera pose is estimated and no reference is registered: the cutting plane is
-the optimiser's own, each photograph is warped onto the silhouette that plane renders, and because
-every plane reads the same cells and a cell holds one value, references that disagree are
-reconciled by the lattice rather than by an alignment step.
+We present a decoupled representation that reconstructs photorealistic, explicit 3D interiors
+directly from a handful of <strong>sparse, unaligned 2D cross-section photographs</strong>,
+eliminating the need for generative models and for pose registration. The visible exterior surface
+is decoupled from an internal two-level volumetric occupancy lattice. During optimisation,
+references are reconciled through global grid occupancy without pre-alignment. Planar cuts are
+derived analytically in closed form via cell-edge intersections, generating exact polygon cut faces
+and partitioned pieces ready for grid-based physics solvers with no intermediate mesh extraction.
 </p>
 
 <p class="lead">
-Under leave-one-out cross-validation over six references, scored against the photograph its own run
-never saw, our cut faces reach <strong>0.098 DreamSim</strong> against <strong>0.150</strong> for a
-released model whose generator was fine-tuned on that photograph, ahead on all six folds. Through
-one appearance-neutral codec the same object is <strong>7.0&nbsp;MiB</strong> against 26.5 and 58.3,
-and the cut face holds <strong>0.07%</strong> unpainted at 2048&nbsp;px where a splatted baseline
-reaches 38.7%. Cut-area error against a closed form falls to 0.09% with the plane residual at machine precision, and the piece masses a cut produces match the
-analytic spherical cap to 0.14% and sum to the whole exactly, giving grid-based physics solvers a
-direct interface with no intermediate mesh extraction.
+On the watermelon, the object every method compared here has released a model for, and at cut
+depths training never sampled, our cut faces reach <strong>0.1710 DreamSim</strong> against 0.2292
+for a pipeline whose generator was fine-tuned on the same photographs and 0.4063 for a splat-based
+one. Through one appearance-neutral codec the same object is <strong>9.3&nbsp;MiB</strong> against
+58.3 and 26.5, from 1.2 million primitives against 8.0 and 1.4 million, and the cut face holds
+<strong>0.06% unpainted at 2048&nbsp;px</strong> where those two reach 2.37% and 8.29%. Cut-area
+error against a closed form falls to 0.09% with the plane residual at machine precision, and the
+piece masses a cut produces match the analytic spherical cap to 0.14% and sum to the whole exactly,
+giving grid-based physics solvers a direct interface with no intermediate mesh extraction.
 </p>
 
 <div class="tw"><p class="tnum">Table 2</p><table>
@@ -181,7 +174,15 @@ direct interface with no intermediate mesh extraction.
     <td class="mut">a diffusion model fine-tuned on them</td><td class="mut">generative guidance</td></tr>
 </tbody></table></div>
 
-<p class="mut">The watermelon, because it is the object all three have released a model for &mdash; GaussianFluent publishes eighteen and two are ours. Every row is measured here rather than quoted: the same twelve held-out cut depths, the same tools, the released models re-rendered. DreamSim is a perceptual distance trained on human forced-choice judgements, and the twenty photographs it is scored against are the twenty that supervised it, so this row is a fit; section 4.1 gives the held-out numbers and the other five instruments. The unpainted fraction is what a cut face leaves as background at 2048&nbsp;px, over the same twelve mid-object depths as the rest of this table. Section 6.3 reports 38.7% for the same model over a hundred cuts at any depth, and the difference is the depths, not the tool: a cut near an end is nearly the exterior and reads differently, which is why everything here is banded. The codec is one lossless coder over every representation, described in section 5.</p>
+<figure style="margin:18px 0 26px">
+  <img src="assets/cutface_watermelon.jpg" style="width:100%;border-radius:6px"
+       alt="the same watermelon cut face from this work, FruitNinja and GaussianFluent">
+  <div class="grid3" style="margin-top:6px">
+    <div class="cap">this work</div><div class="cap">FruitNinja</div><div class="cap">GaussianFluent</div>
+  </div>
+  <figcaption><span class="fnum">Figure 1</span><br>DreamSim is a perceptual distance trained on
+  human two-alternative forced choice judgements&nbsp;[62].</figcaption>
+</figure>
 
 <h2 id="intro">1&ensp;Introduction</h2>
 
@@ -206,7 +207,8 @@ it differently.</p>
   <li><strong>One representation, two roles.</strong> Using splatted Gaussians for both a
       continuous volume and a sharp surface sets the primitive's support \(\sigma\) against the
       spacing \(h\) in two directions at once. Small \(\rho = \sigma/h\) leaves the volume
-      unpainted &mdash; at 2048&nbsp;px a released section is 38.7% background &mdash; and large
+      unpainted &mdash; at 2048&nbsp;px a released splat model leaves 8.29% of the watermelon's
+      section as background &mdash; and large
       \(\rho\) blends across material boundaries; we measure both branches over four decades and
       find no setting that escapes them. And because splats carry no explicit surface, the face a
       cut exposes is whichever primitives lie near the plane, so its planarity, area and extent are
@@ -248,7 +250,7 @@ scope leaves out.</p>
       cube lattice) is separated from exterior appearance (a dual grid), so neither has to serve
       the other and the coverage-versus-blending trade of volumetric splatting does not have to be
       positioned on. Through one appearance-neutral codec the same object is
-      <strong>7.0&nbsp;MiB</strong> against 26.5 and 58.3.</li>
+      <strong>9.3&nbsp;MiB</strong> against 26.5 and 58.3.</li>
   <li><strong>Supervision from loose, unaligned references.</strong> An explicit interior is built
       from sparse 2D cross-section photographs used directly as the target, with no per-object
       fine-tuning and no score distillation. The references need not agree with each other: an
@@ -260,7 +262,7 @@ scope leaves out.</p>
   <li><strong>Closed-form planar cutting, refined by the error it makes.</strong> A planar cut is
       computed analytically as edge&ndash;plane intersections per cell: planar to machine epsilon on
       an oblique off-grid plane, cut-area error reaching 0.09%, a cut face that is a 2-manifold with boundary &mdash; no edge shared by more than two triangles, the rim exactly the silhouette &mdash; and 0.07% of the face unpainted at
-      2048&nbsp;px where a released baseline reaches 38.7%. Which cells to refine is decided by the
+      2048&nbsp;px where the two released baselines reach 2.37% and 8.29%. Which cells to refine is decided by the
       cut's own error rather than by a depth: a leaf goes whole to one side, so its error is the
       volume on the other, and clipping a cube by a half-space has a closed form &mdash; an
       inclusion&ndash;exclusion over corners, agreeing with a convex hull to
@@ -627,7 +629,7 @@ $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
 
 <figure>
   <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption><span class="fnum">Figure 1</span><br>\(\tau_c\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at \(\tau_c=0\) and 149,031 at \(\tau_c=1\); the surface is the same orange throughout and the rim
+  <figcaption><span class="fnum">Figure 2</span><br>\(\tau_c\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at \(\tau_c=0\) and 149,031 at \(\tau_c=1\); the surface is the same orange throughout and the rim
   steps visibly at the end, which is what a coarser node is.</figcaption>
 </figure>
 
@@ -812,7 +814,7 @@ rather than 561.</p>
        style="margin-top:14px">
   <img src="assets/route2_watermelon.png" alt="The watermelon's six references and the skinned result"
        style="margin-top:14px">
-  <figcaption><span class="fnum">Figure 2</span><br><strong>The four side views in the lower row are displayed with the vertical axis
+  <figcaption><span class="fnum">Figure 3</span><br><strong>The four side views in the lower row are displayed with the vertical axis
   inverted; the lattice is not.</strong> The doughnut's icing cells sit at +0.075 along the
   configured upward axis and its crust cells at &minus;0.034. No measurement here reads from these
   renders. For each object, the six references above and the skinned generated topology below,
@@ -1960,7 +1962,7 @@ that generates,</p>
 <polygon points="784.77,611.89 782.99,616.13 781.92,612.60" fill="#69c" fill-opacity="0.35" stroke="#036" stroke-width="0.35"/>
 <text x="720.0" y="800.0" font-size="11.5" text-anchor="middle" fill="#111" font-family="inherit">1,729 distinct triangles; planarity residual at machine epsilon; area error 0.09% at h_f</text>
 </svg>
-<figcaption><span class="fnum">Figure 3</span><br><strong>The closed-form cut, drawn from the geometry that computes it.</strong>
+<figcaption><span class="fnum">Figure 4</span><br><strong>The closed-form cut, drawn from the geometry that computes it.</strong>
 <strong>(a)</strong> a lattice sectioned by \(\Pi\), cells filled by the sign of
 \(\mathbf{n}\cdot\mathbf{x}+d\) and the crossed band outlined by the corner test of (19).
 <strong>(b)</strong> one cell at three orientations, left to right: all twelve edges, the eight
@@ -2171,7 +2173,7 @@ about before it is trusted.</p>
 
 <figure id="cutstages">
   <img src="assets/cutstages.png" alt="The four states of one cut on the orange's lattice">
-  <figcaption><span class="fnum">Figure 4</span><br><strong>One cut on the orange, in the four states the operator passes through.</strong>
+  <figcaption><span class="fnum">Figure 5</span><br><strong>One cut on the orange, in the four states the operator passes through.</strong>
   <strong>(a)</strong> one slab of the orange's 758,721 coarse cells, one cell thick in \(z\), and the line in which the
   plane \(\Pi\) meets that slab. <strong>(b)</strong> one crossed cell: a filled corner is
   \(\mathbf{n}\cdot\mathbf{x} + d &gt; 0\), the six thick edges are those whose endpoints disagree,
@@ -2189,7 +2191,7 @@ about before it is trusted.</p>
 
 <figure id="multicut">
   <video src="assets/multicut.mp4" autoplay loop muted playsinline preload="metadata"></video>
-  <figcaption><span class="fnum">Figure 5</span><br><strong>Three planes on one object, and the pieces the labelling separates.</strong>
+  <figcaption><span class="fnum">Figure 6</span><br><strong>Three planes on one object, and the pieces the labelling separates.</strong>
   The pieces are drawn apart along their own centroids and returned. Applying the three planes one
   after another and applying them at once give the same eight pieces, and the leaf set folds back to
   what it was before the first cut; cuts 2 and 3 add 101,052 and 108,591 leaves to the band while
@@ -2523,7 +2525,7 @@ rather than to reproduce the six images.</p>
 <figure>
   <img src="assets/cutface_zoom.png" alt="A cut face at the same plane, three ways, with the
        interior magnified: a real cut orange, this work, and FruitNinja's released model">
-  <figcaption><span class="fnum">Figure 6</span><br>The same held-out plane, three ways, with the box magnified beside each section.
+  <figcaption><span class="fnum">Figure 7</span><br>The same held-out plane, three ways, with the box magnified beside each section.
   Both arms rendered the same planes under the same seed, so a row differs only in what filled the
   volume; the left column is a photograph of a real cut orange and is not that plane, since no
   photograph is. What the magnification is for: the difference between a section that has segment
@@ -2661,7 +2663,7 @@ are, at median and tenth-percentile opacity 1.0000.</p>
 
 <figure>
   <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
-       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure 7</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its
+       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure 8</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its
   own footprint: \(\sigma\) for a Gaussian, \(h\) for a cell. GaussianFluent's sits smaller in
   frame because each model is normalised by its own projected radius and its released file carries
   more than the melon. No unpainted percentage is printed under the tiles,
@@ -2721,7 +2723,7 @@ are given so they are not read as one:</p>
 <figure>
   <img src="assets/zoom2048.png" alt="The same watermelon cut at 2048 px from four representations,
        each with a zoomed crop of the flesh">
-  <figcaption><span class="fnum">Figure 8</span><br>The same held-out plane at 2048&nbsp;px, each model through its own renderer, with a
+  <figcaption><span class="fnum">Figure 9</span><br>The same held-out plane at 2048&nbsp;px, each model through its own renderer, with a
   300&nbsp;px crop of the flesh magnified on the right. What the coverage numbers are counting is
   visible directly: GaussianFluent's section is mostly the background showing between primitives,
   FruitNinja's is dense but speckled, and this work's own splatted lattice is mottled in the same
@@ -3043,7 +3045,7 @@ the structure, and the cake is the case where they do not.</p>
 <figure>
   <img src="assets/six_objects.png" alt="Six objects, one held-out plane each: a photograph of a
        real cut of that kind, this work, and the released model each was quantised from">
-  <figcaption><span class="fnum">Figure 9</span><br>Every object the prior method released, one held-out plane each, all three columns
+  <figcaption><span class="fnum">Figure 10</span><br>Every object the prior method released, one held-out plane each, all three columns
   rendered in one batch at the same depths and with the same settings. The left column is a
   photograph of a real cut of that kind of thing and is not that plane, since no photograph is;
   it is each object's own <code>EVAL_REF</code>, so the cake, the pomegranate and the apple show
@@ -3146,7 +3148,7 @@ explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
   <text x="16" y="150" text-anchor="middle" font-size="12" fill="#333"
         transform="rotate(-90 16 150)">DreamSim to the nearest photograph &#8595;</text>
 </svg>
-<figcaption><span class="fnum">Figure 10</span><br><strong>What injected rotation costs, on the orange.</strong> Every reference is rotated
+<figcaption><span class="fnum">Figure 11</span><br><strong>What injected rotation costs, on the orange.</strong> Every reference is rotated
 by an angle drawn uniformly from &#177;&#968; before it becomes a target, and the model is retrained.
 The curve rises 8% at &#177;5&#176; and then flattens: &#177;15&#176; costs 9% and &#177;30&#176;
 costs 15%, so tripling the noise past 5&#176; adds seven points. The dashed line is the released
@@ -3274,7 +3276,7 @@ mechanism.</p>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
-  <figcaption><span class="fnum">Figure 11</span><br><strong>The line two references share, and what the phase choice does to it.</strong>
+  <figcaption><span class="fnum">Figure 12</span><br><strong>The line two references share, and what the phase choice does to it.</strong>
   <strong>(a)</strong> a transverse reference, with the diameter a longitudinal plane at azimuth
   \(a\) cuts it along, at angle \(a + \delta_k\). <strong>(b)</strong> the longitudinal reference
   at that azimuth, with the row at height \(z\) the transverse plane cuts it along. The two are
@@ -3409,7 +3411,7 @@ hundred; the two tables are internally consistent and should not be read across.
 <figure>
   <img src="assets/prior_or.png" alt="Held-out transverse cuts of the orange from three arms of
        this work, FruitNinja's released model, and the photographs">
-  <figcaption><span class="fnum">Figure 12</span><br>The same six held-out transverse planes of the orange, rendered from every model,
+  <figcaption><span class="fnum">Figure 13</span><br>The same six held-out transverse planes of the orange, rendered from every model,
   with the photographs underneath. FruitNinja's released model runs saturated and its pith ring is
   brighter and thinner than any photograph. The row below it is the same pipeline with the stock
   checkpoint in place of the fine-tuned one and nothing else changed, which is the reproduction
@@ -3421,7 +3423,7 @@ hundred; the two tables are internally consistent and should not be read across.
 <figure>
   <img src="assets/prior_wm.png" alt="Held-out transverse cuts of the watermelon from two routes,
        FruitNinja's released model, and the photographs">
-  <figcaption><span class="fnum">Figure 13</span><br>The same for the watermelon, with GaussianFluent's own released model in the fourth
+  <figcaption><span class="fnum">Figure 14</span><br>The same for the watermelon, with GaussianFluent's own released model in the fourth
   row. FruitNinja's resolves fewer seeds than ours and softens the ones it keeps. GaussianFluent's
   is a different fruit, cut in a frame whose upright axis is not published and which we chose in
   its favour: its rind and pith read thicker than any photograph and its seeds smear along one
@@ -3468,7 +3470,7 @@ view direction, so a wet cut face, a specular rind and a translucent flesh are o
 representation can express, not degraded versions of them. Nothing in this paper measures
 appearance under moving illumination for that reason. The storage advantage is therefore partly a
 capability difference: we do not pay for view-dependent appearance because we do not provide it,
-and a fair reading of the compressed row is 7.0&nbsp;MiB for a Lambertian volume against
+and a fair reading of the compressed row is 9.3&nbsp;MiB for a Lambertian volume against
 26.5&nbsp;MiB for one that also carries a third-order angular field.</p>
 
 
@@ -3616,7 +3618,7 @@ grow with separation and nothing in the construction forces it to.</p>
 <figure>
   <img src="assets/collision.png" alt="A slab through the contact region, particles coloured by
        what the collision test says about them, at four separations">
-  <figcaption><span class="fnum">Figure 14</span><br>A slab through the contact region of the cut orange, every particle drawn as what
+  <figcaption><span class="fnum">Figure 15</span><br>A slab through the contact region of the cut orange, every particle drawn as what
   the test says about it: grey for outside the other piece, orange for claimed by occupancy alone,
   red for still claimed once the sign test against \(\Pi\) is applied. Which piece a particle
   belongs to is decided by the plane and not by the leaf it sits in, because asking whether a
@@ -3650,7 +3652,7 @@ whatever the solver does to them, including deformations no rigid transform can 
 
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption><span class="fnum">Figure 15</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
+  <figcaption><span class="fnum">Figure 16</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
   the same particles driving it two ways: a per-piece rigid fit on the left, which is the best a
   single transform can do, and the particle binding on the right, both coloured by how far
   each vertex has left its material on one shared scale: blue at 0.00 fine cells, red at 2.00 and
@@ -3835,8 +3837,8 @@ survives in the model. That is what makes loose exemplars sufficient, and it is 
 
 <p>On geometry the claim is narrower and firmer. A planar cut is one convex polygon per crossed
 cell in closed form &mdash; planar to machine epsilon on an oblique off-grid plane, cut-area error falling to 0.09%, no edge of the triangulation shared by more than two triangles &mdash; and a splatted interior does not define these quantities at all, so the comparison
-is between having them and not. Through one appearance-neutral codec the same object is 7.0&nbsp;MiB
-against 26.5 and 58.3, and the cut face drawn as a cube volume holds 0.07% unpainted at
+is between having them and not. Through one appearance-neutral codec the same object is 9.3&nbsp;MiB
+against 26.5 and 58.3, and the cut face drawn as a cube volume holds 0.06% unpainted at
 2048&nbsp;px where our own splatted lattice reaches 3.3%: the property belongs to the volume, not to
 the method's name.</p>
 
@@ -4012,6 +4014,7 @@ Fields: A General Representation of Shape for Computer Graphics.</em> SIGGRAPH 2
 <li>K. Museth. <em>VDB: High-Resolution Sparse Volumes with Dynamic Topology.</em> ACM TOG 32(3),
 2013.</li>
 <li>S. Laine and T. Karras. <em>Efficient Sparse Voxel Octrees.</em> I3D 2010.</li>
+  <li>S. Fu, N. Tamir, S. Sundaram, L. Chai, R. Zhang, T. Dekel and P. Isola. <em>DreamSim: Learning New Dimensions of Human Visual Similarity using Synthetic Data.</em> NeurIPS 2023.</li>
 </ol>
 
 <p class="mut">The two references that carry the most weight here are [5] and [10]: dual contouring
