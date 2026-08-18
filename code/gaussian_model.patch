@@ -1,0 +1,104 @@
+diff --git a/scene/gaussian_model.py b/scene/gaussian_model.py
+index 56538b4..5361338 100644
+--- a/scene/gaussian_model.py
++++ b/scene/gaussian_model.py
+@@ -53,6 +53,20 @@ class GaussianModel:
+         self.max_radii2D = torch.empty(0)
+         self.xyz_gradient_accum = torch.empty(0)
+         self.denom = torch.empty(0)
++        # Per-Gaussian flag: has this primitive ever been covered by a cross-section
++        # mask (i.e. actually supervised)? Paper section 3.3 distinguishes trained from
++        # untrained Gaussians when smoothing; primitives created by densification start
++        # untrained. An empty/mismatched buffer is treated as "nothing trained yet".
++        self.trained = torch.empty(0, dtype=torch.bool)
++        # Per-Gaussian flag: is this one of the lattice-anchored interior fill points?
++        # Set once after filling; new points from densification are exterior by default.
++        self.is_interior = torch.empty(0, dtype=torch.bool)
++        # When set, densification never touches interior points. Freezing xyz alone was
++        # not enough to make the interior a lattice: densification kept spawning free
++        # children there, and the lattice ended up only 15.4% of the model, so the
++        # interior's nearest-neighbour spacing was as irregular as plain 3DGS
++        # (CV 0.662 vs 0.676 over the same region -- no advantage at all).
++        self.lattice_pure = False
+         self.optimizer = None
+         self.percent_dense = 0
+         self.spatial_lr_scale = 0
+@@ -461,8 +475,24 @@ class GaussianModel:
+                 optimizable_tensors[group["name"]] = group["params"][0]
+         return optimizable_tensors
+ 
++    def get_is_interior(self):
++        n = self.get_xyz.shape[0]
++        if self.is_interior.shape[0] != n:
++            return torch.zeros(n, dtype=torch.bool, device=self.get_xyz.device)
++        return self.is_interior.to(self.get_xyz.device)
++
++    def get_trained(self):
++        """Trained-flag aligned to the current point count (all-False if unset)."""
++        n = self.get_xyz.shape[0]
++        if self.trained.shape[0] != n:
++            return torch.zeros(n, dtype=torch.bool, device=self.get_xyz.device)
++        return self.trained.to(self.get_xyz.device)
++
+     def prune_points(self, mask):
+         valid_points_mask = ~mask
++        # read before _xyz is swapped out, otherwise the size check above fails
++        trained_pruned = self.get_trained()[valid_points_mask]
++        interior_pruned = self.get_is_interior()[valid_points_mask]
+         optimizable_tensors = self._prune_optimizer(valid_points_mask)
+ 
+         self._xyz = optimizable_tensors["xyz"]
+@@ -477,6 +507,8 @@ class GaussianModel:
+ 
+         self.denom = self.denom[valid_points_mask]
+         self.max_radii2D = self.max_radii2D[valid_points_mask]
++        self.trained = trained_pruned
++        self.is_interior = interior_pruned
+ 
+     def cat_tensors_to_optimizer(self, tensors_dict):
+         optimizable_tensors = {}
+@@ -517,6 +549,8 @@ class GaussianModel:
+             "scaling" : new_scaling,
+             "rotation" : new_rotation}
+ 
++        old_trained = self.get_trained()   # read before _xyz grows
++        old_interior = self.get_is_interior()
+         optimizable_tensors = self.cat_tensors_to_optimizer(d)
+         self._xyz = optimizable_tensors["xyz"]
+         self._features_dc = optimizable_tensors["f_dc"]
+@@ -525,6 +559,12 @@ class GaussianModel:
+         self._opacity = optimizable_tensors["opacity"]
+         self._scaling = optimizable_tensors["scaling"]
+         self._rotation = optimizable_tensors["rotation"]
++        self.trained = torch.cat([old_trained,
++                                  torch.zeros(new_xyz.shape[0], dtype=torch.bool,
++                                              device=old_trained.device)])
++        self.is_interior = torch.cat([old_interior,
++                                      torch.zeros(new_xyz.shape[0], dtype=torch.bool,
++                                                  device=old_interior.device)])
+ 
+         self.xyz_gradient_accum = torch.zeros((self.get_xyz.shape[0], 1), device="cuda")
+         self.denom = torch.zeros((self.get_xyz.shape[0], 1), device="cuda")
+@@ -538,6 +578,11 @@ class GaussianModel:
+         selected_pts_mask = torch.where(padded_grad >= grad_threshold, True, False)
+         selected_pts_mask = torch.logical_and(selected_pts_mask,
+                                               torch.max(self.get_scaling, dim=1).values > self.percent_dense*scene_extent)
++        if self.lattice_pure:
++            # Splitting an interior point is doubly destructive: the children land off
++            # the lattice, and prune_filter below deletes the parent, so the cell itself
++            # disappears.
++            selected_pts_mask = selected_pts_mask & ~self.get_is_interior()
+ 
+         stds = self.get_scaling[selected_pts_mask].repeat(N,1)
+         means =torch.zeros((stds.size(0), 3),device="cuda")
+@@ -563,7 +608,9 @@ class GaussianModel:
+         selected_pts_mask = torch.where(torch.norm(grads, dim=-1) >= grad_threshold, True, False)
+         selected_pts_mask = torch.logical_and(selected_pts_mask,
+                                               torch.max(self.get_scaling, dim=1).values <= self.percent_dense*scene_extent)
+-        
++        if self.lattice_pure:
++            selected_pts_mask = selected_pts_mask & ~self.get_is_interior()
++
+         new_xyz = self._xyz[selected_pts_mask]
+         new_features_dc = self._features_dc[selected_pts_mask]
+         if self.max_sh_degree > 0:

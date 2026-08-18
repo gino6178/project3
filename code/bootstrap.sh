@@ -11,6 +11,7 @@
 #
 # Re-runnable: every step skips itself if its output is already there.
 set -eu
+HERE_PATCH=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/gaussian_model.patch
 R=$(mkdir -p "${1:?usage: bash code/bootstrap.sh DIR}" && cd "$1" && pwd)
 MC=$R/mc
 export PATH=$MC/bin:$PATH
@@ -64,7 +65,16 @@ step "gaussian-splatting"
 # submodules, so the two extensions come from upstream, whose rasteriser API the fork's renderer
 # is written against.
 cd $R
-[ -d gaussian-splatting ] || git clone -q https://github.com/fanguw/gaussian-splatting.git
+[ -d gaussian-splatting ] || {
+  git clone -q https://github.com/fanguw/gaussian-splatting.git
+  # The three per-primitive flags the interior needs, which the fork does not have. `trained`
+  # records whether a primitive has ever been covered by a section mask, `is_interior` whether
+  # it is one of the lattice points, and `lattice_pure` stops densification from splitting
+  # those -- without it the children land off the lattice, the parent is pruned, and the cell
+  # is gone. This has always been required and was never in the repository: the pipeline calls
+  # get_trained() on the first training step and stops there without it.
+  git -C gaussian-splatting apply "$HERE_PATCH"
+}
 [ -d gs-upstream ] || \
   git clone -q --recursive https://github.com/graphdeco-inria/gaussian-splatting.git gs-upstream
 
@@ -75,9 +85,16 @@ export CXX=$(ls $CUDA_HOME/bin/*-g++ | head -1)
 export TORCH_CUDA_ARCH_LIST="8.9"          # L40 is Ada; 11.7 cannot target it at all
 nvcc --version | tail -2
 
+# The rasteriser is not upstream's. FruitNinja's own code and the fork's renderer both unpack
+# four values -- `rendering, radii, depth, alpha` -- and no graphdeco version returns four:
+# the original returns two, and the one that added `antialiasing` returns three and takes a
+# field the fork does not pass. ashawkey's fork returns exactly those four. FruitNinja's
+# requirements.txt names graphdeco unpinned, which cannot have worked as written; this is what
+# their code is against.
 step "diff-gaussian-rasterization"
+[ -d $R/dgr ] || git clone -q --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git $R/dgr
 $PY -c "import diff_gaussian_rasterization" 2>/dev/null || \
-  $PY -m pip install -q --no-build-isolation $R/gs-upstream/submodules/diff-gaussian-rasterization
+  $PY -m pip install -q --no-build-isolation $R/dgr
 
 step "simple-knn"
 $PY -c "import simple_knn" 2>/dev/null || \
