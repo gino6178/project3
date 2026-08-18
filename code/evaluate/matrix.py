@@ -49,7 +49,11 @@ for rows in OBJECTS:
         print(f"  {rows:12s} vs {cols:12s} {M[rows][cols]}", flush=True)
 
 json.dump(M, open(f"{OUT}/matrix.json", "w"), indent=1)
-print(f"\n{'renders \\ refs':16s}" + "".join(f"{c[:9]:>10s}" for c in OBJECTS))
+# The header out of the f-string: a backslash inside one is a syntax error before Python 3.12,
+# and the scoring interpreter is 3.10, so this file could not be imported in the environment
+# its own README tells you to run it in.
+_hdr = "renders \\ refs"
+print(f"\n{_hdr:16s}" + "".join(f"{c[:9]:>10s}" for c in OBJECTS))
 for rw in OBJECTS:
     if rw in M:
         print(f"{rw:16s}" + "".join(
