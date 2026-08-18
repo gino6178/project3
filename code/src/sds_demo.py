@@ -87,7 +87,10 @@ _PHOTOS = {}
 # photograph and rotates it to the family's phase, which preserves the local content and only
 # partly agrees, because photographs of different specimens have different numbers of walls and
 # no rotation reconciles ten with twelve.
-REF_PHASE_MODE = os.environ.get("REF_PHASE_MODE", "")
+# (27) by default, which falls through to (11) when nothing has been solved for a
+# reference set. "align" forces (11), "share" the single shared phase, "" the raw
+# photograph at whatever angle it was taken.
+REF_PHASE_MODE = os.environ.get("REF_PHASE_MODE", "solve")
 
 
 # Which plane is being supervised, and how many there are. Set by the training loop before
@@ -312,10 +315,11 @@ def _photo(spec):
     # shared by two families meets the same conflict on every pass -- which is what makes the
     # assignment worth optimising at all, and what REF_RANDOM_ASSIGN gives up.
     #
-    # This existed, was measured, and was not in this file: the page says every object trains
-    # with it while every model in the repository was trained with the block rule. Off by
-    # default so the two can still be compared, but the default is the thing to revisit.
-    if os.environ.get("REF_DEPTH_BLEND", "0") == "1" and len(files) > 1:
+    # On by default, which is what the page has always said this pipeline does. It was
+    # implemented, measured, and absent from this file, so every model in the repository until
+    # now was trained by the block rule instead. REF_DEPTH_BLEND=0 restores that rule, which is
+    # what the numbers measured before this change were produced under.
+    if os.environ.get("REF_DEPTH_BLEND", "1") == "1" and len(files) > 1:
         t = _PLANE["idx"] * len(files) / max(_PLANE["n"], 1)
         k0 = int(t) % len(files)
         k1 = (k0 + 1) % len(files)
@@ -431,6 +435,34 @@ def _shared_phase(spec):
     return _PHASE[key]
 
 
+def _solved(spec):
+    """The phases and the assignment equation (27) chose, if they have been solved for.
+
+    (11) sets each transverse phase by cross-correlating that photograph against a fixed member of
+    its own family. That is greedy twice over: it never consults the longitudinal family, whose
+    planes cross every one of these, and it never revisits a choice. (27) minimises the two
+    families' disagreement on the lines they share, over the phases and over which photograph is
+    shown at which depth, before a gradient is taken -- on the orange it takes the chordal cost
+    from 0.2667 to 0.2362.
+
+    Returned only when the directory still holds the photographs it was solved over. A reference
+    set that has gained or lost an image since silently invalidates a permutation, and a silently
+    wrong assignment is the failure this whole area keeps producing.
+    """
+    import numpy as np
+    f = os.path.join(spec, "phase_opt.npz") if os.path.isdir(spec) else ""
+    if not f or not os.path.isfile(f):
+        return None
+    z = np.load(f, allow_pickle=False)
+    now = [os.path.basename(p) for p in sorted(_photos_in(spec))]
+    was = [str(x) for x in z["files"]]
+    if now != was:
+        print(f"  phase_opt.npz is stale for {spec}: {len(was)} photographs solved, "
+              f"{len(now)} present -- falling back to the greedy alignment")
+        return None
+    return z["phases"], z["perm"]
+
+
 def _phase_aligned(spec):
     """This plane's own photograph, turned to the family's angular phase.
 
@@ -466,6 +498,31 @@ def _phase_aligned(spec):
     out = img.rotate(-deg, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
     _PHASE[key] = out
     return out
+
+
+def _solved_photo(spec):
+    """This plane's photograph under equation (27): its assignment, at its solved phase.
+
+    Falls through to (11) when nothing has been solved for this reference set, so a run that has
+    not had `stage_phases` still trains rather than failing, and says which it used.
+    """
+    import numpy as np
+    got = _solved(spec)
+    if got is None:
+        return _phase_aligned(spec)
+    phases, perm = got
+    files = sorted(_photos_in(spec)) if os.path.isdir(spec) else [spec]
+    k = (_PLANE["idx"] * len(files) // _PLANE["n"]) % len(files)
+    k = int(perm[k]) if k < len(perm) else k
+    key = (spec, k, "solved")
+    if key in _PHOTOS:
+        return _PHOTOS[key]
+    deg = float(np.degrees(phases[k])) if k < len(phases) else 0.0
+    img = Image.open(files[k]).convert("RGB")
+    if abs(deg) > 1e-6:
+        img = img.rotate(-deg, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
+    _PHOTOS[key] = img
+    return img
 
 
 def _fit_disc(canon, target):
@@ -607,6 +664,7 @@ def one_step_sds_orange(image, depth, total_epochs, pipe, view_cut):
         # profile averages over.
         if REF_PHASE_MODE and view_cut == "horizontal":
             _p = (_shared_phase(_pdir) if REF_PHASE_MODE == "share"
+                  else _solved_photo(_pdir) if REF_PHASE_MODE == "solve"
                   else _phase_aligned(_pdir))
         else:
             _p = _photo(_pdir)

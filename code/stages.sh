@@ -96,6 +96,22 @@ stage_exterior () {
   $PY "$HERE/src/skin_project.py" "$src" "$CFG" "$DEMO" "$REFS6" "$dst"
 }
 
+# --- 3. the references' phases ---------------------------------------------------------------
+# Equation (27), solved once per object before any gradient is taken.
+#
+# The two families describe one object, and where a transverse plane meets a longitudinal one they
+# describe one line. The disagreement on those lines is a function of the phases alone, so it can
+# be minimised before training rather than left for training to average away. This solves the
+# phases and the assignment together and writes them beside the references; sds_demo reads them
+# and falls back to the greedy per-family alignment of (11) if they are not there.
+stage_phases () {
+  [ -n "${REF_H:-}" ] && [ -n "${REF_V:-}" ] || { say "no reference families for $OBJ"; return; }
+  [ -d "$ROOT/$REF_H" ] && [ -d "$ROOT/$REF_V" ] || { say "references are single files, nothing to solve"; return; }
+  [ -f "$ROOT/$REF_H/phase_opt.npz" ] && { say "phases already solved, skipping"; return; }
+  say "solving the reference phases and assignment against the shared chords"
+  $PY "$HERE/src/phaseopt.py" "$REF_H" "$REF_V" || say "phase solve failed; the greedy alignment will be used"
+}
+
 # --- 4. train ----------------------------------------------------------------------------
 stage_train () {
   local RUN=${RUN:-$OBJ}

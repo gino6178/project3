@@ -33,6 +33,7 @@ say "$OBJ: src=$SRC score=$SCORE iters=$ITERS gpu=${GPU:-0}"
 
 if [ "$ONLY" = all ] || [ "$ONLY" = geometry ]; then stage_lattice; fi
 if [ "$ONLY" = all ] || [ "$ONLY" = exterior ]; then stage_exterior; fi
+if [ "$ONLY" = all ] || [ "$ONLY" = phases ]; then stage_phases; fi
 if [ "$ONLY" = all ] || [ "$ONLY" = train ]; then stage_train; fi
 if [ "$ONLY" = all ] || [ "$ONLY" = eval ]; then
   case "$SCORE" in
