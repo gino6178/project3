@@ -48,16 +48,14 @@ training rather than averaged away by it.
 | | what disagrees | what is done |
 |---|---|---|
 | around the section | the cut angle each photograph happened to have | `stage_phases` solves the rotations and the assignment of photographs to depths together, equation (27), and writes the result beside the references. `sds_demo` falls back to the greedy per-family alignment of (11) when it is absent, so the stage is safe to skip. |
-| across the section | where each fruit's own peel ended | nothing, on measurement. `section_match` can move one knot in the ray coordinate so every reference's rind lands on the render's own (`SEC_RIND_MATCH=1`), and it is off: it aligns the boundary by construction without making the references agree, and makes the outer band worse. See the note in `src/section_match.py`. |
+| across the section | where each fruit's own peel ended | nothing. Two ways of aligning it were written and measured and neither is general -- the numbers are in `src/section_match.py`, and both are off. |
 
 The second looked like it should matter -- the peel runs from 3.9% to 19.5% of the radius
-across the watermelon's twenty transverse photographs -- and measurement says it does not.
-Aligning it changes the spread between references by 0.002 in the flesh and makes the outer
-band worse, because a watermelon's outside is two layers in proportions that vary as much as
-the total does. Aligning the whole colour path by arc length instead, which needs no boundary,
-recovers 2%. What the references disagree about is colour, everywhere at once and by 0.07,
-because they are photographs of different fruit; the first row above removes a disagreement
-that is a function of the rotations alone, and there is no equivalent in the radial direction.
+across the watermelon's twenty transverse photographs -- and measurement says it does not. Both
+attempts made the references agree less, not more, and the orange got 17% worse. What these
+references disagree about is colour, everywhere at once and by 0.07, because they are
+photographs of different fruit; nothing radial reaches that. The first row works because the
+cut angle really is the only thing wrong with a rotated photograph.
 
 ## What counts as the surface
 

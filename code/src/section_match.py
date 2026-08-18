@@ -251,14 +251,10 @@ def _ray_coords(mask, nb_a=1440, smooth_deg=None):
     return (cy, cx), lift(ci), lift(co)
 
 
-# Off, because it was measured and it does not do what it was written to do. See _rind_edge.
-RIND_MATCH = os.environ.get("SEC_RIND_MATCH", "0") == "1"
-# How far the middle has to sit from the rim in colour before there is a layer to match at
-# all. Measured on the section references of all seven: the watermelon reads 0.83 and 0.48,
-# the doughnut's transverse 0.72, the orange 0.14 to 0.33, the loaf 0.16, and the doughnut's
-# longitudinal -- dough throughout, nothing to match -- 0.08. The threshold sits below every
-# object that has a layer and above the one that does not.
-RIND_STEP = float(os.environ.get("SEC_RIND_STEP", "0.12"))
+# Off. Two ways of aligning the layers radially were measured and neither is general; the
+# note in _same_topology_map has the numbers. Kept so the next person can re-measure rather
+# than re-derive the idea, which is a convincing one.
+PATH_MATCH = os.environ.get("SEC_PATH_MATCH", "0") == "1"
 
 def _band_profile(a, mask, ri, ro, cy, cx, nb_s=64):
     """Mean colour of the region as a function of how far across it a pixel sits.
@@ -293,56 +289,26 @@ def _band_profile(a, mask, ri, ro, cy, cx, nb_s=64):
     return prof, cnt
 
 
-def _rind_edge(a, mask, ri, ro, cy, cx):
-    """Where the outermost layer ends, as a fraction of the way across the region.
+def _colour_path(a, mask, ri, ro, cy, cx):
+    """How far the colour has travelled by the time it reaches each radius, 0 to 1.
 
-    Not a colour test and not a threshold on any particular hue: the peel is whatever the
-    outside is, and the boundary is where the profile stops looking like the outside. Working
-    from the rim's own colour keeps this true for a green watermelon, an orange peel and a
-    pomegranate's white pith alike, and returns nothing at all for a loaf, whose middle looks
-    like its edge -- there the map stays exactly what it was.
-
-    The criterion is a distance in colour, not a step in shape, because the thing it is used
-    for rescales the radius. A scan for the largest step re-finds a different cut once the
-    bands have been compressed -- measured on the watermelon photographs, a reference whose
-    own rind sat at 0.883 produced a target whose rind read 0.758, six bins adrift, and the
-    spread across the set came out wider after matching than before. Distance from the rim
-    colour does not move when the radius is stretched, so the boundary lands where it was put.
+    A section's layers are steps in the radial profile, so the profile's own arc length rises
+    quickly across a boundary and slowly inside a layer. Two photographs of the same kind of
+    fruit pass the same boundaries in the same order, whatever fraction of the radius each one
+    gives them, so this coordinate lines their layers up without anyone deciding where a layer
+    is. That matters more than the alignment does: every threshold that finds a boundary is a
+    number tuned on the object it was found with, and there is none here.
     """
-    nb_s = int(os.environ.get("SEC_RIND_BINS", "64"))
-    prof, cnt = _band_profile(a, mask, ri, ro, cy, cx, nb_s)
+    nb_s = int(os.environ.get("SEC_PATH_BINS", "64"))
+    prof, _ = _band_profile(a, mask, ri, ro, cy, cx, nb_s)
     if prof is None:
-        return None, 0.0
-    rim = prof[int(0.95 * nb_s):].mean(0)
-    d = np.linalg.norm(prof - rim, axis=1)
-    lo = float(os.environ.get("SEC_RIND_MIN", "0.55"))   # a rind is not half the fruit
-    hi = float(os.environ.get("SEC_RIND_MAX", "0.985"))  # nor the anti-aliased outline itself
-    i0, i1 = int(lo * nb_s), int(hi * nb_s)
-    if i1 - i0 < 3:
-        return None, 0.0
-    inner = float(d[:i0].mean())     # how far the middle sits from the edge: is there a layer
-    if inner < 1e-6:
-        return None, 0.0
-    k = np.where(d[i0:i1] < inner * 0.5)[0]
-    if len(k) == 0 or k[0] == 0:
-        # Nothing crossed, or it had already crossed before the search began. The second is
-        # the doughnut's longitudinal section: dough all the way out, so the estimate would be
-        # the floor of the range rather than a boundary, and a wrong knot is worse than none.
-        return None, 0.0
-    return (i0 + k[0] + 0.5) / nb_s, inner
-
-
-def _rind_reparam(s, s_src, s_dst):
-    """Send the destination's layers onto the source's, by moving one knot.
-
-    Piecewise linear with a single break, so it is monotone, keeps both ends fixed and does
-    nothing anywhere else. The map that calls this is a bijection and stays one.
-    """
-    out = np.empty_like(s)
-    m = s < s_dst
-    out[m] = s[m] / max(s_dst, 1e-6) * s_src
-    out[~m] = s_src + (s[~m] - s_dst) / max(1.0 - s_dst, 1e-6) * (1.0 - s_src)
-    return np.clip(out, 0.0, 1.0)
+        return None
+    g = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(prof, axis=0), axis=1))])
+    if g[-1] < 1e-9:
+        return None                     # one flat colour: no layers, nothing to line up
+    g = g / g[-1]
+    # np.interp needs its sample points strictly increasing, and a layer's interior is flat
+    return g + np.linspace(0.0, 1e-6, g.shape[0])
 
 
 def _same_topology_map(comp, a_ref, m_ref, a_dst=None):
@@ -379,30 +345,40 @@ def _same_topology_map(comp, a_ref, m_ref, a_dst=None):
     nb = dri.shape[0]
     ai = np.clip(((th + np.pi) / (2 * np.pi) * nb).astype(np.int64), 0, nb - 1)
     s = np.clip((r - dri[ai]) / np.maximum(dro[ai] - dri[ai], 1e-6), 0.0, 1.0)
-    # An attempt to match the layers and not just the outline, kept off and kept here because
-    # what it measures is worth knowing. The map above is the identity in `s`, so it aligns the
-    # two boundaries and leaves each reference's layers at whatever radius they fell at, and
-    # across the watermelon's twenty transverse photographs that radius runs from 0.805 to
-    # 0.961 -- five to one in peel thickness. Moving one knot onto the render's own boundary
-    # does align that number, trivially, because it is the number the knot sets.
+    # Match the layers, not just the outline. The map above is the identity in `s`, so it
+    # aligns the two boundaries and then leaves each reference's layers at whatever fraction of
+    # the radius they happened to fall at -- across the watermelon's twenty transverse
+    # photographs the peel runs from 3.9% to 19.5%, five to one.
     #
-    # It does not make the references agree, which is the only reason to want it. Measured as
-    # the spread between nineteen references mapped onto one shape, per band of radius: the
-    # flesh is unchanged to within 0.002 and the outer band gets worse, 0.0723 to 0.0908 at
-    # 0.75-0.81 and 0.107 to 0.144 at the rim. The cause is visible in the targets -- a
-    # watermelon's outside is two layers, pith and skin, in proportions that vary as much as
-    # the total does, and one knot lands on the pith boundary in one photograph and the skin
-    # boundary in another. Aligning the colour path by arc length instead needs no boundary at
-    # all and recovers 2%: 0.0700 to 0.0684 in the flesh.
+    # Reparametrising by the colour path sends each reference's layers onto the render's own.
+    # It is monotone, fixes both ends, needs no threshold and no idea of what a layer is, so it
+    # is the same code for a watermelon's pith and skin, an orange's peel and a loaf that has
+    # neither -- and on an object with one flat colour it returns nothing and the map is
+    # untouched.
     #
-    # 2% is the size of the effect. What the references disagree about is colour, everywhere at
-    # once and by 0.07, because they are photographs of different fruit -- and no radial
-    # reparametrisation reaches that.
-    if RIND_MATCH and a_dst is not None:
-        s_src, e_src = _rind_edge(a_ref, m_ref, sri, sro, scy, scx)
-        s_dst, e_dst = _rind_edge(a_dst, comp, dri, dro, dcy, dcx)
-        if s_src is not None and s_dst is not None and min(e_src, e_dst) >= RIND_STEP:
-            s = _rind_reparam(s, s_src, s_dst)
+    # It does not work, and it is off. Measured as the spread between references mapped onto one
+    # shape, over every object whose reference set is large enough to ask: the watermelon's
+    # nineteen give 0.0734 to 0.0732, and the orange's five give 0.0540 to 0.0632 across and
+    # 0.0377 to 0.0453 along -- seventeen and twenty percent worse. A version before this one
+    # put a single knot on a boundary found by a threshold, and was worse still on the
+    # watermelon: 0.0723 to 0.0908 just inside the boundary, because its outside is pith and
+    # skin in proportions that vary as much as their total, so the threshold landed on the pith
+    # in one photograph and the skin in another.
+    #
+    # The premise was wrong, not the implementation. These references disagree about colour,
+    # everywhere at once and by 0.07, because they are photographs of different fruit, and no
+    # reparametrisation of the radius reaches that -- while any reparametrisation resamples,
+    # and resampling adds disagreement of its own. That is the whole of both results.
+    #
+    # The phase alignment above works because the cut angle really is the only thing wrong with
+    # a rotated photograph, and undoing it costs nothing. There is no such quantity here.
+    if PATH_MATCH and a_dst is not None:
+        g_dst = _colour_path(a_dst, comp, dri, dro, dcy, dcx)
+        g_src = _colour_path(a_ref, m_ref, sri, sro, scy, scx)
+        if g_dst is not None and g_src is not None:
+            nb_s = g_dst.shape[0]
+            grid = np.arange(nb_s) / nb_s
+            s = np.interp(np.interp(s, grid, g_dst), g_src, grid)
     rs = sri[ai] + s * (sro[ai] - sri[ai])
     # Sample the reference bilinearly, not at the nearest pixel. The map sends neighbouring
     # destination pixels to source positions that differ by a fraction of a pixel; rounding
