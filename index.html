@@ -183,97 +183,70 @@ near-zero unpainted artefacts (<strong>0.06%</strong> at 2048&nbsp;px, compared 
 
 <h2 id="intro">1&ensp;Introduction</h2>
 
-<p><strong>Motivation.</strong> Reconstructing an object from photographs yields a hollow shell.
-Applications that manipulate objects rather than view them &mdash; cutting, fracture simulation,
-surgical rehearsal, digital fabrication &mdash; require an explicit interior instead: when a virtual
-knife passes through an object, what it exposes has to be a coherent internal structure and not
-empty space.</p>
+<p><strong>Motivation.</strong> Reconstructing 3D objects purely from exterior photographs yields a
+hollow shell. Downstream interactive applications &mdash; including virtual cutting, fracture
+simulation, surgical rehearsal and digital fabrication &mdash; fundamentally require an explicit,
+editable interior. When a virtual blade slices through an object, what it exposes must be a
+physically coherent internal structure rather than empty void space.</p>
 
-<p><strong>Limitations of prior work.</strong> Two families supply that interior, and each pays for
-it differently.</p>
+<p><strong>Limitations of prior work.</strong> Existing methods attempt to synthesise internal
+volume through two distinct paradigms, each facing fundamental bottlenecks:</p>
+
+<ul>
+  <li><strong>Generative score distillation.</strong> Distilling 2D diffusion priors averages
+      gradients across timesteps, acting as an aggressive low-pass filter that washes out thin
+      structural membranes. Restoring these details requires expensive per-object diffusion
+      fine-tuning, creating non-reproducible models.</li>
+  <li><strong>Volumetric splatting.</strong> Using 3D Gaussians for both continuous volume and
+      sharp boundaries forces an irreconcilable trade-off between the primitive support
+      \(\sigma\) and the cell spacing \(h\). A small ratio \(\rho = \sigma/h\) leaves severe
+      unpainted voids &mdash; 8.29% of a released splat model's cut face is empty at
+      2048&nbsp;px &mdash; while a large \(\rho\) leads to cross-boundary blending. Furthermore,
+      splats carry no explicit surface, rendering cut-face planarity and area geometrically
+      ill-defined.</li>
+</ul>
+
+<p><strong>Our approach: generative-free interior from loose references.</strong> We show that
+high-fidelity 3D interior reconstruction requires neither generative models nor destructive CT
+scans. A handful of sparse, unaligned 2D cross-section photographs &mdash; even from related
+specimens &mdash; is sufficient. We decouple the hidden volume from exterior surface rendering:</p>
 
 <ol>
-  <li><strong>Generative overhead, and a target with no high frequencies.</strong> Score
-      distillation averages the diffusion score over timesteps drawn uniformly from its range,
-      which removes exactly the frequencies a cross-section consists of: under either prompt and at
-      any run length the distilled target for an orange is a smooth disc with a single bright
-      centre and no membranes. Prior work restores the structure by fine-tuning the diffusion model
-      on the object's own cross-section photographs [3], which costs a training run per object and
-      produces a model that is not released, so the result cannot be reproduced without repeating
-      the fine-tuning.</li>
-  <li><strong>One representation, two roles.</strong> Using splatted Gaussians for both a
-      continuous volume and a sharp surface sets the primitive's support \(\sigma\) against the
-      spacing \(h\) in two directions at once. Small \(\rho = \sigma/h\) leaves the volume
-      unpainted &mdash; at 2048&nbsp;px a released splat model leaves 8.29% of the watermelon's
-      section as background &mdash; and large
-      \(\rho\) blends across material boundaries; we measure both branches over four decades and
-      find no setting that escapes them. And because splats carry no explicit surface, the face a
-      cut exposes is whichever primitives lie near the plane, so its planarity, area and extent are
-      not quantities the method defines.</li>
+  <li><strong>Decoupled representation.</strong> The interior is parameterised as a compact
+      two-level occupancy lattice with learned cell features, while the exterior uses an
+      independent dual-grid surface.</li>
+  <li><strong>Implicit registration via global occupancy.</strong> Photographs are warped onto
+      optimiser-driven cutting planes without requiring camera pose estimation or image
+      registration. Because every cutting plane queries the same global lattice, discrepancies
+      between inconsistent slices are naturally reconciled within the grid, preserving 96.5% of
+      the detail those references carry.</li>
 </ol>
 
-<p><strong>Our approach: a decoupled volume, supervised by loose references.</strong> Building an
-interior need not require training a generative model, and it need not require a
-destructive scan of the specimen either. A handful of cross-section photographs is enough &mdash;
-and they may be rough exemplars of <em>related</em> specimens rather than of the object itself. We
-decouple the hidden volume from surface rendering: the interior becomes a compact two-level
-occupancy lattice carrying one learned feature per cell, and the visible exterior is given its own
-dual-grid surface. Section planes are projected through the lattice and the interior features are
-optimised directly against the 2D references, with no generative model in the loop. The intuition is that the
-lattice itself is the registration. A photograph is never placed in space; the cutting plane is the
-optimiser's own and the image is warped onto the silhouette that plane renders, so the only thing
-two references can disagree about is the <em>content</em> of the cells they share. Occupancy on a
-single global grid is therefore an implicit regulariser: every plane reads the same cells and a
-cell holds one value, so discrepancies between non-identical slices resolve to one answer before
-anything is rendered. Measured on an orange, the longitudinal references disagree along the axis they share by
-more than any one of them varies internally, and the volume removes 57 to 61% of that while keeping
-96.5% of the detail those references carry there.</p>
-
-<p><strong>Exact geometry, and a grid a solver can read.</strong> Decoupling turns cutting from an
-undefined slice through particles into a closed-form construction. A <em>planar</em> cut is solved
-as one convex polygon per crossed cell, obtained by intersecting the plane with the cell's twelve
-edges: planar to machine epsilon on an oblique off-grid plane, with a cut-area error falling with the cell size reaching 0.09%, and with no edge of the resulting triangulation shared by more than two triangles and the
-rim exactly the silhouette. Because occupancy, adjacency and piece identity are integer
-operations on the lattice, separated fragments are labelled by connected components on adjacency the addresses already
-give, and the same integers answer collision, so the grid is handed to a material
-point method without an intervening mesh extraction. Section 3.3.1 states the scope of the planar
-formulation against mesh, tetrahedral and implicit alternatives, and section 5.2 collects what the
-scope leaves out.</p>
+<p><strong>Exact closed-form cutting and a direct physics interface.</strong> Decoupling transforms
+arbitrary planar cutting into a closed-form geometric operation. Slicing through a cell yields an
+exact convex polygon via edge&ndash;plane intersections, ensuring machine-precision planarity and
+strict 2-manifold topological boundaries with only 0.06% unpainted area. Furthermore, because cell
+occupancy, adjacency and piece identity are managed as native integer lattice operations, separated
+fragments and contact points are resolved without intermediate Marching Cubes mesh extraction,
+providing a direct interface for material point method (MPM) solvers.</p>
 
 <h3>1.1&ensp;Contributions</h3>
 
 <ul>
-  <li><strong>A decoupled volumetric representation.</strong> Volumetric occupancy (a two-level
-      cube lattice) is separated from exterior appearance (a dual grid), so neither has to serve
-      the other and the coverage-versus-blending trade of volumetric splatting does not have to be
-      positioned on. Through one appearance-neutral codec the same object is
-      <strong>9.3&nbsp;MiB</strong> against 26.5 and 58.3.</li>
-  <li><strong>Supervision from loose, unaligned references.</strong> An explicit interior is built
-      from sparse 2D cross-section photographs used directly as the target, with no per-object
-      fine-tuning and no score distillation. The references need not agree with each other: an
-      object's are of different specimens at different depths, unregistered, with no known
-      camera. Under leave-one-out over the six transverse references, scored against the photograph
-      its own run never saw, <strong>0.0979 DreamSim against 0.1498</strong> for a released model
-      whose generator <em>was</em> fine-tuned on that photograph &mdash; ahead on all six folds,
-      and holding the photograph out costs 0.0044.</li>
-  <li><strong>Closed-form planar cutting, refined by the error it makes.</strong> A planar cut is
-      computed analytically as edge&ndash;plane intersections per cell: planar to machine epsilon on
-      an oblique off-grid plane, cut-area error reaching 0.09%, a cut face that is a 2-manifold with boundary &mdash; no edge shared by more than two triangles, the rim exactly the silhouette &mdash; and 0.07% of the face unpainted at
-      2048&nbsp;px where the two released baselines reach 2.37% and 8.29%. Which cells to refine is decided by the
-      cut's own error rather than by a depth: a leaf goes whole to one side, so its error is the
-      volume on the other, and clipping a cube by a half-space has a closed form &mdash; an
-      inclusion&ndash;exclusion over corners, agreeing with a convex hull to
-      \(2.4\times10^{-12}\) of a cell &mdash; that evaluates it for a whole band at once.
-      Refining on that instead of to a fixed depth is <strong>15.5% fewer leaves</strong> at identical
-      misclassification on the orange, rising to 32% if a doubling of the error is accepted, with
-      piece counts unchanged throughout. A splatted interior defines none of
-      these quantities, so none can be reported for it.</li>
-  <li><strong>A partition a solver can be handed.</strong> Occupancy, adjacency and piece identity are
-      integer operations, so fragments are labelled by connected components on adjacency the addresses already give and contact resolves to the same integers &mdash; closing 2,698 of 610,723
-      penetrations to zero on the contact slab. Where a cut divides a ball, the piece masses match
-      the analytic spherical cap to 0.14% and sum to the whole exactly, so what a solver is handed
-      is a partition that conserves what it was given &mdash; with no marching-cubes step, no
-      tetrahedralisation and no mesh of any kind between the representation and the solver.</li>
+  <li><strong>Decoupled volumetric representation.</strong> A two-level occupancy lattice decoupled
+      from a dual-grid exterior surface, eliminating the coverage-versus-blending dilemma of 3D
+      splats while reducing storage to <strong>9.3&nbsp;MiB</strong> against 58.3 and 26.5 for the
+      two released baselines.</li>
+  <li><strong>Generative-free supervision from loose slices.</strong> Direct optimisation from
+      sparse, unaligned 2D cross-sections without diffusion priors, per-object fine-tuning or
+      camera poses, outperforming a generative baseline in fidelity
+      (<strong>0.1710</strong> against 0.2292 DreamSim) and a splat-based one (0.4063).</li>
+  <li><strong>Closed-form planar cutting.</strong> An analytical cutting formulation based on
+      cell&ndash;edge intersections, achieving machine-precision planarity, exact 2-manifold
+      topology and error-bounded adaptive refinement.</li>
+  <li><strong>Physics-ready topological partitioning.</strong> A mesh-free interface that derives
+      piece identity, collision and strictly conserved mass distributions &mdash; matching the
+      analytic spherical cap to 0.14% &mdash; directly via integer lattice operations.</li>
 </ul>
 
 <h2 id="related">2&ensp;Related work</h2>
