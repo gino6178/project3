@@ -1690,15 +1690,24 @@ if __name__ == "__main__":
         if pipe_h is pipe_v:
             print("the two section samplers are the same weights: one copy is loaded")
     else:
-        # The depth estimator is still wanted -- `section_depth` conditions on it -- but it is
-        # a small monocular network and the samplers around it are not. Load one pipeline,
-        # keep the estimator, drop the U-Net, the VAE and the text encoder, and let both
-        # branches share it: they would have loaded two copies of the same weights anyway.
-        pipe_h = StableDiffusionDepth2ImgPipeline.from_pretrained(SD_MODEL_HORIZONTAL)
-        pipe_h.depth_estimator = pipe_h.depth_estimator.to("cuda:0")
-        for _part in ("unet", "vae", "text_encoder"):
-            if getattr(pipe_h, _part, None) is not None:
-                setattr(pipe_h, _part, None)
+        # The depth estimator is still wanted -- `section_depth` conditions on it -- and nothing
+        # else is: `pipe.depth_estimator` is the only attribute either branch reaches for once
+        # the targets are photographs. Fetch that one component rather than the pipeline it
+        # belongs to. Constructing the pipeline and then setting three of its fields to None,
+        # which is what this used to do, frees the memory but only after downloading the
+        # weights: 5.3 GB across the wire and 3.46 of it the U-Net, discarded unread, on every
+        # machine that reproduces this. The estimator is 490 MB.
+        from transformers import DPTForDepthEstimation
+
+        class _DepthOnly:
+            """What the two branches use of a pipeline, when neither is sampling from one."""
+            def __init__(self, est):
+                self.depth_estimator = est
+                self.device = est.device
+                self.unet = self.vae = self.text_encoder = None
+
+        pipe_h = _DepthOnly(DPTForDepthEstimation.from_pretrained(
+            SD_MODEL_HORIZONTAL, subfolder="depth_estimator").to("cuda:0"))
         torch.cuda.empty_cache()
         pipe_v = pipe_h
         print("section targets are photographs: only the depth estimator is on the card")
