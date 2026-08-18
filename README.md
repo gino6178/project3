@@ -103,3 +103,29 @@ One machine, one protocol, one render batch per table. DreamSim drifts by up to 
 batches, so a value is comparable within its own table and the tables say which batch they came
 from. The leave-one-out study is the one place something is genuinely unseen: it holds out a
 photograph. `HELDOUT_BAND` holds out the plane, not the depth.
+
+## A correction to the commit of 18 Aug
+
+That commit reported an interior FID for every object, including
+`pomegranate FID 318.3 -> 124.1`. The exterior figures beside them stand: they
+are per-pixel distances over 240,000 to 640,000 pixels of the object.
+
+The interior figures do not, and the pomegranate's least of all. It has three
+reference photographs. FID estimates a covariance in 2048 dimensions, which
+three samples cannot support, and KID reported its own uncertainty as +-75.3 on
+a value of 247.7. Re-scoring the same model a second time moved it by more than
+the difference the commit attributed to the change. References per object:
+watermelon 20, apple 8, orange 6, bread 5, pomegranate 3, cake 3, doughnut 1.
+
+This is not a new limitation -- section 2.4 states that both distribution
+metrics run "at sample sizes far below where they are reliable", and the results
+use DreamSim and a manifold precision/recall for exactly that reason. The error
+was mine, in reaching for FID because it was the number `stages.sh` prints.
+
+What the exterior change is supported by, and what it is not:
+
+  the exterior          per-pixel distance to each object's own ply render, and
+                        counts of stray bright specks. 5,471 specks to 35.
+  the interior          reference-free measures only, where the reference set is
+                        too small: slicing consistency, which needs no photograph
+                        at all.
