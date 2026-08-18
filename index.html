@@ -20,8 +20,8 @@
        -webkit-font-smoothing:antialiased}
   .wrap{max-width:820px;margin:0 auto;padding:0 22px}
   .cutstrip{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 26px}
-  .cutstrip img{height:150px;width:auto;border-radius:3px}
-  @media(max-width:900px){.cutstrip img{height:104px}}
+  .cutstrip img,.cutstrip video{height:170px;width:auto;border-radius:3px}
+  @media(max-width:900px){.cutstrip img,.cutstrip video{height:112px}}
   .eq{display:flex;align-items:center;gap:14px;margin:20px 0}
   .eq .body{flex:1;overflow-x:auto;overflow-y:hidden;text-align:center}
   .eq .num{color:var(--mut);font-size:14px;flex:none}
@@ -105,7 +105,7 @@
   <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.5 Simulation interface</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
-<div class="cutstrip"><img src="assets/cut_orange.gif" alt="orange, cut into pieces and drawn apart" loading="lazy"><img src="assets/cut_watermelon.gif" alt="watermelon, cut into pieces and drawn apart" loading="lazy"><img src="assets/cut_apple.gif" alt="apple, cut into pieces and drawn apart" loading="lazy"><img src="assets/cut_pomegranate.gif" alt="pomegranate, cut into pieces and drawn apart" loading="lazy"><img src="assets/cut_bread.gif" alt="bread, cut into pieces and drawn apart" loading="lazy"><img src="assets/cut_cake.gif" alt="cake, cut into pieces and drawn apart" loading="lazy"><img src="assets/cut_doughnut.gif" alt="doughnut, cut into pieces and drawn apart" loading="lazy"></div>
+<div class="cutstrip"><video src="assets/cut_orange.mp4" autoplay loop muted playsinline preload="metadata" aria-label="orange, cut into pieces and drawn apart"></video><video src="assets/cut_watermelon.mp4" autoplay loop muted playsinline preload="metadata" aria-label="watermelon, cut into pieces and drawn apart"></video><video src="assets/cut_apple.mp4" autoplay loop muted playsinline preload="metadata" aria-label="apple, cut into pieces and drawn apart"></video><video src="assets/cut_pomegranate.mp4" autoplay loop muted playsinline preload="metadata" aria-label="pomegranate, cut into pieces and drawn apart"></video><video src="assets/cut_bread.mp4" autoplay loop muted playsinline preload="metadata" aria-label="bread, cut into pieces and drawn apart"></video><video src="assets/cut_cake.mp4" autoplay loop muted playsinline preload="metadata" aria-label="cake, cut into pieces and drawn apart"></video><video src="assets/cut_doughnut.mp4" autoplay loop muted playsinline preload="metadata" aria-label="doughnut, cut into pieces and drawn apart"></video></div>
 <p class="mut" style="text-align:center;margin:-18px 0 26px">Every object the method was
 run on, cut by three planes and drawn apart. Six take their outside from a released
 reconstruction and the doughnut from six generated views; in all seven only the interior
