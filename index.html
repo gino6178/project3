@@ -19,6 +19,9 @@
        font:17px/1.7 "Charter","Georgia","Times New Roman",serif;
        -webkit-font-smoothing:antialiased}
   .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  .stale{border-left:3px solid #b45309;background:#fffbeb;padding:.55em .8em;margin:0 0 8px;
+    font-size:.86em;line-height:1.45;color:#78350f;border-radius:0 3px 3px 0}
+  .stale b{font-weight:600}
   .cutstrip{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 26px}
   .cutstrip img,.cutstrip video{height:170px;width:auto;border-radius:3px}
   @media(max-width:900px){.cutstrip img,.cutstrip video{height:112px}}
@@ -169,7 +172,7 @@ analytic spherical cap to 0.14% and sum to the whole exactly, giving grid-based 
 direct interface with no intermediate mesh extraction.
 </p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>orange unless stated</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
 <tbody>
 <tr><td>DreamSim to a <em>held-out</em> photograph &darr;</td><td><strong>0.098</strong></td>
@@ -2477,7 +2480,7 @@ already exists, and the diffusion model that produced it was fine-tuned on all s
 one included. The comparison is therefore tilted against us: on every fold, ours is the only model
 that has not seen the image it is being measured against.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>orange, transverse DreamSim &darr;, held-out plane <em>and</em> held-out photograph</th>
 <th>ours, that photograph held out</th><th>FruitNinja, released, fine-tuned on it</th>
 <th>ours, trained on all six</th></tr></thead>
@@ -2495,7 +2498,7 @@ that has not seen the image it is being measured against.</p>
 <p><strong>The paired metrics on the same folds.</strong> PSNR, SSIM and LPIPS are computed on the same six folds against the
 same held-out photograph.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>orange, mean over six leave-one-out folds</th><th>PSNR &uarr;</th><th>SSIM &uarr;</th>
 <th>LPIPS &darr;</th><th>DreamSim &darr;</th></tr></thead>
 <tbody>
@@ -2541,7 +2544,7 @@ rather than to reproduce the six images.</p>
   </figcaption>
 </figure>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>orange, transverse FID &darr;, 100 held-out planes, references in-sample on both sides</th><th></th></tr></thead>
 <tbody>
 <tr><td>FruitNinja, released model, supervised by a diffusion model fine-tuned on this fruit</td><td>102.2</td></tr>
@@ -2559,7 +2562,7 @@ that has not, and the leave-one-out study above has already removed it from our 
 <p>One instrument does not support the result, and it is reported with the rest. FID at six
 references is dominated by its own bias, so we scored the same renders three ways:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>orange, transverse, out-of-sample rows only</th><th>DreamSim &darr;</th><th>FID &darr;</th>
 <th>KID &darr;</th><th>CLIP&#8209;I &uarr;</th><th>CLIP&#8209;T &uarr;</th><th>prec / rec</th></tr></thead>
 <tbody>
@@ -2592,7 +2595,7 @@ way, by 29 points and by about one and a half combined standard deviations.</p>
 <p>Run on every object and every arm, it says the same thing each time, and on the watermelon it
 reverses the one result that had gone against this work:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>DreamSim to the nearest photograph &darr;</th><th>orange</th><th>watermelon</th><th>doughnut</th></tr></thead>
 <tbody>
 <tr><td class="mut">the photographs against each other</td><td class="mut">0.0424</td>
@@ -2930,7 +2933,7 @@ run as three leave-one-out folds instead and the spread across folds is reported
 The released model is re-rendered against each evaluation set in the same batch, because a number
 measured against a different set is not comparable.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>DreamSim to the nearest held-out photograph &darr;</th><th>this work</th><th>FruitNinja, released</th><th class="mut">the held-out photographs against each other</th><th class="mut">train / held out</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td><strong>0.0997</strong></td><td>0.1293</td><td class="mut">0.0551</td><td class="mut">3 / 3</td></tr>
@@ -2972,7 +2975,7 @@ longest extent over 125, which is where the two hand-set objects landed. All six
 same way and scored the same way, against that object's own photographs, with the released model it
 was quantised from scored beside it in the same batch.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>DreamSim to the nearest photograph &darr;</th><th>this work</th>
 <th>FruitNinja, released</th><th class="mut">the photographs against each other</th>
 <th class="mut">supervised by</th><th class="mut">scored against</th></tr></thead>
@@ -3175,7 +3178,7 @@ paper starts from the same quantised reconstruction and no seed was varied.</p>
 <p>Two design choices are swept here because each is a parameter the paper had reported a role for
 without measuring it.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>orange</th><th>DreamSim &darr;<br><span class="mut">held-out, same families</span></th>
 <th>cross-family gap &darr;<br><span class="mut">at 45&deg;, neither family supervised</span></th>
 <th>detail &uarr;<br><span class="mut">at 45&deg;, transverse</span></th></tr></thead>
@@ -3225,7 +3228,7 @@ adds structure and disagreement together, and which of the two dominates is a qu
 answer. Models trained on one transverse and one longitudinal photograph, on three of each, and on
 all six of each, all scored against three photographs none of them saw:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>references</th><th>which</th><th>DreamSim to a photograph none saw &darr;</th></tr></thead>
 <tbody>
 <tr><td>12</td><td>all six of each family</td><td>0.0765</td></tr>
@@ -3258,7 +3261,7 @@ matters here rather than a translation: the fit already places a reference insid
 plane renders, so a displaced photograph is put back, while a rotated one puts radial structure at
 an angle the rest of the family does not share.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>rotation \(\pm\psi\) injected into every reference</th><th>DreamSim &darr;</th><th>against control</th></tr></thead>
 <tbody>
 <tr><td>none (control)</td><td>0.0738</td><td>&mdash;</td></tr>
@@ -3321,7 +3324,7 @@ interpolation. Comparing the colour distributions of the two families' held-out 
 reference-free quantity, since it asks whether the two agree about what the interior is made
 of:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>orange</th><th>gap between the families &darr;</th><th>disagreement on the shared
 axis &darr;</th><th>DreamSim &darr;</th></tr></thead>
 <tbody>
@@ -3359,7 +3362,7 @@ is the mechanism behind a result, that every arm here beats
 FruitNinja on the orange and does not on the watermelon.</div>
 
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>orange, 100 cuts per family</th><th>transverse FID &darr;</th>
 <th>transverse KID &darr;</th><th>longitudinal FID &darr;</th><th>longitudinal KID &darr;</th>
 <th>PSNR &uarr;</th><th>SSIM &uarr;</th><th>LPIPS &darr;</th></tr></thead>
@@ -3374,7 +3377,7 @@ FruitNinja on the orange and does not on the watermelon.</div>
     <td class="mut">21.24</td><td class="mut">0.8047</td><td class="mut">0.1815</td></tr>
 </tbody></table></div>
 
-<div class="tw"><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
 <thead><tr><th>watermelon, 100 cuts per family</th><th>transverse FID &darr;</th>
 <th>transverse KID &darr;</th><th>longitudinal FID &darr;</th><th>longitudinal KID &darr;</th>
 <th>PSNR &uarr;</th><th>SSIM &uarr;</th><th>LPIPS &darr;</th></tr></thead>

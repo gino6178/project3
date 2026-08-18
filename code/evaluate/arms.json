@@ -1,0 +1,9 @@
+{
+  "orange":      {"fruitninja": "prefilled/trained_gs/orange.ply"},
+  "watermelon":  {"fruitninja": "prefilled/trained_gs/watermelon.ply",
+                  "gaussianfluent": "/workspace/gfluent/model/watermelon/point_cloud/iteration_30000/point_cloud.ply"},
+  "apple":       {"fruitninja": "prefilled/trained_gs/apple.ply"},
+  "bread":       {"fruitninja": "prefilled/trained_gs/bread.ply"},
+  "cake":        {"fruitninja": "prefilled/trained_gs/cake.ply"},
+  "pomegranate": {"fruitninja": "prefilled/trained_gs/pomegranate.ply"}
+}
