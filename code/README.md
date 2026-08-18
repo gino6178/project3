@@ -105,3 +105,15 @@ To check an exterior against the model it was taken from:
 ```bash
 $FN_PY src/exterior_views.py MODEL.ply CFG DEMO out.png 384
 ```
+
+## Redrawing the animation at the top of the page
+
+```bash
+bash code/fetch.sh ./worktree            # trained_v2.tar: the seven models, 380 MB
+bash code/figures/draw_cuts.sh orange orange.mp4
+ffmpeg -framerate 14 -i orange_frames/%04d.png -c:v libx264 -crf 20 -pix_fmt yuv420p orange.mp4
+```
+
+`code/figures/` is not on either route — it draws a figure — and has its own README. It needs the
+trained model and two small tensors per object, not the lattice's own point cloud, so redrawing
+all seven is a 380 MB download rather than 1.1 GB.

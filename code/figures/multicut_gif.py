@@ -43,10 +43,10 @@ import torch
 
 sys.path += [_FN_ROOT, _FN_ROOT + "/gaussian-splatting"]
 
-from method.common.cube import multicut as mc                        # noqa: E402
-from method.common.cube import subdivide as sd                       # noqa: E402
-from method.common.cube.globalovox import FACE                       # noqa: E402
-from method.common.demo import gifcam                                # noqa: E402
+import multicut as mc                        # noqa: E402
+import subdivide as sd                       # noqa: E402
+from globalovox import FACE                       # noqa: E402
+import gifcam                                # noqa: E402
 
 MIN_CELLS = 512
 # eight hues, spaced round the circle, for the cut faces only
@@ -160,7 +160,7 @@ def faces(allf, pid, K, k_samp=3):
 def main(lattice_dir, ply, cfg, demo, out_gif, n_frames=72, size=440, ss=2, k_samp=3,
          amp=0.52, radius_scale=1.55):
     from scipy.spatial import cKDTree
-    from method.common.cube.occupancy import close_and_fill, to_grid
+    from occupancy import close_and_fill, to_grid
 
     lat = gifcam.load_lattice(lattice_dir, ply)
     xyz, rgb, lvl, hc, hf = lat["xyz"], lat["rgb"], lat["level"], lat["hc"], lat["hf"]

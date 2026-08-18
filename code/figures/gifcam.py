@@ -237,7 +237,17 @@ def load_lattice(lattice_dir, colour_from=None):
     from plyfile import PlyData
     lat = torch.load(_os.path.join(lattice_dir, "lattice.pt"))
     hc, hf = float(lat["coarse_dx"]), float(lat["fine_dx"])
-    el = PlyData.read(_os.path.join(lattice_dir, "gs_fill.ply")).elements[0]
+    # Positions from the lattice when it is there, and from the trained model when it is not.
+    # The two are row-aligned -- that is the invariant `colour_from` already relies on -- so the
+    # lattice's own ply is 114 MB of the same coordinates. Letting it be absent is the difference
+    # between shipping 375 MB for anyone who wants to redraw these and shipping 1.1 GB.
+    src = _os.path.join(lattice_dir, "gs_fill.ply")
+    if not _os.path.isfile(src):
+        if not (colour_from and _os.path.isfile(colour_from)):
+            raise SystemExit(f"neither {src} nor a model to take positions from")
+        src = colour_from
+        print(f"  positions from {colour_from} (the lattice's own ply is not here)")
+    el = PlyData.read(src).elements[0]
     xyz = np.stack([el["x"], el["y"], el["z"]], 1).astype(np.float64)
     C0 = 0.28209479177387814
     rgb = np.clip(np.stack([el["f_dc_0"], el["f_dc_1"], el["f_dc_2"]], 1).astype(np.float64)
