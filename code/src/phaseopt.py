@@ -129,14 +129,34 @@ def main(hd, vd):
     # the assignment: which photograph is shown at which depth. The pipeline spreads them in file
     # order; the depths themselves are fixed by the schedule, so this is a permutation of six items
     # and the exhaustive search is 720 evaluations.
-    import itertools
-    best_perm, best_c = tuple(range(len(H))), None
-    for perm in itertools.permutations(range(len(H))):
-        Hp = [H[i] for i in perm]; php = ph[list(perm)]
-        c = cost(Hp, V, php, zs, azs)
-        if best_c is None or c < best_c:
-            best_c, best_perm = c, perm
-    print(f"  + assignment over {len(H)}! permutations {best_c:.5f}   order {best_perm}")
+    # Exhaustively while that is 40,320 evaluations or fewer, and by pairwise exchange after.
+    # The watermelon has twenty photographs and 20! is 2.4e18: the exhaustive loop does not run
+    # slowly there, it does not finish, and the stage sits at "solving" forever holding a GPU.
+    # Exchange is how an assignment problem is usually solved anyway, and it keeps the monotone
+    # guarantee -- every accepted move lowers the same cost the sweep above lowers.
+    import itertools, math
+    perm = list(range(len(H)))
+    best_c = cost([H[i] for i in perm], V, ph[perm], zs, azs)
+    if math.factorial(len(H)) <= 40320:
+        for cand in itertools.permutations(range(len(H))):
+            c = cost([H[i] for i in cand], V, ph[list(cand)], zs, azs)
+            if c < best_c:
+                best_c, perm = c, list(cand)
+        how = f"{len(H)}! permutations"
+    else:
+        improved, rounds = True, 0
+        while improved and rounds < 6:
+            improved, rounds = False, rounds + 1
+            for a in range(len(H)):
+                for b in range(a + 1, len(H)):
+                    cand = perm[:]
+                    cand[a], cand[b] = cand[b], cand[a]
+                    c = cost([H[i] for i in cand], V, ph[cand], zs, azs)
+                    if c < best_c - 1e-9:
+                        best_c, perm, improved = c, cand, True
+        how = f"pairwise exchange, {rounds} rounds"
+    best_perm = tuple(perm)
+    print(f"  + assignment by {how} {best_c:.5f}   order {best_perm}")
 
     c1 = cost(H, V, ph, zs, azs)
     print(f"\n  pipeline's greedy alignment {c0:.5f}")
