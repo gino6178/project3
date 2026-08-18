@@ -579,15 +579,24 @@ if __name__ == "__main__":
     # beneath, which is what it is in a real peel.
     if SEC_SKIP_OUTER > 0:
         with torch.no_grad():
-            # By radius over every primitive. `is_interior` cannot be used for this -- in voxel
-            # mode it is true for all 985,492 of them, so its complement is empty -- and the
-            # outermost layer is a geometric fact anyway, not a flag.
+            # What the sections may not paint is the exterior, and the exterior is what the shape
+            # says it is. This took the outermost fraction *by radius*, which is a sphere: on the
+            # loaf it skips the middle of the flat faces and none of the ends, and on the torus it
+            # skips the outer rim and leaves the whole inner wall to the sections. The same
+            # function that decides what gets pinned decides what they skip, so the two agree by
+            # construction and neither needs the object to be round.
+            #
+            # A separate depth from SHELL_PIN_LAYERS because the questions differ: pinning asks
+            # what is visible, and skipping asks how far in the rind goes -- a watermelon's green
+            # and white run deeper than the cells you can see.
+            from occupancy import surface_cells
+            _lat_sk = torch.load(os.path.join(os.path.dirname(args.gs_path), "lattice.pt"))
             _p = gaussians.get_xyz.detach()
-            _rr = (_p - _p.mean(0)).norm(dim=1).float()
-            _thr = torch.quantile(_rr, 1.0 - SEC_SKIP_OUTER)
-            gaussians.is_outer = _rr > _thr
-        print(f"  sections will skip the outer {100*SEC_SKIP_OUTER:.0f}% by radius: "
-              f"{int(gaussians.is_outer.sum()):,} primitives")
+            _k_sk = int(_os.environ.get("SEC_SKIP_LAYERS",
+                                        _os.environ.get("SHELL_PIN_LAYERS", "2")))
+            gaussians.is_outer = surface_cells(_p, float(_lat_sk["coarse_dx"]), layers=_k_sk)
+        print(f"  sections skip the exterior, {_k_sk} cells deep by the occupancy: "
+              f"{int(gaussians.is_outer.sum()):,} of {gaussians.is_outer.numel():,} primitives")
     else:
         gaussians.is_outer = torch.zeros_like(gaussians.is_interior.reshape(-1), dtype=torch.bool)
     gaussians_ori = load_checkpoint(model_path, gs_path=args.gs_ori_path)

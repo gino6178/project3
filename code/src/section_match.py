@@ -251,7 +251,95 @@ def _ray_coords(mask, nb_a=1440, smooth_deg=None):
     return (cy, cx), lift(ci), lift(co)
 
 
-def _same_topology_map(comp, a_ref, m_ref):
+RIND_MATCH = os.environ.get("SEC_RIND_MATCH", "1") == "1"
+# How far the middle has to sit from the rim in colour before there is a layer to match at
+# all. Measured on the section references of all seven: the watermelon reads 0.83 and 0.48,
+# the doughnut's transverse 0.72, the orange 0.14 to 0.33, the loaf 0.16, and the doughnut's
+# longitudinal -- dough throughout, nothing to match -- 0.08. The threshold sits below every
+# object that has a layer and above the one that does not.
+RIND_STEP = float(os.environ.get("SEC_RIND_STEP", "0.12"))
+
+def _band_profile(a, mask, ri, ro, cy, cx, nb_s=64):
+    """Mean colour of the region as a function of how far across it a pixel sits.
+
+    The one coordinate the ray map already uses, collapsed over angle. A fruit's layers are
+    bands in this coordinate -- peel, pith, flesh -- so a layer boundary is a step in this
+    profile no matter what shape the outline is.
+    """
+    ys, xs = np.where(mask)
+    th = np.arctan2(ys - cy, xs - cx)
+    nb = ri.shape[0]
+    ai = np.clip(((th + np.pi) / (2 * np.pi) * nb).astype(np.int64), 0, nb - 1)
+    r = np.hypot(ys - cy, xs - cx)
+    s = np.clip((r - ri[ai]) / np.maximum(ro[ai] - ri[ai], 1e-6), 0.0, 1.0)
+    b = np.clip((s * nb_s).astype(np.int64), 0, nb_s - 1)
+    tot = np.zeros((nb_s, a.shape[2])); cnt = np.zeros(nb_s)
+    np.add.at(tot, b, a[ys, xs]); np.add.at(cnt, b, 1.0)
+    ok = cnt > 0
+    if not ok.any():
+        return None, None
+    prof = np.zeros_like(tot)
+    prof[ok] = tot[ok] / cnt[ok, None]
+    if not ok.all():                      # bins no pixel landed in: carry the nearest
+        idx = ndimage.distance_transform_edt(~ok, return_distances=False,
+                                             return_indices=True)[0]
+        prof = prof[idx]
+    return prof, cnt
+
+
+def _rind_edge(a, mask, ri, ro, cy, cx):
+    """Where the outermost layer ends, as a fraction of the way across the region.
+
+    Not a colour test and not a threshold on any particular hue: the peel is whatever the
+    outside is, and the boundary is where the profile stops looking like the outside. Working
+    from the rim's own colour keeps this true for a green watermelon, an orange peel and a
+    pomegranate's white pith alike, and returns nothing at all for a loaf, whose middle looks
+    like its edge -- there the map stays exactly what it was.
+
+    The criterion is a distance in colour, not a step in shape, because the thing it is used
+    for rescales the radius. A scan for the largest step re-finds a different cut once the
+    bands have been compressed -- measured on the watermelon photographs, a reference whose
+    own rind sat at 0.883 produced a target whose rind read 0.758, six bins adrift, and the
+    spread across the set came out wider after matching than before. Distance from the rim
+    colour does not move when the radius is stretched, so the boundary lands where it was put.
+    """
+    nb_s = int(os.environ.get("SEC_RIND_BINS", "64"))
+    prof, cnt = _band_profile(a, mask, ri, ro, cy, cx, nb_s)
+    if prof is None:
+        return None, 0.0
+    rim = prof[int(0.95 * nb_s):].mean(0)
+    d = np.linalg.norm(prof - rim, axis=1)
+    lo = float(os.environ.get("SEC_RIND_MIN", "0.55"))   # a rind is not half the fruit
+    hi = float(os.environ.get("SEC_RIND_MAX", "0.985"))  # nor the anti-aliased outline itself
+    i0, i1 = int(lo * nb_s), int(hi * nb_s)
+    if i1 - i0 < 3:
+        return None, 0.0
+    inner = float(d[:i0].mean())     # how far the middle sits from the edge: is there a layer
+    if inner < 1e-6:
+        return None, 0.0
+    k = np.where(d[i0:i1] < inner * 0.5)[0]
+    if len(k) == 0 or k[0] == 0:
+        # Nothing crossed, or it had already crossed before the search began. The second is
+        # the doughnut's longitudinal section: dough all the way out, so the estimate would be
+        # the floor of the range rather than a boundary, and a wrong knot is worse than none.
+        return None, 0.0
+    return (i0 + k[0] + 0.5) / nb_s, inner
+
+
+def _rind_reparam(s, s_src, s_dst):
+    """Send the destination's layers onto the source's, by moving one knot.
+
+    Piecewise linear with a single break, so it is monotone, keeps both ends fixed and does
+    nothing anywhere else. The map that calls this is a bijection and stays one.
+    """
+    out = np.empty_like(s)
+    m = s < s_dst
+    out[m] = s[m] / max(s_dst, 1e-6) * s_src
+    out[~m] = s_src + (s[~m] - s_dst) / max(1.0 - s_dst, 1e-6) * (1.0 - s_src)
+    return np.clip(out, 0.0, 1.0)
+
+
+def _same_topology_map(comp, a_ref, m_ref, a_dst=None):
     """Colour a component from a reference of the same topology, by their own coordinates.
 
     One rule for every case the branch used to split. A disc onto a disc and an annulus onto
@@ -285,6 +373,21 @@ def _same_topology_map(comp, a_ref, m_ref):
     nb = dri.shape[0]
     ai = np.clip(((th + np.pi) / (2 * np.pi) * nb).astype(np.int64), 0, nb - 1)
     s = np.clip((r - dri[ai]) / np.maximum(dro[ai] - dri[ai], 1e-6), 0.0, 1.0)
+    # Match the layers, not just the outline. The map above is the identity in `s`, so it
+    # aligns the two boundaries and then leaves every reference sitting at whatever radius its
+    # own layers happened to fall at. The reference sets are photographs of different fruit:
+    # measured across the watermelon's six, the peel runs from 2% to 25% of the radius, so the
+    # cell at 0.9R is told it is flesh by one reference and peel by another. The lattice cannot
+    # satisfy both and settles on the average, which is the soft red-to-white gradient the
+    # sections show instead of a rind. Moving one knot puts each reference's rind onto the rind
+    # the render actually has, which is the pinned exterior and therefore the ply's own, and the
+    # references stop contradicting each other in the radial direction. It is the same
+    # correction the phase alignment makes around the section and for the same reason.
+    if RIND_MATCH and a_dst is not None:
+        s_src, e_src = _rind_edge(a_ref, m_ref, sri, sro, scy, scx)
+        s_dst, e_dst = _rind_edge(a_dst, comp, dri, dro, dcy, dcx)
+        if s_src is not None and s_dst is not None and min(e_src, e_dst) >= RIND_STEP:
+            s = _rind_reparam(s, s_src, s_dst)
     rs = sri[ai] + s * (sro[ai] - sri[ai])
     # Sample the reference bilinearly, not at the nearest pixel. The map sends neighbouring
     # destination pixels to source positions that differ by a fraction of a pixel; rounding
@@ -380,7 +483,7 @@ def section_target(render, ref_rgb, alpha=None, min_frac=0.002, bg_tol=0.03, bg=
         if ref_info is not None:
             a_ref, m_ref = ref_info[0], ref_info[1]
             # same topology, so a bijection exists: map them by their own coordinates
-            tgt[ys, xs] = _same_topology_map(comp, a_ref, m_ref)
+            tgt[ys, xs] = _same_topology_map(comp, a_ref, m_ref, r)
         else:
             lut, nb = _filled[4], _filled[5]
             # no bijection exists; fall back to the one coordinate both shapes have

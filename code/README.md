@@ -39,6 +39,24 @@ second: its topology is generated, and `skin_project.py` paints it from six view
 Both end in the same place — the exterior sitting on the lattice's surface cells — and the
 trainer pins it there. Only the interior learns.
 
+## What the references are put through before they supervise
+
+A reference set is many photographs of one kind of fruit. Each was cut at its own angle and
+each is a different fruit, so two of them disagree in two ways, and both are removed before
+training rather than averaged away by it.
+
+| | what disagrees | what is done |
+|---|---|---|
+| around the section | the cut angle each photograph happened to have | `stage_phases` solves the rotations and the assignment of photographs to depths together, equation (27), and writes the result beside the references. `sds_demo` falls back to the greedy per-family alignment of (11) when it is absent, so the stage is safe to skip. |
+| across the section | where each fruit's own peel ended | `section_match` moves one knot in the ray coordinate so every reference's rind lands on the rind the render actually has, which is the pinned exterior and therefore the ply's own. |
+
+The second matters because the peel runs from 3.9% to 19.5% of the radius across the
+watermelon's twenty transverse photographs: without it a trainable cell at 0.85R is told it is
+flesh by one photograph and peel by another, and the lattice settles between them. It applies
+only where there is a layer to match, which it decides from the reference itself -- the
+watermelon reads 0.83, the orange 0.27, the loaf 0.17, and the doughnut, dough throughout, is
+left alone on both of its sections.
+
 ## What counts as the surface
 
 One function, `occupancy.surface_cells`, used by the painter and again by the trainer that pins
