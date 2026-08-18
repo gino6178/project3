@@ -301,10 +301,62 @@ def _photo(spec):
     import glob
     files = sorted(_photos_in(spec)) if os.path.isdir(spec) else [spec]
     k = (_PLANE["idx"] * len(files) // _PLANE["n"]) % len(files)
+    # The continuous assignment, which is equation (14) of the paper. The rule above is
+    # piecewise constant -- integer division gives two or three adjacent planes the same
+    # photograph, so the interior has no reason to differ between them and every reason to
+    # change where the block does. Continuous instead: a plane at t = j M_f / N_f takes
+    # photograph floor(t) and the next, both brought onto a common disc by _blend_canonical,
+    # mixed at the fractional part.
+    #
+    # It is deterministic. A plane still sees one fixed target for the whole run, so a cell
+    # shared by two families meets the same conflict on every pass -- which is what makes the
+    # assignment worth optimising at all, and what REF_RANDOM_ASSIGN gives up.
+    #
+    # This existed, was measured, and was not in this file: the page says every object trains
+    # with it while every model in the repository was trained with the block rule. Off by
+    # default so the two can still be compared, but the default is the thing to revisit.
+    if os.environ.get("REF_DEPTH_BLEND", "0") == "1" and len(files) > 1:
+        t = _PLANE["idx"] * len(files) / max(_PLANE["n"], 1)
+        k0 = int(t) % len(files)
+        k1 = (k0 + 1) % len(files)
+        w = float(t - int(t))
+        key = (spec, "blend", k0, k1, round(w, 3))
+        if key not in _PHOTOS:
+            _PHOTOS[key] = _blend_on_disc(files[k0], files[k1], w)
+        return _PHOTOS[key]
     key = (spec, k)
     if key not in _PHOTOS:
         _PHOTOS[key] = Image.open(files[k]).convert("RGB")
     return _PHOTOS[key]
+
+
+def _blend_canonical(path, size=512, frac=0.38):
+    """One photograph with its section centred and scaled to a fixed radius.
+
+    Named _blend_canonical, not _canonical: this file already has a _canonical with a different
+    signature, and defining a second one silently replaced it.
+
+    Two references cannot be blended as they arrive: they are different fruits, framed by hand, and
+    their discs differ in centre and radius. Overlaying them directly leaves a ring where one disc
+    reaches and the other does not, which the section loss would then try to reproduce.
+    """
+    import numpy as np
+    im = Image.open(path).convert("RGB")
+    cy, cx, r = _disc(im)
+    scale = (frac * size) / max(r, 1e-6)
+    w, h = im.size
+    im2 = im.resize((max(1, int(round(w * scale))), max(1, int(round(h * scale)))), Image.LANCZOS)
+    out = Image.new("RGB", (size, size), (255, 255, 255))
+    out.paste(im2, (int(round(size / 2 - cx * scale)), int(round(size / 2 - cy * scale))))
+    return np.asarray(out, np.float32) / 255.0
+
+
+def _blend_on_disc(pa, pb, w):
+    """(1-w) of one reference and w of the next, both on a common disc."""
+    import numpy as np
+    a, b = _blend_canonical(pa), _blend_canonical(pb)
+    m = np.clip((1.0 - w) * a + w * b, 0, 1)
+    return Image.fromarray((m * 255).astype("uint8"))
 
 
 def _disc(img):
