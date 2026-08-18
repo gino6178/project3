@@ -45,11 +45,26 @@ def unpainted(path):
     # of the image bridges the gaps a coverage failure leaves without inventing area.
     k = max(3, int(round(a.shape[0] * 0.02)) | 1)
     fill = cv2.morphologyEx(painted.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((k, k), np.uint8))
-    cnts, _ = cv2.findContours(fill, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Outer contour and its children, not the outer contour alone. Filling only the outer one
+    # says a torus's central hole is section that failed to be painted: the doughnut measured
+    # 22.09% by that rule, and (0.337/0.709)^2 -- its own inner and outer radii -- is 22.6%. The
+    # hole is not material and does not belong in the denominator.
+    #
+    # A child is kept out of the silhouette when it is a real hole and filled when it is a
+    # coverage failure, and size separates the two at the same threshold section_match uses for
+    # the same distinction: 5% of the section. An unpainted patch that large is not a patch.
+    cnts, hier = cv2.findContours(fill, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     if not cnts:
         return None
+    outer = max(range(len(cnts)), key=lambda i: cv2.contourArea(cnts[i]))
     sil = np.zeros_like(fill)
-    cv2.drawContours(sil, [max(cnts, key=cv2.contourArea)], -1, 1, -1)
+    cv2.drawContours(sil, cnts, outer, 1, -1)
+    area = max(cv2.contourArea(cnts[outer]), 1.0)
+    hole_min = float(_os.environ.get("HOLE_MIN_FRAC", "0.05"))
+    if hier is not None:
+        for i, h in enumerate(hier[0]):
+            if h[3] == outer and cv2.contourArea(cnts[i]) > hole_min * area:
+                cv2.drawContours(sil, cnts, i, 0, -1)
     inside = sil > 0
     return 100.0 * float((inside & ~painted).sum()) / max(int(inside.sum()), 1)
 
