@@ -164,26 +164,24 @@ analytic spherical cap to 0.14% and sum to the whole exactly, giving grid-based 
 direct interface with no intermediate mesh extraction.
 </p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 2</p><table>
-<thead><tr><th>orange unless stated</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
+<div class="tw"><p class="tnum">Table 2</p><table>
+<thead><tr><th>watermelon</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
 <tbody>
-<tr><td>DreamSim to a <em>held-out</em> photograph &darr;</td><td><strong>0.098</strong></td>
-    <td>0.150</td><td class="mut">no orange model released</td></tr>
-<tr><td>cut face unpainted at 2048&nbsp;px &darr;</td><td><strong>0.07%</strong></td>
-    <td>2.4%</td><td>38.7%</td></tr>
-<tr><td>watermelon, through one codec &darr;</td><td><strong>7.0&nbsp;MiB</strong></td>
+<tr><td>DreamSim to the nearest reference &darr;</td><td><strong>0.1710</strong></td>
+    <td>0.2292</td><td>0.4063</td></tr>
+<tr><td>cut face unpainted at 2048&nbsp;px &darr;</td><td><strong>0.06%</strong></td>
+    <td>2.37%</td><td>8.29%</td></tr>
+<tr><td>through one codec &darr;</td><td><strong>9.3&nbsp;MiB</strong></td>
     <td>58.3&nbsp;MiB</td><td>26.5&nbsp;MiB</td></tr>
+<tr><td>primitives</td><td><strong>1,245,168</strong></td>
+    <td>7,959,789</td><td>1,381,100</td></tr>
 <tr><td>the cut face itself</td><td><strong>closed form</strong></td>
     <td class="mut">whatever lies near the plane</td><td class="mut">whatever lies near the plane</td></tr>
 <tr><td>interior supervision</td><td><strong>the photographs</strong></td>
     <td class="mut">a diffusion model fine-tuned on them</td><td class="mut">generative guidance</td></tr>
 </tbody></table></div>
 
-<p class="mut">DreamSim is a perceptual distance trained on human forced-choice judgements; the
-figure is the mean over six leave-one-out folds, each scored against the one photograph its own run
-never saw, while FruitNinja's generator was fine-tuned on all six. Photographs of the same fruit
-score 0.042 against each other. Section 4.1.2 gives the other five instruments and states what is
-in-sample.</p>
+<p class="mut">The watermelon, because it is the object all three have released a model for &mdash; GaussianFluent publishes eighteen and two are ours. Every row is measured here rather than quoted: the same twelve held-out cut depths, the same tools, the released models re-rendered. DreamSim is a perceptual distance trained on human forced-choice judgements, and the twenty photographs it is scored against are the twenty that supervised it, so this row is a fit; section 4.1 gives the held-out numbers and the other five instruments. The unpainted fraction is what a cut face leaves as background at 2048&nbsp;px, over the same twelve mid-object depths as the rest of this table. Section 6.3 reports 38.7% for the same model over a hundred cuts at any depth, and the difference is the depths, not the tool: a cut near an end is nearly the exterior and reads differently, which is why everything here is banded. The codec is one lossless coder over every representation, described in section 5.</p>
 
 <h2 id="intro">1&ensp;Introduction</h2>
 
