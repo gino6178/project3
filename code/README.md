@@ -9,11 +9,12 @@ git clone https://github.com/gino6178/project3.git && cd project3
 bash code/setup.sh ./worktree         # lays code/ and data/ out as one tree
 bash code/fetch.sh ./worktree         # the released reconstructions, too large for a git repo
 
-bash code/bootstrap.sh ./build         # the interpreter and the two CUDA extensions
+bash code/bootstrap.sh ./build         # both interpreters and the two CUDA extensions
 
 export FN_ROOT=$PWD/worktree
 export GS_ROOT=$PWD/build/gaussian-splatting
 export FN_PY=$PWD/build/mc/envs/fn/bin/python
+export FN_PY_SCORE=$PWD/build/mc/envs/score/bin/python   # only code/evaluate needs this
 
 bash code/run.sh orange               # or: watermelon apple bread cake pomegranate doughnut
 ```

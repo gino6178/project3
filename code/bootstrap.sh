@@ -48,7 +48,7 @@ $PY -m pip install -q \
   numpy==1.24.4 scipy opencv-python-headless pillow plyfile tqdm h5py zstandard \
   trimesh scikit-image PyMCubes pytorch_msssim lpips torchmetrics \
   "diffusers==0.19.3" "transformers==4.30.2" "huggingface_hub==0.16.4" safetensors \
-  imageio imageio-ffmpeg matplotlib ninja \
+  imageio imageio-ffmpeg matplotlib ninja torch-fidelity \
   "setuptools<70" wheel      # the rasteriser's setup.py imports pkg_resources, which
                              # setuptools dropped in 81
 
@@ -100,6 +100,26 @@ step "simple-knn"
 $PY -c "import simple_knn" 2>/dev/null || \
   $PY -m pip install -q --no-build-isolation $R/gs-upstream/submodules/simple-knn
 
+# --- the scoring interpreter ------------------------------------------------------------
+# A second environment, because DreamSim's stack and the rasteriser's cannot both be satisfied:
+# the extensions are built against torch 2.0.1, and DreamSim wants a torchvision newer than the
+# one that pairs with it. Nothing here compiles, and nothing here renders -- these tools only
+# read PNGs -- so it is free to be current. `code/evaluate/measure.py` skips the DreamSim rows
+# and says so when FN_PY_SCORE is unset, so this step is optional.
+if [ ! -d "$MC/envs/score" ]; then
+  step "scoring environment (DreamSim)"
+  conda create -y -q -n score python=3.10
+fi
+SPY=$MC/envs/score/bin/python
+$SPY -c "import dreamsim" 2>/dev/null || {
+  step "dreamsim, torchmetrics"
+  $SPY -m pip install -q torch torchvision --index-url https://download.pytorch.org/whl/cu118
+  # torch-fidelity carries the Inception weights torchmetrics refuses to run without,
+  # and both environments reach for them -- fid_eval.py in the render one, realism.py here.
+  $SPY -m pip install -q dreamsim torchmetrics torch-fidelity "numpy<2" scipy \
+        opencv-python-headless pillow
+}
+
 step "check"
 $PY - <<'PYEOF'
 import torch, taichi, warp, diff_gaussian_rasterization, cv2, scipy, trimesh
@@ -107,4 +127,12 @@ print("torch", torch.__version__, "cuda", torch.cuda.is_available(), torch.cuda.
 print("taichi", taichi.__version__, "warp", warp.config.version)
 print("rasteriser ok")
 PYEOF
+$SPY - <<'PYEOF'
+import torch, dreamsim, torchmetrics
+print("score env: torch", torch.__version__, "dreamsim ok")
+PYEOF
+echo
+echo "  export FN_PY=$MC/envs/fn/bin/python"
+echo "  export FN_PY_SCORE=$MC/envs/score/bin/python"
+echo "  export GS_ROOT=$R/gaussian-splatting"
 echo; echo "BUILD_OK"; date -u +%H:%M:%S
