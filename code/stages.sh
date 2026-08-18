@@ -164,6 +164,9 @@ stage_eval () {
   # distinction is real and was once used: when the watermelon trained against one shared
   # reference, FID here would have been computed against a single image. KID refused outright,
   # which is how that was found, and FID would have returned a number.
+  # matplotlib is reached through torchmetrics, and it refuses the inline backend a notebook
+  # kernel exports -- which is how this gets launched. Name a backend that always works.
+  export MPLBACKEND=${MPLBACKEND:-Agg}
   $PY "$HERE/src/fid_eval.py" "${EVAL_REF:-$REF_H}" "eval_$RUN"/rh*_init_0.png
   $PY "$HERE/src/clip_eval.py" "$CLIP_PROMPT" "eval_$RUN"/rh*_init_0.png
 }
