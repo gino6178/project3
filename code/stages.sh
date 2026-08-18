@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The stages every object runs, so each object's script is only its parameters.
 #
-# Sourced, not executed. The caller sets OBJ, SRC, COARSE_DX, SKIN_FRAC, CFG, DEMO, REF_H, REF_V,
+# Sourced, not executed. The caller sets OBJ, SRC, COARSE_DX, CFG, DEMO, REF_H, REF_V,
 # ITERS and PROMPT, then calls the stages it needs. Each stage skips itself if its output is
 # already there, so a run can be resumed by re-running the same script.
 # -e as well as -u: a stage that fails must stop the run. Without it the lattice stage failed,
@@ -11,16 +11,10 @@
 # failure before the file had the guard.
 set -eu
 # Both settable, so the same scripts run on the remote box without edits.
-# Two roots, because code and data are not the same thing. HERE is this folder, which holds
-# every line of the pipeline. FN_ROOT is where the inputs live and the outputs are written --
-# the released models, the reference images, the physics configs. Point FN_ROOT at a checkout
-# of the data and this folder runs anywhere.
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ROOT=${FN_ROOT:?set FN_ROOT to the directory holding prefilled/, config/ and the reference images}
 GS_ROOT=${GS_ROOT:-$ROOT/gaussian-splatting}
 PY=${FN_PY:?set FN_PY to the python that has torch, taichi, warp and diff_gaussian_rasterization}
-# mpm_solver_warp imports its own siblings flat (`import mpm_utils`), so its directory is
-# on the path as well as its parent.
 export PYTHONPATH="$HERE/src:$HERE/inherited:$HERE/inherited/mpm_solver_warp:$GS_ROOT:${PYTHONPATH:-}"
 export GS_ROOT
 # Every stage, not only the two that used to set it. GPU=1 was reaching the trainer and the
@@ -74,8 +68,8 @@ stage_lattice () {
       say "meshing $SRC to a two-level lattice"
       $PY "$HERE/src/mesh_to_voxel.py" "$SRC" "$dst" "${CELLS:-600000}" 2 ;;
     *)
-      say "voxelising $SRC at refine=2, coarse dx $COARSE_DX, skin from r/R $SKIN_FRAC"
-      $PY "$HERE/src/voxelize.py" "$SRC" "$dst" 2 0 "$COARSE_DX" "$SKIN_FRAC" ;;
+      say "voxelising $SRC at refine=2, coarse dx $COARSE_DX, skin from the occupancy"
+      $PY "$HERE/src/voxelize.py" "$SRC" "$dst" 2 0 "$COARSE_DX" ;;
   esac
 }
 

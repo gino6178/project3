@@ -26,7 +26,7 @@ _FN_ROOT = _os.environ.get("FN_ROOT", "/home/gino/project/FruitNinja_clean")
 
 import sys, os
 sys.path.append(_FN_ROOT)
-sys.path.append(_os.environ.get("GS_ROOT", _FN_ROOT + "/gaussian-splatting"))
+sys.path.append(_FN_ROOT + "/gaussian-splatting")
 os.chdir(_FN_ROOT)
 
 import torch, numpy as np
@@ -160,7 +160,22 @@ def main(ply, out_dir, refine=2, target_cells=0, coarse_dx=0.0, skin_frac=0.0):
         frac = skin_frac
     c = xyz.mean(0)
     rn = (xyz - c).norm(dim=1) / R
-    skin = rn > frac
+    # Which primitives get the fine spacing. The level is a cell *size*, and the size a surface
+    # wants is decided by where the surface is, which `r/R > skin_frac` answers with a sphere.
+    # None of these objects is one, so most of the real surface falls inside that sphere and is
+    # quantised at the coarse size -- twice what a surface is meant to get. Measured as the
+    # fraction of the actual outermost cells that land on the fine level: pomegranate 1.5%,
+    # cake 17.9%, bread 38.4%, apple 50.5%, orange 52.0%. The watermelon reaches 99.5% only
+    # because its threshold happens to be 0.85 rather than 0.95, and the doughnut 89.1% because
+    # its lattice was never built by this rule -- which is why those two are the only ones whose
+    # cut faces do not read as blocks.
+    #
+    # The occupancy answers it for any shape and takes no parameter. It is the same function the
+    # exterior is pinned and painted by, so one definition decides what the surface is throughout.
+    from occupancy import surface_cells
+    skin = surface_cells(xyz, coarse, layers=int(_os.environ.get("SKIN_LAYERS", "2")))
+    print(f"  skin from the occupancy boundary: {int(skin.sum()):,} of {xyz.shape[0]:,} "
+          f"primitives, against {int((rn > frac).sum()):,} the radius rule would have taken")
     # Snap the origin to the coarse grid.
     #
     # Cells are found by rounding (x - origin) / dx, so the origin decides the phase of both
