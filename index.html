@@ -66,6 +66,7 @@
   figure video{width:100%;display:block;border-radius:3px;background:#fff}
   figure img{width:100%;display:block;border-radius:3px;background:#fff}
   figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
+  .tnum,.fnum{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:0 0 6px}
   .tw{overflow-x:auto;margin:20px 0}
   td.mut{color:var(--mut)}
   table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px;
@@ -113,6 +114,19 @@
 run on, cut by three planes and drawn apart. Six take their outside from a released
 reconstruction and the doughnut from six generated views; in all seven only the interior
 was ever trained, and none of these cut faces was supervised.</p>
+
+<div class="tw"><p class="tnum">Table 1</p><table>
+<thead><tr><th>DreamSim to the nearest reference &darr;</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th><th class="mut">references</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td><strong>0.0717</strong></td><td>0.1301</td><td class="mut">not released</td><td class="mut">6</td></tr>
+<tr><td>watermelon</td><td><strong>0.1710</strong></td><td>0.2292</td><td>0.4063</td><td class="mut">20</td></tr>
+<tr><td>apple</td><td><strong>0.2512</strong></td><td>0.3765</td><td class="mut">not released</td><td class="mut">9</td></tr>
+<tr><td>bread</td><td><strong>0.3337</strong></td><td>0.4983</td><td class="mut">not released</td><td class="mut">5</td></tr>
+<tr><td>cake</td><td>0.3417</td><td><strong>0.2670</strong></td><td>0.5011</td><td class="mut">3</td></tr>
+<tr><td>pomegranate</td><td><strong>0.2625</strong></td><td>0.2968</td><td class="mut">not released</td><td class="mut">3</td></tr>
+<tr><td>doughnut</td><td><strong>0.0966</strong></td><td class="mut">not released</td><td class="mut">not released</td><td class="mut">1</td></tr>
+</tbody></table></div>
+<p class="mut" style="margin:-6px 0 26px">Every model rendered on the same twelve held-out cut depths by the same tools, the released ones re-rendered rather than quoted; <code>code/evaluate/compare.py</code> is the whole of it. GaussianFluent publishes eighteen objects and two of them are ours. The reference count is what each row was both supervised by and scored against, so these are fits, not held-out scores &mdash; section 4.1 separates the two. The cake is the row this work loses.</p>
 
 <div class="grid3">
   <figure>
@@ -172,7 +186,7 @@ analytic spherical cap to 0.14% and sum to the whole exactly, giving grid-based 
 direct interface with no intermediate mesh extraction.
 </p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 2</p><table>
 <thead><tr><th>orange unless stated</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
 <tbody>
 <tr><td>DreamSim to a <em>held-out</em> photograph &darr;</td><td><strong>0.098</strong></td>
@@ -440,7 +454,7 @@ around.</p>
 only through photographs of its exterior. A <em>cuttable representation</em> of \(\Omega\) must
 support three queries, and they are stated first:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 3</p><table>
 <thead><tr><th></th><th>query</th><th>signature</th></tr></thead>
 <tbody>
 <tr><td>Q1</td><td>occupancy and material</td>
@@ -505,7 +519,7 @@ section&nbsp;3.2.2 produces from 759,353, and 894,304 is the same quantity in a 
 level differs; the geometry tables below say which of the two each timing was taken on. No
 appearance result depends on the difference.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 4</p><table>
 <thead><tr><th>symbol</th><th>meaning</th><th>value or domain</th></tr></thead>
 <tbody>
 <tr><td>\(\mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1\)</td><td>the lattice, coarse and fine cells</td><td>\(|\mathcal{V}| = 8.8\times10^5\) on the orange</td></tr>
@@ -637,7 +651,7 @@ $$ \sqrt{r / w} \;\le\; \tau_c\,h, \qquad w = \text{planes the block covers}, $$
 
 <figure>
   <video src="assets/collapse.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption>\(\tau_c\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at \(\tau_c=0\) and 149,031 at \(\tau_c=1\); the surface is the same orange throughout and the rim
+  <figcaption><span class="fnum">Figure 1</span><br>\(\tau_c\) swept from 0 to 1 and back on the orange's exterior. 421,138 nodes at \(\tau_c=0\) and 149,031 at \(\tau_c=1\); the surface is the same orange throughout and the rim
   steps visibly at the end, which is what a coarser node is.</figcaption>
 </figure>
 
@@ -651,7 +665,7 @@ collapse discards rather than a surface-error measure against ground truth; the 
 reproduces the uncollapsed mesh, which is what makes it the reference. All distances are in units
 of \(h\).</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 5</p><table>
 <thead><tr><th>\(\tau_c\)</th><th>nodes</th><th>of uniform</th><th>node&nbsp;&rarr;&nbsp;surface</th><th>surface&nbsp;&rarr;&nbsp;node</th><th>symmetric</th><th>95th</th><th>triangles</th></tr></thead>
 <tbody>
 <tr><td>&minus;1 (identity)</td><td>442,253</td><td>100.0%</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.000</td><td>934,520</td></tr>
@@ -675,7 +689,7 @@ four voxels to the nodes that survived, and with nothing merged that reproduces 
 <p>The two routes are not alternatives to be chosen on preference; each answers a different
 question about what exists before the pipeline starts.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 6</p><table>
 <thead><tr><th>what is available</th><th>route</th><th>why</th></tr></thead>
 <tbody>
 <tr><td>A reconstruction of a real object, with an interior already generated into it</td>
@@ -734,7 +748,7 @@ $$ \mathcal{O}^{\bullet} = \complement\, \mathcal{C}_{\partial}
 component of the complement that reaches the bounding box. What is left is inside by
 construction rather than by a threshold. The count of connected components is the read-out.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 7</p><table>
 <thead><tr><th>object</th><th>coarse cells</th><th>pieces before</th><th>pieces after</th></tr></thead>
 <tbody>
 <tr><td>doughnut</td><td>517,166 &rarr; 522,753 <span class="mut">(+1.1%)</span></td><td>1</td><td><strong>1</strong></td></tr>
@@ -757,7 +771,7 @@ paths are how the lattice gets populated rather than the claim being made; the s
 
 <p>Each step of route 2 replaces an inference with something exact.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 8</p><table>
 <thead><tr><th>step</th><th>what it does</th><th>what it replaces</th></tr></thead>
 <tbody>
 <tr><td>topology</td><td>cells inside a signed-distance field, at two spacings</td>
@@ -822,7 +836,7 @@ rather than 561.</p>
        style="margin-top:14px">
   <img src="assets/route2_watermelon.png" alt="The watermelon's six references and the skinned result"
        style="margin-top:14px">
-  <figcaption><strong>The four side views in the lower row are displayed with the vertical axis
+  <figcaption><span class="fnum">Figure 2</span><br><strong>The four side views in the lower row are displayed with the vertical axis
   inverted; the lattice is not.</strong> The doughnut's icing cells sit at +0.075 along the
   configured upward axis and its crust cells at &minus;0.034. No measurement here reads from these
   renders. For each object, the six references above and the skinned generated topology below,
@@ -1088,7 +1102,7 @@ any of the others in mind.  Ten vertical training planes all contain the object'
 <p>That inconsistency is measurable and it is not small. Taking the axis column of each reference,
 restricted to rows where every section has material, and comparing the references pairwise:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 9</p><table>
 <thead><tr><th>mean absolute disagreement on the shared axis</th><th>the references</th>
 <th>our renders</th><th>removed</th></tr></thead>
 <tbody>
@@ -1970,7 +1984,7 @@ that generates,</p>
 <polygon points="784.77,611.89 782.99,616.13 781.92,612.60" fill="#69c" fill-opacity="0.35" stroke="#036" stroke-width="0.35"/>
 <text x="720.0" y="800.0" font-size="11.5" text-anchor="middle" fill="#111" font-family="inherit">1,729 distinct triangles; planarity residual at machine epsilon; area error 0.09% at h_f</text>
 </svg>
-<figcaption><strong>The closed-form cut, drawn from the geometry that computes it.</strong>
+<figcaption><span class="fnum">Figure 3</span><br><strong>The closed-form cut, drawn from the geometry that computes it.</strong>
 <strong>(a)</strong> a lattice sectioned by \(\Pi\), cells filled by the sign of
 \(\mathbf{n}\cdot\mathbf{x}+d\) and the crossed band outlined by the corner test of (19).
 <strong>(b)</strong> one cell at three orientations, left to right: all twelve edges, the eight
@@ -2021,7 +2035,7 @@ report no numbers for it.</p>
 representation supports in principle, from the constructions cited above rather than from anything
 measured here; only the last row is this work.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 10</p><table>
 <thead><tr><th>representation</th><th>planar cut</th><th>curved cut</th><th>incision that stops</th>
 <th>after the cut</th></tr></thead>
 <tbody>
@@ -2149,7 +2163,7 @@ tetrahedra. Checked against a convex hull on 300 random cubes and planes, the cl
 <p>The ablation, on a ball cut by an oblique plane, comparing uniform
 refinement to adaptive refinement at matched error:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 11</p><table>
 <thead><tr><th>ball, oblique plane</th><th>uniform, leaves</th><th>adaptive, leaves</th>
 <th>fewer</th><th>error</th><th>pieces</th></tr></thead>
 <tbody>
@@ -2160,7 +2174,7 @@ refinement to adaptive refinement at matched error:</p>
 
 <p>And on the orange's own lattice, 894,304 solid cells cut by an oblique off-grid plane:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 12</p><table>
 <thead><tr><th>orange</th><th>leaves</th><th>misclassified volume</th><th>fewer</th></tr></thead>
 <tbody>
 <tr><td>uniform to \(h_c/4\)</td><td>1,380,146</td><td>0.001079</td><td></td></tr>
@@ -2181,7 +2195,7 @@ about before it is trusted.</p>
 
 <figure id="cutstages">
   <img src="assets/cutstages.png" alt="The four states of one cut on the orange's lattice">
-  <figcaption><strong>One cut on the orange, in the four states the operator passes through.</strong>
+  <figcaption><span class="fnum">Figure 4</span><br><strong>One cut on the orange, in the four states the operator passes through.</strong>
   <strong>(a)</strong> one slab of the orange's 758,721 coarse cells, one cell thick in \(z\), and the line in which the
   plane \(\Pi\) meets that slab. <strong>(b)</strong> one crossed cell: a filled corner is
   \(\mathbf{n}\cdot\mathbf{x} + d &gt; 0\), the six thick edges are those whose endpoints disagree,
@@ -2199,7 +2213,7 @@ about before it is trusted.</p>
 
 <figure id="multicut">
   <video src="assets/multicut.mp4" autoplay loop muted playsinline preload="metadata"></video>
-  <figcaption><strong>Three planes on one object, and the pieces the labelling separates.</strong>
+  <figcaption><span class="fnum">Figure 5</span><br><strong>Three planes on one object, and the pieces the labelling separates.</strong>
   The pieces are drawn apart along their own centroids and returned. Applying the three planes one
   after another and applying them at once give the same eight pieces, and the leaf set folds back to
   what it was before the first cut; cuts 2 and 3 add 101,052 and 108,591 leaves to the band while
@@ -2217,7 +2231,7 @@ leaf on either end. That set is the band, which is \(O(N^{2/3})\) of the volume 
 to 10.7% of the cells on the objects here, so the cut's <em>geometry</em> is linear in the crossed cells \(K\) rather
 than in the object \(N\). Labelling is then connected components on the surviving graph.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 13</p><table>
 <thead><tr><th>one cut on the orange, 894,304 solid cells</th><th>seconds</th></tr></thead>
 <tbody>
 <tr><td>labelling as an interpreted union-find, adjacency over every leaf</td><td>13.76</td></tr>
@@ -2400,7 +2414,7 @@ same place as the ones that do not. Comparisons against other work sit on the sa
 footing with one exception, stated in section 4.1: route 1 quantises a released model, and the
 released watermelon's interior came from a fine-tuned checkpoint, so that lattice inherits one.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 14</p><table>
 <thead><tr><th>the comparison</th><th>what it answers</th><th>its figure</th></tr></thead>
 <tbody>
 <tr><td>route 1 against route 2</td><td>cost of a generated topology</td>
@@ -2439,7 +2453,7 @@ without it.</p>
 541,266,069 bytes and the same MD5 as the model route 1 quantises. The two representations can
 therefore be compared on the same object, from the same source file.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 15</p><table>
 <thead><tr><th>watermelon</th><th>FruitNinja, as released</th><th>this work, route 1</th><th></th></tr></thead>
 <tbody>
 <tr><td>primitives / cells</td><td>7,959,789</td><td>1,741,169</td><td><strong>4.6&times; fewer</strong></td></tr>
@@ -2480,7 +2494,7 @@ already exists, and the diffusion model that produced it was fine-tuned on all s
 one included. The comparison is therefore tilted against us: on every fold, ours is the only model
 that has not seen the image it is being measured against.</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 16</p><table>
 <thead><tr><th>orange, transverse DreamSim &darr;, held-out plane <em>and</em> held-out photograph</th>
 <th>ours, that photograph held out</th><th>FruitNinja, released, fine-tuned on it</th>
 <th>ours, trained on all six</th></tr></thead>
@@ -2498,7 +2512,7 @@ that has not seen the image it is being measured against.</p>
 <p><strong>The paired metrics on the same folds.</strong> PSNR, SSIM and LPIPS are computed on the same six folds against the
 same held-out photograph.</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 17</p><table>
 <thead><tr><th>orange, mean over six leave-one-out folds</th><th>PSNR &uarr;</th><th>SSIM &uarr;</th>
 <th>LPIPS &darr;</th><th>DreamSim &darr;</th></tr></thead>
 <tbody>
@@ -2533,7 +2547,7 @@ rather than to reproduce the six images.</p>
 <figure>
   <img src="assets/cutface_zoom.png" alt="A cut face at the same plane, three ways, with the
        interior magnified: a real cut orange, this work, and FruitNinja's released model">
-  <figcaption>The same held-out plane, three ways, with the box magnified beside each section.
+  <figcaption><span class="fnum">Figure 6</span><br>The same held-out plane, three ways, with the box magnified beside each section.
   Both arms rendered the same planes under the same seed, so a row differs only in what filled the
   volume; the left column is a photograph of a real cut orange and is not that plane, since no
   photograph is. What the magnification is for: the difference between a section that has segment
@@ -2544,7 +2558,7 @@ rather than to reproduce the six images.</p>
   </figcaption>
 </figure>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 18</p><table>
 <thead><tr><th>orange, transverse FID &darr;, 100 held-out planes, references in-sample on both sides</th><th></th></tr></thead>
 <tbody>
 <tr><td>FruitNinja, released model, supervised by a diffusion model fine-tuned on this fruit</td><td>102.2</td></tr>
@@ -2562,7 +2576,7 @@ that has not, and the leave-one-out study above has already removed it from our 
 <p>One instrument does not support the result, and it is reported with the rest. FID at six
 references is dominated by its own bias, so we scored the same renders three ways:</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 19</p><table>
 <thead><tr><th>orange, transverse, out-of-sample rows only</th><th>DreamSim &darr;</th><th>FID &darr;</th>
 <th>KID &darr;</th><th>CLIP&#8209;I &uarr;</th><th>CLIP&#8209;T &uarr;</th><th>prec / rec</th></tr></thead>
 <tbody>
@@ -2595,7 +2609,7 @@ way, by 29 points and by about one and a half combined standard deviations.</p>
 <p>Run on every object and every arm, it says the same thing each time, and on the watermelon it
 reverses the one result that had gone against this work:</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 20</p><table>
 <thead><tr><th>DreamSim to the nearest photograph &darr;</th><th>orange</th><th>watermelon</th><th>doughnut</th></tr></thead>
 <tbody>
 <tr><td class="mut">the photographs against each other</td><td class="mut">0.0424</td>
@@ -2671,7 +2685,7 @@ are, at median and tenth-percentile opacity 1.0000.</p>
 
 <figure>
   <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
-       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption>The same slab through the same fruit, four ways, with every primitive drawn at its
+       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure 7</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its
   own footprint: \(\sigma\) for a Gaussian, \(h\) for a cell. GaussianFluent's sits smaller in
   frame because each model is normalised by its own projected radius and its released file carries
   more than the melon. No unpainted percentage is printed under the tiles,
@@ -2687,7 +2701,7 @@ are, at median and tenth-percentile opacity 1.0000.</p>
 transverse cuts at 512&nbsp;px. At this size the released models are close, which is why a single
 image size settles nothing:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 21</p><table>
 <thead><tr><th>unpainted inside the section, own rasteriser, 100 cuts</th><th>watermelon</th><th>orange</th></tr></thead>
 <tbody>
 <tr><td>FruitNinja, released model</td><td>0.21%</td><td>0.90%</td></tr>
@@ -2718,7 +2732,7 @@ which is a small difference and would have been an unfair one. The row above is 
 512&nbsp;px and these are six at each of three sizes; they are separate experiments and the counts
 are given so they are not read as one:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 22</p><table>
 <thead><tr><th>unpainted inside the section, watermelon</th><th>256&nbsp;px</th><th>1024&nbsp;px</th><th>2048&nbsp;px</th></tr></thead>
 <tbody>
 <tr><td>FruitNinja, released model <span class="mut">(3DGS)</span></td><td>0.13%</td><td>0.39%</td><td>2.37%</td></tr>
@@ -2731,7 +2745,7 @@ are given so they are not read as one:</p>
 <figure>
   <img src="assets/zoom2048.png" alt="The same watermelon cut at 2048 px from four representations,
        each with a zoomed crop of the flesh">
-  <figcaption>The same held-out plane at 2048&nbsp;px, each model through its own renderer, with a
+  <figcaption><span class="fnum">Figure 8</span><br>The same held-out plane at 2048&nbsp;px, each model through its own renderer, with a
   300&nbsp;px crop of the flesh magnified on the right. What the coverage numbers are counting is
   visible directly: GaussianFluent's section is mostly the background showing between primitives,
   FruitNinja's is dense but speckled, and this work's own splatted lattice is mottled in the same
@@ -2750,7 +2764,7 @@ cube has by construction at every zoom, and that follows from what a cell is rat
 number that happened to come out well. It is measured on one object at three image sizes, on six
 cuts each, and the other two objects and the intervening sizes are not run.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 23</p><table>
 <thead><tr><th>watermelon</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work, route 1</th><th>route 2</th></tr></thead>
 <tbody>
 <tr><td><strong>primitives / cells</strong></td><td><strong>7,959,789</strong></td><td>1,381,100</td>
@@ -2780,7 +2794,7 @@ cuts each, and the other two objects and the intervening sizes are not run.</p>
 <h4>4.1.2.1&ensp;Then enlarge the Gaussians: what \(\rho\) actually costs</h4>
 
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 24</p><table>
 <thead><tr><th>\(\rho = \sigma/h\)</th><th colspan="2">orange</th><th colspan="2">watermelon</th>
 <th colspan="2">doughnut</th></tr>
 <tr><th></th><th>holes</th><th>blending</th><th>holes</th><th>blending</th><th>holes</th><th>blending</th></tr></thead>
@@ -2903,7 +2917,7 @@ result entropy-coded field by field. For the lattice the cell coordinates are Mo
 delta-coded first, which is the octree compaction a structured representation is open to and a free
 point cloud is not.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 25</p><table>
 <thead><tr><th>watermelon</th><th>as counted</th><th>same codec, compressed</th><th>ratio</th></tr></thead>
 <tbody>
 <tr><td>FruitNinja, released</td><td>425.1 MiB</td><td>58.3 MiB</td><td>7.3&times;</td></tr>
@@ -2933,7 +2947,7 @@ run as three leave-one-out folds instead and the spread across folds is reported
 The released model is re-rendered against each evaluation set in the same batch, because a number
 measured against a different set is not comparable.</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 26</p><table>
 <thead><tr><th>DreamSim to the nearest held-out photograph &darr;</th><th>this work</th><th>FruitNinja, released</th><th class="mut">the held-out photographs against each other</th><th class="mut">train / held out</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td><strong>0.0997</strong></td><td>0.1293</td><td class="mut">0.0551</td><td class="mut">3 / 3</td></tr>
@@ -2950,7 +2964,7 @@ from.</strong> The pomegranate and the cake hold three transverse photographs ea
 trains on two. Both lose on every one of their three folds and the spread across folds is small
 &mdash; 0.013 and 0.023 against gaps of 0.065 and 0.069 &mdash; so this is a stable result and not
 a draw of the evaluation image. Under the earlier protocol, which let them train on all three and
-scored them against the same three, both were ahead at 0.2508 and 0.2816; what changed is the
+scored them against the same three, both were ahead at 0.2625 and 0.3417; what changed is the
 training set, not the method.</p>
 
 <p>The doughnut is scored differently because there is nothing to score it against: the released
@@ -2975,22 +2989,22 @@ longest extent over 125, which is where the two hand-set objects landed. All six
 same way and scored the same way, against that object's own photographs, with the released model it
 was quantised from scored beside it in the same batch.</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="tnum">Table 27</p><table>
 <thead><tr><th>DreamSim to the nearest photograph &darr;</th><th>this work</th>
 <th>FruitNinja, released</th><th class="mut">the photographs against each other</th>
 <th class="mut">supervised by</th><th class="mut">scored against</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td><strong>0.0700</strong></td><td>0.1290</td><td class="mut">0.0424</td>
+<tr><td>orange</td><td><strong>0.0717</strong></td><td>0.1301</td><td class="mut">0.0424</td>
     <td class="mut">6 h + 6 v</td><td class="mut">the same 6 + 6</td></tr>
-<tr><td>watermelon</td><td><strong>0.1783</strong></td><td>0.2328</td><td class="mut">0.0670</td>
+<tr><td>watermelon</td><td><strong>0.1710</strong></td><td>0.2292</td><td class="mut">0.0670</td>
     <td class="mut"><strong>1 h + 1 v</strong></td><td class="mut">20 h + 23 v <strong>(19 of 20 unseen)</strong></td></tr>
-<tr><td>apple</td><td><strong>0.2951</strong></td><td>0.3823</td><td class="mut">0.1653</td>
+<tr><td>apple</td><td><strong>0.2512</strong></td><td>0.3765</td><td class="mut">0.1653</td>
     <td class="mut">9 h + 3 v</td><td class="mut">the same 9 + 3</td></tr>
-<tr><td>pomegranate</td><td><strong>0.2508</strong></td><td>0.2985</td><td class="mut">0.1324</td>
+<tr><td>pomegranate</td><td><strong>0.2625</strong></td><td>0.2968</td><td class="mut">0.1324</td>
     <td class="mut">3 h + 5 v</td><td class="mut">the same 3 + 5</td></tr>
-<tr><td>bread</td><td><strong>0.3685</strong></td><td>0.4949</td><td class="mut">0.1873</td>
+<tr><td>bread</td><td><strong>0.3337</strong></td><td>0.4983</td><td class="mut">0.1873</td>
     <td class="mut">5 h + 5 v</td><td class="mut">the same 5 + 5</td></tr>
-<tr><td>cake</td><td>0.2816</td><td><strong>0.2669</strong></td><td class="mut">0.2677</td>
+<tr><td>cake</td><td>0.3417</td><td><strong>0.2670</strong></td><td class="mut">0.2677</td>
     <td class="mut">3 h + 3 v</td><td class="mut">the same 3 + 3</td></tr>
 </tbody></table></div>
 
@@ -3009,7 +3023,7 @@ the framing argument is strongest both go the other way.</p>
 reference set, not only its own. If the distance were reading colour and framing rather than the
 interior, the six sets would be interchangeable.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 28</p><table>
 <thead><tr><th>renders \ references</th><th>orange</th><th>watermelon</th><th>apple</th><th>pomegranate</th><th>bread</th><th>cake</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td><strong>0.0724</strong></td><td class="mut">0.3984</td><td class="mut">0.4909</td><td class="mut">0.6411</td><td class="mut">0.6393</td><td class="mut">0.6300</td></tr>
@@ -3021,7 +3035,7 @@ interior, the six sets would be interchangeable.</p>
 </tbody></table></div>
 
 <p>The object's own references are the nearest of the six in every row. The diagonal averages
-0.2442 and the off-diagonal 0.5929, a separation of <strong>0.3487</strong> &mdash; 2.8 times the
+0.2442 and the off-diagonal 0.5929, a separation of <strong>0.3487</strong> &mdash; 2.1 times the
 largest margin this work holds over the released model anywhere in the table above. The distance
 is reading the interior. These values are computed over twelve renders per object rather than the
 full forty and sit within 0.008 of the corresponding entries above.</p>
@@ -3032,9 +3046,9 @@ full forty and sit within 0.008 of the corresponding entries above.</p>
 
 <p class="mut">Rendered as one batch: 40 cuts per object, every arm and its baseline together at the same depths, and every arm re-rendered for this table so no value in it comes from an earlier batch. Three of these objects had references on a dark backdrop; the whole set was measured again after they were put on white, because the released model renders on white and was being scored against a black frame. Values elsewhere in this paper come from other batches and differ by up to 0.006 from the same arm here.</p>
 
-<p>The last two columns are not the same quantity and the watermelon is why. Its interior was supervised by a single transverse photograph and a single longitudinal one, and scored against the twenty and twenty-three the repository holds; nineteen of those twenty were never seen. Every other object was scored against the set that supervised it, which is stated below. So the watermelon's row is the one number here that is almost entirely out-of-sample, and it is a win by 1.31&times;.</p>
+<p>The last two columns are not the same quantity and the watermelon is why. Its interior was supervised by a single transverse photograph and a single longitudinal one, and scored against the twenty and twenty-three the repository holds; nineteen of those twenty were never seen. Every other object was scored against the set that supervised it, which is stated below. So the watermelon's row is the one number here that is almost entirely out-of-sample, and it is a win by 1.34&times;.</p>
 
-<p>Five of six, by 1.2 to 1.8 times, and the cake goes the other way. The three we expected to be
+<p>Five of six, by 1.1 to 1.8 times, and the cake goes the other way. The three we expected to be
 hardest are the three that decide what this table is worth. The pomegranate has three transverse references, half the orange's, and an
 interior of packed arils that has no repeating angular pattern for the phase alignment to exploit.
 The loaf and the cake have references in one family only, because their interiors read differently
@@ -3042,7 +3056,7 @@ along the other axis &mdash; a cinnamon swirl is a spiral across the loaf and st
 a layer cake is stripes lengthwise and a single-colour disc across &mdash; so what the volume
 produces in the family it never saw is a prediction rather than a fit.</p>
 
-<p>The cake is the one this work loses, by 0.015, and it loses to the arm it is supposed to beat &mdash; which on this object sits at the photographs' own agreement with each other, 0.2669 against 0.2677, so there is little room above it to be had. Three
+<p>The cake is the one this work loses, by 0.075, and it loses to the arm it is supposed to beat &mdash; which on this object sits at the photographs' own agreement with each other, 0.2670 against 0.2677, so there is little room above it to be had. Three
 longitudinal photographs are the entire supervision, the interior is a stack of horizontal layers,
 and a transverse cut &mdash; which is what this column scores &mdash; is the one section those
 photographs never show. What the lattice produces there is an extrapolation from three images of a
@@ -3053,12 +3067,12 @@ the structure, and the cake is the case where they do not.</p>
 <figure>
   <img src="assets/six_objects.png" alt="Six objects, one held-out plane each: a photograph of a
        real cut of that kind, this work, and the released model each was quantised from">
-  <figcaption>Every object the prior method released, one held-out plane each, all three columns
+  <figcaption><span class="fnum">Figure 9</span><br>Every object the prior method released, one held-out plane each, all three columns
   rendered in one batch at the same depths and with the same settings. The left column is a
   photograph of a real cut of that kind of thing and is not that plane, since no photograph is;
   it is each object's own <code>EVAL_REF</code>, so the cake, the pomegranate and the apple show
   the references after they were moved off the dark backdrop they had been shot on. The cake is
-  the row this work loses, by 0.015: its supervision is three longitudinal photographs and the
+  the row this work loses, by 0.075: its supervision is three longitudinal photographs and the
   plane scored here is transverse, which those photographs never show.</figcaption>
 </figure>
 
@@ -3111,7 +3125,7 @@ variation between references survives in the volume.</p>
 <p><strong>The fit converges, and to the same place.</strong> Every run records the section loss
 and the warp residual for each plane at each iteration.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 29</p><table>
 <thead><tr><th>run</th><th>loss, first</th><th>loss, last</th><th>fall</th><th>sd over the last 20</th><th class="mut">warp residual, first &rarr; last</th></tr></thead>
 <tbody>
 <tr><td>orange, block assignment</td><td>0.2591</td><td>0.1196</td><td>53.8%</td><td>0.0059</td><td class="mut">0.0061 &rarr; 0.0028</td></tr>
@@ -3156,7 +3170,7 @@ explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
   <text x="16" y="150" text-anchor="middle" font-size="12" fill="#333"
         transform="rotate(-90 16 150)">DreamSim to the nearest photograph &#8595;</text>
 </svg>
-<figcaption><strong>What injected rotation costs, on the orange.</strong> Every reference is rotated
+<figcaption><span class="fnum">Figure 10</span><br><strong>What injected rotation costs, on the orange.</strong> Every reference is rotated
 by an angle drawn uniformly from &#177;&#968; before it becomes a target, and the model is retrained.
 The curve rises 8% at &#177;5&#176; and then flattens: &#177;15&#176; costs 9% and &#177;30&#176;
 costs 15%, so tripling the noise past 5&#176; adds seven points. The dashed line is the released
@@ -3178,7 +3192,7 @@ paper starts from the same quantised reconstruction and no seed was varied.</p>
 <p>Two design choices are swept here because each is a parameter the paper had reported a role for
 without measuring it.</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 30</p><table>
 <thead><tr><th>orange</th><th>DreamSim &darr;<br><span class="mut">held-out, same families</span></th>
 <th>cross-family gap &darr;<br><span class="mut">at 45&deg;, neither family supervised</span></th>
 <th>detail &uarr;<br><span class="mut">at 45&deg;, transverse</span></th></tr></thead>
@@ -3228,7 +3242,7 @@ adds structure and disagreement together, and which of the two dominates is a qu
 answer. Models trained on one transverse and one longitudinal photograph, on three of each, and on
 all six of each, all scored against three photographs none of them saw:</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 31</p><table>
 <thead><tr><th>references</th><th>which</th><th>DreamSim to a photograph none saw &darr;</th></tr></thead>
 <tbody>
 <tr><td>12</td><td>all six of each family</td><td>0.0765</td></tr>
@@ -3261,7 +3275,7 @@ matters here rather than a translation: the fit already places a reference insid
 plane renders, so a displaced photograph is put back, while a rotated one puts radial structure at
 an angle the rest of the family does not share.</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 32</p><table>
 <thead><tr><th>rotation \(\pm\psi\) injected into every reference</th><th>DreamSim &darr;</th><th>against control</th></tr></thead>
 <tbody>
 <tr><td>none (control)</td><td>0.0738</td><td>&mdash;</td></tr>
@@ -3284,7 +3298,7 @@ mechanism.</p>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
-  <figcaption><strong>The line two references share, and what the phase choice does to it.</strong>
+  <figcaption><span class="fnum">Figure 11</span><br><strong>The line two references share, and what the phase choice does to it.</strong>
   <strong>(a)</strong> a transverse reference, with the diameter a longitudinal plane at azimuth
   \(a\) cuts it along, at angle \(a + \delta_k\). <strong>(b)</strong> the longitudinal reference
   at that azimuth, with the row at height \(z\) the transverse plane cuts it along. The two are
@@ -3324,7 +3338,7 @@ interpolation. Comparing the colour distributions of the two families' held-out 
 reference-free quantity, since it asks whether the two agree about what the interior is made
 of:</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 33</p><table>
 <thead><tr><th>orange</th><th>gap between the families &darr;</th><th>disagreement on the shared
 axis &darr;</th><th>DreamSim &darr;</th></tr></thead>
 <tbody>
@@ -3362,7 +3376,7 @@ is the mechanism behind a result, that every arm here beats
 FruitNinja on the orange and does not on the watermelon.</div>
 
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 34</p><table>
 <thead><tr><th>orange, 100 cuts per family</th><th>transverse FID &darr;</th>
 <th>transverse KID &darr;</th><th>longitudinal FID &darr;</th><th>longitudinal KID &darr;</th>
 <th>PSNR &uarr;</th><th>SSIM &uarr;</th><th>LPIPS &darr;</th></tr></thead>
@@ -3377,7 +3391,7 @@ FruitNinja on the orange and does not on the watermelon.</div>
     <td class="mut">21.24</td><td class="mut">0.8047</td><td class="mut">0.1815</td></tr>
 </tbody></table></div>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><table>
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 35</p><table>
 <thead><tr><th>watermelon, 100 cuts per family</th><th>transverse FID &darr;</th>
 <th>transverse KID &darr;</th><th>longitudinal FID &darr;</th><th>longitudinal KID &darr;</th>
 <th>PSNR &uarr;</th><th>SSIM &uarr;</th><th>LPIPS &darr;</th></tr></thead>
@@ -3419,7 +3433,7 @@ hundred; the two tables are internally consistent and should not be read across.
 <figure>
   <img src="assets/prior_or.png" alt="Held-out transverse cuts of the orange from three arms of
        this work, FruitNinja's released model, and the photographs">
-  <figcaption>The same six held-out transverse planes of the orange, rendered from every model,
+  <figcaption><span class="fnum">Figure 12</span><br>The same six held-out transverse planes of the orange, rendered from every model,
   with the photographs underneath. FruitNinja's released model runs saturated and its pith ring is
   brighter and thinner than any photograph. The row below it is the same pipeline with the stock
   checkpoint in place of the fine-tuned one and nothing else changed, which is the reproduction
@@ -3431,7 +3445,7 @@ hundred; the two tables are internally consistent and should not be read across.
 <figure>
   <img src="assets/prior_wm.png" alt="Held-out transverse cuts of the watermelon from two routes,
        FruitNinja's released model, and the photographs">
-  <figcaption>The same for the watermelon, with GaussianFluent's own released model in the fourth
+  <figcaption><span class="fnum">Figure 13</span><br>The same for the watermelon, with GaussianFluent's own released model in the fourth
   row. FruitNinja's resolves fewer seeds than ours and softens the ones it keeps. GaussianFluent's
   is a different fruit, cut in a frame whose upright axis is not published and which we chose in
   its favour: its rind and pith read thicker than any photograph and its seeds smear along one
@@ -3447,7 +3461,7 @@ construction to measure; a splatted interior draws whatever primitives lie near 
 none, which is the difference this paper is about and not a number it can report on their
 behalf.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 36</p><table>
 <thead><tr><th>dimension</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work</th><th>&sect;</th></tr></thead>
 <tbody>
 <tr><td>primitives or cells</td><td>7,959,789</td><td>1,381,100</td><td><strong>1,065,856</strong></td><td>4.1.1</td></tr>
@@ -3505,7 +3519,7 @@ through &mdash; not the finer grid particles are seeded on, against which these 
 four to six times larger, since the filling grid is set per object: 0.01 for the watermelon and
 0.00625 for the orange.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 37</p><table>
 <thead><tr><th>object</th><th>shell thickness</th><th>in fine cells</th><th>in MPM grid cells</th><th>a stiffness contrast is</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td>0.01910</td><td>3.2</td><td><strong>0.31</strong></td><td>not resolvable</td></tr>
@@ -3519,7 +3533,7 @@ four to six times larger, since the filling grid is set per object: 0.01 for the
 number passed to the builder rather than a property of someone else's model. The criterion is evaluated against the grid the solver integrates on, \(\Delta x = 3.2/80\), not
 the finer grid particles are seeded on. Building the doughnut at four settings:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 38</p><table>
 <thead><tr><th>\(\beta\), fine cells</th><th>cells</th><th>measured thickness</th><th>in MPM grid cells</th><th></th></tr></thead>
 <tbody>
 <tr><td>3 <span class="mut">(the default)</span></td><td>1,129,008</td><td>4.1</td><td><strong>0.29</strong></td><td>no</td></tr>
@@ -3536,7 +3550,7 @@ separately for the cells the field called skin and the ones it called interior. 
 its own extent and lets the interior lose more, so the sign of the gap between them is the
 question, not its size.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 39</p><table>
 <thead><tr><th>doughnut, at deepest compression</th><th>shell, in grid cells</th><th>skin extent</th><th>interior extent</th><th>interior &minus; skin</th></tr></thead>
 <tbody>
 <tr><td>\(\beta = 3\), falling</td><td>0.29</td><td>0.9220</td><td>0.9259</td><td><strong>+0.0040</strong></td></tr>
@@ -3556,7 +3570,7 @@ resolved shell. The control that separates these is the uniform preset at both \
 code ships for exactly this purpose. It has now been run, with the level labels present so that the
 same per-level extent is recorded, and only the stiffness made uniform. The field swept here is not equation&nbsp;(23). It is a two-rule preset that assigns a shell and an interior stiffness directly, and its shell value of \(8.0\times10^6\ \mathrm{Pa}\) is above equation&nbsp;(23)'s ceiling of \(5\times10^6\). What the sweep tests is whether a stiffness contrast survives the transfer at a given band width, not the mapping of section 3.5.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 40</p><table>
 <thead><tr><th>doughnut, extent gap (interior &minus; skin) at the last frame</th>
 <th>\(\beta = 3\)</th><th>\(\beta = 7\)</th></tr></thead>
 <tbody>
@@ -3591,7 +3605,7 @@ plane at signed distance \(t\) from the centre of a ball of radius \(R\) cuts a 
 volume. Both sides are compared at four offsets and three spacings, on the same oblique off-grid
 plane used elsewhere.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 41</p><table>
 <thead><tr><th>ball radius in cells</th><th>\(t/R = 0\)</th><th>0.25</th><th>0.50</th><th>0.75</th>
 <th>pieces sum to the whole</th></tr></thead>
 <tbody>
@@ -3626,7 +3640,7 @@ grow with separation and nothing in the construction forces it to.</p>
 <figure>
   <img src="assets/collision.png" alt="A slab through the contact region, particles coloured by
        what the collision test says about them, at four separations">
-  <figcaption>A slab through the contact region of the cut orange, every particle drawn as what
+  <figcaption><span class="fnum">Figure 14</span><br>A slab through the contact region of the cut orange, every particle drawn as what
   the test says about it: grey for outside the other piece, orange for claimed by occupancy alone,
   red for still claimed once the sign test against \(\Pi\) is applied. Which piece a particle
   belongs to is decided by the plane and not by the leaf it sits in, because asking whether a
@@ -3636,7 +3650,7 @@ grow with separation and nothing in the construction forces it to.</p>
   it in proportion, which is what makes this a contact test rather than a coincidence.</figcaption>
 </figure>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 42</p><table>
 <thead><tr><th>object</th><th>particles <span class="mut">(one per route&nbsp;2 cell)</span></th><th>solid cells <span class="mut">(route&nbsp;1)</span></th><th>at rest, occupancy alone</th>
 <th>with the plane test</th><th>pushed 1 / 2 / 4 cells in</th></tr></thead>
 <tbody>
@@ -3660,7 +3674,7 @@ whatever the solver does to them, including deformations no rigid transform can 
 
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption>One piece under a non-affine deformation, its surface bound to the particles, and
+  <figcaption><span class="fnum">Figure 15</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
   the same particles driving it two ways: a per-piece rigid fit on the left, which is the best a
   single transform can do, and the particle binding on the right, both coloured by how far
   each vertex has left its material on one shared scale: blue at 0.00 fine cells, red at 2.00 and
@@ -3681,7 +3695,7 @@ convex polygon, obtained by intersecting the plane with the cell's twelve edges 
 A method whose cut face is determined by the primitives near the plane does not define these
 quantities, so neither can be reported for it.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 43</p><table>
 <thead><tr><th>ball, radius in cells</th><th>plane</th><th>cut area</th><th>\(\pi r^2\)</th>
 <th>area error</th><th>worst vertex off the plane</th></tr></thead>
 <tbody>
@@ -3712,7 +3726,7 @@ edge&ndash;plane intersection solved from the plane equation, so the residual
 \(|\mathbf{n}\cdot\mathbf{v}+d|\) is at machine precision on an oblique off-grid plane rather
 than at a tolerance. Area: the error against the closed form falls from 0.97% at six cells of radius to 0.09% at forty-eight. Gaps and manifoldness: a cut face is a 2-manifold <em>with boundary</em> &mdash; a disc for a convex object, an annulus for the doughnut cut across its axis &mdash; interior edges shared by exactly two triangles, and a rim of edges belonging to one. On the orange, cut axis-aligned and obliquely, that is what it is:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 44</p><table>
 <thead><tr><th>orange, one cut</th><th>distinct triangles</th><th>edges used twice</th><th>edges used once</th><th>edges used more than twice</th></tr></thead>
 <tbody>
 <tr><td>axis-aligned</td><td>85,960</td><td>128,430</td><td>1,020</td><td><strong>0</strong></td></tr>
@@ -3732,7 +3746,7 @@ assertion. Each operation is timed as it is used rather than in a microbenchmark
 cut on a whole object, and the collision query is against the number of particles the solver
 actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 45</p><table>
 <thead><tr><th>operation</th><th>time</th><th>rate</th></tr></thead>
 <tbody>
 <tr><td>read the model from disk</td><td>23.7&nbsp;ms</td><td></td></tr>
@@ -3753,7 +3767,7 @@ actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 supplement, and they are different operations on different lattices, so every one of them is
 set out together here rather than left to be reconciled.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 46</p><table>
 <thead><tr><th>what was timed</th><th>lattice</th><th>seconds</th><th>where</th></tr></thead>
 <tbody>
 <tr><td>refine the band and label the pieces, adjacency rebuilt over every leaf</td>
@@ -3776,7 +3790,7 @@ the end of this section.</p>
 
 <p><strong>What the cost scales with.</strong> The labelling itself is linear in the leaves the cut touches, but the implementation is not: adjacency is rebuilt and the component structure allocated over every leaf, so the measured cost follows the object rather than the band. The cost is flat against the total and rises against the band:</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 47</p><table>
 <thead><tr><th>ball, cells</th><th>ms per 1000 cells</th><th>ms per 1000 band leaves</th></tr></thead>
 <tbody>
 <tr><td>17k</td><td>0.0091</td><td>0.0185</td></tr>
@@ -3809,7 +3823,7 @@ published models is therefore almost entirely in <em>how many things there are</
 each one costs, and on an object whose lattice is mostly fine cells it can vanish. None of these
 figures is measured against a compressed Gaussian model, which would move them again.</p>
 
-<div class="tw"><table>
+<div class="tw"><p class="tnum">Table 48</p><table>
 <thead><tr><th>orange</th><th>as Gaussians</th><th>as cube cells</th><th>a cut, while live</th><th>folded back</th></tr></thead>
 <tbody>
 <tr><td>route 1, 877,494 cells</td><td>46.9 MiB</td>
