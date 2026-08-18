@@ -9,9 +9,11 @@ git clone https://github.com/gino6178/project3.git && cd project3
 bash code/setup.sh ./worktree         # lays code/ and data/ out as one tree
 bash code/fetch.sh ./worktree         # the released reconstructions, too large for a git repo
 
+bash code/bootstrap.sh ./build         # the interpreter and the two CUDA extensions
+
 export FN_ROOT=$PWD/worktree
-export GS_ROOT=/path/to/gaussian-splatting   # built, with diff_gaussian_rasterization
-export FN_PY=/path/to/python                 # torch, taichi, warp
+export GS_ROOT=$PWD/build/gaussian-splatting
+export FN_PY=$PWD/build/mc/envs/fn/bin/python
 
 bash code/run.sh orange               # or: watermelon apple bread cake pomegranate doughnut
 ```
@@ -107,9 +109,14 @@ builds one from nothing but the shape.
 
 ## What is not here
 
-`gaussian-splatting` supplies `scene`, `gaussian_renderer` and the CUDA rasteriser; point
-`GS_ROOT` at it. The released reconstructions are the six models FruitNinja published and come
-from `fetch.sh`.
+`gaussian-splatting` supplies `scene` and `gaussian_renderer`, and it has to be **FruitNinja's
+fork**, `fanguw/gaussian-splatting`: the pipeline calls `GaussianModel.load_ply_zero_sh`, which
+is only there. That fork carries no submodules, so `diff_gaussian_rasterization` and `simple_knn`
+are built from upstream, whose rasteriser API its renderer is written against. `bootstrap.sh`
+does both, along with the parts that are not guessable -- torch 2.0.1 on **cu118**, because CUDA
+11.7 cannot target sm_89 and an L40 is Ada, and `setuptools<70`, because the rasteriser's
+`setup.py` imports `pkg_resources`. The released reconstructions are the six models FruitNinja
+published and come from `fetch.sh`.
 
 ## Scoring
 

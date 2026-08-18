@@ -188,7 +188,9 @@ def main(ply, out_dir, refine=2, target_cells=0, coarse_dx=0.0, skin_frac=0.0):
     print(f"{ply}")
     print(f"  primitives {xyz.shape[0]:,}   vertical axis "
           f"{[round(float(v),3) for v in up]}")
-    print(f"  coarse dx {coarse:.6f}   fine dx {fine:.6f}   skin starts at r/R {frac:.2f}")
+    # Not "skin starts at r/R", which this used to print: nothing starts there any more, and
+    # reading that line is enough to doubt whether the occupancy rule above is the one running.
+    print(f"  coarse dx {coarse:.6f}   fine dx {fine:.6f}")
 
     p0, s0, o0, c0, r0 = merge(xyz[~skin], sh[~skin], op[~skin], sc[~skin], ro[~skin],
                                coarse, origin)
