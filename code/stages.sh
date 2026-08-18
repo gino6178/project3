@@ -64,6 +64,13 @@ stage_lattice () {
     return
   fi
   case "$SRC" in
+    sphere|torus|ellipsoid)
+      # A shape with an equation needs no mesh and no scan: occupancy is a comparison. This is
+      # the second route's actual starting point, and until now nothing called make_shape.py --
+      # the doughnut pointed at a lattice directory built from a torus.obj that is not on disk
+      # and never was in this repository, so `run.sh doughnut` could not work for anyone.
+      say "generating a $SRC lattice at dx $COARSE_DX"
+      $PY "$HERE/src/make_shape.py" "$SRC" "$dst" --dx "$COARSE_DX" --refine 2 ${SHAPE_ARGS:-} ;;
     *.obj|*.stl|*.glb|*.gltf)
       say "meshing $SRC to a two-level lattice"
       $PY "$HERE/src/mesh_to_voxel.py" "$SRC" "$dst" "${CELLS:-600000}" 2 ;;
