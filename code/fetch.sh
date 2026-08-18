@@ -9,12 +9,16 @@
 #
 #   released.tar        the six reconstructions FruitNinja published, ~1.6 GB. Needed to build
 #                       a lattice from scratch; run.sh quantises them.
-#   trained_v2.tar      the seven models this work trained, ~380 MB, and the two small tensors
+#   trained_v3.tar      the seven models this work trained, ~430 MB, and the two small tensors
 #                       per object that say what lattice each was trained on. With these,
 #                       `run.sh OBJECT eval` scores without retraining and
 #                       `figures/draw_cuts.sh` redraws the animation at the top of the page.
-#   trained.tar         superseded. The models before the exterior was fixed; kept so the
-#                       earlier numbers on the page can still be checked.
+#                       These are the models the page shows.
+#   trained_v2.tar      superseded: the same models on a lattice whose levels came from a
+#                       radius rather than from the occupancy.
+#   trained.tar         superseded: before the exterior was fixed at all. Both are kept so the
+#                       earlier numbers on the page can still be checked against the models
+#                       that produced them.
 #   lattices.tar        the six quantised lattices, ~640 MB. Only needed to skip the minutes
 #                       run.sh spends rebuilding them; trained_v2 carries the metadata alone.
 set -eu
@@ -22,7 +26,7 @@ set -eu
 REPO=${REPO:-gino6178/project3}
 TAG=${TAG:-v1-inputs}
 DEST=${1:-$(cd "$(dirname "$0")/../.." && pwd)/worktree}
-WANT=${WANT:-released trained_v2}
+WANT=${WANT:-released trained_v3}
 
 mkdir -p "$DEST"
 cd "$DEST"
