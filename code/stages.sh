@@ -158,10 +158,12 @@ stage_eval () {
   HELDOUT_BAND=0.30,0.70 FULL_SH=1 \
     $PY "$HERE/src/random_cuts.py" "$RUN/orange_demo_epoch_$((ITERS-1)).ply" \
        "$CFG" "$DEMO" "eval_$RUN" 12
-  # Score against the photographs, not against what training was shown. They are different
-  # sets and conflating them is not a small error: the watermelon trains against one shared
-  # reference, so FID would have been computed against a single image -- KID refuses outright,
-  # which is how this was found, and FID would have returned a number.
+  # Score against EVAL_REF, which every object here now points at the same photographs training
+  # was shown -- so these are fits, not held-out scores, and evaluate/README.md says so per
+  # object rather than leaving it to be assumed. The variable stays separate because the
+  # distinction is real and was once used: when the watermelon trained against one shared
+  # reference, FID here would have been computed against a single image. KID refused outright,
+  # which is how that was found, and FID would have returned a number.
   $PY "$HERE/src/fid_eval.py" "${EVAL_REF:-$REF_H}" "eval_$RUN"/rh*_init_0.png
   $PY "$HERE/src/clip_eval.py" "$CLIP_PROMPT" "eval_$RUN"/rh*_init_0.png
 }
