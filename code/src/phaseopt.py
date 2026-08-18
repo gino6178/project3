@@ -15,7 +15,7 @@ exact for each coordinate and monotone overall.
 
     python phaseopt.py H_DIR V_DIR [n_angles]
 """
-import glob, os as _os, sys
+import glob, os as _os, sys, time as _time
 os = _os
 import numpy as np
 from PIL import Image
@@ -109,6 +109,25 @@ def main(hd, vd):
     c0 = cost(H, V, greedy, zs, azs)
     print(f"  no alignment                {c_none:.5f}")
     print(f"  pipeline's greedy alignment {c0:.5f}")
+    # Whether to go on at all. The sweep evaluates `cost` 4 x |H| x NA times and each call
+    # compares every horizontal against every vertical, so the work grows as |H|^2 |V| -- the
+    # orange's six and seven come to 252 units and the watermelon's twenty and twenty-three to
+    # 9,200, thirty-six times more, and the watermelon sat in this loop for thirty-five minutes
+    # having printed nothing. Equation (11)'s greedy alignment, already computed above, is the
+    # fallback the page describes and sds_demo takes when there is no phase_opt.npz.
+    #
+    # Timed rather than counted, so the rule needs no constant per object and none per machine:
+    # measure the call that was just made, project the sweep, and stop if the projection exceeds
+    # the budget.
+    t0 = _time.time(); cost(H, V, greedy, zs, azs); per = _time.time() - t0
+    projected = 4 * len(H) * NA * per
+    budget = float(os.environ.get("PHASE_BUDGET_S", "900"))
+    print(f"  one evaluation {per*1000:.0f} ms, sweep projected at {projected/60:.1f} min "
+          f"(budget {budget/60:.0f})")
+    if projected > budget:
+        print(f"  too large to solve jointly: {len(H)} x {len(V)} references. Equation (11)'s "
+              f"greedy alignment stands, and nothing is written.")
+        return
     ph = greedy.copy()
     for sweep in range(4):
         moved = 0.0
