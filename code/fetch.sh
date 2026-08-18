@@ -31,7 +31,10 @@ TAG=${TAG:-v1-inputs}
 DEST=${1:-$(cd "$(dirname "$0")/../.." && pwd)/worktree}
 WANT=${WANT:-released trained_v3}
 
-mkdir -p "$DEST"
+# Absolute, before anything cds: the untar below names $DEST as its target directory *after*
+# this cd, so a relative DEST -- which is what the README's own example passes -- resolves
+# against the wrong place and tar exits with "worktree: Cannot open".
+DEST=$(mkdir -p "$DEST" && cd "$DEST" && pwd)
 cd "$DEST"
 for a in $WANT; do
   # Not ours to redistribute: the comparison arms come from the GaussianFluent authors' own
