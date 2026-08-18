@@ -251,7 +251,8 @@ def _ray_coords(mask, nb_a=1440, smooth_deg=None):
     return (cy, cx), lift(ci), lift(co)
 
 
-RIND_MATCH = os.environ.get("SEC_RIND_MATCH", "1") == "1"
+# Off, because it was measured and it does not do what it was written to do. See _rind_edge.
+RIND_MATCH = os.environ.get("SEC_RIND_MATCH", "0") == "1"
 # How far the middle has to sit from the rim in colour before there is a layer to match at
 # all. Measured on the section references of all seven: the watermelon reads 0.83 and 0.48,
 # the doughnut's transverse 0.72, the orange 0.14 to 0.33, the loaf 0.16, and the doughnut's
@@ -273,8 +274,13 @@ def _band_profile(a, mask, ri, ro, cy, cx, nb_s=64):
     r = np.hypot(ys - cy, xs - cx)
     s = np.clip((r - ri[ai]) / np.maximum(ro[ai] - ri[ai], 1e-6), 0.0, 1.0)
     b = np.clip((s * nb_s).astype(np.int64), 0, nb_s - 1)
-    tot = np.zeros((nb_s, a.shape[2])); cnt = np.zeros(nb_s)
-    np.add.at(tot, b, a[ys, xs]); np.add.at(cnt, b, 1.0)
+    # bincount, not np.add.at: the same sum over a quarter of a million pixels, and the
+    # unbuffered version costs more than the map it is supporting -- 126 ms of the 216 this
+    # added per target, against 90 for the map itself.
+    v = a[ys, xs]
+    cnt = np.bincount(b, minlength=nb_s).astype(np.float64)
+    tot = np.stack([np.bincount(b, weights=v[:, c], minlength=nb_s)
+                    for c in range(v.shape[1])], axis=1)
     ok = cnt > 0
     if not ok.any():
         return None, None
@@ -373,16 +379,25 @@ def _same_topology_map(comp, a_ref, m_ref, a_dst=None):
     nb = dri.shape[0]
     ai = np.clip(((th + np.pi) / (2 * np.pi) * nb).astype(np.int64), 0, nb - 1)
     s = np.clip((r - dri[ai]) / np.maximum(dro[ai] - dri[ai], 1e-6), 0.0, 1.0)
-    # Match the layers, not just the outline. The map above is the identity in `s`, so it
-    # aligns the two boundaries and then leaves every reference sitting at whatever radius its
-    # own layers happened to fall at. The reference sets are photographs of different fruit:
-    # measured across the watermelon's six, the peel runs from 2% to 25% of the radius, so the
-    # cell at 0.9R is told it is flesh by one reference and peel by another. The lattice cannot
-    # satisfy both and settles on the average, which is the soft red-to-white gradient the
-    # sections show instead of a rind. Moving one knot puts each reference's rind onto the rind
-    # the render actually has, which is the pinned exterior and therefore the ply's own, and the
-    # references stop contradicting each other in the radial direction. It is the same
-    # correction the phase alignment makes around the section and for the same reason.
+    # An attempt to match the layers and not just the outline, kept off and kept here because
+    # what it measures is worth knowing. The map above is the identity in `s`, so it aligns the
+    # two boundaries and leaves each reference's layers at whatever radius they fell at, and
+    # across the watermelon's twenty transverse photographs that radius runs from 0.805 to
+    # 0.961 -- five to one in peel thickness. Moving one knot onto the render's own boundary
+    # does align that number, trivially, because it is the number the knot sets.
+    #
+    # It does not make the references agree, which is the only reason to want it. Measured as
+    # the spread between nineteen references mapped onto one shape, per band of radius: the
+    # flesh is unchanged to within 0.002 and the outer band gets worse, 0.0723 to 0.0908 at
+    # 0.75-0.81 and 0.107 to 0.144 at the rim. The cause is visible in the targets -- a
+    # watermelon's outside is two layers, pith and skin, in proportions that vary as much as
+    # the total does, and one knot lands on the pith boundary in one photograph and the skin
+    # boundary in another. Aligning the colour path by arc length instead needs no boundary at
+    # all and recovers 2%: 0.0700 to 0.0684 in the flesh.
+    #
+    # 2% is the size of the effect. What the references disagree about is colour, everywhere at
+    # once and by 0.07, because they are photographs of different fruit -- and no radial
+    # reparametrisation reaches that.
     if RIND_MATCH and a_dst is not None:
         s_src, e_src = _rind_edge(a_ref, m_ref, sri, sro, scy, scx)
         s_dst, e_dst = _rind_edge(a_dst, comp, dri, dro, dcy, dcx)

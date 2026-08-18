@@ -48,14 +48,16 @@ training rather than averaged away by it.
 | | what disagrees | what is done |
 |---|---|---|
 | around the section | the cut angle each photograph happened to have | `stage_phases` solves the rotations and the assignment of photographs to depths together, equation (27), and writes the result beside the references. `sds_demo` falls back to the greedy per-family alignment of (11) when it is absent, so the stage is safe to skip. |
-| across the section | where each fruit's own peel ended | `section_match` moves one knot in the ray coordinate so every reference's rind lands on the rind the render actually has, which is the pinned exterior and therefore the ply's own. |
+| across the section | where each fruit's own peel ended | nothing, on measurement. `section_match` can move one knot in the ray coordinate so every reference's rind lands on the render's own (`SEC_RIND_MATCH=1`), and it is off: it aligns the boundary by construction without making the references agree, and makes the outer band worse. See the note in `src/section_match.py`. |
 
-The second matters because the peel runs from 3.9% to 19.5% of the radius across the
-watermelon's twenty transverse photographs: without it a trainable cell at 0.85R is told it is
-flesh by one photograph and peel by another, and the lattice settles between them. It applies
-only where there is a layer to match, which it decides from the reference itself -- the
-watermelon reads 0.83, the orange 0.27, the loaf 0.17, and the doughnut, dough throughout, is
-left alone on both of its sections.
+The second looked like it should matter -- the peel runs from 3.9% to 19.5% of the radius
+across the watermelon's twenty transverse photographs -- and measurement says it does not.
+Aligning it changes the spread between references by 0.002 in the flesh and makes the outer
+band worse, because a watermelon's outside is two layers in proportions that vary as much as
+the total does. Aligning the whole colour path by arc length instead, which needs no boundary,
+recovers 2%. What the references disagree about is colour, everywhere at once and by 0.07,
+because they are photographs of different fruit; the first row above removes a disagreement
+that is a function of the rotations alone, and there is no equivalent in the radial direction.
 
 ## What counts as the surface
 
