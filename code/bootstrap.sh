@@ -130,6 +130,23 @@ $SPY -c "import dreamsim" 2>/dev/null || {
         opencv-python-headless pillow
 }
 
+# --- the dual-grid exterior ---------------------------------------------------------------
+# TRELLIS.2's o-voxel, which `figures/globalovox.py` and `figures/ovoxel.py` hand the boundary
+# mesh to. It is a public Microsoft repository and it was reached through a hard-coded path to a
+# checkout on one machine -- so the dual-grid exterior the contributions claim could not be built
+# from this repository at all. TRELLIS2_ROOT is the variable those two files read.
+if [ ! -d "$R/TRELLIS.2/o-voxel" ]; then
+  step "TRELLIS.2 o-voxel, for the dual-grid exterior"
+  git clone -q --depth 1 https://github.com/microsoft/TRELLIS.2.git "$R/TRELLIS.2"
+fi
+if ! ls "$R"/TRELLIS.2/o-voxel/build/lib.*/o_voxel/_C*.so >/dev/null 2>&1; then
+  step "building o-voxel (a CUDA extension, same toolchain as the rasteriser)"
+  ( cd "$R/TRELLIS.2/o-voxel" && $PY setup.py build_ext --inplace > "$R/ovoxel_build.log" 2>&1 \
+      || $PY setup.py build > "$R/ovoxel_build.log" 2>&1 ) || \
+    echo "  o-voxel did not build; see $R/ovoxel_build.log. Everything except the dual-grid" \
+         "exterior still works."
+fi
+
 step "check"
 $PY - <<'PYEOF'
 import torch, taichi, warp, diff_gaussian_rasterization, cv2, scipy, trimesh

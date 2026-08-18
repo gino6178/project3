@@ -15,6 +15,7 @@ export FN_ROOT=$PWD/worktree
 export GS_ROOT=$PWD/build/gaussian-splatting
 export FN_PY=$PWD/build/mc/envs/fn/bin/python
 export FN_PY_SCORE=$PWD/build/mc/envs/score/bin/python   # only code/evaluate needs this
+export TRELLIS2_ROOT=$PWD/build/TRELLIS.2                # only the dual-grid exterior needs this
 
 bash code/run.sh orange               # or: watermelon apple bread cake pomegranate doughnut
 ```
