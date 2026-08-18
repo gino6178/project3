@@ -110,10 +110,6 @@
 </nav>
 
 <div class="cutstrip"><video src="assets/cut_orange.mp4" autoplay loop muted playsinline preload="metadata" aria-label="orange, cut into pieces and drawn apart"></video><video src="assets/cut_watermelon.mp4" autoplay loop muted playsinline preload="metadata" aria-label="watermelon, cut into pieces and drawn apart"></video><video src="assets/cut_apple.mp4" autoplay loop muted playsinline preload="metadata" aria-label="apple, cut into pieces and drawn apart"></video><video src="assets/cut_pomegranate.mp4" autoplay loop muted playsinline preload="metadata" aria-label="pomegranate, cut into pieces and drawn apart"></video><video src="assets/cut_bread.mp4" autoplay loop muted playsinline preload="metadata" aria-label="bread, cut into pieces and drawn apart"></video><video src="assets/cut_cake.mp4" autoplay loop muted playsinline preload="metadata" aria-label="cake, cut into pieces and drawn apart"></video><video src="assets/cut_doughnut.mp4" autoplay loop muted playsinline preload="metadata" aria-label="doughnut, cut into pieces and drawn apart"></video></div>
-<p class="mut" style="text-align:center;margin:-18px 0 26px">Every object the method was
-run on, cut by three planes and drawn apart. Six take their outside from a released
-reconstruction and the doughnut from six generated views; in all seven only the interior
-was ever trained, and none of these cut faces was supervised.</p>
 
 <div class="tw"><p class="tnum">Table 1</p><table>
 <thead><tr><th>DreamSim to the nearest reference &darr;</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th><th class="mut">references</th></tr></thead>
@@ -126,27 +122,9 @@ was ever trained, and none of these cut faces was supervised.</p>
 <tr><td>pomegranate</td><td><strong>0.2625</strong></td><td>0.2968</td><td class="mut">not released</td><td class="mut">3</td></tr>
 <tr><td>doughnut</td><td><strong>0.0966</strong></td><td class="mut">not released</td><td class="mut">not released</td><td class="mut">1</td></tr>
 </tbody></table></div>
-<p class="mut" style="margin:-6px 0 26px">Every model rendered on the same twelve held-out cut depths by the same tools, the released ones re-rendered rather than quoted; <code>code/evaluate/compare.py</code> is the whole of it. GaussianFluent publishes eighteen objects and two of them are ours. The reference count is what each row was both supervised by and scored against, so these are fits, not held-out scores &mdash; section 4.1 separates the two. The cake is the row this work loses.</p>
 
-<div class="grid3">
-  <figure>
-    <video src="assets/ovox_orange.mp4" autoplay loop muted playsinline preload="metadata"></video>
-    <div class="cap">orange</div>
-  </figure>
-  <figure>
-    <video src="assets/ovox_watermelon.mp4" autoplay loop muted playsinline preload="metadata"></video>
-    <div class="cap">watermelon</div>
-  </figure>
-  <figure>
-    <video src="assets/ovox_doughnut.mp4" autoplay loop muted playsinline preload="metadata"></video>
-    <div class="cap">doughnut</div>
-  </figure>
-</div>
 
-<p class="mut" style="text-align:center;margin-top:-10px">Three planes, eight pieces, drawn apart
-and back. Each object is a cube volume drawn as the faces of its own cells &mdash; no dual grid and
-no Gaussian anywhere in the picture. The pieces come from connected-component labelling on the
-lattice, and the colour on every exposed face is read from the volume that was already there.</p>
+
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
