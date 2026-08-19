@@ -811,7 +811,7 @@ photographs measured against each other. Nothing in that spread is a result.</p>
 unaligned references is section S3.1, and it is the axis the paper's main claim rests on.
 <strong>Geometric precision of the cut face</strong> &mdash; planarity, area error, unpainted
 fraction, absence of gaps &mdash; is sections 4.1.2 and 4.3.2. <strong>Storage and runtime</strong>
-is section S3.3, and it contains a result in each direction: contact queries run at 4.9 million per
+is section S3.3, and it contains a result in each direction: contact queries run at 5.2 million per
 second, and a cut takes seconds rather than milliseconds. <strong>Physics</strong> is section S3.2,
 and it is the axis that is not filled: contact is measured and a resolvability criterion is derived
 and swept, but there is no comparison against a reference solver, no deformation or stress error, no
@@ -965,13 +965,15 @@ separates them by most and is the instrument this paper reads.</p>
 <p>Two things follow, and the second is the one the objection was about. The first is the margin:
 <strong>1.53 times</strong> closer to a photograph our model was not allowed to fit and theirs was,
 winning on all six folds individually and by more than the fold-to-fold spread of either column.
-The second is the third column. Holding the photograph out costs <strong>0.0044</strong> of
+The second is the third column. Holding the photograph out costs <strong>0.0191</strong> of
 DreamSim &mdash; 0.1006 against 0.0815, on the same references and the same procedure, the only
-difference being whether the run had seen the image. That is less than half the spread across
-folds, and the gap it has to explain is 0.052. A representation that was storing its references
-would not behave this way: removing one of six references from a memoriser costs it that
-reference, and here it costs 8% of a margin. The six images are being used to learn the fruit
-rather than to reproduce the six images.</p>
+difference being whether the run had seen the image. That is 1.6 times the spread across
+folds, against a gap to the baseline of 0.047 &mdash; so the sixth photograph is worth 41% of that
+margin, not 8%. This is a weaker statement than the one that stood here, which followed from a
+subtraction that was wrong: 0.1006 against 0.0815 is 0.0191 and not 0.0044. What survives is that
+the fold-trained models still beat a generator fine-tuned on the photograph being scored, on every
+fold; what does not survive is the claim that a reference is nearly free, and with it the argument
+that the volume cannot be storing its references.</p>
 
 <figure>
   <img src="assets/cutface_zoom.png" alt="A cut face at the same plane, three ways, with the
@@ -2217,7 +2219,7 @@ the end of this section.</p>
 <p>Each ball is cut by one oblique plane. Reusing the adjacency outside the band is what took a cut on the orange from 13.76 to 2.91&nbsp;s, and taking the rest of the way to a cost proportional to the band is open.</p>
 
 <p>The two halves of the claim come apart here and both are reported. Contact is cheap as claimed:
-a floor division and a table lookup run at 4.9 million queries per second against the solver's own
+a floor division and a table lookup run at 5.2 million queries per second against the solver's own
 particle set, which is what makes physics on this representation practical. <strong>Cutting is
 not interactive.</strong> A cut costs about eleven seconds end to end at this resolution, dominated
 by refining the band and by emitting one polygon per crossed cell. The geometry is linear in the crossed cells; the implementation's total cost is not, and the scaling measurement below separates the two; an adaptive refinement of the band and a GPU formulation of the same passes are the two levers on it.</p>
