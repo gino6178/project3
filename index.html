@@ -389,10 +389,6 @@ around.</p>
   photographs that supervise the interior, and what a cut produces.</figcaption>
 </figure>
 
-<p class="mut">Every figure in this section is computed from the object's own lattice, by
-<code>code/figures/pipeline_fig.py</code>, <code>chordfig.py</code> and
-<code>cutgeom_fig.py</code>.</p>
-
 <p>We decouple the surface from the interior. The visible outer hull is carried by a flexible dual
 grid; the solid interior is a discrete two-level lattice whose cells store latent features rather
 than explicit primitives. The interior is supervised entirely by sparse, unaligned 2D
@@ -954,7 +950,7 @@ are, at median and tenth-percentile opacity 1.0000.</p>
 
 <figure>
   <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
-       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure 6</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for a cell. The footprints are not comparable in the way the word suggests: measured off the released files, FruitNinja&#8217;s median is 1.09e&minus;07 and GaussianFluent&#8217;s 1.39e&minus;09 against a 98th-percentile extent of 0.88, while a cell here is 8.61e&minus;03. Both released models also carry a single constant opacity across every primitive &mdash; 10000 and 20. So what fills those two volumes is not overlapping Gaussians but points of essentially no size rendered as impulses, four orders of magnitude smaller than the spacing they sit on, and that is what the salt-and-pepper in Figure&nbsp;7&#8217;s magnification is. Drawn by <code>code/figures/slab_fig.py</code>.</figcaption>
+       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure 6</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for a cell. The footprints are not comparable in the way the word suggests: measured off the released files, FruitNinja&#8217;s median is 1.09e&minus;07 and GaussianFluent&#8217;s 1.39e&minus;09 against a 98th-percentile extent of 0.88, while a cell here is 8.61e&minus;03. Both released models also carry a single constant opacity across every primitive &mdash; 10000 and 20. So what fills those two volumes is not overlapping Gaussians but points of essentially no size rendered as impulses, four orders of magnitude smaller than the spacing they sit on, and that is what the salt-and-pepper in Figure&nbsp;7&#8217;s magnification is.</figcaption>
 </figure>
 
 
@@ -1410,7 +1406,7 @@ explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
-  <figcaption><span class="fnum">Figure 9</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(11), 0.1178, and under the phases and assignment&nbsp;(27) solves jointly, 0.1122. Drawn by <code>code/figures/chords_fig.py</code> from <code>phaseopt.py</code>&#8217;s own samplers and the phases it wrote.</figcaption>
+  <figcaption><span class="fnum">Figure 9</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(11), 0.1178, and under the phases and assignment&nbsp;(27) solves jointly, 0.1122.</figcaption>
 </figure>
 
 
@@ -1748,7 +1744,7 @@ grow with separation and nothing in the construction forces it to.</p>
 <figure>
   <img src="assets/collision.png" alt="A slab through the contact region, particles coloured by
        what the collision test says about them, at four separations">
-  <figcaption><span class="fnum">Figure 12</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. Drawn by <code>code/figures/collision_fig.py</code>, which drives <code>evaluate/physics.py</code>&#8217;s own index and contact test, so the picture and the counts cannot disagree.</figcaption>
+  <figcaption><span class="fnum">Figure 12</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. The picture and the counts come from the same index and contact test, so they cannot disagree.</figcaption>
 </figure>
 
 <div class="tw"><p class="tnum">Table 27</p><table>
