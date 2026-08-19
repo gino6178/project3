@@ -96,7 +96,7 @@ def main(obj, out):
 
     fig = plt.figure(figsize=(13.6, 7.2))
     gs = fig.add_gridspec(2, 4, hspace=0.46, wspace=0.10,
-                          left=0.075, right=0.985, top=0.835, bottom=0.075)
+                          left=0.075, right=0.985, top=0.815, bottom=0.075)
 
     # --- route 1 -----------------------------------------------------------------------
     ax = fig.add_subplot(gs[0, 0])
@@ -107,7 +107,8 @@ def main(obj, out):
     k = np.random.default_rng(0).choice(len(p), min(len(p), 400000), replace=False)
     ax.scatter(p[k, 0], p[k, 2], c=c[k], s=0.25, marker=".", linewidths=0)
     ax.set_aspect("equal"); ax.set_axis_off()
-    panel(ax, "a released reconstruction", f"{len(p):,} primitives, taken as they are")
+    panel(ax, "the scan we do not have",
+          f"a released reconstruction stands in; {len(p):,} primitives")
 
     ax = fig.add_subplot(gs[0, 1])
     # The interior the reconstruction carried, recovered rather than assumed: each cell takes
@@ -117,25 +118,27 @@ def main(obj, out):
     ii = lvl1 == 0
     inh[ii] = c[cKDTree(p[k]).query(xyz1[ii], k=1)[1]]
     slab(ax, xyz1, inh, s=0.5)
-    panel(ax, "quantised, and sealed",
-          "close_and_fill; the inside is the reconstruction's")
+    panel(ax, "what it happens to carry inside",
+          "a scan would not have supplied this")
 
     ax = fig.add_subplot(gs[0, 2])
     flat = rgb1.copy(); flat[lvl1 == 0] = 0.5
     slab(ax, xyz1, flat, s=0.5)
-    panel(ax, "the interior is discarded", "shape and skin kept; the inside starts at 0.5")
+    panel(ax, "so it is discarded",
+          "what a scan does give: shape, and outer surface")
 
     ax = fig.add_subplot(gs[0, 3])
     sk = lvl1 == 1
     slab(ax, xyz1[sk], rgb1[sk], s=0.5)
-    panel(ax, "its own exterior, pinned", "colour and geometry, held exactly")
+    panel(ax, "the surface, pinned", "colour and geometry, held exactly")
 
     # --- route 2 -----------------------------------------------------------------------
     if have2:
         ax = fig.add_subplot(gs[1, 0])
         f2 = rgb2.copy(); f2[lvl2 == 0] = 0.5
         slab(ax, xyz2, f2, s=0.5)
-        panel(ax, "a shape from its equation", "sphere, ellipsoid, box, torus; nothing to repair")
+        panel(ax, "a shape from its equation",
+              "no scan, and no interior to discard")
 
         ax = fig.add_subplot(gs[1, 1])
         import cv2
@@ -149,26 +152,25 @@ def main(obj, out):
                 tiles.append(np.full_like(tiles[0], 255))
             ax.imshow(np.vstack([np.hstack(tiles[:3]), np.hstack(tiles[3:6])]))
         ax.set_axis_off()
-        panel(ax, "six views of the object", f"{len(six)} images, rendered or generated")
+        panel(ax, "six views of the surface", f"{len(six)} images, rendered or generated")
 
         ax = fig.add_subplot(gs[1, 2])
         p2 = rgb2.copy(); p2[lvl2 == 0] = 0.5
         slab(ax, xyz2, p2, s=0.5)
-        panel(ax, "projected onto the same cells",
-              "skin_project; flat inside, painted outside")
+        panel(ax, "the surface, projected",
+              "skin_project; the same lattice, equally blind inside")
 
     ax = fig.add_subplot(gs[1, 3])
     ax.set_axis_off()
     ax.text(0.0, 1.02,
-            "A scanner sees the outside of\nan object and nothing else.\n\n"
-            "That is the situation both\nroutes start from. Route 2 has\n"
-            "no interior to give: the shape\ncomes from an equation.\n"
-            "Route 1 stands in for the scan\nwe do not have -- a released\n"
-            "reconstruction, used the way a\nscan would be, for its shape\n"
-            "and its outer surface only.\n\n"
-            "So neither route brings an\ninterior. Both begin at a flat\n"
-            "0.5, and everything inside is\nput there by the photographs.\n\n"
-            "INTERIOR_FROM_PLY=1 restores\nthe older route 1.",
+            "Both routes end in the same\nplace, and it is the premise\n"
+            "rather than a result: a lattice\nwhose surface is known and\n"
+            "whose interior is not.\n\n"
+            "Nothing above ever writes\ninside the object. The\n"
+            "photographs of cross-sections\nare the only thing that does,\n"
+            "and that is section 3.2.\n\n"
+            "INTERIOR_FROM_PLY=1 restores\nthe older route 1, which took\n"
+            "the stand-in's interior too.",
             transform=ax.transAxes, fontsize=7.6, va="top", color="#333", linespacing=1.45)
 
     for y, lab, col in ((0.900, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
