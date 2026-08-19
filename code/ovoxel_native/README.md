@@ -161,3 +161,43 @@ so with `_n = 0` both settings load the same degree-0 model. The comparison agai
 representation, which has no view-dependent term, is therefore already like-for-like on these
 models, and the 24-coefficient figure in `random_cuts.py`'s comment does not describe anything
 currently on disk.
+
+## Cross-family reconciliation: measured, and it does not work
+
+`SEC_XCONS` reconciles the two families' section targets along the lines their planes share. It
+is off in the pipeline, set nowhere, and the page reports only its averaging mode, which failed.
+`mode="copy"` is documented in `section_consistency.py` as the answer to that failure -- one
+family wins and the other adopts, so structure survives with a definite position -- and had never
+been run. It has now been run, on both representations.
+
+| O-Voxel arm | DreamSim rh | DreamSim rv |
+|---|---|---|
+| r1_pin_full (full parity) | 0.0599 | **0.2315** |
+| r1_xc_copy (+ reconcile) | 0.0588 | 0.2901 |
+| r2_pin_full (full parity) | 0.1018 | **0.2731** |
+| r2_xc_copy (+ reconcile) | 0.1019 | 0.3092 |
+
+| pipeline arm (orange) | DreamSim |
+|---|---|
+| control | **0.0743** |
+| SEC_XCONS_MODE=mean | 0.0826 |
+| SEC_XCONS_MODE=copy | 0.0867 |
+
+The transverse column does not move (0.0599 to 0.0588, 0.1018 to 0.1019) and the longitudinal
+gets substantially worse on both routes, by 0.059 and 0.036. The mechanism is not mysterious in
+hindsight: `copy` overwrites the longitudinal targets with what the transverse family says along
+the shared lines, so the families do agree afterwards, but the longitudinal family is then
+supervised in part by another family's photographs -- and `rv` is scored against the longitudinal
+photographs. The agreement is bought by making one family give up its own evidence, and the
+measurement asks whether it kept it.
+
+On the pipeline both modes cost, and copy costs more than mean. That also reproduces the page's
+own figure independently: it reports 0.012 for mean and this run measures 0.0083, same order and
+same sign. So the page can make its claim more strongly than it does -- both modes were tried and
+the non-averaging one is worse -- rather than reporting the averaging mode alone.
+
+The longitudinal defect is therefore not a missing consistency term. The only thing measured to
+reduce it so far is SEC_PATCH's band term (rv 0.2535 to 0.2230), and it does not remove it. The
+next place to look is the geometry rather than the supervision: the streak directions recovered
+by Hough and back-projection are (1,0,-1), (2,0,-1) and (1,0,2) in the lattice frame, and whether
+those correspond to particular dual-grid topologies has not been checked.
