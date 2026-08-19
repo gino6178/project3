@@ -127,30 +127,30 @@
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
-Interactive 3D applications &mdash; such as virtual cutting, dissection and fracture simulation
-&mdash; require an explicit, realistic interior rather than a hollow shell. Existing solutions rely
-either on generative score distillation, which introduces severe low-pass blur across thin
-structural membranes, or on volumetric splatting, which trades hole artefacts against material bleeding
-along a window that has to be located for each primitive set.
+Interactive 3D applications &mdash; such as virtual cutting, dissection, and fracture simulation
+&mdash; require an explicit, realistic internal structure rather than a hollow shell. Existing
+methods rely either on generative score distillation (which blurs structural membranes and
+requires expensive per-object fine-tuning) or volumetric splatting (which suffers from boundary
+bleeding and unpainted void artifacts).
 </p>
 
 <p class="lead">
-We present a decoupled volumetric representation that reconstructs photorealistic, explicit 3D
-interiors directly from a handful of <strong>sparse, unaligned 2D cross-section photographs</strong>
-&mdash; completely eliminating the need for generative priors, per-object fine-tuning, or camera
-pose registration. By decoupling the visible exterior surface from an internal two-level occupancy
-lattice, unaligned references are implicitly reconciled through global cell occupancy during
-optimisation. Planar cuts are derived analytically in closed form via cell-edge intersections,
-yielding exact polygonal cut surfaces and immediate topological components for grid-based physics
-solvers without intermediate mesh extraction.
+We introduce a decoupled volumetric representation that reconstructs photorealistic, explicit 3D
+interiors directly from a sparse set of <strong>unaligned 2D cross-section photographs</strong>,
+completely eliminating the need for generative priors, per-object fine-tuning, or camera pose
+registration. By decoupling the visible exterior surface from an internal two-level occupancy
+lattice, unaligned references are implicitly reconciled via global cell occupancy. Furthermore,
+our representation seamlessly discretizes into an explicit voxel grid, enabling analytical
+closed-form planar cutting via cell-edge intersections and direct integration with grid-based
+physics solvers (e.g., MPM) without intermediate mesh extraction.
 </p>
 
 <p class="lead">
-Experiments on held-out cutting depths demonstrate that our approach outperforms fine-tuned
-generative baselines in visual fidelity (<strong>0.1825</strong> vs. 0.2292 DreamSim) and
-splat-based baselines (0.4063). Our model compresses to just <strong>9.3&nbsp;MiB</strong> with
-near-zero unpainted artefacts (<strong>0.06%</strong> at 2048&nbsp;px, compared to 2.37% and
-8.29%), while maintaining machine-precision planarity and strict volumetric mass conservation.
+Compared to generative and splatting baselines, our method achieves superior visual fidelity
+(<strong>0.1825</strong> vs. 0.2292 DreamSim), near-zero cut-face artifacts
+(<strong>0.06%</strong> vs. 8.29% unpainted at 2048&nbsp;px), and a compact footprint of just
+<strong>9.3&nbsp;MiB</strong>, while preserving exact mass conservation and machine-precision
+planarity on the discretized volume.
 </p>
 
 <div class="tw"><p class="tnum">Table 2</p><table>
