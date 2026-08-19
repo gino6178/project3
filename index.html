@@ -400,23 +400,20 @@ around.</p>
 <figure style="margin:18px 0 30px">
   <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
        alt="the two routes side by side, the training that follows, and what a cut produces">
-  <figcaption><span class="fnum">Figure 2</span><br>One object through the whole method, every
-  panel rendered from the run this page reports. <b>Above,</b> the two routes, which are
-  alternatives and not stages: route 1 quantises a released reconstruction and seals what
-  quantisation left &mdash; the white in that panel is the holes &mdash; keeps its shape and its
-  exterior, and <em>discards its interior</em>; route 2 asks whether each cell's centre is inside a
-  shape it has the equation for, which leaves nothing to repair, and projects six views onto the
-  same cells. Both arrive at the same lattice, with the same flat interior, and the pipeline is one
-  pipeline from there. The panels above are drawn by <code>code/figures/pipeline_fig.py</code>;
-  this image predates the discard and still shows route&nbsp;1 carrying the reconstruction's
-  interior into the lattice, which is the one thing in it that is no longer true. <b>Middle,</b> the photographs are
-  each cut at their own angle and nobody posed them; equation&nbsp;(27) solves the phases and the
-  assignment together before training, <code>section_match</code> warps each onto the silhouette
-  the cutting plane renders, and only the cells beneath the pinned skin learn. <b>Below,</b> a cut
-  is the plane against a crossed cell's twelve edges &mdash; six intersections here, one convex
-  hexagon, computed and not approximated &mdash; the face it exposes at a depth training never
-  sampled, the pieces from the lattice's own adjacency, and the newly exposed face, and only that
-  face, converted to a dual grid.</figcaption>
+  <figcaption><span class="fnum">Figure 2</span><br><strong>A scanner sees a surface, never an interior, and neither
+  route is given one.</strong> A 3D scan gives a shell; the volume behind it is filled so the
+  object is solid, and those cells begin with no colour of their own. Route&nbsp;1 stands in for
+  the scan this work does not have &mdash; a released reconstruction, used the way a scan would
+  be, for its shape and its outer surface, with whatever it carries inside discarded. Route&nbsp;2
+  is the same three beats with no scan at all: a surface from its own equation, which never had an
+  interior to discard, filled, and painted from six views of the outside. Neither route ever
+  writes inside the object. The photographs of cross-sections are the only thing that does, and
+  that is section&nbsp;3.2 &mdash; the last panel is where this figure hands over to it. The third
+  panel of route&nbsp;1 is the first panel again, on purpose: <code>SHELL_PIN</code> means training
+  does not move the surface, and the drift it does show over two hundred iterations is 0.0015.
+  Every panel is a slab of the lattice rather than a projection, because the interior is the
+  subject and a projection of a solid shows only its skin. Drawn by
+  <code>code/figures/pipeline_fig.py</code>.</figcaption>
 </figure>
 
 
