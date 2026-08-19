@@ -159,7 +159,7 @@ def main(obj, out):
 
     ax = fig.add_subplot(gs[1, 3])
     ax.set_axis_off()
-    ax.text(0.02, 0.92,
+    ax.text(0.0, 1.02,
             "What the routes share, and\nwhat they do not.\n\n"
             "They differ in where the shape\nand the exterior come from:\n"
             "a released reconstruction, or\nan equation and six views.\n\n"
@@ -168,20 +168,12 @@ def main(obj, out):
             "there by the photographs.\n\n"
             "INTERIOR_FROM_PLY=1 restores\nthe older route 1, which took the\n"
             "reconstruction's interior too.",
-            transform=ax.transAxes, fontsize=8.0, va="top", color="#333", linespacing=1.5)
+            transform=ax.transAxes, fontsize=7.6, va="top", color="#333", linespacing=1.45)
 
-    for y, lab, col in ((0.905, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
-                        (0.455, "ROUTE 2  —  from an equation and six views", "#2e7d5b")):
+    for y, lab, col in ((0.935, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
+                        (0.487, "ROUTE 2  —  from an equation and six views", "#2e7d5b")):
         fig.text(0.02, y, lab, fontsize=9, weight="bold", color=col)
 
-    fig.text(0.022, 0.665, "ROUTE 1", fontsize=10.5, weight="bold", color="#c0392b",
-             rotation=90, ha="center", va="center")
-    fig.text(0.042, 0.665, "from a released reconstruction", fontsize=8, color="#c0392b",
-             rotation=90, ha="center", va="center")
-    fig.text(0.022, 0.245, "ROUTE 2", fontsize=10.5, weight="bold", color="#2e7d5b",
-             rotation=90, ha="center", va="center")
-    fig.text(0.042, 0.245, "from an equation and six views", fontsize=8, color="#2e7d5b",
-             rotation=90, ha="center", va="center")
     fig.suptitle("Building the representation: either route, never both — and neither brings "
                  "an interior", fontsize=11.5, y=0.965)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
