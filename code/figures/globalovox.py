@@ -154,6 +154,14 @@ def main(lattice_dir, out_npz=None, device="cpu", colour_from=None):
     print(f"  O-Voxel exterior: {n_ov:,} active voxels, mean RGB "
           f"{patch['rgb'].mean(0).round(3)}")
 
+    # Measured 2026-08-19, and it does not mean what it looks like it means. Against the same
+    # 480,287 skin centres: the staircase corners this converter is *given* sit at 0.00609
+    # (1.03 h_f), the centroids of those same triangles -- one line, no solver -- sit at 0.00432
+    # (0.73), and what the QEF returns sits at 0.00517 (0.88). The dual vertex is closer than the
+    # staircase and further than a trivial average of it, so this number is not evidence that the
+    # grid recovered sub-cell geometry. It is a smoothing of the occupancy, and `pos = f(occupancy)`
+    # exactly: the call below is given (V, F, h_f) and nothing else -- no image, no appearance.
+    #
     # How close the dual grid puts the surface to the model it came from. The blockiness is the
     # input's; the QEF is what is being measured.
     dist, _ = tree.query(patch["pos"], k=1)

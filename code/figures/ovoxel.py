@@ -22,6 +22,15 @@ CPython 3.11, so this runs under the `cube_ovoxel` environment rather than `frui
 is not on the remote box at all.
 
     /home/gino/miniconda3/envs/cube_ovoxel/bin/python method/common/cube/ovoxel.py
+
+What the colour on an O-Voxel is, since it is easy to mistake for new information: whatever the
+caller's `colour=` returns, and both real callers return a nearest-neighbour lookup into this
+pipeline's own trained per-cell colour -- `globalovox.py` from the skin Gaussians, the cut path
+below from the coarse cells. Measured over 900,556 exterior voxels and 40,500 cut-face voxels,
+max|difference| against that lookup is 0.000e+00: bit-identical. The conversion is a coordinate
+transform on appearance, so it cannot supervise the field it was read from, and the cut face is
+additionally a downsample -- 40,500 voxels carrying 3,826 distinct colours, because the patch is
+converted at h_f while the colour is looked up at h_c.
 """
 import os as _os
 _FN_ROOT = _os.environ.get("FN_ROOT", "/home/gino/project/FruitNinja_clean")
