@@ -729,14 +729,6 @@ reads that value, so the volume absorbs the step before a renderer ever sees it.
 continuous rule as the one the system uses and this measurement as the reason it is not the
 contribution it was taken for.</p>
 
-<figure style="margin:16px 0 26px">
-  <img src="assets/depthassign.png" style="width:100%;border-radius:4px"
-       alt="what the two assignment rules ask for, and what the models trained under them do">
-  <figcaption><span class="fnum">Figure 7</span><br>What the two assignment rules ask adjacent
-  planes for, and what the models trained under them do when the plane is walked through the
-  object.</figcaption>
-</figure>
-
 <h3>4.2&ensp;Cutting precision and local complexity</h3>
 
 <p><strong>The band is a small, resolution-determined fraction.</strong> Two counts are involved
@@ -778,7 +770,7 @@ No edge is shared by more than two triangles on any object.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
-  <figcaption><span class="fnum">Figure 8</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure 7</span><br>The crossed band against the object it is cut
   from, on each object's own lattice and on three coarsenings of it.</figcaption>
 </figure>
 
@@ -803,7 +795,7 @@ fruit has a peel.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/collision.png" style="width:100%;border-radius:4px"
        alt="a slab through the contact region at four separations">
-  <figcaption><span class="fnum">Figure 9</span><br>A slab through the contact region of the cut
+  <figcaption><span class="fnum">Figure 8</span><br>A slab through the contact region of the cut
   orange, every particle drawn as what the narrow phase calls it: grey for clear, red for
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
