@@ -154,8 +154,8 @@ def main(lattice_dir, cfg, demo, ref_h, ref_v, out_dir, size=512):
     rgb = (g._features_dc.detach().to(DEV).squeeze(1) * C0 + 0.5).clamp(0, 1)
     rgb[got] = col[got]
     print(f"  interior initialised from the photographs: {int(got.sum()):,} cells, "
-          f"mean {rgb[lvl == 0].mean(0).cpu().numpy().round(3)}, "
-          f"spread {rgb[lvl == 0].std(0).mean():.4f}")
+          f"mean {rgb[lvl == 0].mean(0).detach().cpu().numpy().round(3)}, "
+          f"spread {float(rgb[lvl == 0].std(0).mean()):.4f}")
 
     with torch.no_grad():
         g._features_dc = torch.nn.Parameter(((rgb - 0.5) / C0).unsqueeze(1).contiguous())
