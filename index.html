@@ -2732,12 +2732,7 @@ are, at median and tenth-percentile opacity 1.0000.</p>
 
 <figure>
   <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
-       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure 9</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its
-  own footprint: \(\sigma\) for a Gaussian, \(h\) for a cell. GaussianFluent's sits smaller in
-  frame because each model is normalised by its own projected radius and its released file carries
-  more than the melon. No unpainted percentage is printed under the tiles,
-  because a footprint drawing answers what a primitive <em>covers</em> and not what a renderer
-  draws; the table below answers the second.</figcaption>
+       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure 9</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for a cell. The footprints are not comparable in the way the word suggests: measured off the released files, FruitNinja&#8217;s median is 1.09e&minus;07 and GaussianFluent&#8217;s 1.39e&minus;09 against a 98th-percentile extent of 0.88, while a cell here is 8.61e&minus;03. Both released models also carry a single constant opacity across every primitive &mdash; 10000 and 20. So what fills those two volumes is not overlapping Gaussians but points of essentially no size rendered as impulses, four orders of magnitude smaller than the spacing they sit on, and that is what the salt-and-pepper in Figure&nbsp;10&#8217;s magnification is. Drawn by <code>code/figures/slab_fig.py</code>.</figcaption>
 </figure>
 
 
