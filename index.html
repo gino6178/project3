@@ -400,15 +400,17 @@ around.</p>
 
 <figure style="margin:18px 0 30px">
   <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
-       alt="the orange through every stage: reconstruction, occupancy, exterior, six views, a section photograph, a cut, and the pieces">
-  <figcaption><span class="fnum">Figure 2</span><br>One object through every stage. The
-  reconstruction is quantised onto an occupancy at two spacings &mdash; coarse fills the volume,
-  fine sits on the surface, and which cells those are is decided by the shape and not by a radius.
-  The exterior is then held exactly where it arrived, from the reconstruction on the first route
-  or from six views on the second, and only the cells beneath it are trained, against photographs
-  that are never posed or registered. A cut is one convex polygon per crossed cell and the pieces
-  fall out of the lattice's own adjacency, so nothing here passes through a mesh, a marching cube
-  or a generative model.</figcaption>
+       alt="the orange through every stage: reconstruction, occupancy at two spacings, exterior, six views, a section photograph, the closed-form cut, the exposed face, the pieces, and the dual grid">
+  <figcaption><span class="fnum">Figure 2</span><br>One object through every stage, rendered
+  from the run this page reports. The reconstruction is quantised onto an occupancy at two
+  spacings &mdash; coarse fills the volume, fine sits on the surface, and which cells those are
+  is decided by the shape rather than by a radius. The exterior is then held where it arrived,
+  from the reconstruction on the first route or from six views on the second, and only the cells
+  beneath it are trained, against photographs nobody aligned. A cut is the plane against each
+  crossed cell's twelve edges, one convex polygon each; the pieces are connected components on
+  the lattice's own adjacency; and the newly exposed face &mdash; only that face &mdash; becomes
+  a dual grid. The fifth panel and the seventh are the argument: a photograph nobody posed, and
+  what the lattice renders at a depth training never sampled.</figcaption>
 </figure>
 
 
