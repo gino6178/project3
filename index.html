@@ -400,21 +400,21 @@ around.</p>
 
 <figure style="margin:18px 0 30px">
   <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
-       alt="the orange through every stage: reconstruction, occupancy at two spacings, exterior, six views, a section photograph, the closed-form cut, the exposed face, the pieces, and the dual grid">
+       alt="the two routes side by side, the training that follows, and what a cut produces">
   <figcaption><span class="fnum">Figure 2</span><br>One object through the whole method, every
-  panel rendered from the run this page reports. <b>Above:</b> the reconstruction is quantised
-  onto an occupancy at two spacings &mdash; coarse fills the volume, fine sits on the surface, and
-  which cells those are is decided by the shape rather than by a radius &mdash; and the exterior
-  is then held exactly where it arrived, from the reconstruction on the first route or from six
-  views on the second. <b>Middle:</b> the photographs are each cut at their own angle and nobody
-  posed them; equation&nbsp;(27) solves the phases and the assignment together before training,
-  and <code>section_match</code> warps each one onto the silhouette the cutting plane renders, per
-  connected component. Only the cells beneath the pinned skin learn, one feature each through one
-  shared decoder. <b>Below:</b> a cut is the plane against a crossed cell's twelve edges &mdash;
-  six intersections here, one convex polygon, computed and not approximated &mdash; the face it
-  exposes at a depth training never sampled, the pieces from the lattice's own adjacency as
-  integer operations, and the newly exposed face, and only that face, converted to a dual
-  grid.</figcaption>
+  panel rendered from the run this page reports. <b>Above,</b> the two routes, which are
+  alternatives and not stages: route 1 quantises a released reconstruction and seals what
+  quantisation left &mdash; the white in that panel is the holes &mdash; and pins the exterior
+  that came with it; route 2 asks whether each cell's centre is inside a shape it has the equation
+  for, which leaves nothing to repair, and projects six views onto the same cells. Both arrive at
+  the same lattice and the pipeline is one pipeline from there. <b>Middle,</b> the photographs are
+  each cut at their own angle and nobody posed them; equation&nbsp;(27) solves the phases and the
+  assignment together before training, <code>section_match</code> warps each onto the silhouette
+  the cutting plane renders, and only the cells beneath the pinned skin learn. <b>Below,</b> a cut
+  is the plane against a crossed cell's twelve edges &mdash; six intersections here, one convex
+  hexagon, computed and not approximated &mdash; the face it exposes at a depth training never
+  sampled, the pieces from the lattice's own adjacency, and the newly exposed face, and only that
+  face, converted to a dual grid.</figcaption>
 </figure>
 
 
