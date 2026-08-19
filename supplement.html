@@ -975,20 +975,6 @@ the fold-trained models still beat a generator fine-tuned on the photograph bein
 fold; what does not survive is the claim that a reference is nearly free, and with it the argument
 that the volume cannot be storing its references.</p>
 
-<figure>
-  <img src="assets/cutface_zoom.png" alt="A cut face at the same plane, three ways, with the
-       interior magnified: a real cut orange, this work, and FruitNinja's released model">
-  <figcaption><span class="fnum">Figure S5</span><br>The same held-out plane, three ways, with the box magnified beside each section.
-  Both arms rendered the same planes under the same seed, so a row differs only in what filled the
-  volume; the left column is a photograph of a real cut orange and is not that plane, since no
-  photograph is. What the magnification is for: the difference between a section that has segment
-  membranes and one that has a smooth gradient is a few tens of pixels wide and is invisible at the
-  size a section is normally shown. The released model resolves the core as a dark blob with a
-  blown-out surround; the membranes it draws do not reach the rind. The photograph's sections fill
-  more of their frame than the renders do, which is a framing difference and not a result.
-  </figcaption>
-</figure>
-
 <div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected. This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table S6</p><table>
 <thead><tr><th>orange, transverse FID &darr;, 100 held-out planes, references in-sample on both sides</th><th></th></tr></thead>
 <tbody>
@@ -1116,7 +1102,7 @@ are, at median and tenth-percentile opacity 1.0000.</p>
 
 <figure>
   <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
-       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure S6</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for a cell. The footprints are not comparable in the way the word suggests: measured off the released files, FruitNinja&#8217;s median is 1.09e&minus;07 and GaussianFluent&#8217;s 1.39e&minus;09 against a 98th-percentile extent of 0.88, while a cell here is 8.61e&minus;03. Both released models also carry a single constant opacity across every primitive &mdash; 10000 and 20. So what fills those two volumes is not overlapping Gaussians but points of essentially no size rendered as impulses, four orders of magnitude smaller than the spacing they sit on, and that is what the salt-and-pepper in Figure&nbsp;S7&#8217;s magnification is.</figcaption>
+       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure S5</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for a cell. The footprints are not comparable in the way the word suggests: measured off the released files, FruitNinja&#8217;s median is 1.09e&minus;07 and GaussianFluent&#8217;s 1.39e&minus;09 against a 98th-percentile extent of 0.88, while a cell here is 8.61e&minus;03. Both released models also carry a single constant opacity across every primitive &mdash; 10000 and 20. So what fills those two volumes is not overlapping Gaussians but points of essentially no size rendered as impulses, four orders of magnitude smaller than the spacing they sit on, and that is what the salt-and-pepper in the paper&#8217;s Figure&nbsp;7 is.</figcaption>
 </figure>
 
 
@@ -1167,12 +1153,6 @@ are given so they are not read as one:</p>
 <tr><td><strong>this work, route 2, as a cube volume</strong></td><td><strong>0.04%</strong></td>
     <td><strong>0.07%</strong></td><td><strong>0.07%</strong></td></tr>
 </tbody></table></div>
-
-<figure>
-  <img src="assets/zoom2048.png" alt="The same watermelon cut at 2048 px from four representations,
-       each with a zoomed crop of the flesh">
-  <figcaption><span class="fnum">Figure S7</span><br>The same held-out plane of the watermelon at 2048&nbsp;px, each released model through the same cutter, with a box of its own section magnified beside it. What the magnification shows is what each representation is made of: GaussianFluent leaves white between its primitives, FruitNinja&#8217;s flesh carries salt-and-pepper over a saturated red, and the splatted lattice draws a continuous fibre with the seeds whole. A fourth row, the same section drawn as a cube volume, is withdrawn: the renderer that produces it is under-drawing transverse sections by half their silhouette, which is recorded with the tool, and a picture from a renderer with a known defect is not evidence about a representation.</figcaption>
-</figure>
 
 <p> Coverage from a splatted
 representation is resolution-dependent for every model including ours: at 256&nbsp;px they are all
@@ -1487,7 +1467,7 @@ the structure, and the cake is the case where they do not.</p>
 <figure>
   <img src="assets/six_objects.png" alt="Six objects, one held-out plane each: a photograph of a
        real cut of that kind, this work, and the released model each was quantised from">
-  <figcaption><span class="fnum">Figure S8</span><br>Every object, one held-out plane each, every column rendered in one batch at the same depths with the same settings and the released models re-rendered rather than quoted. The left column is a photograph of a real cut of that kind and is not that plane, since no photograph is; it is each object's own evaluation set. GaussianFluent publishes eighteen objects and two are ours, so that column is the watermelon and the cake; the doughnut has no released model of any kind, which is why it is the one object whose interior owes nothing to a reconstruction. What the rows show is where each method spends its fidelity: the seeds and pith of the watermelon, the five-pointed core of the apple, the spiral of the loaf.</figcaption>
+  <figcaption><span class="fnum">Figure S6</span><br>Every object, one held-out plane each, every column rendered in one batch at the same depths with the same settings and the released models re-rendered rather than quoted. The left column is a photograph of a real cut of that kind and is not that plane, since no photograph is; it is each object's own evaluation set. GaussianFluent publishes eighteen objects and two are ours, so that column is the watermelon and the cake; the doughnut has no released model of any kind, which is why it is the one object whose interior owes nothing to a reconstruction. What the rows show is where each method spends its fidelity: the seeds and pith of the watermelon, the five-pointed core of the apple, the spiral of the loaf.</figcaption>
 </figure>
 
 <p class="mut">Every row here is in-sample: each model is scored against the photographs that
@@ -1572,7 +1552,7 @@ explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
-  <figcaption><span class="fnum">Figure S9</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(4), 0.1178, and under the phases and assignment&nbsp;(5) solves jointly, 0.1122.</figcaption>
+  <figcaption><span class="fnum">Figure S7</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(4), 0.1178, and under the phases and assignment&nbsp;(5) solves jointly, 0.1122.</figcaption>
 </figure>
 
 
@@ -1692,7 +1672,7 @@ hundred; the two tables are internally consistent and should not be read across.
 <figure>
   <img src="assets/prior_or.png" alt="Held-out transverse cuts of the orange from three arms of
        this work, FruitNinja's released model, and the photographs">
-  <figcaption><span class="fnum">Figure S10</span><br>The same six held-out transverse planes of the orange, rendered from every model,
+  <figcaption><span class="fnum">Figure S8</span><br>The same six held-out transverse planes of the orange, rendered from every model,
   with the photographs underneath. FruitNinja's released model runs saturated and its pith ring is
   brighter and thinner than any photograph. The row below it is the same pipeline with the stock
   checkpoint in place of the fine-tuned one and nothing else changed, which is the reproduction
@@ -1704,7 +1684,7 @@ hundred; the two tables are internally consistent and should not be read across.
 <figure>
   <img src="assets/prior_wm.png" alt="Held-out transverse cuts of the watermelon from two routes,
        FruitNinja's released model, and the photographs">
-  <figcaption><span class="fnum">Figure S11</span><br>The same for the watermelon, with GaussianFluent's own released model in the fourth
+  <figcaption><span class="fnum">Figure S9</span><br>The same for the watermelon, with GaussianFluent's own released model in the fourth
   row. FruitNinja's resolves fewer seeds than ours and softens the ones it keeps. GaussianFluent's
   is a different fruit, cut in a frame whose upright axis is not published and which we chose in
   its favour: its rind and pith read thicker than any photograph and its seeds smear along one
@@ -1798,7 +1778,9 @@ is zero.</p>
   <img src="assets/depthassign.png" alt="The per-step change between adjacent targets under the two
        assignment rules, and between adjacent rendered sections of the two models trained under
        them">
-  <figcaption><span class="fnum">Figure S12</span><br>What the two assignment rules ask adjacent
+  <figcaption><span class="fnum">Figure S10</span><br>The orange, six transverse
+  photographs over sixteen supervised planes; the body carries the same comparison on the
+  watermelon at three. What the two assignment rules ask adjacent
   planes for, and what the models trained under them do when the plane is walked through the
   object.</figcaption>
 </figure>
@@ -1951,7 +1933,7 @@ grow with separation and nothing in the construction forces it to.</p>
 <figure>
   <img src="assets/collision.png" alt="A slab through the contact region, particles coloured by
        what the collision test says about them, at four separations">
-  <figcaption><span class="fnum">Figure S13</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. The picture and the counts come from the same index and contact test, so they cannot disagree.</figcaption>
+  <figcaption><span class="fnum">Figure S11</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. The picture and the counts come from the same index and contact test, so they cannot disagree.</figcaption>
 </figure>
 
 <div class="tw"><p class="tnum">Table S27</p><table>
@@ -1978,7 +1960,7 @@ whatever the solver does to them, including deformations no rigid transform can 
 
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption><span class="fnum">Figure S14</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
+  <figcaption><span class="fnum">Figure S12</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
   the same particles driving it two ways: a per-piece rigid fit on the left, which is the best a
   single transform can do, and the particle binding on the right, both coloured by how far
   each vertex has left its material on one shared scale: blue at 0.00 fine cells, red at 2.00 and
@@ -2139,7 +2121,7 @@ band a smaller fraction rather than a larger one.</p>
 <figure>
   <img src="assets/bandfrac.png" alt="K against N over four resolutions of each object, and the
        crossed and refined band as a percentage of the object">
-  <figcaption><span class="fnum">Figure S15</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure S13</span><br>The crossed band against the object it is cut
   from, on each object&#8217;s own lattice and on three coarsenings of it. The band comes from the
   operator's own test rather than from a restatement of it.</figcaption>
 </figure>
@@ -2252,12 +2234,12 @@ figures is measured against a compressed Gaussian model, which would move them a
 </tbody></table></div>
 
 <figure style="margin:18px 0 26px">
-  <img src="assets/depthassign.png" style="width:100%;border-radius:4px"
-       alt="what the two assignment rules ask for, and what the models trained under them do">
-  <figcaption><span class="fnum">Figure S16</span><br>The orange, six transverse photographs
-  over sixteen supervised planes. What the two assignment rules ask adjacent planes for, and
-  what the models trained under them do when the plane is walked through the object. The body
-  carries the same comparison on the watermelon, at three photographs.</figcaption>
+  <img src="assets/voids2048.png" style="width:100%;border-radius:4px"
+       alt="the same cut face at 2048 px from a photograph and three methods">
+  <figcaption><span class="fnum">Figure S14</span><br>The same held-out plane of the watermelon,
+  each method through its own renderer rather than through a common cutter. Top: a quadrant of
+  the section. Bottom: the marked square, at the scale of a few cells. The renders are
+  2048&nbsp;px and the photograph 512&nbsp;px, and neither row is resampled.</figcaption>
 </figure>
 
 <h3 id="ablations">S3.4&ensp;Ablations</h3>
