@@ -61,6 +61,13 @@ LR_RGB = float(os.environ.get("LR_RGB", "0.02"))
 LR_GEO = float(os.environ.get("LR_GEO", "1e-3"))
 PROBE_EVERY = int(os.environ.get("PROBE_EVERY", "20"))
 VOXEL_SMOOTH = os.environ.get("VOXEL_SMOOTH", "1") == "1"
+# The pipeline's cross-family reconciliation, which is off there and reported only in its
+# averaging mode. See xcons.py for why "copy" is the mode worth measuring and why the
+# transverse family is the one that should win.
+SEC_XCONS = float(os.environ.get("SEC_XCONS", "0"))
+SEC_XCONS_AT = int(os.environ.get("SEC_XCONS_AT", "0"))
+SEC_XCONS_HOLD = os.environ.get("SEC_XCONS_HOLD", "0") == "1"
+SEC_XCONS_MODE = os.environ.get("SEC_XCONS_MODE", "copy")
 ABL_INTERVAL = int(os.environ.get("ABL_INTERVAL", "30"))
 ABL_GRID = int(os.environ.get("ABL_GRID", "16"))
 dev = "cuda"
@@ -271,6 +278,14 @@ def rows(k):
             "dual_v": st["dual_v"], "split_w": st["split_w"]}[k]
 
 
+# One entry per longitudinal plane: its last target, and the geometry needed to project onto
+# it. Under SEC_XCONS_HOLD the reconciled target is kept and reused rather than re-derived,
+# because section_target rebuilds each target from the current render every pass and would
+# rebuild the contradiction with it.
+_vcache, _vheld = {}, {}
+if SEC_XCONS > 0:
+    import xcons
+
 touch = {k: torch.zeros(len(rows(k)), dtype=torch.bool, device=dev) for k in TK}
 upd_i = torch.zeros(len(seed_i), dtype=torch.bool, device=dev)
 hist, l1hist, probes = [], [], [(0, probe())]
@@ -298,7 +313,31 @@ for j in range(ITERS):
                 st, glctx, torch.as_tensor(C["e_mvp"][i], dtype=torch.float32, device=dev), RES)
             ref = refs_e[enames[i]]
         with torch.no_grad():
-            tgt = sm.section_target(img, ref, alpha=al)
+            if kind == "v" and SEC_XCONS_HOLD and j > SEC_XCONS_AT and i in _vheld:
+                tgt = _vheld[i]
+            else:
+                tgt = sm.section_target(img, ref, alpha=al)
+            if SEC_XCONS > 0 and j >= SEC_XCONS_AT:
+                if kind == "v":
+                    _vcache[i] = (tgt, torch.as_tensor(C["v_mvp"][i], dtype=torch.float32,
+                                                       device=dev),
+                                  torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32,
+                                                  device=dev),
+                                  float(C["v_planes"][i, 3]))
+                elif kind == "h" and _vcache:
+                    # The transverse target wins along every line it shares with a cached
+                    # longitudinal one; under "copy" reconcile writes into the longitudinal.
+                    _tot, _dis = 0, 0.0
+                    for _vi, (_vt, _vm, _vn, _vd) in _vcache.items():
+                        _k, _e = xcons.reconcile(tgt, hmvp, hn, d, _vt, _vm, _vn, _vd,
+                                                 centres, RES, band=float(h_step),
+                                                 weight=SEC_XCONS, mode=SEC_XCONS_MODE)
+                        _tot += _k; _dis += _e * _k
+                        if SEC_XCONS_HOLD and _k:
+                            _vheld[_vi] = _vt
+                    if _tot and j % 10 == 0:
+                        print(f"  cross-section consistency at {j}: {_tot:,} px reconciled, "
+                              f"disagreement {_dis / max(_tot, 1):.4f}", flush=True)
         loss = (secloss.patch_loss(img, tgt) if secloss.SEC_PATCH > 0
                 else (img - tgt).abs().mean())
         with torch.no_grad():
