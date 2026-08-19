@@ -13,14 +13,9 @@ lattice whose interior looks the same.
 
 Panels and where each comes from, so nothing here is an illustration of something unmeasured:
 
-  1a  the released ply, its own primitives, orthographic
-  1b  the same slab with the interior colour the reconstruction actually carried, recovered by
-      taking each cell's nearest primitive in the source ply.  Without this panel the figure has
-      no before to put beside its after, which is the defect the first version of this tool had:
-      it drew the current lattice twice and called one of them "sealed"
-  1c  a slab of the lattice as route 1 now writes it: skin cells at their own colour, interior
-      cells flat.  This is the panel the figure was missing
-  1d  the exterior, pinned: the skin cells alone
+  1a  the skin cells alone: the shell a scan gives, hollow
+  1b  the same object filled: every cell, with the interior at 0.5
+  1c  the surface again, which is what training holds fixed
   2a  the same slab of the shape route 2 builds from its equation, interior equally flat
   2b  the six views
   2c  the skin those views project, on the same cells
@@ -98,49 +93,47 @@ def main(obj, out):
     gs = fig.add_gridspec(2, 4, hspace=0.46, wspace=0.10,
                           left=0.075, right=0.985, top=0.815, bottom=0.075)
 
-    # --- route 1 -----------------------------------------------------------------------
+    # --- route 1: the shell a scan gives, then filled ---------------------------------
     ax = fig.add_subplot(gs[0, 0])
-    src = conf("SRC", obj)
-    el = PlyData.read(os.path.join(FN, src)).elements[0]
-    p = np.stack([el["x"], el["y"], el["z"]], 1).astype(np.float64)
-    c = np.clip(np.stack([el["f_dc_0"], el["f_dc_1"], el["f_dc_2"]], 1) * C0 + 0.5, 0, 1)
-    k = np.random.default_rng(0).choice(len(p), min(len(p), 400000), replace=False)
-    ax.scatter(p[k, 0], p[k, 2], c=c[k], s=0.25, marker=".", linewidths=0)
-    ax.set_aspect("equal"); ax.set_axis_off()
-    panel(ax, "the scan we do not have",
-          f"a released reconstruction stands in; {len(p):,} primitives")
-
-    ax = fig.add_subplot(gs[0, 1])
-    # The interior the reconstruction carried, recovered rather than assumed: each cell takes
-    # the colour of its nearest primitive in the source ply, which is what quantising it did.
-    from scipy.spatial import cKDTree
-    inh = rgb1.copy()
-    ii = lvl1 == 0
-    inh[ii] = c[cKDTree(p[k]).query(xyz1[ii], k=1)[1]]
-    slab(ax, xyz1, inh, s=0.5)
-    panel(ax, "what it happens to carry inside",
-          "a scan would not have supplied this")
-
-    ax = fig.add_subplot(gs[0, 2])
-    flat = rgb1.copy(); flat[lvl1 == 0] = 0.5
-    slab(ax, xyz1, flat, s=0.5)
-    panel(ax, "so it is discarded",
-          "what a scan does give: shape, and outer surface")
-
-    ax = fig.add_subplot(gs[0, 3])
     sk = lvl1 == 1
     slab(ax, xyz1[sk], rgb1[sk], s=0.5)
-    panel(ax, "the surface, pinned", "colour and geometry, held exactly")
+    panel(ax, "the shell", "what a 3D scan gives: a surface, and nothing behind it")
 
-    # --- route 2 -----------------------------------------------------------------------
+    ax = fig.add_subplot(gs[0, 1])
+    flat = rgb1.copy(); flat[lvl1 == 0] = 0.5
+    slab(ax, xyz1, flat, s=0.5)
+    panel(ax, "filled", f"close_and_fill: {int((lvl1 == 0).sum()):,} cells, no colour of their own")
+
+    ax = fig.add_subplot(gs[0, 2])
+    slab(ax, xyz1[sk], rgb1[sk], s=0.5)
+    panel(ax, "the surface, pinned", "colour and geometry, held exactly through training")
+
+    ax = fig.add_subplot(gs[0, 3]); ax.set_axis_off()
+    ax.text(0.0, 1.02,
+            "A 3D scan gives a shell.\n\n"
+            "That is the whole input on\nthis route: an outer surface,\n"
+            "with nothing behind it. The\nvolume inside is filled so the\n"
+            "object is solid, and those\ncells start with no colour of\n"
+            "their own.\n\n"
+            "We have no scan files, so a\nreleased reconstruction stands\n"
+            "in -- used the way a scan\nwould be, for its surface only.\n"
+            "Whatever it carries inside is\ndiscarded, because a scan\n"
+            "would not have supplied it.",
+            transform=ax.transAxes, fontsize=7.6, va="top", color="#333", linespacing=1.45)
+
+    # --- route 2: the same three beats, with no scan at all ---------------------------
     if have2:
+        sk2 = lvl2 == 1
         ax = fig.add_subplot(gs[1, 0])
-        f2 = rgb2.copy(); f2[lvl2 == 0] = 0.5
-        slab(ax, xyz2, f2, s=0.5)
-        panel(ax, "a shape from its equation",
-              "no scan, and no interior to discard")
+        slab(ax, xyz2[sk2], rgb2[sk2], s=0.5)
+        panel(ax, "the shell", "a surface from its equation: sphere, ellipsoid, box, torus")
 
         ax = fig.add_subplot(gs[1, 1])
+        f2 = rgb2.copy(); f2[lvl2 == 0] = 0.5
+        slab(ax, xyz2, f2, s=0.5)
+        panel(ax, "filled", "solid by construction; closing adds 0.1%")
+
+        ax = fig.add_subplot(gs[1, 2])
         import cv2
         d6 = os.path.join(FN, conf("REFS6", obj) or "")
         six = sorted(g for g in os.listdir(d6) if g.endswith((".png", ".jpg"))) if os.path.isdir(d6) else []
@@ -152,35 +145,22 @@ def main(obj, out):
                 tiles.append(np.full_like(tiles[0], 255))
             ax.imshow(np.vstack([np.hstack(tiles[:3]), np.hstack(tiles[3:6])]))
         ax.set_axis_off()
-        panel(ax, "six views of the surface", f"{len(six)} images, rendered or generated")
+        panel(ax, "the surface, projected", f"{len(six)} views of the outside, onto the same cells")
 
-        ax = fig.add_subplot(gs[1, 2])
-        p2 = rgb2.copy(); p2[lvl2 == 0] = 0.5
-        slab(ax, xyz2, p2, s=0.5)
-        panel(ax, "the surface, projected",
-              "skin_project; the same lattice, equally blind inside")
+    ax = fig.add_subplot(gs[1, 3]); ax.set_axis_off()
+    ph = sorted(os.listdir(os.path.join(FN, conf("REF_H", obj))))
+    ph = [f for f in ph if f.endswith((".png", ".jpg")) and "_depth" not in f]
+    if ph:
+        import cv2 as _cv
+        im = _cv.imread(os.path.join(FN, conf("REF_H", obj), ph[0]))[:, :, ::-1]
+        ax.imshow(im)
+    panel(ax, "and then the interior",
+          "photographs of cross-sections are the only thing\nthat ever writes inside; section 3.2")
 
-    ax = fig.add_subplot(gs[1, 3])
-    ax.set_axis_off()
-    ax.text(0.0, 1.02,
-            "Both routes end in the same\nplace, and it is the premise\n"
-            "rather than a result: a lattice\nwhose surface is known and\n"
-            "whose interior is not.\n\n"
-            "Nothing above ever writes\ninside the object. The\n"
-            "photographs of cross-sections\nare the only thing that does,\n"
-            "and that is section 3.2.\n\n"
-            "INTERIOR_FROM_PLY=1 restores\nthe older route 1, which took\n"
-            "the stand-in's interior too.",
-            transform=ax.transAxes, fontsize=7.6, va="top", color="#333", linespacing=1.45)
-
-    for y, lab, col in ((0.884, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
-                        (0.448, "ROUTE 2  —  from an equation and six views", "#2e7d5b")):
-        fig.text(0.02, y, lab, fontsize=9, weight="bold", color=col)
-
-    fig.suptitle("A scanner sees a surface, never an interior. Neither route is given one.",
+    fig.suptitle("From a scanned shell, the interior is generated \u2014 not carried in",
                  fontsize=12.5, y=0.985)
-    fig.text(0.5, 0.942, "either route, never both — and both end at a lattice that is "
-             "blind inside until the photographs are applied",
+    fig.text(0.5, 0.942, "a shell, filled; either route, never both \u2014 and neither route "
+             "ever writes inside the object",
              fontsize=8.8, color="#555", ha="center")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     fig.savefig(out, dpi=150, facecolor="white")
