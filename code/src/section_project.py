@@ -42,6 +42,7 @@ from cross_section import generate_plane_center, interpolate_along_camera_direct
 from scene.gaussian_model import GaussianModel                          # noqa: E402
 from utils.camera_view_utils import get_camera_view                     # noqa: E402
 from utils.decode_param import decode_param_json                        # noqa: E402
+from utils.render_utils import load_params_from_gs                   # noqa: E402
 from utils.transformation_utils import *                                # noqa: E402
 
 import sds_demo                                                          # noqa: E402
