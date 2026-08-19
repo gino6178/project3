@@ -17,6 +17,21 @@ What the hook draws:
 and whichever is nearer takes the pixel.
 
     python method/common/eval/ovox_cuts.py MODEL.ply LATTICE OVOX.npz CFG DEMO OUT_DIR [n]
+
+KNOWN DEFECT, measured 2026-08-19: on a transverse plane this draws about half the silhouette
+the Gaussian renderer draws, and on a longitudinal plane it draws the same one. Six planes each,
+the orange, same depths and same camera:
+
+    plane   gaussian   this      ratio
+    rh0     0.308      0.153     0.50
+    rv0     0.309      0.298     0.96
+
+So a DreamSim scored on `rh*` output -- which is what `realism.py` globs -- measures this
+renderer and not the representation. Two hypotheses are already excluded: it is not the exterior
+layer being dropped (`OVOX_LAYERS=face,ext` moves the area from 0.153 to 0.154), and it is not
+resolution (2048 and a 512 downsample score to within 0.0004). The occupancy lookup below is
+axis-agnostic, so what is left is the ray-plane construction for planes near the equator. Until
+that is found, do not quote a number from this file as a property of the dual grid.
 """
 import os as _os
 _FN_ROOT = _os.environ.get("FN_ROOT", "/home/gino/project/FruitNinja_clean")

@@ -54,3 +54,18 @@ evidence of generalisation, and a table that does not say so invites the opposit
 watermelon used to be the exception — one reference in, twenty out, nineteen never seen — and
 that arm is preserved as `trained_v2.tar`'s watermelon so the one held-out result this project
 had can still be checked.
+
+## ovox_cuts draws half a transverse section
+
+Measured 2026-08-19 on the orange, twelve held-out planes, same depths and camera as the Gaussian
+renderer: the longitudinal six agree with it to within 2 to 6% of silhouette area and DreamSim
+0.04 to 0.09 between the two pictures, and the transverse six lose 22% to 86% of the area. Since
+`realism.py` globs `rh*` only, a DreamSim computed on this tool's output is a measurement of the
+tool.
+
+Excluded already: the exterior layer (`OVOX_LAYERS=face,ext` moves the area 0.153 to 0.154, so
+the missing half is not the peel), and resolution (2048 and a 512 downsample agree to 0.0004).
+The occupancy lookup is axis-agnostic. What is left is the ray-plane construction near the
+equator.
+
+Do not quote a figure from this file as a property of the dual grid until that is closed.

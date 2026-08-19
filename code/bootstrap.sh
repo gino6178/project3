@@ -139,10 +139,14 @@ if [ ! -d "$R/TRELLIS.2/o-voxel" ]; then
   step "TRELLIS.2 o-voxel, for the dual-grid exterior"
   git clone -q --depth 1 https://github.com/microsoft/TRELLIS.2.git "$R/TRELLIS.2"
 fi
-if ! ls "$R"/TRELLIS.2/o-voxel/build/lib.*/o_voxel/_C*.so >/dev/null 2>&1; then
-  step "building o-voxel (a CUDA extension, same toolchain as the rasteriser)"
-  ( cd "$R/TRELLIS.2/o-voxel" && $PY setup.py build_ext --inplace > "$R/ovoxel_build.log" 2>&1 \
-      || $PY setup.py build > "$R/ovoxel_build.log" 2>&1 ) || \
+if ! ls "$R"/TRELLIS.2/o-voxel/o_voxel/_C*.so >/dev/null 2>&1; then
+  # Against the scoring interpreter, not the render one. o-voxel's hash.cu uses torch::kUInt32,
+  # which arrived in torch 2.3, and the render environment is pinned at 2.0.1 by the rasteriser
+  # -- so the two cannot share an interpreter, and this is the second reason that env exists.
+  # `figures/globalovox.py` imports numpy, torch and ovoxel and nothing that renders, so it runs
+  # there quite happily.
+  step "building o-voxel against the scoring interpreter"
+  ( cd "$R/TRELLIS.2/o-voxel" && $SPY setup.py build_ext --inplace > "$R/ovoxel_build.log" 2>&1 ) || \
     echo "  o-voxel did not build; see $R/ovoxel_build.log. Everything except the dual-grid" \
          "exterior still works."
 fi
