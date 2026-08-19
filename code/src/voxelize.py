@@ -202,6 +202,33 @@ def main(ply, out_dir, refine=2, target_cells=0, coarse_dx=0.0, skin_frac=0.0):
     # every cell gets a Gaussian the size of its own cell, or it renders as a dot screen
     scale = torch.where(lvl.to(DEV)[:, None] == 0, coarse * 0.5, fine * 0.5).expand(-1, 3)
 
+    # What route 1 takes from the released model, and what it does not.
+    #
+    # It takes the shape and the exterior. It used to take the interior as well: every coarse
+    # cell arrived carrying the colour of whatever primitives quantised into it, and those
+    # primitives are the reconstruction's own interior, which on a fine-tuned baseline is a
+    # diffusion model's guess about the inside of a fruit. Every interior claim in this paper is
+    # that the photographs put the structure there, and a run that starts from someone else's
+    # interior cannot make it cleanly.
+    #
+    # So the interior starts flat, at the same neutral value route 2's lattice starts at --
+    # f_dc = 0 decodes to 0.5 through the C0 scaling, and route 2's raw lattice is 0.5 in every
+    # channel with zero spread. The two routes then differ only in where the shape and the
+    # exterior come from, which is what distinguishes them and all that should.
+    #
+    # `skin` above is occupancy.surface_cells, the same function the trainer pins the exterior
+    # with, so the cells kept here and the cells held fixed during training are the same set by
+    # construction and not by two rules that agree today.
+    #
+    # INTERIOR_FROM_PLY=1 restores the old behaviour. It is off, and it is what every number
+    # measured before this change was produced under.
+    if _os.environ.get("INTERIOR_FROM_PLY", "0") != "1":
+        _was = float(s0.std())
+        s0 = torch.zeros_like(s0)
+        print(f"  interior starts flat: {s0.shape[0]:,} coarse cells set to 0.5 in every "
+              f"channel (they arrived with a spread of {_was:.3f}); the {s1.shape[0]:,} skin "
+              f"cells keep the model's own colour")
+
     with torch.no_grad():
         g._xyz = nn.Parameter(pos.contiguous())
         g._features_dc = nn.Parameter(torch.cat([s0, s1]).unsqueeze(1).contiguous())
