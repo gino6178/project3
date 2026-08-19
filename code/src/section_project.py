@@ -107,12 +107,32 @@ def sweep(world, cam_of, spec, n_planes, size, tag, rgb0, lvl):
         near = dist < 0.5
         if int(near.sum()) < 64:
             continue
-        # the section as this plane's own cells draw it
+        # The section as this plane's own cells draw it -- and it has to be a *filled*
+        # silhouette, not the scatter of pixels the cell centres land on. A rasteriser draws
+        # each cell at its own footprint; projecting centres alone leaves a dot screen, whose
+        # connected components are all smaller than section_target's minimum and are therefore
+        # all skipped, and the target comes back as the render it was handed. Measured: that
+        # path returned a grey volume of spread 0.045 where the correct one returns 0.18.
+        # Closing the scatter to the footprint the cells actually have is what the renderer
+        # does, and it costs one dilation.
+        from scipy import ndimage as _nd
         img = torch.ones(size, size, 3, device=DEV)
         cov = torch.zeros(size, size, device=DEV)
         flat = py[near] * size + px[near]
         img.view(-1, 3).index_copy_(0, flat, rgb0[near])
         cov.view(-1).index_fill_(0, flat, 1.0)
+        cn = cov.detach().cpu().numpy() > 0.5
+        k = max(1, int(round(0.004 * size)))
+        cn = _nd.binary_fill_holes(_nd.binary_closing(cn, np.ones((2 * k + 1,) * 2)))
+        im_np = img.detach().cpu().numpy()
+        # carry each filled pixel a colour, so the render handed to section_target is a section
+        # and not a stencil; the mapped components overwrite it anyway
+        idx = _nd.distance_transform_edt(~(cov.detach().cpu().numpy() > 0.5),
+                                         return_distances=False, return_indices=True)
+        im_np = im_np[idx[0], idx[1]]
+        im_np[~cn] = 1.0
+        cov = torch.from_numpy(cn.astype(np.float32)).to(DEV)
+        img = torch.from_numpy(im_np).to(DEV)
         tgt = sm.section_target(img.permute(2, 0, 1), arr, alpha=cov[None])
         t = tgt.permute(1, 2, 0)
         c = t[py, px]
