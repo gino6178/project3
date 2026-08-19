@@ -450,8 +450,10 @@ $$\mathcal{O}^{\bullet} = \complement\, \mathcal{C}_{\partial}
 </div><div class="num">(3)</div></div>
 
 <p>where \(B\) is the one-cell structuring element and \(\mathcal{C}_\partial\) the component of
-the complement that reaches the bounding box. What is left is inside by construction rather than
-by a threshold.</p>
+the complement that reaches the bounding box. An optical scan cannot see through the object, so
+every void behind its surface is a failure to observe rather than a feature: on the orange the
+quantised occupancy is 884 disconnected pieces and 440,867 cells, and sealing takes it to one piece
+and 889,183. What is left is inside by construction rather than by a threshold.</p>
 
 <p><strong>Route&nbsp;2, generate and project.</strong> The solid is built analytically from a
 signed distance field, \(\phi(\mathbf{x}) < 0\), so there is nothing to repair, and the skin is
@@ -607,9 +609,40 @@ satisfies the plane equation to machine precision, so the face is planar by cons
 than by fitting; under uniform refinement of the band the polygons meet edge to edge, with no
 T-junctions and no non-manifold edges.</p>
 
+<p>The two degenerate configurations need no special case. A plane through a cell's vertex gives
+coincident intersection points, which merge at a tolerance of \(10^{-6}h\) when the polygons are
+welded. A plane lying in a cell's face gives no straddling edge at all, because the sign test is
+strict, so that cell contributes no polygon and the partition simply follows the lattice face that
+is already there.</p>
+
 <p><strong>Locality.</strong> A cut changes adjacency only inside the crossed band
 \(\mathcal{B}\); everywhere else the graph is reused unchanged, so the geometry costs
 \(\mathcal{O}(K)\) in \(K = \lvert \mathcal{B} \rvert\) rather than in the size of the object.</p>
+
+<div class="tw"><p class="tnum">Algorithm 1</p>
+<table><thead><tr><th>a plane arrives; the pieces and the exposed face leave</th><th>cost</th></tr></thead>
+<tbody>
+<tr><td>1&ensp;\(\mathcal{B} \leftarrow \{c : |\mathbf{n}\cdot\mathbf{x}_c + d| \le \tfrac12 h\sum_a|n_a|\}\)
+    &ensp;<span class="mut">the crossed band, equation&nbsp;(10)</span></td>
+    <td>\(\mathcal{O}(N)\)</td></tr>
+<tr><td>2&ensp;refine every \(c \in \mathcal{B}\) to \(h_f\)
+    &ensp;<span class="mut">one level at the cut, which is what removes T-junctions</span></td>
+    <td>\(\mathcal{O}(K)\)</td></tr>
+<tr><td>3&ensp;\(q(\mathbf{k}) \leftarrow \operatorname{sgn}(\mathbf{n}\cdot\mathbf{x_k} + d)\) for every leaf</td>
+    <td>\(\mathcal{O}(N)\)</td></tr>
+<tr><td>4&ensp;\(\mathcal{E} \leftarrow \{(\mathbf{k},\mathbf{k}') \in \mathcal{A} : q(\mathbf{k}) = q(\mathbf{k}')\}\)
+    &ensp;<span class="mut">drop the adjacencies the plane separates; the rest is reused</span></td>
+    <td>\(\mathcal{O}(K)\)</td></tr>
+<tr><td>5&ensp;pieces \(\leftarrow\) connected components of \(\mathcal{E}\)</td>
+    <td>\(\mathcal{O}(|\mathcal{E}|\,\alpha)\)</td></tr>
+<tr><td>6&ensp;for each \(c \in \mathcal{B}\): intersect its twelve edges, order the points by angle
+    about their centroid, emit \(\mathcal{P}_c\) &ensp;<span class="mut">equation&nbsp;(11)</span></td>
+    <td>\(\mathcal{O}(K)\)</td></tr>
+</tbody></table></div>
+
+<p>Only step&nbsp;3 touches the whole object, and it is a sign evaluation rather than a traversal;
+every step that builds geometry is linear in the crossed cells. Reusing the adjacency outside the
+band rather than rebuilding it is what takes a cut on the orange from 13.76 to 2.91&nbsp;seconds.</p>
 
 <h3 id="physics">3.4&ensp;Simulation interface and contact</h3>
 
@@ -651,7 +684,7 @@ validations sit in the supplement.</p>
 <p class="mut">The measurements this section condenses &mdash; the per-object comparisons against
 prior work, the resolution and compression sweeps, the shell-thickness study, the timings and the
 storage accounting &mdash; are in section&nbsp;S3 of the supplement, with tables and figures
-numbered S1 onward.</p>
+numbered S1 onward. The method section as it was first written, with its notation table, its collapse-tolerance sweep, its sealing counts and its refinement ablations, is section&nbsp;S4.</p>
 
 <h3>4.1&ensp;Interior appearance and cross-view consistency</h3>
 
