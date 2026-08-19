@@ -69,12 +69,19 @@ def build_renderer(ply, cfg, demo, size=512, n_depth=24):
     copy of it.
     """
     (mat, bc, tp, pre, cam_p) = decode_param_json(cfg)
-    # Load at the degree the file actually carries. `load_ply_zero_sh` reads only f_dc and
-    # discards every higher band, and our models carry 24 f_rest coefficients whose mean
-    # magnitude is 0.078 -- the per-voxel directional appearance. Measuring them with that
-    # thrown away, against a released model that has no higher bands to throw away, is not a
-    # comparison. It is also why the offline renders looked washed out beside the training
-    # ones and why a visibly better model scored a worse FID.
+    # Load at the degree the file actually carries, rather than at degree 0 as
+    # `load_ply_zero_sh` does.
+    #
+    # This comment used to say our models carry 24 f_rest coefficients of mean magnitude 0.078
+    # and that dropping them cost the watermelon 17 points of FID. Checked with plyfile against
+    # every model on the box -- orange, orange_b, orange_r2, the six orange folds, watermelon,
+    # apple, bread, pomegranate_r2, and the released plys they are built from -- **every one
+    # carries f_rest 0**. The branch below is therefore dead on all current inputs and FULL_SH
+    # is a no-op: `_n = 0` sends both settings down the same path. It is kept because a model
+    # that does carry higher bands would otherwise be silently flattened, which is the failure
+    # the old comment described; but nothing in this paper is measured through it, and the
+    # representation the paper describes has no view-dependent term at all, which is what
+    # section 4.1.1 already reports.
     from plyfile import PlyData as _P
     _n = len([q.name for q in _P.read(ply).elements[0].properties
               if q.name.startswith("f_rest_")])
