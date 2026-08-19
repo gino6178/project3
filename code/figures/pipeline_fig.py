@@ -106,7 +106,17 @@ def main(obj, out):
 
     ax = fig.add_subplot(gs[0, 2])
     slab(ax, xyz1[sk], rgb1[sk], s=0.5)
-    panel(ax, "the surface, pinned", "colour and geometry, held exactly through training")
+    # The same picture as the first panel, deliberately: SHELL_PIN means training does not move
+    # it, and the measured drift is the sub-caption rather than a claim.
+    ext = "measurements/results.json"
+    drift = None
+    if os.path.exists(os.path.join(FN, ext)):
+        import json
+        r = json.load(open(os.path.join(FN, ext))).get(obj, {})
+        drift = r.get("exterior_mean")
+    panel(ax, "the surface, pinned",
+          "the same picture, on purpose: training does not move it"
+          + (f"\n(mean drift {drift:.4f} over 200 iterations)" if drift is not None else ""))
 
     ax = fig.add_subplot(gs[0, 3]); ax.set_axis_off()
     ax.text(0.0, 1.02,
@@ -156,6 +166,10 @@ def main(obj, out):
         ax.imshow(im)
     panel(ax, "and then the interior",
           "photographs of cross-sections are the only thing\nthat ever writes inside; section 3.2")
+
+    for y, lab, col in ((0.884, "ROUTE 1  \u2014  a scan (a released reconstruction stands in)", "#c0392b"),
+                        (0.448, "ROUTE 2  \u2014  a shape from its equation", "#2e7d5b")):
+        fig.text(0.02, y, lab, fontsize=9, weight="bold", color=col)
 
     fig.suptitle("From a scanned shell, the interior is generated \u2014 not carried in",
                  fontsize=12.5, y=0.985)
