@@ -955,13 +955,44 @@ fruit has a peel.</p>
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
 
+<p><strong>The parameters the solver is given.</strong> The constitutive model is elastic:
+each particle carries a Young&#8217;s modulus, a Poisson ratio and a density, and there is no
+plasticity and therefore no yield stress &#8212; a piece that is pushed returns, and what the
+paper claims about the solver is about contact and conservation rather than about failure. The
+per-object presets, which the learned decomposition of Table&nbsp;6 has to beat rather than
+reproduce, are:</p>
+
+<div class="tw"><p class="tnum">Table 5</p><table>
+<thead><tr><th>object</th><th>\(E\) skin (Pa)</th><th>\(E\) interior (Pa)</th>
+<th>\(\rho\) skin</th><th>\(\rho\) interior</th><th>\(\nu\)</th><th>contrast</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>8.0&times;10<sup>6</sup></td><td>6.0&times;10<sup>5</sup></td>
+    <td>750</td><td>950</td><td>0.35</td><td>13&times;</td></tr>
+<tr><td>watermelon</td><td>2.0&times;10<sup>7</sup></td><td>4.0&times;10<sup>5</sup></td>
+    <td>900</td><td>950</td><td>0.35</td><td>50&times;</td></tr>
+<tr><td>doughnut</td><td>3.0&times;10<sup>6</sup></td><td>3.0&times;10<sup>5</sup></td>
+    <td>450</td><td>250</td><td>0.30</td><td>10&times;</td></tr>
+<tr><td class="mut">uniform, the control</td><td class="mut">1.2&times;10<sup>6</sup></td>
+    <td class="mut">1.2&times;10<sup>6</sup></td><td class="mut">800</td>
+    <td class="mut">800</td><td class="mut">0.35</td><td class="mut">1&times;</td></tr>
+</tbody></table></div>
+
+<p>The interior is graded rather than constant, spanning up to ten times its own softest value,
+so the contrast column is between the shell and the stiffest interior and not between the shell
+and a single number. The upper end is bounded by the integrator and not by the fruit: at the grid
+and step size used here, \(E = 10^8\) diverges, which is why the extreme preset exists in the
+code and is not reported. Mass conservation under the cut is exact to floating point on every
+object &#8212; the last column of Table&nbsp;2, 4.44 to 6.66\(\times 10^{-16}\) &#8212; because
+a piece is a set of whole cells and a cut moves cells between sets rather than resampling
+them.</p>
+
 <h3>4.4&ensp;Ablations</h3>
 
 <p>Four arms, each the orange with exactly one thing changed, trained by the same program on the
 same references for the same two hundred iterations and scored in one run against twelve held-out
 cuts. Two of them come out the other way, and both are reported as they fell.</p>
 
-<div class="tw"><p class="tnum">Table 5</p><table>
+<div class="tw"><p class="tnum">Table 6</p><table>
 <thead><tr><th>arm</th><th>cells</th><th>DreamSim &darr;</th><th>against the control</th>
 <th>detail, e&#8722;3</th></tr></thead>
 <tbody>
