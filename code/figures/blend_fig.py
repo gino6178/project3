@@ -64,6 +64,7 @@ def main(obj, out, n_sweep=24, lo=0.34, hi=0.66, size=384):
     files = sorted(_photos_in(os.path.join(FN, ref_h)))
     M = len(files)
     N_f = int(os.environ.get("H_HI", "20")) - int(os.environ.get("H_LO", "4"))
+    plt.rcParams["figure.constrained_layout.use"] = False
 
     # --- (a) the weights, over the trainer's own plane index -------------------------------
     j = np.arange(N_f)
@@ -74,7 +75,9 @@ def main(obj, out, n_sweep=24, lo=0.34, hi=0.66, size=384):
     # --- the sweep, in the trainer's depth fraction ----------------------------------------
     depths = np.linspace(lo, hi, n_sweep)
     tmp = os.path.join(os.path.dirname(os.path.abspath(out)), f"_sweep_{obj}")
-    paths = random_cuts.sweep(ply, cfg, demo, tmp, depths, size=size)
+    # Four times the trainer's 24, so consecutive sweep depths are distinct planes and
+    # panel (d) reads the volume rather than the indexing.
+    paths = random_cuts.sweep(ply, cfg, demo, tmp, depths, size=size, n_depth=4 * n_sweep)
     imgs = [cv2.imread(p)[:, :, ::-1].astype(np.float32) / 255. for p in paths]
     d = [float(np.abs(imgs[i + 1] - imgs[i]).mean()) for i in range(len(imgs) - 1)]
 
@@ -96,7 +99,10 @@ def main(obj, out, n_sweep=24, lo=0.34, hi=0.66, size=384):
     axw.set_xlabel("transverse plane index $j$", fontsize=8)
     axw.set_ylabel("weight in (14)", fontsize=8)
     axw.tick_params(labelsize=7); axw.set_ylim(-0.03, 1.03)
-    axw.legend(fontsize=6, ncol=min(M, 6), loc="upper center", framealpha=0.9)
+    if M <= 8:
+        axw.legend(fontsize=6, ncol=min(M, 4), loc="upper center", framealpha=0.9)
+    else:
+        axw.set_title("", fontsize=1)
     axw.set_title("(a) every plane is a mixture of two photographs, and the mixture is "
                   "continuous in depth", fontsize=9)
 
@@ -129,7 +135,7 @@ def main(obj, out, n_sweep=24, lo=0.34, hi=0.66, size=384):
 
     fig.suptitle(f"{obj}: {n_sweep} sections between depth {lo} and {hi}, "
                  f"{M} transverse photographs over {N_f} supervised planes", fontsize=10)
-    fig.tight_layout(rect=(0.02, 0, 1, 0.97))
+    fig.subplots_adjust(left=0.06, right=0.99, top=0.94, bottom=0.06)
     fig.savefig(out, dpi=145)
     print(f"  -> {out}")
     at = [d[i] for i in cross if i < len(d)]

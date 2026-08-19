@@ -60,7 +60,7 @@ class P:
     debug = False
 
 
-def build_renderer(ply, cfg, demo, size=512):
+def build_renderer(ply, cfg, demo, size=512, n_depth=24):
     """The trainer's own camera, model and cutting, as a function of (azimuth, elevation, depth).
 
     Factored out of main because a figure that renders at depths it chooses -- the continuity
@@ -107,9 +107,13 @@ def build_renderer(ply, cfg, demo, size=512):
                                    init_azimuthm=az, init_elevation=el,
                                    init_radius=cam_p["init_radius"], move_camera=False,
                                    current_frame=0, delta_a=None, delta_e=None, delta_r=None)
-        _, _, centers, avg = interpolate_along_camera_direction(raw, tpos, 24)
+        # n_depth is the trainer's own 24 by default, and the depth fraction indexes into it.
+        # A sweep finer than this resolves nothing: two fractions that round to one centre give
+        # the identical image, so a continuity read-out over such a sweep measures the
+        # quantisation of this list and not the volume. blend_fig.py raises it for that reason.
+        _, _, centers, avg = interpolate_along_camera_direction(raw, tpos, n_depth)
         avg = float(avg)
-        c = centers[int(depth_frac * (len(centers) - 1))]
+        c = centers[int(round(depth_frac * (len(centers) - 1)))]
         plane = generate_plane_center(raw, c)
         mask, mask_suf = plane_filter(plane, tpos, raw, surf_dis=avg / 2, include_double=True)
         pos = apply_inverse_rotations(
@@ -130,10 +134,14 @@ def build_renderer(ply, cfg, demo, size=512):
     return render
 
 
-def sweep(ply, cfg, demo, out_dir, depths, az=0.0, el=None, size=512):
-    """Render one transverse section per depth fraction, in the order given."""
+def sweep(ply, cfg, demo, out_dir, depths, az=0.0, el=None, size=512, n_depth=24):
+    """Render one transverse section per depth fraction, in the order given.
+
+    n_depth must be at least as large as the sweep is dense, or neighbouring depths collapse
+    onto one plane and the sweep is a step function of its own indexing.
+    """
     os.makedirs(out_dir, exist_ok=True)
-    render = build_renderer(ply, cfg, demo, size)
+    render = build_renderer(ply, cfg, demo, size, n_depth)
     el = float(os.environ.get("CUT_EL", "-90")) if el is None else el
     out = []
     for i, f in enumerate(depths):
