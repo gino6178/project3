@@ -915,12 +915,23 @@ caching allocator still holds, and is a property of the process rather than of t
 optimisation times are read from checkpoint timestamps between iterations 20 and 180 and scaled
 to 200, and the runs shared the machine, so they are upper bounds.</p>
 
-<p>The two baselines are absent from this table on purpose. Their optimisation could not be
-reproduced here &#8212; neither releases the fine-tuning data or the schedule for the checkpoint
-its interior depends on &#8212; so a training time for them would be quoted rather than measured,
-and a quoted number against a measured one is not a comparison. What can be said without
-measuring either is structural and is in Table&nbsp;1: their interiors are supervised through a
-generative model fitted to the object, and this one by the photographs directly.</p>
+<p><strong>What a generative interior costs per target.</strong> The prior work supervises a
+section by sampling a depth-conditioned latent diffusion model and taking what comes back as the
+target. That call can be timed on this machine even though its fine-tuned weights cannot be
+obtained, because the cost is set by the architecture and the schedule and not by which weights
+are loaded. At the settings the code itself uses &#8212; 512&nbsp;&times;&nbsp;512, fifty
+inference steps, guidance 10 &#8212; one target takes <strong>1.70&nbsp;s</strong> at sampling
+strength 0.6 and 0.79&nbsp;s at 0.25, and the pipeline holds 6.2&nbsp;GiB. One pass over sixteen
+planes in each of two families is 32 targets, so 25 to 54&nbsp;s; regenerating every plane every
+iteration for 200 iterations is <strong>1.4 to 3.0&nbsp;hours</strong> of sampling alone, against
+29 to 45 minutes for the whole of this method.</p>
+
+<p>That is a lower bound on the difference and not the difference. It counts only the sampling.
+Fine-tuning the checkpoint on the object&#8217;s own cross-sections comes before any of it, and
+neither the data nor the schedule for that stage is released, so it is a cost we can name and not
+one we can time. What can be said without timing anything is structural and is in Table&nbsp;1:
+their interiors are supervised through a generative model fitted to the object, and this one by
+the photographs directly.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
