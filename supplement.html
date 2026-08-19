@@ -86,7 +86,7 @@
 
 <p>The paper states every result; this is the detail behind them, unchanged rather than
 summarised. Sections here are numbered with an S so they cannot be confused with the
-paper's; a bare "section 4.1.2" in this document is a reference to the paper. The limitations are here too, and they are the
+paper's; a bare "section S3.1.2" in this document is a reference to the paper. The limitations are here too, and they are the
 first thing below.</p>
 
 <h2 id="limits">Limitations</h2>
@@ -100,15 +100,15 @@ first thing below.</p>
       should be read that way.</li>
   <li><strong>Two of the four runtime figures are not reported.</strong> The specification asks for
       initial load, single-cut update, O&#8209;Voxel conversion and render rate. The first two are in
-      section 4.3.4. The O&#8209;Voxel conversion is not timed because the extension is not built on
+      section S3.3.4 The O&#8209;Voxel conversion is not timed because the extension is not built on
       the machine the timings were taken on, and the interactive render rate is not timed because
       the harness fails to produce it. Neither absence is evidence either way about the cost of
       those operations.</li>
   <li><strong>The two levers on cutting cost are unbenchmarked.</strong> A cut is about eleven
       seconds at the resolution used, and the face geometry is linear in the crossed cells; the labelling as implemented is not,
-      and section 4.3.4 measures the cost as flat per total cell. An adaptive refinement of the band and a GPU formulation of the same
+      and section S3.3.4 measures the cost as flat per total cell. An adaptive refinement of the band and a GPU formulation of the same
       passes are the two ways to reduce it, and neither is implemented here: the operator refines
-      every crossed cell to the same spacing, which is what section&nbsp;4.3.3 measures as one
+      every crossed cell to the same spacing, which is what section&nbsp;S3.3.3 measures as one
       level at the cut on all twenty-four cuts, and the GPU formulation exists in the repository
       without a timing.</li>
   <li><strong>No modulus here is measured.</strong> \(E_{\min}\) and \(E_{\max}\) are the ends
@@ -172,7 +172,7 @@ first thing below.</p>
   <li><strong>The interior features are not retrained.</strong> The per-cell features are still
       the ones the Gaussian run learned; refitting them for the cube renderer flattened the
       orange's segment walls twice, and the criterion for "the walls survived", the angular oscillation of a section over its middle radii, is in place but the fit is not.</li>
-  <li><strong>Cutting is not fast.</strong> Eleven to fifteen seconds depending on which stage and which lattice; the paper's section 4.3.4 sets the four timings side by side. Where we call the cut
+  <li><strong>Cutting is not fast.</strong> Eleven to fifteen seconds depending on which stage and which lattice; the paper's section S3.3.4 sets the four timings side by side. Where we call the cut
       cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
       design asked for a GPU-friendly band subdivision, which is not what was built.</li>  <li><strong>Resolution bounds what the representation can hold.</strong> Occupancy is a
       decision per cell, so a feature narrower than a cell is either absorbed into its neighbours
@@ -375,7 +375,7 @@ define.</p>
 
 
 <p>Four properties the cutting code has, established on quantised lattices in the previous
-project before generated ones existed. They are listed here for what they are; section 4.1.2 is
+project before generated ones existed. They are listed here for what they are; section S3.1.2 is
 the run that asks whether they survive a generated lattice, and where the two disagree numerically
 it is because they are different measurements of the same property rather than the same measurement
 twice.</p>
@@ -529,7 +529,7 @@ with the smallest kept at 2,287 cells.</p>
 <tr><td>watermelon</td><td>66,408 (10.7%)</td><td>620,162</td><td>2</td><td>n/a</td></tr>
 </tbody></table></div>
 
-<p class="mut">The total-leaf column is the lattice these geometry runs were made on and is not the cell count the appearance results use; the two differ by the fine level's configuration, and the doughnut's and the watermelon's are below the solid-cell counts of the paper's section 4.2.5 for that reason. The band fraction is the quantity to read here, and it is a ratio within one run.</p>
+<p class="mut">The total-leaf column is the lattice these geometry runs were made on and is not the cell count the appearance results use; the two differ by the fine level's configuration, and the doughnut's and the watermelon's are below the solid-cell counts of the paper's section S3.2.5 for that reason. The band fraction is the quantity to read here, and it is a ratio within one run.</p>
 
 <h4>S2.6&ensp;Cross-sections</h4>
 
@@ -694,7 +694,7 @@ what its paper states.</p>
     <td><strong>FID 378.7 / 511.6</strong> <span class="mut">(our reproduction)</span></td>
     <td class="mut">needs none</td>
     <td class="mut">the arm once entered here at FID 90.1 / 213.5 is photograph-supervised;
-        see the paper's section 4.1.7</td></tr>
+        see the paper's section S3.1.7</td></tr>
 <tr><td>breaking into pieces</td><td class="mut">not addressed</td>
     <td>fracture by continuum damage</td>
     <td>connected components on face adjacency, one solver per piece</td></tr>
@@ -787,21 +787,1520 @@ matches them transversally and overshoots longitudinally.</p>
 </tbody></table></div>
 
 <div class="note"><strong>The cube columns are the worst in these tables and that is not a
-contradiction of section 4.1.2.</strong> Coverage and fidelity are different questions. Measured
+contradiction of section S3.1.2</strong> Coverage and fidelity are different questions. Measured
 against the photographs' own 13.0e&#8722;3 of fine detail, the Gaussian rasteriser carries
 13.8e&#8722;3 and the cube march 24.0e&#8722;3 and 30.8e&#8722;3, and the four FIDs order themselves
 by exactly that excess: the march resolves detail the photographs do not have, and a distribution
-metric punishes it for that. What section 4.1.2 establishes is that the cube volume paints the
+metric punishes it for that. What section S3.1.2 establishes is that the cube volume paints the
 section at any resolution; what these tables establish is that at 512&nbsp;px, against six
 photographs, it does not look more like them for it.</div>
 
 <h4>S2.11&ensp;Reference-based metrics</h4>
 
-<p>PSNR, SSIM and LPIPS on the same cuts are in section 4.1.7, computed on a hundred planes rather
+<p>PSNR, SSIM and LPIPS on the same cuts are in section S3.1.7, computed on a hundred planes rather
 than six and against the same references. They are not repeated here: at six renders the four route
 and renderer combinations differ by 0.29&nbsp;dB, 0.010 SSIM and 0.019 LPIPS on the orange and by
 less than half that on the watermelon, and all four sit about 4.5&nbsp;dB and 0.21 LPIPS below the
 photographs measured against each other. Nothing in that spread is a result.</p>
+
+
+<h2 id="s3">S3&ensp;Experiments, in full</h2>
+<p class="mut">The body reports the four results section&nbsp;4 stands on. This is the section as it was measured: every sweep, every per-object sheet, and the engineering validations that guarantee the geometry rather than demonstrate the contribution. Its tables and figures are numbered S1 onward and are referred to by those numbers from the body.</p>
+
+<p>The validation is organised along four axes, and which of them this paper fills and which it does not. <strong>Perceptual fidelity</strong> under loose,
+unaligned references is section S3.1, and it is the axis the paper's main claim rests on.
+<strong>Geometric precision of the cut face</strong> &mdash; planarity, area error, unpainted
+fraction, absence of gaps &mdash; is sections 4.1.2 and 4.3.2. <strong>Storage and runtime</strong>
+is section S3.3, and it contains a result in each direction: contact queries run at 4.9 million per
+second, and a cut takes seconds rather than milliseconds. <strong>Physics</strong> is section S3.2,
+and it is the axis that is not filled: contact is measured and a resolvability criterion is derived
+and swept, but there is no comparison against a reference solver, no deformation or stress error, no
+fracture &mdash; which this formulation does not implement at all &mdash; and no interactive frame
+rate. No physics benchmark is reported; the <a href="supplement.html#limits">limitations</a> say so in
+the same words.</p>
+
+<p> The organising axis is
+the two routes, a lattice quantised from a scan and a lattice generated from a field and skinned
+from six views, because after the second step nothing downstream can tell which was
+taken, so any result that separates them is a result about how an object is <em>reached</em>
+rather than about what happens to it afterwards. Objects are chosen by whether a released
+model of a prior method exists for them, so that every comparison is against a published result
+rather than a reimplementation. Where a comparison comes out against this work it is reported in the
+same place as the ones that do not. Comparisons against other work sit on the same
+footing, and the one exception that used to stand here is gone. Route&nbsp;1 quantises a released
+model, and it used to take that model's interior with it: every coarse cell arrived carrying the
+colour of the primitives that fell in it, which on a fine-tuned baseline is a diffusion model's
+guess about the inside of a fruit. It now takes the shape and the exterior and nothing else. The
+interior starts at a flat 0.5 in every channel &mdash; the value route&nbsp;2's lattice starts at,
+measured, with zero spread &mdash; so on both routes every structure inside the object was put
+there by the photographs.</p>
+
+<p class="mut">What that costs, since it is not free. Scored against the photographs that
+supervised them, the flat start is 0.0026 worse on the orange, 0.0166 on the watermelon, 0.0308 on
+the bread and 0.0373 on the apple, and the ordering is the point: the cost is smallest where the
+photographs constrain the interior most and largest where they constrain it least, which is what
+an initialisation carrying real information looks like when it is taken away. It is taken away
+anyway, and not as a trade. A scanner cannot see inside an object, so a run that begins from an
+interior is answering an easier question than the one posed; the numbers above are what it costs to
+answer the posed one. The older behaviour is retained behind a switch, so the difference can be reproduced.</p>
+
+<div class="tw"><p class="tnum">Table S2</p><table>
+<thead><tr><th>the comparison</th><th>what it answers</th><th>its figure</th></tr></thead>
+<tbody>
+<tr><td>route 1 against route 2</td><td>cost of a generated topology</td>
+    <td>held-out cuts, transverse and longitudinal</td></tr>
+<tr><td>the six views against the shell they made</td><td>projection accuracy</td>
+    <td>three per-object sheets</td></tr>
+<tr><td>this work against FruitNinja and GaussianFluent</td><td>cost of holding a hidden volume</td>
+    <td>the same slab, four ways</td></tr>
+<tr><td>this work against FruitNinja's released models</td><td>the cut a viewer actually sees</td>
+    <td>the same held-out planes, five rows</td></tr>
+<tr><td>occupancy alone against occupancy and the cut plane</td><td>whether contact is real</td>
+    <td>the contact slab at four separations</td></tr>
+<tr><td>route 1 against route 2</td><td>dependence on object-specific supervision</td>
+    <td>the same cuts, both ways</td></tr>
+<tr><td>the cube renderer against the rasteriser</td><td>representation against renderer</td>
+    <td>the same cuts, four columns</td></tr>
+<tr><td>uniform material against a field</td><td>solver-resolvable shell thickness</td>
+    <td>the section by class and by stiffness</td></tr>
+</tbody></table></div>
+
+<h3 id="prior">S3.1&ensp;Comparison with prior work</h3>
+
+<p>Two published methods fill an object's interior with Gaussian primitives so that a cut reveals
+something: FruitNinja [3], which supervises the interior with depth-conditioned diffusion, and
+GaussianFluent [23], which densifies it under generative guidance and then simulates fracture. They
+are compared here on four things: what the interior costs to hold, what it looks like on terms none
+of the three methods chose, what a held-out cut scores through one evaluator, and what each method
+depends on. FruitNinja's published interiors come from a diffusion model
+fine-tuned on the object's own photographs, and that model is not released; GaussianFluent needs no
+fine-tuned model, and neither does this work, so the reproduction anyone can perform is the one
+without it.</p>
+
+<h4>S3.1.1&ensp;The same object, from the same source file</h4>
+
+<p>FruitNinja's released watermelon is redistributed by GaussianFluent [23]: the same
+541,266,069 bytes and the same MD5 as the model route 1 quantises. The two representations can
+therefore be compared on the same object, from the same source file.</p>
+
+<div class="tw"><p class="tnum">Table S3</p><table>
+<thead><tr><th>watermelon</th><th>FruitNinja, as released</th><th>this work, route 1</th><th></th></tr></thead>
+<tbody>
+<tr><td>primitives / cells</td><td>7,959,789</td><td>1,741,169</td><td><strong>4.6&times; fewer</strong></td></tr>
+<tr><td>as stored, cells only, index implicit</td><td>425.1 MiB</td><td>56.5 MiB</td><td>7.5&times; less</td></tr>
+<tr><td>with the sparse index the lattice needs</td><td>425.1 MiB</td><td>76.4 MiB</td><td>5.6&times; less</td></tr>
+<tr><td><strong>with the dual-grid exterior as well</strong></td><td><strong>425.1 MiB</strong></td>
+    <td><strong>163.5 MiB</strong></td><td><strong>2.6&times; less</strong></td></tr>
+<tr><td>opacity</td><td>1.0000 at the median and the 10th percentile</td><td>n/a</td><td>opaque by construction</td></tr>
+<tr><td>support scale \(\sigma\)</td><td>1.11e&#8722;7</td><td>n/a</td><td></td></tr>
+<tr><td>spacing \(h\)</td><td>0.0036</td><td>0.0172</td><td></td></tr>
+<tr><td><strong>\(\rho = \sigma/h\)</strong></td><td><strong>3.1e&#8722;5</strong></td>
+    <td>0.26 as splatted; n/a as a cube volume</td><td></td></tr>
+<tr><td>primitives per unit volume</td><td>1,029,854</td><td>137,000</td><td></td></tr>
+</tbody></table></div>
+
+<h4>S3.1.2&ensp;The cut face</h4>
+
+<p>Two claims are made here and the second is the one a cut exposes. The first is that a
+cut face drawn from a cube volume can be <em>stated</em>; the second is that it <em>looks more like
+the fruit</em>. The second is measured under leave-one-out, at 0.1006 against 0.1474 on all six folds, and goes first.</p>
+
+<p>The comparison turns on what the supervision is. Both methods are given the same asset &mdash;
+photographs of the fruit's cross-sections, six of each family. FruitNinja spends them on a
+fine-tuning run, obtaining a depth-conditioned diffusion model specific to that fruit, and distils
+that model into the interior; the model is not released, so reproducing their result means
+reproducing the fine-tuning. We use the images as the target directly. Nothing is trained that is
+not the object itself, nothing generative runs in the loop, and the comparison below is therefore
+not between two amounts of supervision but between two ways of spending the same six photographs.</p>
+
+<p><strong>Holding out the photograph, not just the plane.</strong> The objection to supervising a
+volume with six images is that the volume may simply be storing them. Held-out <em>planes</em> do
+not answer it: a plane the training never used still cuts a fruit whose every reference the
+training did. So the reference is held out instead. Six models are trained, each on five of the
+six transverse photographs and five of the six longitudinal, and each is scored against the one
+transverse photograph its own run never saw. FruitNinja's released model is scored against the
+same held-out photograph in the same batch, without retraining anything &mdash; its interior
+already exists, and the diffusion model that produced it was fine-tuned on all six, the held-out
+one included. The comparison is therefore tilted against us: on every fold, ours is the only model
+that has not seen the image it is being measured against.</p>
+
+<div class="tw"><p class="tnum">Table S4</p><table>
+<thead><tr><th>orange, transverse DreamSim &darr;, held-out plane <em>and</em> held-out photograph</th>
+<th>ours, that photograph held out</th><th>FruitNinja, released, fine-tuned on it</th>
+<th>ours, trained on all six</th></tr></thead>
+<tbody>
+<tr><td>fold 0</td><td><strong>0.1090</strong></td><td>0.1713</td><td class="mut">0.0830</td></tr>
+<tr><td>fold 1</td><td><strong>0.1049</strong></td><td>0.1404</td><td class="mut">0.0885</td></tr>
+<tr><td>fold 2</td><td><strong>0.0841</strong></td><td>0.1325</td><td class="mut">0.0769</td></tr>
+<tr><td>fold 3</td><td><strong>0.1085</strong></td><td>0.1696</td><td class="mut">0.0831</td></tr>
+<tr><td>fold 4</td><td><strong>0.0862</strong></td><td>0.1403</td><td class="mut">0.0729</td></tr>
+<tr><td>fold 5</td><td><strong>0.1108</strong></td><td>0.1303</td><td class="mut">0.0848</td></tr>
+<tr><td><strong>mean &plusmn; sd</strong></td><td><strong>0.1006 &plusmn; 0.0121</strong></td><td>0.1474 &plusmn; 0.0183</td><td class="mut">0.0815 &plusmn; 0.0057</td></tr>
+</tbody></table></div>
+
+<p><strong>The paired metrics on the same folds.</strong> PSNR, SSIM and LPIPS are computed on the same six folds against the
+same held-out photograph.</p>
+
+<div class="tw"><p class="tnum">Table S5</p><table>
+<thead><tr><th>orange, mean over six leave-one-out folds</th><th>PSNR &uarr;</th><th>SSIM &uarr;</th>
+<th>LPIPS &darr;</th><th>DreamSim &darr;</th></tr></thead>
+<tbody>
+<tr><td><strong>this work</strong></td><td><strong>14.70 dB</strong></td><td>0.7377</td>
+    <td><strong>0.4262</strong></td><td><strong>0.1006</strong></td></tr>
+<tr><td>FruitNinja, released</td><td>13.87 dB</td><td><strong>0.7461</strong></td><td>0.4837</td><td>0.1474</td></tr>
+</tbody></table></div>
+
+<p class="mut">Rendered as the leave-one-out batch: 40 cuts per fold, each fold scored against the one photograph its own run never saw. DreamSim values in this paper come from three render batches taken at different times; a value is comparable with others in its own table and differs by up to 0.006 from the same arm in another.</p>
+
+<p>All four agree in direction, and the size of each margin follows from what each instrument
+compares. PSNR and SSIM are pixel-aligned comparisons, and a
+held-out cutting plane is not a photograph of any particular slice: there is no correspondence
+between a plane at an arbitrary depth and an image of a different fruit cut somewhere else, so what
+these measure is largely that both models produce an orange disc of about the right size and colour.
+Fourteen decibels is what two photographs of different oranges score against each other, so the
+scale here is set by the protocol rather than by either method. LPIPS compares features rather than
+pixels and separates the two by more; DreamSim, trained on human choices between image pairs,
+separates them by most and is the instrument this paper reads.</p>
+
+<p>Two things follow, and the second is the one the objection was about. The first is the margin:
+<strong>1.53 times</strong> closer to a photograph our model was not allowed to fit and theirs was,
+winning on all six folds individually and by more than the fold-to-fold spread of either column.
+The second is the third column. Holding the photograph out costs <strong>0.0044</strong> of
+DreamSim &mdash; 0.1006 against 0.0815, on the same references and the same procedure, the only
+difference being whether the run had seen the image. That is less than half the spread across
+folds, and the gap it has to explain is 0.052. A representation that was storing its references
+would not behave this way: removing one of six references from a memoriser costs it that
+reference, and here it costs 8% of a margin. The six images are being used to learn the fruit
+rather than to reproduce the six images.</p>
+
+<figure>
+  <img src="assets/cutface_zoom.png" alt="A cut face at the same plane, three ways, with the
+       interior magnified: a real cut orange, this work, and FruitNinja's released model">
+  <figcaption><span class="fnum">Figure S5</span><br>The same held-out plane, three ways, with the box magnified beside each section.
+  Both arms rendered the same planes under the same seed, so a row differs only in what filled the
+  volume; the left column is a photograph of a real cut orange and is not that plane, since no
+  photograph is. What the magnification is for: the difference between a section that has segment
+  membranes and one that has a smooth gradient is a few tens of pixels wide and is invisible at the
+  size a section is normally shown. The released model resolves the core as a dark blob with a
+  blown-out surround; the membranes it draws do not reach the rind. The photograph's sections fill
+  more of their frame than the renders do, which is a framing difference and not a result.
+  </figcaption>
+</figure>
+
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected. This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table S6</p><table>
+<thead><tr><th>orange, transverse FID &darr;, 100 held-out planes, references in-sample on both sides</th><th></th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released model, supervised by a diffusion model fine-tuned on this fruit</td><td>102.2</td></tr>
+<tr><td>this work, route 1</td><td>91.5</td></tr>
+<tr><td><strong>this work, route 2</strong></td><td><strong>74.1</strong></td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td></tr>
+</tbody></table></div>
+
+<p>Twenty-eight points of FID closer to the photographs than a method whose interiors were generated by a model fine-tuned on those photographs, on supervision that is those photographs used directly. The planes are held out; the reference images are not, on either side &mdash; ours are
+the training target and the baseline's fine-tuned its model &mdash; so the comparison is between
+two ways of spending the same six images and not between one method that has seen them and one
+that has not, and the leave-one-out study above has already removed it from our side alone.</p>
+
+
+<p>One instrument does not support the result, and it is reported with the rest. FID at six
+references is dominated by its own bias, so we scored the same renders three ways:</p>
+
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected. This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table S7</p><table>
+<thead><tr><th>orange, transverse, out-of-sample rows only</th><th>DreamSim &darr;</th><th>FID &darr;</th>
+<th>KID &darr;</th><th>CLIP&#8209;I &uarr;</th><th>CLIP&#8209;T &uarr;</th><th>prec / rec</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released model</td><td>0.1326</td><td>102.2</td><td>171&plusmn;27</td>
+    <td><strong>97.64</strong></td><td>24.64</td><td class="mut">0.00 / 0.00</td></tr>
+<tr><td>FruitNinja, stock checkpoint</td><td>0.2697</td><td>378.7</td><td>667&plusmn;103</td>
+    <td>90.89</td><td><strong>25.13</strong></td><td class="mut">0.00 / 0.00</td></tr>
+<tr><td><strong>this work, route 1, photographs as the target</strong></td><td><strong>0.0744</strong></td>
+    <td>90.1</td><td>136&plusmn;27</td><td>96.92</td><td>23.24</td><td class="mut">0.00 / 0.00</td></tr>
+<tr><td><strong>this work, route 2, photographs as the target</strong></td><td>0.0794</td>
+    <td><strong>73.2</strong></td><td><strong>107&plusmn;33</strong></td><td>96.92</td><td>24.28</td>
+    <td class="mut">0.00 / 0.00</td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">0.0424</td>
+    <td class="mut">46.3</td><td class="mut">n/a</td><td class="mut">98.48</td>
+    <td class="mut">24.62</td><td class="mut">1.00 / 0.33</td></tr>
+</tbody></table></div>
+
+<p>Six references will not support a distribution, so rather than argue about FID we scored the
+same renders with every instrument that seemed defensible and report all of them. Four are
+informative and two are not.</p>
+
+<p><strong>DreamSim is the one to read.</strong> It is a perceptual distance trained on human
+two-alternative forced choice judgements, which is precisely the judgement "does this cut face look
+more real" asks for, and unlike the others it was built for that rather than repurposed. On this
+object it puts this work at <strong>0.0744</strong> and 0.0794 against the released model's 0.1326,
+roughly <strong>1.7&times; closer</strong> to the photographs and about halfway between that model
+and the photographs' own agreement with each other at 0.0424. FID and KID order the arms the same
+way, by 29 points and by about one and a half combined standard deviations.</p>
+
+<p>Run on every object and every arm, it says the same thing each time, and on the watermelon it
+reverses the one result that had gone against this work:</p>
+
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected. This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table S8</p><table>
+<thead><tr><th>DreamSim to the nearest photograph &darr;</th><th>orange</th><th>watermelon</th><th>doughnut</th></tr></thead>
+<tbody>
+<tr><td class="mut">the photographs against each other</td><td class="mut">0.0424</td>
+    <td class="mut">0.0670</td><td class="mut">one reference</td></tr>
+<tr><td><strong>this work, route 2</strong></td><td><strong>0.0794</strong></td>
+    <td><strong>0.1674</strong></td><td><strong>0.1145</strong></td></tr>
+<tr><td><strong>this work, route 1</strong></td><td>0.0759</td><td>0.1750</td><td>0.1178</td></tr>
+<tr><td>FruitNinja, released</td><td>0.1326</td><td>0.2211</td><td class="mut">no released model</td></tr>
+<tr><td>GaussianFluent, released</td><td class="mut">no orange released</td><td>0.3278</td>
+    <td class="mut">no released model</td></tr>
+<tr><td>FruitNinja, stock checkpoint</td><td>0.2697</td><td class="mut">not run</td><td class="mut">not run</td></tr>
+</tbody></table></div>
+
+<p>Both objects, both baselines, the same direction. On the watermelon this work is
+<strong>1.3&times;</strong> closer to the photographs than FruitNinja and <strong>2.0&times;</strong>
+closer than GaussianFluent, which is the model that took the best FID on that object. The two instruments rank it differently. GaussianFluent's watermelon is a different specimen whose
+seeds are elongated along one direction and whose pith reads thicker than in the photographs,
+features a distribution over sections is less sensitive to than a paired perceptual distance is.</p>
+
+<p>The doughnut has one appearance number here. It has one reference photograph
+per family, which is why every distribution metric in this paper skips it and why its only previous
+score was a topological check that a featureless grey torus would also pass. A pairwise perceptual
+distance needs one reference, so the object the paper leans on for non-convex topology and for the
+whole physics section is no longer unmeasured on appearance.</p>
+
+<p>Against that, CLIP image similarity puts FruitNinja 0.72 of a point ahead on a scale where every
+candidate and the references themselves fall between 96.9 and 98.5, so it is discriminating inside
+two percent of its range. CLIP against a text prompt ranks the stock-checkpoint arm highest of all,
+the one with brown flesh and crusted segment walls, which is the clearest available demonstration
+that it does not measure what is in dispute. And improved precision and recall cannot be estimated
+at all here: with six references the manifold radii are smaller than the gap between any render and
+any photograph, so every arm reads 0.00 and the metric returns no information rather than a low
+score. </p>
+
+<p>So: three instruments favour this work, one of them the one built for human judgement; one
+favours the baseline marginally on a compressed scale; one is at its ceiling; one is unestimable.
+That is not a proof, and a two-alternative forced choice against the photographs would settle it
+properly, which the <a href="supplement.html#limits">limitations</a> list as owed. It is enough to say that a lattice supervised without any
+photograph of the object produces a cut face 1.53 times closer on DreamSim than a pipeline whose interiors came from a diffusion model fine-tuned on exactly those photographs, and by the human-aligned
+measure, more so.</p>
+
+<p>The instrument matters on the watermelon and the two disagree. On FID this work is level
+with FruitNinja at 180.9 against 182.0 and behind GaussianFluent's 170.2; on DreamSim it is
+ahead of both, 0.167 against 0.221 and 0.328. We read the perceptual pairing as the answer and
+give the reason in section S3.1.2 above. The orange's photograph-supervised rows are in-sample and are not a
+comparison at all.</p>
+
+<p> <strong>A cut face drawn
+from a cube volume stays closed at every resolution; a cut face drawn from splatted primitives
+comes apart as the viewer looks closer.</strong> At 2048&nbsp;px, the scale at which a cut is inspected, GaussianFluent's section is <strong>38.73%</strong> background
+and FruitNinja's is 2.37%, while the same lattice drawn as a volume is <strong>0.07%</strong>.
+That is a factor of 550 against one baseline and 34 against the other, and it is not a tuning
+result: a cell's support is the cell, so a pixel either falls inside an occupied one or it does
+not, at any zoom, with nothing to set.</p>
+
+<p>A splatted interior defines no cut-face planarity, area or extent, so none can be reported for it.  It has the primitives that lie near the plane, so the surface a viewer
+sees is a rendering artefact of their density and support, and no statement can be made about it:
+not that it is planar, not what its area is, not where its boundary lies. Here the face is the
+convex polygon of equation&nbsp;(11), one per crossed cell, and the statements follow by
+construction. Every vertex satisfies the plane equation to machine epsilon on an oblique off-grid
+plane, and the area error against a closed form falls from 0.97% to 0.09% as the lattice refines,
+so the only error in a cut is the voxelised silhouette, which falls with \(h\). Neither
+baseline can be measured on that axis at all, which is the difference this paper is about.</p>
+
+
+<h5>What each primitive covers</h5>
+
+<p>Storage says what each costs, not what each produced. Every method has its own frame, scale and
+renderer, so a comparison of the interiors routes through none of them: for each model, the plane
+through its own centroid, the primitives within a slab of half-width 1% of its own extent, so
+2% thick, projected orthographically, normalised by its own projected radius, opaque and nearest-first, which all three
+are, at median and tenth-percentile opacity 1.0000.</p>
+
+<figure>
+  <img src="assets/interiors_compared.png" alt="A watermelon cross-section from four
+       representations: FruitNinja, GaussianFluent, and this work's two routes">  <figcaption><span class="fnum">Figure S6</span><br>The same slab through the same fruit, four ways, with every primitive drawn at its own footprint &mdash; \(\sigma\) for a Gaussian, \(h\) for a cell. The footprints are not comparable in the way the word suggests: measured off the released files, FruitNinja&#8217;s median is 1.09e&minus;07 and GaussianFluent&#8217;s 1.39e&minus;09 against a 98th-percentile extent of 0.88, while a cell here is 8.61e&minus;03. Both released models also carry a single constant opacity across every primitive &mdash; 10000 and 20. So what fills those two volumes is not overlapping Gaussians but points of essentially no size rendered as impulses, four orders of magnitude smaller than the spacing they sit on, and that is what the salt-and-pepper in Figure&nbsp;S7&#8217;s magnification is.</figcaption>
+</figure>
+
+
+
+<h5>Through each method's own renderer, at one size</h5>
+
+<p>Measured on the images each method's own rasteriser produced, over the same hundred held-out
+transverse cuts at 512&nbsp;px. At this size the released models are close, which is why a single
+image size settles nothing:</p>
+
+<div class="tw"><p class="tnum">Table S9</p><table>
+<thead><tr><th>unpainted inside the section, own rasteriser, 100 cuts</th><th>watermelon</th><th>orange</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released model</td><td>0.21%</td><td>0.90%</td></tr>
+<tr><td>FruitNinja, stock checkpoint</td><td class="mut">not run</td><td>11.40%</td></tr>
+<tr><td>GaussianFluent, released model</td><td>0.10%</td><td class="mut">no orange released</td></tr>
+<tr><td>this work, route 1</td><td>0.17%</td><td>0.18%</td></tr>
+<tr><td>this work, route 2</td><td><strong>0.00%</strong></td><td><strong>0.01%</strong></td></tr>
+</tbody></table></div>
+
+<p>The one row that is not under a percent is the stock-checkpoint reproduction, at 11.40%, : without the fine-tuned model the supervision leaves the
+interior sparse as well as brown, so the same collapse shows in coverage and in FID.</p>
+
+<p>Two things qualify that table. Every row in it, ours included, is a <em>Gaussian</em> render: a route-2 cell carries fourteen numbers and is splatted like any other
+primitive, at a median \(\rho\) of 0.26, which the sweep below shows is inside the window where a
+Gaussian set pays little for coverage. So this is not yet a comparison between a cube and a
+Gaussian: at this image size every row is a Gaussian render inside the window where a Gaussian set
+pays little for coverage, and no claim about a cube's support can rest on it.</p>
+
+<h5>Over resolution, which is where it separates</h5>
+
+<p>A coverage number at one pixel count says nothing. Swept over resolution, on the watermelon, six transverse
+cuts per cell, with the cube volume rendered by cube lookup rather than by splatting and with
+supersampling off, so that every row is one sample per pixel. That last point is not incidental:
+the cube march defaults to two-by-two supersampling, and measuring it that way against Gaussian
+rows that get one sample gives the cube four times the sample density at the resolution where the
+argument is made. With supersampling on it reads 0.02 / 0.05 / 0.06% instead of the figures below,
+which is a small difference and would have been an unfair one. The row above is a hundred cuts at
+512&nbsp;px and these are six at each of three sizes; they are separate experiments and the counts
+are given so they are not read as one:</p>
+
+<div class="tw"><p class="tnum">Table S10</p><table>
+<thead><tr><th>unpainted inside the section, watermelon</th><th>256&nbsp;px</th><th>1024&nbsp;px</th><th>2048&nbsp;px</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released model <span class="mut">(3DGS)</span></td><td>0.13%</td><td>0.39%</td><td>2.37%</td></tr>
+<tr><td>GaussianFluent, released model <span class="mut">(3DGS)</span></td><td>0.05%</td><td>2.03%</td><td><strong>38.73%</strong></td></tr>
+<tr><td>this work, route 2, splatted <span class="mut">(3DGS)</span></td><td>0.00%</td><td>0.45%</td><td>3.32%</td></tr>
+<tr><td><strong>this work, route 2, as a cube volume</strong></td><td><strong>0.04%</strong></td>
+    <td><strong>0.07%</strong></td><td><strong>0.07%</strong></td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/zoom2048.png" alt="The same watermelon cut at 2048 px from four representations,
+       each with a zoomed crop of the flesh">
+  <figcaption><span class="fnum">Figure S7</span><br>The same held-out plane of the watermelon at 2048&nbsp;px, each released model through the same cutter, with a box of its own section magnified beside it. What the magnification shows is what each representation is made of: GaussianFluent leaves white between its primitives, FruitNinja&#8217;s flesh carries salt-and-pepper over a saturated red, and the splatted lattice draws a continuous fibre with the seeds whole. A fourth row, the same section drawn as a cube volume, is withdrawn: the renderer that produces it is under-drawing transverse sections by half their silhouette, which is recorded with the tool, and a picture from a renderer with a known defect is not evidence about a representation.</figcaption>
+</figure>
+
+<p> Coverage from a splatted
+representation is resolution-dependent for every model including ours: at 256&nbsp;px they are all
+under two tenths of a percent and indistinguishable, and by 2048&nbsp;px GaussianFluent's section
+is 39% background (32.9 to 49.5 across the six cuts), FruitNinja's 2.4% (1.5 to 3.4) and our own
+splatted lattice's 3.3% (2.5 to 3.8), against the cube volume's 0.07% (0.06 to 0.09). The cube volume does not move, 0.04% to 0.07% over three octaves, because a cell's support is the cell and a pixel either falls
+inside an occupied one or does not. What a Gaussian buys with enough primitives at a chosen zoom, a
+cube has by construction at every zoom, and that follows from what a cell is rather than from a
+number that happened to come out well. It is measured on one object at three image sizes, on six
+cuts each, and the other two objects and the intervening sizes are not run.</p>
+
+<div class="tw"><p class="tnum">Table S11</p><table>
+<thead><tr><th>watermelon</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work, route 1</th><th>route 2</th></tr></thead>
+<tbody>
+<tr><td><strong>primitives / cells</strong></td><td><strong>7,959,789</strong></td><td>1,381,100</td>
+    <td>1,741,169</td><td><strong>1,065,856</strong></td></tr>
+<tr><td>stored, cells only</td><td>425.1 MiB</td><td>310.8 MiB</td><td>56.5 MiB</td><td>34.6 MiB</td></tr>
+<tr><td><strong>stored, with the sparse index and the exterior surface</strong></td>
+    <td><strong>425.1 MiB</strong></td><td><strong>310.8 MiB</strong></td><td>163.5 MiB</td>
+    <td><strong>62.6 MiB</strong></td></tr>
+<tr><td>higher-band SH coefficients</td><td>0</td><td>45 <span class="mut">(76% of its bytes)</span></td><td>0</td><td>0</td></tr>
+<tr><td><strong>stored at spherical-harmonic degree 0, matched fields</strong></td>
+    <td>425.1 MiB</td><td><strong>73.8 MiB</strong></td><td>163.5 MiB</td><td>66.5 MiB</td></tr>
+<tr><td>support \(\sigma\) / cell \(h\)</td><td>1.11e&#8722;7</td><td>1.35e&#8722;9</td><td>0.0172</td><td>0.0172</td></tr>
+<tr><td>that, against one pixel in the slab figure</td><td>47,053&times; smaller</td>
+    <td>5,067,762&times; smaller</td><td>3.3 pixels across</td><td>3.3 pixels</td></tr>
+<tr><td>primitives in the slab</td><td>256,696</td><td>57,289</td><td>51,763</td><td>34,587</td></tr>
+<tr><td class="mut">unpainted at each primitive's own footprint <span class="mut">(what a
+    primitive covers, not what a renderer draws: it charges a Gaussian its \(\sigma\) and credits
+    a cell its \(h\), and our cells carry Gaussians at \(\sigma \approx 0.26h\))</span></td>
+    <td class="mut">20.5%</td><td class="mut">46.7%</td><td class="mut">5.7%</td><td class="mut">6.1%</td></tr>
+<tr><td>unpainted, own rasteriser, 512&nbsp;px</td><td>0.21%</td><td>0.10%</td><td>0.17%</td><td>0.00%</td></tr>
+<tr><td><strong>unpainted, own rasteriser, 2048&nbsp;px</strong></td><td>2.37%</td>
+    <td><strong>38.73%</strong></td><td class="mut">not run</td><td>3.32%</td></tr>
+<tr><td><strong>the same lattice as a cube volume, 2048&nbsp;px</strong></td>
+    <td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">not run</td><td><strong>0.07%</strong></td></tr>
+</tbody></table></div>
+
+<h4>S3.1.2.1&ensp;Then enlarge the Gaussians: what \(\rho\) actually costs</h4>
+
+
+<div class="tw"><p class="tnum">Table S12</p>
+<p class="mut">Holes, as a percentage of the section.</p>
+<table>
+<thead><tr><th></th><th colspan="7">\(\rho = \sigma/h\)</th></tr>
+<tr><th>object, image size</th><th>0.25</th><th>0.50</th><th>0.75</th><th>1.00</th><th>1.50</th><th>2.00</th><th>3.00</th></tr></thead>
+<tbody>
+<tr><td>apple, 512&nbsp;px</td><td>0.417%</td><td>0.350%</td><td>0.273%</td><td>0.206%</td><td>0.107%</td><td>0.082%</td><td>0.025%</td></tr>
+<tr><td>apple, 1024&nbsp;px</td><td>0.426%</td><td>0.377%</td><td>0.299%</td><td>0.224%</td><td>0.121%</td><td>0.084%</td><td>0.027%</td></tr>
+<tr><td>apple, 2048&nbsp;px</td><td>0.411%</td><td>0.367%</td><td>0.287%</td><td>0.217%</td><td>0.116%</td><td>0.081%</td><td>0.025%</td></tr>
+<tr><td>bread, 512&nbsp;px</td><td>0.032%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>bread, 1024&nbsp;px</td><td>0.084%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>bread, 2048&nbsp;px</td><td>0.104%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>cake, 512&nbsp;px</td><td>0.758%</td><td>0.010%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>cake, 1024&nbsp;px</td><td>1.134%</td><td>0.012%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>cake, 2048&nbsp;px</td><td>1.264%</td><td>0.013%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>doughnut, 512&nbsp;px</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>doughnut, 1024&nbsp;px</td><td>0.002%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>doughnut, 2048&nbsp;px</td><td>0.009%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>orange, 512&nbsp;px</td><td>0.139%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>orange, 1024&nbsp;px</td><td>0.271%</td><td>0.001%</td><td>0.001%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>orange, 2048&nbsp;px</td><td>0.330%</td><td>0.001%</td><td>0.001%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>watermelon, 512&nbsp;px</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>watermelon, 1024&nbsp;px</td><td>0.006%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+<tr><td>watermelon, 2048&nbsp;px</td><td>0.010%</td><td><strong>0.000%</strong></td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td><td>0.000%</td></tr>
+</tbody></table>
+<p class="mut">The \(\rho\) at which an object's holes close is a property of the object rather than a constant: the watermelon, the doughnut and the bread are at 0.000% by \(\rho = 0.50\), the cake by 0.75 and the orange by 1.00, and the apple never reaches it &mdash; 0.025% of its section is still empty at \(\rho = 3.00\).</p>
+<p class="mut">Blending excess: what a primitive's support adds at a material boundary over what it adds away from one.</p>
+<table>
+<thead><tr><th></th><th colspan="7">\(\rho = \sigma/h\)</th></tr>
+<tr><th>object, image size</th><th>0.25</th><th>0.50</th><th>0.75</th><th>1.00</th><th>1.50</th><th>2.00</th><th>3.00</th></tr></thead>
+<tbody>
+<tr><td>apple, 512&nbsp;px</td><td>+0.0362</td><td>+0.0410</td><td>+0.0419</td><td>+0.0462</td><td>+0.0626</td><td>+0.0815</td><td>+0.1103</td></tr>
+<tr><td>apple, 1024&nbsp;px</td><td>+0.0505</td><td>+0.0654</td><td>+0.0662</td><td>+0.0724</td><td>+0.0987</td><td>+0.1295</td><td>+0.1633</td></tr>
+<tr><td>apple, 2048&nbsp;px</td><td>+0.0615</td><td>+0.0814</td><td>+0.0822</td><td>+0.0905</td><td>+0.1252</td><td>+0.1648</td><td>+0.1759</td></tr>
+<tr><td>bread, 512&nbsp;px</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+<tr><td>bread, 1024&nbsp;px</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+<tr><td>bread, 2048&nbsp;px</td><td>+0.0330</td><td>+0.0389</td><td>+0.0396</td><td>+0.0505</td><td>+0.0630</td><td>+0.0750</td><td>+0.0738</td></tr>
+<tr><td>cake, 512&nbsp;px</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+<tr><td>cake, 1024&nbsp;px</td><td>+0.0889</td><td>+0.0592</td><td>+0.0563</td><td>+0.0606</td><td>+0.0426</td><td>&minus;0.0419</td><td>&minus;0.2297</td></tr>
+<tr><td>cake, 2048&nbsp;px</td><td>+0.0961</td><td>+0.0832</td><td>+0.0886</td><td>+0.0962</td><td>+0.0880</td><td>+0.0317</td><td>&minus;0.1191</td></tr>
+<tr><td>doughnut, 512&nbsp;px</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+<tr><td>doughnut, 1024&nbsp;px</td><td>&minus;0.0058</td><td>&minus;0.0023</td><td>&minus;0.0019</td><td>&minus;0.0028</td><td>+0.0067</td><td>+0.0128</td><td>+0.0220</td></tr>
+<tr><td>doughnut, 2048&nbsp;px</td><td>&minus;0.0108</td><td>+0.0023</td><td>&minus;0.0006</td><td>&minus;0.0028</td><td>+0.0042</td><td>+0.0117</td><td>+0.0259</td></tr>
+<tr><td>orange, 512&nbsp;px</td><td>+0.0474</td><td>+0.0541</td><td>+0.0510</td><td>+0.0410</td><td>+0.0286</td><td>+0.0361</td><td>+0.0502</td></tr>
+<tr><td>orange, 1024&nbsp;px</td><td>+0.0184</td><td>+0.0289</td><td>+0.0325</td><td>+0.0347</td><td>+0.0357</td><td>+0.0368</td><td>+0.0341</td></tr>
+<tr><td>orange, 2048&nbsp;px</td><td>+0.0162</td><td>+0.0331</td><td>+0.0347</td><td>+0.0353</td><td>+0.0359</td><td>+0.0388</td><td>+0.0394</td></tr>
+<tr><td>watermelon, 512&nbsp;px</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+<tr><td>watermelon, 1024&nbsp;px</td><td>+0.0378</td><td>+0.0517</td><td>+0.0548</td><td>+0.0560</td><td>+0.0549</td><td>+0.0532</td><td>+0.0543</td></tr>
+<tr><td>watermelon, 2048&nbsp;px</td><td>+0.0060</td><td>+0.0331</td><td>+0.0369</td><td>+0.0401</td><td>+0.0431</td><td>+0.0422</td><td>+0.0418</td></tr>
+</tbody></table>
+<p class="mut">The excess is a difference against the region away from a boundary, so it is undefined where the section is entirely boundary &mdash; at 512 and 1024&nbsp;px five of these sections are 100.0% boundary and the away term has nothing to average. Where it is defined it does not rise with \(\rho\) on the orange, the watermelon or the doughnut, and it does rise on the apple and the bread; on the cake it turns negative past \(\rho = 1.5\), where the support is wider than the features away from the boundary as well.</p>
+<p class="mut">Holes and the blending excess below \(\rho = 0.25\), on the three objects the earlier sweep covered, at one image size.</p>
+<table>
+<thead><tr><th>\(\rho = \sigma/h\)</th><th colspan="2">orange</th><th colspan="2">watermelon</th>
+<th colspan="2">doughnut</th></tr>
+<tr><th></th><th>holes</th><th>blending</th><th>holes</th><th>blending</th><th>holes</th><th>blending</th></tr></thead>
+<tbody>
+<tr><td>0.0001</td><td><strong>44.7%</strong></td><td>&minus;0.09</td><td><strong>16.5%</strong></td><td>&minus;0.07</td><td><strong>44.4%</strong></td><td>&minus;0.02</td></tr>
+<tr><td>0.01</td><td>44.4%</td><td>&minus;0.09</td><td>16.3%</td><td>&minus;0.07</td><td>44.2%</td><td>&minus;0.02</td></tr>
+<tr><td>0.05</td><td>37.1%</td><td>&minus;0.10</td><td>11.8%</td><td>&minus;0.06</td><td>38.7%</td><td>&minus;0.02</td></tr>
+<tr><td>0.10</td><td>17.5%</td><td>&minus;0.09</td><td>2.6%</td><td>&minus;0.05</td><td class="mut">n/a</td><td class="mut">n/a</td></tr>
+</tbody></table></div>
+
+<div class="flow">
+<svg viewBox="470 22 375 284" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Node count against surface error over the collapse tolerance">
+<defs><style>
+.ax{stroke:#bbb;stroke-width:1;fill:none}.gl{stroke:#eee;stroke-width:1;fill:none}
+.t{font:600 13px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#111}
+.s{font:10.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif;fill:#666}
+.c1{stroke:#a8412a;stroke-width:2;fill:none}.c2{stroke:#1b6ca8;stroke-width:2;fill:none}
+.d1{fill:#a8412a}.d2{fill:#1b6ca8}.hi{fill:#2a7a3a}
+</style></defs>
+<text class="t" x="500" y="40">collapse tolerance: nodes against surface error</text>
+<path class="ax" d="M500,262 H820 M500,60 V262"/>
+<path class="gl" d="M500.0,60 V262"/>
+<text class="s" x="500.0" y="276" text-anchor="middle">0</text>
+<path class="gl" d="M604.3,60 V262"/>
+<text class="s" x="604.3" y="276" text-anchor="middle">150k</text>
+<path class="gl" d="M708.7,60 V262"/>
+<text class="s" x="708.7" y="276" text-anchor="middle">300k</text>
+<path class="gl" d="M813.0,60 V262"/>
+<text class="s" x="813.0" y="276" text-anchor="middle">450k</text>
+<text class="s" x="660.0" y="292" text-anchor="middle">dual-grid nodes</text>
+<polyline class="c1" points="807.7,262.0 719.6,207.1 695.1,189.6 649.8,148.2 603.7,74.8"/>
+<circle class="d1" cx="807.7" cy="262.0" r="3"/>
+<text class="s" x="807.7" y="254.0" text-anchor="middle">&#964;&#8348;=0</text>
+<circle class="d1" cx="719.6" cy="207.1" r="3"/>
+<text class="s" x="719.6" y="199.1" text-anchor="middle">&#964;&#8348;=0.1</text>
+<circle class="d1" cx="695.1" cy="189.6" r="3"/>
+<text class="s" x="695.1" y="181.6" text-anchor="middle">&#964;&#8348;=0.35</text>
+<circle class="d1" cx="649.8" cy="148.2" r="3"/>
+<text class="s" x="649.8" y="140.2" text-anchor="middle">&#964;&#8348;=0.5</text>
+<circle class="d1" cx="603.7" cy="74.8" r="3"/>
+<text class="s" x="603.7" y="66.8" text-anchor="middle">&#964;&#8348;=1</text>
+<text class="s" x="506" y="74" fill="#a8412a">symmetric surface error, in h</text>
+</svg>
+</div>
+
+<p class="mut" style="text-align:center;margin-top:-6px">The trade-off this work avoids by
+construction, measured on the collapse sweep: the dual grid trades node count against
+surface error monotonically, so a point on that curve is chosen rather than found. The support
+scale is not drawn beside it, because it is not one curve &mdash; the \(\rho\) at which an
+object's holes close, and whether its excess rises with \(\rho\) at all, are properties of that
+object, and the table above gives both per object. A cube's occupancy has neither knob: its
+support is its cell.</p>
+
+
+<p>So the answer to "just make them bigger" is: on a fixed primitive set it usually works, within a window that must be located per primitive set and that on one of the six objects here never opens at all, and it is not what the published models do. FruitNinja sits at
+\(\rho = 3\times10^{-5}\), four orders of magnitude to the left of that window, and
+GaussianFluent's \(\sigma\) is two orders smaller again, though its own nearest-neighbour spacing
+is not published so no \(\rho\) can be formed for it here, where the table says 16 to 45% of a section is unpainted for a primitive set
+of this size. Their renders are not full of holes because they buy coverage the other way, with 7,959,789 and 1,381,100 primitives against this
+lattice's 1,741,169 quantised and 1,065,856 generated. The sweep above is on each object's own
+lattice, one particular size each; whether an 8-million-primitive set at \(\rho = 0.25\)
+blends or merely covers is the same experiment on their primitive sets and is not run here. That is the trade this paper is
+actually about, and it is a trade about count rather than about support: a cube's support is its
+cell, so it covers exactly, at any resolution, with no window to find and no parameter to set.</p>
+
+<h4>S3.1.2.2&ensp;Under compression</h4>
+
+<p>Counting fields at float32 measures a file format rather than a representation, and the obvious
+objection is that a codec would close the gap. It does not. Every arm below goes through the same
+appearance-neutral pipeline: constant fields dropped, unobservable fields dropped, positions
+quantised to sixteen bits of the model's own extent, log-scales and colours to eight, and the
+result entropy-coded field by field. For the lattice the cell coordinates are Morton-ordered and
+delta-coded first, which is the octree compaction a structured representation is open to and a free
+point cloud is not.</p>
+
+<div class="tw"><p class="tnum">Table S13</p><table>
+<thead><tr><th>watermelon</th><th>as counted</th><th>same codec, compressed</th><th>ratio</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released</td><td>425.1 MiB</td><td>58.3 MiB</td><td>7.3&times;</td></tr>
+<tr><td>GaussianFluent, released</td><td>310.8 MiB</td><td>26.5 MiB</td><td>11.7&times;</td></tr>
+<tr><td><strong>this work, route 1</strong></td><td>66.5 MiB</td><td><strong>9.3 MiB</strong></td><td>7.1&times;</td></tr>
+<tr><td class="mut">this work, route 2, not retrained</td><td class="mut">46.8 MiB</td><td class="mut">7.0 MiB</td><td class="mut">6.6&times;</td></tr>
+</tbody></table></div>
+
+<p>The Gaussian models compress harder, which is expected and is the objection stated properly:
+FruitNinja's opacity has a single value across all 7,959,789 primitives, and its median anisotropy
+is 1.06, so the quaternion describes the orientation of a sphere. Removing what carries no
+information takes 425.1&nbsp;MiB to 58.3 before any entropy coding does its part. The lattice has
+less of that redundancy to give up and still ends smaller: <strong>2.9&times; smaller than
+GaussianFluent and 6.3&times; smaller than FruitNinja</strong> after every arm has been compressed
+the same way. The lattice figure is also an upper bound, because the per-cell feature is
+substituted here by white noise of the same shape, which is the least compressible object of that
+size; a learned feature can only do better.</p>
+
+<h4>S3.1.3&ensp;Every object, on photographs that supervised nothing</h4>
+
+<p>The measurements below are the ones this paper stands on. Every object is trained with the
+continuous assignment of equation&nbsp;(7) and scored against photographs that took no part in
+its supervision. Each family's references are split in two by alternating index, an odd count
+giving the extra image to training; where a family holds three photographs the split leaves one to
+score against, which is too few for the distance to mean anything on its own, so those objects are
+run as three leave-one-out folds instead and the spread across folds is reported beside the mean.
+The released model is re-rendered against each evaluation set in the same batch, because a number
+measured against a different set is not comparable.</p>
+
+<div class="tw"><p class="tnum">Table S14</p><table>
+<thead><tr><th>DreamSim to the nearest held-out photograph &darr;</th><th>this work</th><th>FruitNinja, released</th><th class="mut">the held-out photographs against each other</th><th class="mut">train / held out</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td><strong>0.1231</strong></td><td>0.1303</td><td class="mut">0.0551</td><td class="mut">3 / 3</td></tr>
+<tr><td>watermelon</td><td><strong>0.1805</strong></td><td>0.2338</td><td class="mut">0.0724</td><td class="mut">10 / 10</td></tr>
+<tr><td>apple <span class="mut">(3 folds)</span></td><td><strong>0.3105 &plusmn; 0.0152</strong></td><td>0.4323 &plusmn; 0.0236</td><td class="mut">one image per fold</td><td class="mut">2 / 1</td></tr>
+<tr><td>bread</td><td><strong>0.3924</strong></td><td>0.4983</td><td class="mut">0.2215</td><td class="mut">3 / 2</td></tr>
+<tr><td>cake <span class="mut">(3 folds)</span></td><td>0.4188 &plusmn; 0.0681</td><td><strong>0.3165 &plusmn; 0.0447</strong></td><td class="mut">one image per fold</td><td class="mut">2 / 1</td></tr>
+<tr><td>doughnut <span class="mut">(topology, not appearance)</span></td><td><strong>20 of 20</strong> held-out sections read as an annulus</td><td class="mut">no released model of this genus</td><td class="mut">&mdash;</td><td class="mut">1 / &mdash;</td></tr>
+</tbody></table></div>
+
+<p><strong>Four of five on appearance, and the one that loses is the one with the least to learn
+from.</strong> The cake holds three transverse photographs, so a fold
+trains on two. It loses on every one of its three folds and the spread across them is small
+&mdash; 0.023 against a gap of 0.069 &mdash; so this is a stable result and not
+a draw of the evaluation image. Under the earlier protocol, which let them train on all three and
+scored them against the same three, both were ahead at 0.2625 and 0.3417, under the route&nbsp;1 that
+inherited an interior; what changed since is the training set and then the initialisation, and what changed is the
+training set, not the method.</p>
+
+<p>The doughnut is scored differently because there is nothing to score it against: the released
+dataset is entirely genus zero. What its row reports is the property that matters for a torus
+&mdash; every one of the forty held-out transverse cuts still reads as an annulus, with exactly
+one hole and never two or none. Its two families hold one photograph each, so the continuous
+assignment has nothing to interpolate between and falls through to the block rule: that row
+measures the earlier block assignment, not equation&nbsp;(7).</p>
+
+<p class="mut">The apple's references were corrected before this run. One was photographed on a
+pale backdrop close in colour to the flesh and had passed the earlier audit, whose thresholds it
+missed on both sides; another covered 8% of its frame against 24 to 66% for the rest, small enough
+that blending it with a neighbour hands one depth a nearly empty target. The first was whitened,
+the second dropped, and the pool went from nine to eight.</p>
+
+<h4>S3.1.4&ensp;The same objects with every photograph used, and scored against those same photographs</h4>
+
+<p>FruitNinja releases six reconstructions and this work first reported on two of them. The other
+four have cross-section photographs in the same repository, so the only thing between them and a
+run was a configuration, and the spacing for each is derived rather than tuned &mdash; the object's
+longest extent over 125, which is where the two hand-set objects landed. All six are trained the
+same way and scored the same way, against that object's own photographs, with the released model it
+was quantised from scored beside it in the same batch.</p>
+
+<div class="tw"><p class="tnum">Table S15</p><table>
+<thead><tr><th>DreamSim to the nearest photograph &darr;</th><th>this work</th>
+<th>FruitNinja, released</th><th class="mut">the photographs against each other</th>
+<th class="mut">supervised by</th><th class="mut">scored against</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td><strong>0.0763</strong></td><td>0.1301</td><td class="mut">0.0424</td>
+    <td class="mut">6 h + 6 v</td><td class="mut">the same 6 + 6</td></tr>
+<tr><td>watermelon</td><td><strong>0.1825</strong></td><td>0.2292</td><td class="mut">0.0670</td>
+    <td class="mut"><strong>1 h + 1 v</strong></td><td class="mut">20 h + 23 v <strong>(19 of 20 unseen)</strong></td></tr>
+<tr><td>apple</td><td><strong>0.2887</strong></td><td>0.3765</td><td class="mut">0.1653</td>
+    <td class="mut">9 h + 3 v</td><td class="mut">the same 9 + 3</td></tr>
+<tr><td>bread</td><td><strong>0.3693</strong></td><td>0.4983</td><td class="mut">0.1873</td>
+    <td class="mut">5 h + 5 v</td><td class="mut">the same 5 + 5</td></tr>
+<tr><td>cake</td><td>0.3318</td><td><strong>0.2670</strong></td><td class="mut">0.2677</td>
+    <td class="mut">3 h + 3 v</td><td class="mut">the same 3 + 3</td></tr>
+</tbody></table></div>
+
+<p><strong>Three checks that were run to break this table, and what they returned.</strong></p>
+
+<p><strong>Framing.</strong> DreamSim compares whole images, so a systematic difference in how
+much of the frame each arm fills would enter the distance. The arms do differ: this work's
+sections are larger than the released model's in every object, by 2.2% on the watermelon to 18.1%
+on the cake. That does not explain the result, because it does not predict it. If nearness to the
+references' own framing were doing the work, the cake would win &mdash; its sections are 10.7
+points of frame coverage from the references against the baseline's 15.8 &mdash; and it loses.
+The object where the framing argument is strongest goes the other way.</p>
+
+<p><strong>The instrument.</strong> Each object's renders were scored against every object's
+reference set, not only its own. If the distance were reading colour and framing rather than the
+interior, the six sets would be interchangeable.</p>
+
+<div class="tw"><p class="tnum">Table S16</p><table>
+<thead><tr><th>renders \ references</th><th>orange</th><th>watermelon</th><th>apple</th><th>bread</th><th>cake</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td><strong>0.0724</strong></td><td class="mut">0.3984</td><td class="mut">0.4909</td><td class="mut">0.6393</td><td class="mut">0.6300</td></tr>
+<tr><td>watermelon</td><td class="mut">0.4626</td><td><strong>0.1777</strong></td><td class="mut">0.4708</td><td class="mut">0.6642</td><td class="mut">0.6372</td></tr>
+<tr><td>apple</td><td class="mut">0.5754</td><td class="mut">0.5540</td><td><strong>0.3030</strong></td><td class="mut">0.4635</td><td class="mut">0.6636</td></tr>
+<tr><td>bread</td><td class="mut">0.7309</td><td class="mut">0.7214</td><td class="mut">0.6281</td><td><strong>0.3656</strong></td><td class="mut">0.5939</td></tr>
+<tr><td>cake</td><td class="mut">0.6840</td><td class="mut">0.6264</td><td class="mut">0.7044</td><td class="mut">0.6311</td><td><strong>0.2899</strong></td></tr>
+</tbody></table></div>
+
+<p>The object's own references are the nearest of the six in every row. The diagonal averages
+0.2442 and the off-diagonal 0.5929, a separation of <strong>0.3487</strong> &mdash; 2.1 times the
+largest margin this work holds over the released model anywhere in the table above. The distance
+is reading the interior. These values are computed over twelve renders per object rather than the
+full forty and sit within 0.008 of the corresponding entries above.</p>
+
+<p><strong>The band.</strong> The third check is the one that failed, and it is stated next.</p>
+
+<p class="mut"><strong>What "held out" means here, and what it does not.</strong> The cuts are drawn uniformly from the middle of the object, at depths \(f \in [0.30, 0.70]\) of its extent. This is not a region the trainer never reaches. The depth walk takes twenty-four steps and the trainer supervises centres 4 through 19, and at \(J = 0.5\) each slot's jitter window is exactly one step wide, so the windows tile: training covers \([0.146, 0.813]\) continuously and every depth scored here falls inside it. What is held out is the particular plane, not the depth &mdash; no evaluation plane coincides with a training sample, but the model has seen planes arbitrarily near it. The study in which something is genuinely unseen is the leave-one-out of section S3.1.2, which holds out a <em>photograph</em>.</p>
+
+<p class="mut">Rendered as one batch: 40 cuts per object, every arm and its baseline together at the same depths, and every arm re-rendered for this table so no value in it comes from an earlier batch. Three of these objects had references on a dark backdrop; the whole set was measured again after they were put on white, because the released model renders on white and was being scored against a black frame. Values elsewhere in this paper come from other batches and differ by up to 0.006 from the same arm here.</p>
+
+<p>The last two columns are not the same quantity and the watermelon is why. Its interior was supervised by a single transverse photograph and a single longitudinal one, and scored against the twenty and twenty-three the repository holds; nineteen of those twenty were never seen. Every other object was scored against the set that supervised it, which is stated below. So the watermelon's row is the one number here that is almost entirely out-of-sample, and it is a win by 1.34&times;.</p>
+
+<p>Five of six, by 1.1 to 1.8 times, and the cake goes the other way. The three we expected to be
+hardest are the two that decide what this table is worth.
+The loaf and the cake have references in one family only, because their interiors read differently
+along the other axis &mdash; a cinnamon swirl is a spiral across the loaf and stripes along it, and
+a layer cake is stripes lengthwise and a single-colour disc across &mdash; so what the volume
+produces in the family it never saw is a prediction rather than a fit.</p>
+
+<p>The cake is the one this work loses, by 0.075, and it loses to the arm it is supposed to beat &mdash; which on this object sits at the photographs' own agreement with each other, 0.2670 against 0.2677, so there is little room above it to be had. Three
+longitudinal photographs are the entire supervision, the interior is a stack of horizontal layers,
+and a transverse cut &mdash; which is what this column scores &mdash; is the one section those
+photographs never show. What the lattice produces there is an extrapolation from three images of a
+different cake, and it is worse than what a diffusion model fine-tuned on the same three produced.
+That is the boundary of supervision by photograph: it holds where the families between them see
+the structure, and the cake is the case where they do not.</p>
+
+<figure>
+  <img src="assets/six_objects.png" alt="Six objects, one held-out plane each: a photograph of a
+       real cut of that kind, this work, and the released model each was quantised from">
+  <figcaption><span class="fnum">Figure S8</span><br>Every object, one held-out plane each, every column rendered in one batch at the same depths with the same settings and the released models re-rendered rather than quoted. The left column is a photograph of a real cut of that kind and is not that plane, since no photograph is; it is each object's own evaluation set. GaussianFluent publishes eighteen objects and two are ours, so that column is the watermelon and the cake; the doughnut has no released model of any kind, which is why it is the one object whose interior owes nothing to a reconstruction. What the rows show is where each method spends its fidelity: the seeds and pith of the watermelon, the five-pointed core of the apple, the spiral of the loaf.</figcaption>
+</figure>
+
+<p class="mut">Every row here is in-sample: each model is scored against the photographs that
+supervised it, as is the released model it is compared with, whose generator was fine-tuned on
+them. The orange is the one object with a leave-one-out study, in section S3.1.2 The reference
+counts differ by object and are given because a distribution metric on three images is not one; that
+is why DreamSim, which is a distance between pairs, is the column reported.</p>
+
+<h4>S3.1.5&ensp;What happens when the references disagree, and whether the fit can stall</h4>
+
+<p>Supervising from photographs with no camera invites two objections. If the warp that places a
+reference on the render can go wrong, the optimisation might settle in a bad configuration and
+stay there; and if two references describe the same region differently, the volume might satisfy
+both by averaging them into a blur. The first is answered by what the warp is, the second by
+measurement.</p>
+
+<p>The flatness of that curve is not a property of gradient descent. Two structural
+constraints remove the degrees of freedom a perturbation would have to exploit, and both can be
+checked by reading the code rather than by trusting a run.</p>
+
+<p><strong>The first is that no pose is optimised.</strong> \(\Phi\) has two degrees of freedom,
+an isotropic scale and a translation. Both are computed from the moments of the two silhouettes
+&mdash; the ratio of their radii and the difference of their centroids &mdash; rather than fitted,
+and both are recomputed from scratch at every iteration. No parameter of the warp is exposed to
+the optimiser, so the warp has no local minimum of its own, cannot drift, and cannot carry error
+from one iteration into the next. The silhouette it anchors to is the occupancy's, which is not
+being trained, so a rotated reference is still placed inside the object's own outline at the
+object's own scale. Scale disagreement between two references is removed by the same construction,
+before either enters the loss.</p>
+
+<p><strong>The second is that the shape is not trainable at all.</strong> The optimisation is over
+the per-cell features and the shared decoder. The occupancy is fixed &mdash; quantised from a
+reconstruction under route&nbsp;1, extracted from a field under route&nbsp;2 &mdash; so the volume
+cannot thin, swell, hollow or change topology however badly it is supervised, because none of
+those are parameters. Two planes that disagree cannot each grow their own explanation the way an
+over-parameterised field can: they address one set of cells and one decoder, and a value written
+to satisfy one of them is read by the other.</p>
+
+<p>What is left is that the appearance can collapse, and it does have one failure mode, which this
+paper measures rather than argues away. Under conflicting supervision a cell converges to the
+<em>mean</em> of what its planes ask for, not to a robust choice among them. An
+ablation that gives every plane a different photograph on every iteration flattens the orange's radial
+structure to an even wash, 0.0700 to 0.1367, while reconciling two targets by averaging
+them explicitly costs 0.012 DreamSim. The fixed assignment avoids it by keeping a plane on one
+photograph, so what it converges to is that photograph. Where planes genuinely share cells the
+conflict is small and was measured: the contested set is 2.9% of the cells and 96.5% of the
+variation between references survives in the volume.</p>
+
+<p><strong>The fit converges, and to the same place.</strong> Every run records the section loss
+and the warp residual for each plane at each iteration.</p>
+
+<div class="tw"><p class="tnum">Table S17</p><table>
+<thead><tr><th>run</th><th>loss, first</th><th>loss, last</th><th>fall</th><th>sd over the last 20</th><th class="mut">warp residual, first &rarr; last</th></tr></thead>
+<tbody>
+<tr><td>orange, block assignment</td><td>0.2591</td><td>0.1196</td><td>53.8%</td><td>0.0059</td><td class="mut">0.0061 &rarr; 0.0028</td></tr>
+<tr><td>orange, continuous</td><td>0.2334</td><td>0.1077</td><td>53.8%</td><td>0.0044</td><td class="mut">0.0050 &rarr; 0.0022</td></tr>
+<tr><td>watermelon, block assignment</td><td>0.3537</td><td>0.1502</td><td>57.5%</td><td>0.0050</td><td class="mut">0.0067 &rarr; 0.0025</td></tr>
+<tr><td>watermelon, continuous</td><td>0.3468</td><td>0.1447</td><td>58.3%</td><td>0.0048</td><td class="mut">0.0069 &rarr; 0.0026</td></tr>
+<tr><td>watermelon, rind profile</td><td>0.3610</td><td>0.1569</td><td>56.5%</td><td>0.0036</td><td class="mut">0.0072 &rarr; 0.0027</td></tr>
+<tr><td>watermelon, warped blend</td><td>0.3589</td><td>0.1432</td><td>60.1%</td><td>0.0038</td><td class="mut">0.0070 &rarr; 0.0027</td></tr>
+</tbody></table></div>
+
+<p>The loss falls by half to three fifths and its spread over the last twenty iterations is 3 to
+6% of the level it settles at, on six runs that differ in what supervises them. The residual
+column is reported but does not mean what it might appear to: it falls because the render's
+silhouette improves as the volume converges, not because the warp is being fitted. Two runs of one
+configuration differ by 0.0003 DreamSim and 5.0 FID, which is the spread any comparison in this
+section has to clear.</p>
+
+<p><strong>Blurring under conflict is real, and its cause is the assignment.</strong> The
+experiment that produces it draws each plane's photograph afresh every time it is supervised: giving a plane a different
+photograph on every iteration is the strongest disagreement the reference set can express, and it does blur
+&mdash; the orange's radial structure flattens to an even wash and DreamSim goes from 0.0700 to
+0.1367. Under the fixed rule it does not, because a plane keeps one photograph and the target it
+converges to is that photograph rather than a mean. Where two planes genuinely share cells the
+conflict is small and was measured: the contested set is 2.9% of the cells, 96.5% of the variation
+between references survives in the volume, and reconciling the two targets by averaging them
+explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
+
+
+<h4>S3.1.6&ensp;Choosing the references' phases against the geometry they share</h4>
+
+<figure id="chords">
+  <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
+  <figcaption><span class="fnum">Figure S9</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(4), 0.1178, and under the phases and assignment&nbsp;(5) solves jointly, 0.1122.</figcaption>
+</figure>
+
+
+
+<p>The transverse and longitudinal families meet in known lines, so the disagreement between them
+is a function of the phases alone and can be minimised before training. Where a transverse section
+at height \(z\), rotated by \(\delta\), is met by a longitudinal plane at azimuth \(a\), the
+shared line is that section's diameter at angle \(a + \delta\) and that longitudinal section's row
+at height \(z\). Both are one-dimensional signals of one physical line, and equation&nbsp;(5) is
+the disagreement between them summed over every such line. It is a mixed discrete&ndash;continuous problem small enough to solve to a coordinate-wise optimum: the phases by
+coordinate descent over 72 candidate angles, which is exhaustive per coordinate and therefore
+monotone, converging in two sweeps; the assignment by enumerating all \(6!\) permutations. Seconds,
+once, before any gradient. Against the pipeline's own alignment &mdash; each photograph
+cross-correlated with the first of its family &mdash; this lowers chordal disagreement from 0.11775
+to 0.11190. The existing alignment is worth 1.2% against no alignment at all on this objective,
+which is unsurprising: it was built to make one family internally coherent and never consulted the
+other.</p>
+
+<p>What that buys, and what it does not, has to be measured on planes the families did not
+supervise, because a held-out transverse cut sits among six transverse photographs and is close to
+interpolation. Comparing the colour distributions of the two families' held-out renders &mdash; a
+reference-free quantity, since it asks whether the two agree about what the interior is made
+of:</p>
+
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected. This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table S18</p><table>
+<thead><tr><th>orange</th><th>gap between the families &darr;</th><th>disagreement on the shared
+axis &darr;</th><th>DreamSim &darr;</th></tr></thead>
+<tbody>
+<tr><td>phases from the existing alignment</td><td>0.2667</td><td><strong>0.0520</strong></td>
+    <td><strong>0.0738</strong></td></tr>
+<tr><td><strong>phases solved on the chords</strong></td><td><strong>0.2362</strong></td>
+    <td>0.0617</td><td>0.0759</td></tr>
+<tr><td class="mut">the same, on 45&deg; cuts neither family supervised</td>
+    <td class="mut">0.1955 &rarr; <strong>0.1844</strong></td><td class="mut">&mdash;</td>
+    <td class="mut">&mdash;</td></tr>
+</tbody></table></div>
+
+<p>The solve improves the quantity it targets, by 11% on held-out cuts of the two families and 6%
+on cuts at forty-five degrees, the orientation no photograph constrains. It does not improve
+similarity to the photographs: DreamSim moves by 0.0021 in the wrong direction, which is small
+against the spread between folds and is reported as no gain. And it makes the longitudinal family
+slightly less self-consistent on the axis, 0.0520 to 0.0617, which follows from what was solved
+&mdash; the transverse phases were free and the axis is where longitudinal sections meet each other,
+not where they meet the transverse family. Cross-family coherence and photographic similarity are separable, and this addresses the first.</p>
+
+<h4>S3.1.7&ensp;Both methods through the same evaluator</h4>
+
+
+
+<div class="note"><strong>The orange's evaluation photographs are the orange's training
+targets.</strong> Its training references and its evaluation set are the same
+six photographs, so the two photograph-supervised arms
+were fitted to the six images they are then scored against. The no-photograph arm, FruitNinja's
+released model and the stock-checkpoint reproduction were not. The 46.3 reference-against-itself
+floor is computed on those same targets. Every orange number below is therefore in-sample for two
+of five rows and out-of-sample for three, and the ordering must not be read as a comparison. The
+watermelon does not have this problem: it is trained against a single reference and scored
+against a separate set of twenty, which are disjoint. That asymmetry
+is the mechanism behind a result, that every arm here beats
+FruitNinja on the orange and does not on the watermelon.</div>
+
+
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected. This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table S19</p><table>
+<thead><tr><th>orange, 100 cuts per family</th><th>transverse FID &darr;</th>
+<th>transverse KID &darr;</th><th>longitudinal FID &darr;</th><th>longitudinal KID &darr;</th>
+<th>PSNR &uarr;</th><th>SSIM &uarr;</th><th>LPIPS &darr;</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released model <span class="mut">(fine-tuned on this fruit)</span></td>    <td>102.2</td><td>171&plusmn;27</td><td>269.6</td><td>383&plusmn;90</td><td>15.25</td><td>0.7561</td><td>0.4575</td></tr>
+<tr><td>FruitNinja's pipeline, stock checkpoint <span class="mut">(our reproduction)</span></td>    <td>378.7</td><td>667&plusmn;103</td><td>511.6</td><td>825&plusmn;79</td><td>13.09</td><td>0.6461</td><td>0.4619</td></tr>
+<tr><td>this work, route 1</td><td>91.5</td><td>142&plusmn;21</td><td>222.8</td><td>275&plusmn;96</td><td>16.13</td><td><strong>0.7650</strong></td><td>0.4070</td></tr>
+<tr><td>this work, route 2</td><td><strong>74.1</strong></td><td><strong>101&plusmn;21</strong></td><td>286.8</td><td>382&plusmn;102</td><td><strong>16.43</strong></td><td>0.7560</td><td><strong>0.4048</strong></td></tr>
+<tr><td>this work, a second run on the same photographs</td><td>90.1</td><td>136&plusmn;27</td><td><strong>213.5</strong></td><td><strong>298&plusmn;111</strong></td><td>16.07</td><td>0.7632</td><td>0.4080</td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">46.3</td>
+    <td class="mut">n/a</td><td class="mut">70.2</td><td class="mut">n/a</td>
+    <td class="mut">21.24</td><td class="mut">0.8047</td><td class="mut">0.1815</td></tr>
+</tbody></table></div>
+
+<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected. This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table S20</p><table>
+<thead><tr><th>watermelon, 100 cuts per family</th><th>transverse FID &darr;</th>
+<th>transverse KID &darr;</th><th>longitudinal FID &darr;</th><th>longitudinal KID &darr;</th>
+<th>PSNR &uarr;</th><th>SSIM &uarr;</th><th>LPIPS &darr;</th></tr></thead>
+<tbody>
+<tr><td>FruitNinja, released model <span class="mut">(fine-tuned on this fruit)</span></td>    <td>182.0</td><td>223&plusmn;15</td><td>211.0</td><td>244&plusmn;19</td><td>11.32</td><td><strong>0.7383</strong></td><td>0.4651</td></tr>
+<tr><td>GaussianFluent, released model <span class="mut">(its own watermelon)</span></td>    <td><strong>170.2</strong></td><td><strong>151&plusmn;10</strong></td><td><strong>177.5</strong></td><td><strong>187&plusmn;18</strong></td><td><strong>11.61</strong></td><td>0.7119</td><td>0.4838</td></tr>
+<tr><td>this work, route 1</td><td>183.5</td><td>240&plusmn;12</td><td>236.7</td><td>285&plusmn;30</td><td>11.46</td><td>0.7308</td><td>0.4625</td></tr>
+<tr><td>this work, route 2</td><td>180.9</td><td>229&plusmn;14</td><td>262.8</td><td>342&plusmn;38</td><td>11.51</td><td>0.7302</td><td><strong>0.4594</strong></td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">60.4</td>
+    <td class="mut">n/a</td><td class="mut">69.9</td><td class="mut">n/a</td>
+    <td class="mut">17.59</td><td class="mut">0.6290</td><td class="mut">0.2927</td></tr>
+</tbody></table></div>
+
+<p>On the orange every arm of this work is ahead of FruitNinja's released model on every column,
+and two of those arms were fitted to the photographs they are scored against, so that ordering is
+not a comparison. The stock-checkpoint reproduction at 378.7 is out-of-sample and is the one row here that can be read against FruitNinja's 102.2 without that caveat. The arm at 90.1 was described in an earlier version as photograph-free. Its run directory identifies it: the training log records section targets as photographs, and replaying the silhouette fit against each of the six references matches every target to a photograph at a residual of 0.0000, the same set route 1 was given. It is a second photograph-supervised run and what else distinguishes it is not recorded, so no comparison is drawn from it. The comparison this object supports out-of-sample is the leave-one-out study of section S3.1.2</p>
+
+<p>On the watermelon the answer goes the other way and should be stated plainly:
+<strong>GaussianFluent's released model scores best</strong>, 170.2 and 177.5 against our 180.9 and
+236.7 and FruitNinja's 182.0 and 211.0. It is a different watermelon from the one photographed,
+its cameras were chosen by us, and its upright axis is the best of three we tried while every other
+row is a single draw, so it is a minimum over configurations against single draws and not a
+like-for-like win. It is still the best FID in the table and nothing here is served by hiding
+that. On cost the reading is narrower than this paper first claimed. GaussianFluent's file is 310.8&nbsp;MiB, but 76% of that is degree-1-to-3
+spherical harmonics, a view-dependent capability this representation does not have at all. Charged
+the same fields, at degree 0, its 1,381,100 primitives cost <strong>73.8&nbsp;MiB</strong> against
+this work's 62.6 and route 1's 163.5. So against GaussianFluent the storage advantage is
+1.18&times; for route 2 and a 2.6&times; <em>disadvantage</em> for route 1, and the five-fold
+figure was an accounting of somebody else's spherical harmonics. What does not change is that at
+2048&nbsp;px its own rasteriser leaves 38.7% of its section unpainted where the same lattice drawn
+as a cube volume leaves 0.07%. The claim this
+work makes is about what a representation can state about a cut face and what it costs to hold a
+volume, not about winning a distribution metric at 100 samples against a reference set that scores
+60.4 against itself.</p>
+
+<p>These FID values are not the ones in the six-cut table above, which scores six cuts rather than a
+hundred; the two tables are internally consistent and should not be read across.</p>
+
+<figure>
+  <img src="assets/prior_or.png" alt="Held-out transverse cuts of the orange from three arms of
+       this work, FruitNinja's released model, and the photographs">
+  <figcaption><span class="fnum">Figure S10</span><br>The same six held-out transverse planes of the orange, rendered from every model,
+  with the photographs underneath. FruitNinja's released model runs saturated and its pith ring is
+  brighter and thinner than any photograph. The row below it is the same pipeline with the stock
+  checkpoint in place of the fine-tuned one and nothing else changed, which is the reproduction
+  anyone outside the group can perform: the flesh goes brown and the segment walls become a crust.
+  The third row from the top is this work with no fine-tuned model anywhere in its run, and
+  it is hard to tell from the two rows above it.</figcaption>
+</figure>
+
+<figure>
+  <img src="assets/prior_wm.png" alt="Held-out transverse cuts of the watermelon from two routes,
+       FruitNinja's released model, and the photographs">
+  <figcaption><span class="fnum">Figure S11</span><br>The same for the watermelon, with GaussianFluent's own released model in the fourth
+  row. FruitNinja's resolves fewer seeds than ours and softens the ones it keeps. GaussianFluent's
+  is a different fruit, cut in a frame whose upright axis is not published and which we chose in
+  its favour: its rind and pith read thicker than any photograph and its seeds smear along one
+  direction, and it still takes the best FID in the table. The metric is measuring the colour
+  statistics of a slice, not whether the slice is a plane.</figcaption>
+</figure>
+
+<h4>S3.1.8&ensp;The comparison in one table</h4>
+
+<p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
+or marked where the quantity does not exist for that representation. A cut-face residual and a cut-area error need a cut-face
+construction to measure; a splatted interior draws whatever primitives lie near the plane and has
+none, which is the difference this paper is about and not a number it can report on their
+behalf.</p>
+
+<div class="tw"><p class="tnum">Table S21</p><table>
+<thead><tr><th>dimension</th><th>FruitNinja</th><th>GaussianFluent</th><th>this work</th><th>&sect;</th></tr></thead>
+<tbody>
+<tr><td>primitives or cells</td><td>7,959,789</td><td>1,381,100</td><td><strong>1,065,856</strong></td><td>4.1.1</td></tr>
+<tr><td>stored, all a method needs</td><td>425.1 MiB</td><td>310.8 MiB</td><td><strong>62.6 MiB</strong></td><td>4.1.1</td></tr>
+<tr><td><strong>stored, same codec</strong></td><td>58.3 MiB</td><td>26.5 MiB</td><td><strong>9.3 MiB</strong></td><td>4.1.2.2</td></tr>
+<tr><td>unpainted at 512&nbsp;px, own renderer</td><td>0.21%</td><td>0.10%</td><td><strong>0.00%</strong></td><td>4.1.2</td></tr>
+<tr><td><strong>unpainted at 2048&nbsp;px</strong></td><td>2.37%</td><td>38.73%</td><td><strong>0.07%</strong> <span class="mut">as a volume</span></td><td>4.1.2</td></tr>
+<tr><td>cut-face plane residual</td><td class="mut">no cut-face construction</td>
+    <td class="mut">no cut-face construction</td><td><strong>machine &epsilon;</strong></td><td>4.3.1</td></tr>
+<tr><td>cut-area error against a closed form</td><td class="mut">not measurable without one</td>
+    <td class="mut">not measurable without one</td><td>0.97% &rarr; <strong>0.09%</strong> over an eightfold refinement</td><td>4.3.1</td></tr>
+<tr><td><strong>DreamSim to the photographs, watermelon</strong>
+    <span class="mut">(0.067 between photographs)</span></td>
+    <td>0.2292</td><td>0.4063</td><td><strong>0.1825</strong></td><td>4.1.2</td></tr>
+<tr><td><strong>DreamSim to the photographs, orange</strong>
+    <span class="mut">(0.042 between photographs)</span></td>
+    <td>0.1301</td><td class="mut">no orange released</td><td><strong>0.0763</strong></td><td>4.1.2</td></tr>
+<tr><td>transverse FID, 100 held-out cuts, watermelon</td><td>182.0</td><td><strong>170.2</strong></td>
+    <td>180.9</td><td>4.1.7</td></tr>
+<tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.1.1</td></tr>
+<tr><td>slicing and piece labelling</td><td class="mut">not addressed</td><td class="mut">damage field</td>
+    <td>face \(O(K)\); labelling \(\Theta(N)\), 2.9&nbsp;s</td><td>4.3.4</td></tr>
+</tbody></table></div>
+
+<p>The view-dependence row is a bound rather than a measurement, and it is the one honest way to
+read the storage column. The decoder here takes a cell's feature and returns a colour; it takes no
+view direction, so a wet cut face, a specular rind and a translucent flesh are outside what this
+representation can express, not degraded versions of them. Nothing in this paper measures
+appearance under moving illumination for that reason. The storage advantage is therefore partly a
+capability difference: we do not pay for view-dependent appearance because we do not provide it,
+and a fair reading of the compressed row is 9.3&nbsp;MiB for a Lambertian volume against
+26.5&nbsp;MiB for one that also carries a third-order angular field.</p>
+
+
+<h4>S3.1.9&ensp;A plane moved through the object</h4>
+
+<p>Every appearance number above scores one cut against one photograph. A viewer who drags a
+cutting plane sees a sequence instead, and a representation can be right about every member of that
+sequence and wrong about the transitions between them. Equation&nbsp;(7) is about the transitions:
+a plane at depth \(t\) takes the two photographs it falls between, mixed at the fractional part,
+where the rule it replaced takes \(\lfloor t \rfloor\) alone and therefore hands the same
+photograph to two or three adjacent planes.</p>
+
+<p>What each rule asks for can be measured with no model and no renderer at all, on the orange&#8217;s
+six transverse photographs over the sixteen planes the trainer supervises, with the pipeline's own canonicalisation applied under both so that the assignment is the
+only difference. Under the block rule ten of the fifteen steps ask for no change whatever and the
+other five ask for 0.22 to 0.26 of 1&nbsp;&minus;&nbsp;SSIM; under&nbsp;(7) every step lies between
+0.036 and 0.070. The jerk &mdash; the standard deviation of the per-step change, which is what
+flicker is &mdash; is 0.1134 against 0.0102, eleven times smaller. The mean step is 0.0799 against
+0.0503, so the block rule is not asking for less change overall. It is asking for the same change in
+a third of the places.</p>
+
+<p>Whether that survives into the model is a different question, and the answer is that it
+does not. Two runs of the same program on the same lattice and the same references, differing only
+in the assignment rule, swept over the same forty-eight depths through the middle of the
+orange: the step-to-step change is 0.1306 in the mean under&nbsp;(7) and 0.1281 under the block
+rule, and the jerk is 0.0408 against 0.0405. The two curves lie on top of each other, step for
+step, and neither carries a spike where the block boundaries fall. On held-out cuts the block arm
+is 0.0025 <em>better</em> in DreamSim, which section&nbsp;S3.4 reports with the rest of it.
+<strong>Equation&nbsp;(7) changes what the supervision asks for by a factor of eleven and does not
+measurably change what the volume does.</strong> The reason is the one section&nbsp;S3.1.5 gives for
+a different question: a cell holds one value and every plane that crosses it reads that value, so a
+volume cannot be piecewise constant along an axis its cells run continuously along. The
+discontinuity is in the targets, and the geometry absorbs it before anything is rendered.</p>
+
+<p class="mut">The first version of this sweep measured the renderer instead, and the way it failed
+is worth keeping. The cut view indexes a fixed list of twenty-four plane centres, so a sweep denser
+than that list returns the same picture several times over and then jumps: both arms came back with
+38 of 47 steps at exactly zero and the same nine spikes in the same places, which is a step function
+of the indexing and not of either volume. The renderer takes the sweep density as an argument for this reason; the numbers above are through it at four times the sweep density, and no step
+is zero.</p>
+
+
+<figure>
+  <img src="assets/depthassign.png" alt="The per-step change between adjacent targets under the two
+       assignment rules, and between adjacent rendered sections of the two models trained under
+       them">
+  <figcaption><span class="fnum">Figure S12</span><br>What the two assignment rules ask adjacent
+  planes for, and what the models trained under them do when the plane is walked through the
+  object.</figcaption>
+</figure>
+
+<h3 id="phys-res">S3.2&ensp;Materials, collision and a shell the solver can resolve</h3>
+
+<p>The lattice answers three physical questions with the same structure it uses to answer
+geometric ones: which material a cell holds, whether two pieces are touching, and whether a
+stiffness contrast survives the solver's grid transfer. They belong together because they share a
+failure mode. Each is decided at the resolution of a cell, so each is wrong in the same place, the
+band where the cut or the shell is thinner than the cell that represents it, and each is fixed by
+the same move: state the geometry exactly where the discretisation cannot.</p>
+
+<h4>S3.2.1&ensp;Shell thickness in solver grid cells</h4>
+
+<p>A material field can change the simulated dynamics and still fail to produce a hard shell
+around a soft interior, because MPM transfers through one background grid and a shell one to three
+cells thick does not survive that transfer. That failure has a number, and the number can be worked
+out before any simulation runs. MPM moves
+particle quantities to a background grid of spacing \(dx\) and back, so a feature thinner than
+about two grid cells is averaged with its neighbours on the way through and comes back as the
+average. The quantity that decides whether a hard shell is possible is therefore the shell's thickness in
+units of the <em>transfer</em> grid \(\Delta x = 3.2/80 = 0.04\), one grid for all three objects,, which is the grid momentum passes
+through &mdash; not the finer grid particles are seeded on, against which these values would read
+four to six times larger, since the filling grid is set per object: 0.01 for the watermelon and
+0.00625 for the orange.</p>
+
+<div class="tw"><p class="tnum">Table S22</p><table>
+<thead><tr><th>object</th><th>shell thickness</th><th>in fine cells</th><th>in MPM grid cells</th><th>a stiffness contrast is</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>0.01910</td><td>3.2</td><td><strong>0.31</strong></td><td>not resolvable</td></tr>
+<tr><td>watermelon</td><td>0.02571</td><td>3.0</td><td><strong>0.31</strong></td><td>not resolvable</td></tr>
+<tr><td>doughnut</td><td>0.01234</td><td>3.0</td><td><strong>0.22</strong></td><td>not resolvable</td></tr>
+</tbody></table></div>
+
+<h4>S3.2.2&ensp;Shell thickness as a parameter of route 2</h4>
+
+<p>That threshold is what route 2 can act on. It builds the lattice from a field, so the skin band \(\beta\) is a
+number passed to the builder rather than a property of someone else's model. The criterion is evaluated against the grid the solver integrates on, \(\Delta x = 3.2/80\), not
+the finer grid particles are seeded on. Building the doughnut at four settings:</p>
+
+<div class="tw"><p class="tnum">Table S23</p><table>
+<thead><tr><th>\(\beta\), fine cells</th><th>cells</th><th>measured thickness</th><th>in MPM grid cells</th><th></th></tr></thead>
+<tbody>
+<tr><td>3 <span class="mut">(the default)</span></td><td>1,129,008</td><td>4.1</td><td><strong>0.29</strong></td><td>no</td></tr>
+<tr><td>5</td><td>1,486,904</td><td>5.5</td><td><strong>0.39</strong></td><td>no</td></tr>
+<tr><td><strong>7</strong></td><td>1,827,832 <span class="mut">(+62%)</span></td><td>7.2</td><td><strong>0.52</strong></td><td>no</td></tr>
+<tr><td>9</td><td>2,148,936 <span class="mut">(+90%)</span></td><td>9.0</td><td><strong>0.65</strong></td><td>no</td></tr>
+</tbody></table></div>
+
+<h4>S3.2.3&ensp;Solver response across the threshold</h4>
+
+<p>The arithmetic says a shell under two grid cells cannot hold a stiffness contrast. Simulating
+both settings says whether that is what happens. The object falls under its own weight with the material field applied, and the solver reports each body's extent along the gravity axis as a fraction of its rest extent,
+separately for the cells the field called skin and the ones it called interior. A hard shell keeps
+its own extent and lets the interior lose more, so the sign of the gap between them is the
+question, not its size.</p>
+
+<div class="tw"><p class="tnum">Table S24</p><table>
+<thead><tr><th>doughnut, at deepest compression</th><th>shell, in grid cells</th><th>skin extent</th><th>interior extent</th><th>interior &minus; skin</th></tr></thead>
+<tbody>
+<tr><td>\(\beta = 3\), falling</td><td>0.29</td><td>0.9220</td><td>0.9259</td><td><strong>+0.0040</strong></td></tr>
+<tr><td>\(\beta = 7\), falling</td><td>0.52</td><td>0.9334</td><td>0.9318</td><td><strong>&minus;0.0016</strong></td></tr>
+<tr><td>\(\beta = 3\), falling and cut</td><td>0.29</td><td>0.9264</td><td>0.9333</td><td><strong>+0.0070</strong></td></tr>
+<tr><td>\(\beta = 7\), falling and cut</td><td>0.52</td><td>0.9280</td><td>0.9177</td><td><strong>&minus;0.0103</strong></td></tr>
+</tbody></table></div>
+
+
+<p>Two confounds are not controlled. The same preset makes the skin <em>lighter</em> than the
+interior, 750 against 950 in density, so an extent measured under gravity is being pushed by a
+density contrast in the opposite direction to the stiffness one and the paper cannot separate them.
+And the \(\beta = 7\) build is not the \(\beta = 3\) build with a thicker skin: it has 62% more
+cells and a much larger skin fraction, so at \(8.0\times10^6\ \mathrm{Pa}\) in the shell the whole body is stiffer, and both
+extents rise between the two settings, which is the signature of a stiffer object rather than of a
+resolved shell. The control that separates these is the uniform preset at both \(\beta\), which the material
+code ships for exactly this purpose. It has now been run, with the level labels present so that the
+same per-level extent is recorded, and only the stiffness made uniform. The field swept here is not equation&nbsp;(13). It is a two-rule preset that assigns a shell and an interior stiffness directly, and its shell value of \(8.0\times10^6\ \mathrm{Pa}\) is above equation&nbsp;(13)'s ceiling of \(5\times10^6\). What the sweep tests is whether a stiffness contrast survives the transfer at a given band width, not the mapping of equation&nbsp;(13).</p>
+
+<div class="tw"><p class="tnum">Table S25</p><table>
+<thead><tr><th>doughnut, extent gap (interior &minus; skin) at the last frame</th>
+<th>\(\beta = 3\)</th><th>\(\beta = 7\)</th></tr></thead>
+<tbody>
+<tr><td><strong>uniform stiffness, labels present</strong></td><td><strong>+0.0630</strong></td><td><strong>+0.0628</strong></td></tr>
+<tr><td>the material field applied</td><td>+0.0288</td><td>+0.0515</td></tr>
+<tr><td>difference the field makes</td><td>&minus;0.0342</td><td>&minus;0.0113</td></tr>
+</tbody></table></div>
+
+<p>The control does what a control should: it shows that the geometry alone produces a gap, that
+the gap is the same at both band widths to within a thousandth, and therefore that a raw gap is not
+evidence about a shell. Against that baseline the material field does move the result, so the field
+is reaching the solver. But it moves it <em>more</em> at \(\beta = 3\) than at \(\beta = 7\),
+which is the opposite ordering to the one a shell becoming resolvable would produce, and it is consistent with the \(\tau_s\) values above: on the grid the solver integrates, neither build
+is near the threshold, so there is no reason to expect the thicker band to behave differently in
+kind. <strong>We report this as a negative result.</strong> The band width is a parameter route 2
+can set, the criterion for choosing it is stated and computable, and the experiment intended to
+confirm the criterion does not confirm it.</p>
+
+<p>The four gaps are 0.16%, 0.40%, 0.70% and 1.03% of the object's extent, so the effect is a
+fraction of a percent at three of the four settings and reaches 1% at one. Each cell is a single
+deterministic run: there is no repeat, no seed variation and therefore no noise floor to compare
+the sign flip against. It is detectable in the solver's report and not in a render. What it establishes is smaller than that. On the grid the solver integrates, no build in the sweep crosses the threshold &mdash; \(\tau_s\) runs 0.29 to 0.65 against a kernel support of 1.5 &mdash; so the sign change across \(\beta\) is a response to band width and not to a resolvability threshold being crossed. The criterion is derived and computable before the first timestep; it is not confirmed here, because the sweep never left the unresolvable side. Whether a contrast large enough to <em>look</em>
+like a peel needs a thicker shell again, a finer solver grid or a different transfer is not
+answered here.</p>
+
+<h4>S3.2.4&ensp;How the cut divides mass</h4>
+
+<p>What the lattice is answerable for is what it hands over:
+which material went to which piece and how much of it, and that has a closed form on a ball. A
+plane at signed distance \(t\) from the centre of a ball of radius \(R\) cuts a cap of volume
+\(\pi (R-t)^2 (2R+t)/3\); the lattice's answer is the leaves labelled to that side times their own
+volume. Both sides are compared at four offsets and three spacings, on the same oblique off-grid
+plane used elsewhere.</p>
+
+<div class="tw"><p class="tnum">Table S26</p><table>
+<thead><tr><th>ball radius in cells</th><th>\(t/R = 0\)</th><th>0.25</th><th>0.50</th><th>0.75</th>
+<th>pieces sum to the whole</th></tr></thead>
+<tbody>
+<tr><td>16</td><td>0.47%</td><td>0.52%</td><td>0.65%</td><td>0.98%</td><td>0.000%</td></tr>
+<tr><td>24</td><td>0.22%</td><td>0.18%</td><td>0.29%</td><td>0.65%</td><td>0.000%</td></tr>
+<tr><td>32</td><td><strong>0.14%</strong></td><td><strong>0.14%</strong></td>
+    <td><strong>0.14%</strong></td><td>0.47%</td><td><strong>0.000%</strong></td></tr>
+</tbody></table></div>
+
+<p>The error against the analytic cap falls with the spacing and is worst for the
+thinnest cap, which is where a discretisation has least material to be right about &mdash; the same
+first-order behaviour the cut-area error shows, and for the same reason. Conservation is not
+approximate: the pieces sum to the whole to zero, at every offset and every spacing, because a leaf
+is handed to one side and only one and no material is created or destroyed at the boundary. This is
+the one physical quantity the representation rather than the solver is responsible for, and it is
+the extent of the quantitative physics in this paper.</p>
+
+<h4>S3.2.5&ensp;Collision</h4>
+
+<p>Equation&nbsp;(12) is two tests, and the second is the one that earns its place. At rest, with the
+two halves exactly as the cut left them, occupancy alone reports 1,543 particles of the orange
+inside the other piece and 1,413 of the watermelon; the sign test takes both to zero. On the
+doughnut occupancy alone already reports none, which is not a stronger result but a property of
+where its cut falls: the plane meets the torus in two bands rather than one disc, and no leaf on
+this cut straddles it. An object can therefore pass the first test for a reason that has nothing
+to do with the second working, which is why the push column below and not this one is the
+evidence about contact.</p>
+
+<p>That zero is a consequence: A leaf
+assigned to piece B has its centre on B's side, so a point on A's side that falls inside a B leaf
+must lie within the leaf's half-diagonal of the plane, which is the leaf's half-diagonal bound, and the
+sign test removes exactly that band. The at-rest column is therefore a check that the indexing has
+no aliasing bug, not evidence about contact. The evidence is the push column: penetration has to
+grow with separation and nothing in the construction forces it to.</p>
+
+<figure>
+  <img src="assets/collision.png" alt="A slab through the contact region, particles coloured by
+       what the collision test says about them, at four separations">
+  <figcaption><span class="fnum">Figure S13</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. The picture and the counts come from the same index and contact test, so they cannot disagree.</figcaption>
+</figure>
+
+<div class="tw"><p class="tnum">Table S27</p><table>
+<thead><tr><th>object</th><th>particles <span class="mut">(one per route&nbsp;1 cell)</span></th><th>solid cells <span class="mut">(route&nbsp;1)</span></th><th>at rest, occupancy alone</th>
+<th>with the plane test</th><th>pushed 1 / 2 / 4 cells in</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>1,162,387</td><td>770,182</td><td>1,543 of 553,720</td>
+    <td><strong>0</strong></td><td>7,956 / 17,518 / 38,767</td></tr>
+<tr><td>watermelon</td><td>1,245,168</td><td>709,368</td><td>1,413 of 616,881</td>
+    <td><strong>0</strong></td><td>8,802 / 19,449 / 42,617</td></tr>
+<tr><td>doughnut</td><td>1,119,304</td><td>544,568</td><td><strong>0</strong> of 557,503</td>
+    <td><strong>0</strong></td><td>2,532 / 6,269 / 13,676</td></tr>
+</tbody></table></div>
+
+<p>The last column is the check that the test is a contact test and not a coincidence: pushing one
+piece into the other by one, two and four coarse cells has to report more penetration each time,
+and it does, on every object. </p>
+
+<h4>S3.2.6&ensp;Surface binding</h4>
+
+<p>Collision moves pieces; binding is what carries the visible surface with them. The surface
+binding of section&nbsp;3.4 fixes each surface vertex to its own piece's nearest particles at bind time, so the surface follows
+whatever the solver does to them, including deformations no rigid transform can express.</p>
+
+<figure>
+  <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
+  <figcaption><span class="fnum">Figure S14</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
+  the same particles driving it two ways: a per-piece rigid fit on the left, which is the best a
+  single transform can do, and the particle binding on the right, both coloured by how far
+  each vertex has left its material on one shared scale: blue at 0.00 fine cells, red at 2.00 and
+  above, linear between. The rigid panel saturates the scale and stays undeformed; the bound panel
+  bends and stays at 0.00. The bind residual
+  is 0.34 to 0.45 of a fine cell in the mean and 1.02 to 1.23 at the 95th, over 480,344, 419,404
+  and 442,956 surface vertices carried on 1.23M, 1.07M and 0.94M particles. The surface is the whole O&#8209;Voxel exterior now rather than a cut patch, so what is bound is every
+  visible vertex the object has.</figcaption>
+</figure>
+
+<h4>S3.2.7&ensp;The classes the mapping is applied to</h4>
+
+<p>Equation&nbsp;(13) orders material classes and maps the ordering onto a stiffness range. What it
+is applied to is a decomposition nothing supervised: the trained per-cell feature is clustered,
+classes whose appearance centroids agree are merged, and no object is told that an orange has a
+pith or a loaf a crust. Both halves are shipped now. They were outside the shipped tooling until now: the
+material figures in the <a href="supplement.html">supplement</a> were drawn by a script the
+repository did not carry, so they could not be corrected when the models were retrained. The
+numbers below were produced by the shipped copy, on the models this page reports, and the
+same call regenerates that figure.</p>
+
+<div class="tw"><p class="tnum">Table S28</p><table>
+<thead><tr><th>class, ordered by \(u_j\)</th><th>cells</th><th>\(\beta_j\), share on the skin band</th>
+<th>mean luminance</th><th>\(u_j\)</th><th>\(E_j\)</th></tr></thead>
+<tbody>
+<tr><td>orange, four classes from the anchor feature</td><td colspan="5"></td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the skin class</td><td>470,243 <span class="mut">(40.5%)</span></td>
+    <td><strong>1.00</strong></td><td>0.531</td><td>0.765</td><td><strong>5.00e6</strong></td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the pale interior class</td><td>139,383 <span class="mut">(12.0%)</span></td>
+    <td>0.07</td><td>0.775</td><td>0.396</td><td>3.37e6</td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the mid interior class</td><td>324,649 <span class="mut">(27.9%)</span></td>
+    <td>0.00</td><td>0.598</td><td>0.233</td><td>1.73e6</td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the dark interior class</td><td>228,112 <span class="mut">(19.6%)</span></td>
+    <td>0.01</td><td>0.527</td><td>0.004</td><td><strong>1.00e5</strong></td></tr>
+<tr><td>watermelon, the skin class</td><td>537,924 <span class="mut">(43.2%)</span></td>
+    <td><strong>0.98</strong></td><td>0.517</td><td>0.755</td><td><strong>5.00e6</strong></td></tr>
+<tr><td>watermelon, the darkest interior class</td><td>194,211 <span class="mut">(15.6%)</span></td>
+    <td>0.00</td><td>0.443</td><td>0.000</td><td><strong>1.00e5</strong></td></tr>
+<tr><td>doughnut, the skin class</td><td>529,750 <span class="mut">(47.3%)</span></td>
+    <td><strong>0.99</strong></td><td>0.576</td><td>0.879</td><td><strong>5.00e6</strong></td></tr>
+<tr><td>doughnut, the darkest interior class</td><td>189,643 <span class="mut">(16.9%)</span></td>
+    <td>0.14</td><td>0.414</td><td>0.090</td><td><strong>1.00e5</strong></td></tr>
+</tbody></table></div>
+
+<p>On all three objects one of the four classes comes out sitting almost entirely on the skin band
+&mdash; \(\beta_j\) of 0.98 to 1.00 &mdash; without any term in the clustering that asks for a
+shell, and it is that class equation&nbsp;(13) puts at the top of the ordering. The interior classes
+are then ordered by luminance, which puts the orange&#8217;s pale pith and albedo above its flesh.
+The contrast between the ends of the mapping is 50&times; on every object, because the range is
+fixed and the ordering is what is being claimed. <strong>What this does not say is that the
+contrast reaches the solver as a shell.</strong> That is section&nbsp;S3.2.1&#8217;s question, it is
+answered against the grid momentum is transferred on rather than the finer grid particles are
+seeded on, and the answer there is that none of these shells is resolvable.</p>
+
+<h3 id="correctness">S3.3&ensp;Correctness, storage and runtime</h3>
+
+<h4>S3.3.1&ensp;The cut face</h4>
+
+
+<p> Each crossed cell contributes one
+convex polygon, obtained by intersecting the plane with the cell's twelve edges in closed form. No primitive is asked to approximate a plane, so there is no error to tune away and the only departure in a cut area is the voxelisation of the silhouette.
+A method whose cut face is determined by the primitives near the plane does not define these
+quantities, so neither can be reported for it.</p>
+
+<div class="tw"><p class="tnum">Table S29</p><table>
+<thead><tr><th>ball, radius in cells</th><th>plane</th><th>cut area</th><th>\(\pi r^2\)</th>
+<th>area error</th><th>worst vertex off the plane</th></tr></thead>
+<tbody>
+<tr><td>6</td><td>axis-aligned, \(d=0\)</td><td>112.0</td><td>113.1</td><td>0.97%</td><td>0.00e+00</td></tr>
+<tr><td>12</td><td>axis-aligned, \(d=0\)</td><td>448.0</td><td>452.4</td><td>0.97%</td><td>0.00e+00</td></tr>
+<tr><td>24</td><td>axis-aligned, \(d=0\)</td><td>1804.0</td><td>1809.6</td><td>0.31%</td><td>0.00e+00</td></tr>
+<tr><td><strong>48</strong></td><td>axis-aligned, \(d=0\)</td><td>7232.0</td><td>7238.2</td><td><strong>0.09%</strong></td><td>0.00e+00</td></tr>
+<tr><td>6</td><td>oblique, off-grid</td><td>115.6</td><td>112.7</td><td>2.58%</td><td>4.44e&#8722;16</td></tr>
+<tr><td>12</td><td>oblique, off-grid</td><td>451.0</td><td>452.0</td><td>0.22%</td><td>6.66e&#8722;16</td></tr>
+<tr><td>24</td><td>oblique, off-grid</td><td>1803.4</td><td>1809.1</td><td>0.32%</td><td>1.78e&#8722;15</td></tr>
+<tr><td><strong>48</strong></td><td>oblique, off-grid</td><td>7233.7</td><td>7237.8</td><td><strong>0.06%</strong></td><td>3.55e&#8722;15</td></tr>
+<tr><td class="mut">torus, \(R=14, r=5\)</td><td class="mut">across the axis</td><td class="mut">868.0</td>
+    <td class="mut">\(4\pi Rr\) = 879.6</td><td class="mut">1.3%</td><td class="mut">0.00e+00</td></tr>
+</tbody></table></div>
+
+<p>The area error falls roughly as
+\(h\) with resolution, from about 1% at six cells to 0.06 to 0.09% at forty-eight, which is what
+a voxelised silhouette should do and what a plane approximated by primitives would not. The
+residual of the plane itself does not fall and does not need to: it is 0.00e+00 for an
+axis-aligned plane through the origin, where the intersection lands on a coordinate exactly, and a
+few multiples of the machine epsilon for an oblique off-grid plane at every resolution. The cut
+face carries no error term that resolution has to chase; the silhouette does.</p>
+
+<h4>S3.3.2&ensp;Geometry and topology of the cut face</h4>
+
+<p>Three properties are claimed for the face and each has a number. Planarity: every vertex is an
+edge&ndash;plane intersection solved from the plane equation, so the residual
+\(|\mathbf{n}\cdot\mathbf{v}+d|\) is at machine precision on an oblique off-grid plane rather
+than at a tolerance. Area: the error against the closed form falls from 0.97% at six cells of radius to 0.09% at forty-eight. Gaps and manifoldness: a cut face is a 2-manifold <em>with boundary</em> &mdash; a disc for a convex object, an annulus for the doughnut cut across its axis &mdash; interior edges shared by exactly two triangles, and a rim of edges belonging to one. On the orange, cut axis-aligned and obliquely, that is what it is:</p>
+
+<div class="tw"><p class="tnum">Table S30</p><table>
+<thead><tr><th>orange, one cut</th><th>distinct triangles</th><th>edges used twice</th><th>edges used once</th><th>edges used more than twice</th></tr></thead>
+<tbody>
+<tr><td>axis-aligned</td><td>85,960</td><td>128,430</td><td>1,020</td><td><strong>0</strong></td></tr>
+<tr><td>oblique, off-grid</td><td>112,753</td><td>168,570</td><td>1,119</td><td><strong>0</strong></td></tr>
+</tbody></table></div>
+
+<p>The edges used once form the rim &mdash; a count consistent with the silhouette's own length divided by the leaf size. There are no non-manifold edges and no interior gaps. This is measured under uniform refinement of the band, which is the precondition section&nbsp;3.3 states: polygons meet edge to edge because every crossed cell is at the same level. That precondition is not an assumption here but a property of the refinement the operator performs, and section&nbsp;S3.3.3 repeats the measurement on all six objects and four planes each to check it &mdash; one level at the cut and no non-manifold edge on any of the twenty-four. Under an adaptive refinement of the band it would not hold, and there is no adaptive refinement here. (The mesh is emitted double-sided, one triangle per winding, so the counts above are taken after reducing each face to one instance; counting on the emitted mesh doubles every edge and hides the rim.)</p>
+
+<p>Peak device memory during training is 5.2 to 5.9&nbsp;GB at the settings used here, on one
+card.</p>
+
+<h4>S3.3.3&ensp;The band a plane crosses, on every object</h4>
+
+<p>Section&nbsp;3.3 claims that a cut changes adjacency only inside the crossed band, so it costs
+what it touches rather than what the object contains. That is worth a number, and the number has
+to say which band it counts. Equation&nbsp;(10) returns a set of cells on the lattice as it is
+stored; the operator then refines every one of them to the fine spacing, which multiplies the
+count by four and produces the leaves that carry a polygon. Both are below, on an oblique
+off-grid plane through each object&#8217;s centroid, because the first is the set whose adjacency
+has to be rebuilt and the second is what the polygon pass runs over.</p>
+
+<div class="tw"><p class="tnum">Table S31</p><table>
+<thead><tr><th>object, one oblique plane</th><th>\(N\)</th><th>\(K\), equation&nbsp;(10)</th>
+<th>\(K/N\)</th><th>leaves after refinement</th><th>of \(N\)</th><th>levels at the cut</th>
+<th>edges used once</th><th>used twice</th><th>used more than twice</th>
+<th>worst \(|\mathbf{n}\cdot\mathbf{v}+d|\)</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>770,182</td><td>17,036</td><td>2.21%</td><td>68,191</td><td>8.85%</td>
+    <td>1</td><td>1,299</td><td>203,937</td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
+<tr><td>watermelon</td><td>709,368</td><td>16,369</td><td>2.31%</td><td>65,530</td><td>9.24%</td>
+    <td>1</td><td>1,266</td><td>195,978</td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
+<tr><td>apple</td><td>756,905</td><td>16,951</td><td>2.24%</td><td>67,830</td><td>8.96%</td>
+    <td>1</td><td>1,352</td><td>202,832</td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
+<tr><td>bread</td><td>396,075</td><td>11,795</td><td>2.98%</td><td>47,188</td><td>11.91%</td>
+    <td>1</td><td>1,125</td><td>141,006</td><td><strong>0</strong></td><td>3.33e&#8722;16</td></tr>
+<tr><td>cake</td><td>395,613</td><td>10,440</td><td>2.64%</td><td>41,703</td><td>10.54%</td>
+    <td>1</td><td>1,084</td><td>124,570</td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
+<tr><td>doughnut</td><td>544,568</td><td>5,586</td><td>1.03%</td><td>22,367</td><td>4.11%</td>
+    <td>1</td><td>1,149</td><td>66,540</td><td><strong>0</strong></td><td>4.44e&#8722;16</td></tr>
+</tbody></table></div>
+
+<p>Over the three axis-aligned planes as well, twenty-four cuts in all, equation&nbsp;(10) returns
+0.51% to 3.03% of an object&#8217;s cells and the refined band that carries polygons is 2.04% to
+12.12%. <strong>A figure of 4.0% to 10.7% had been carried for this, and neither measured range is
+that.</strong> The refined band brackets it and is wider at both ends; the crossed set itself is
+three to four times smaller than either. The operator&#8217;s own docstring made the same slip in
+both directions at once &mdash; 4 to 11% in one place and about nine thousand cells of 877,495,
+which is 1.0%, in another &mdash; and the two are the two counts, not a disagreement. Which is
+meant has to be said, and the extremes are both the doughnut, for a reason that is about the shape
+rather than about the method: a plane across the torus&#8217;s axis meets it in two annular bands
+and crosses 12.12%, while the same plane turned ninety degrees passes through the hole and
+crosses 2.04%.</p>
+
+<p>Whether that fraction is a property of these six objects or of the resolution they are held at
+is answerable by holding the object and changing the resolution. Coarsening each object&#8217;s own
+occupancy by successive factors of two gives four resolutions of one shape, and the slope of
+\(\log K\) against \(\log N\) over them is 0.641 to 0.685 on twenty-four object-and-normal
+pairs, mean 0.666 against the \(2/3\) a surface through a volume predicts. So \(K/N\) falls as
+\(N^{-1/3}\): the band is small because the lattice is fine, and refining it further makes the
+band a smaller fraction rather than a larger one.</p>
+
+<figure>
+  <img src="assets/bandfrac.png" alt="K against N over four resolutions of each object, and the
+       crossed and refined band as a percentage of the object">
+  <figcaption><span class="fnum">Figure S15</span><br>The crossed band against the object it is cut
+  from, on each object&#8217;s own lattice and on three coarsenings of it. The band comes from the
+  operator's own test rather than from a restatement of it.</figcaption>
+</figure>
+
+<p>The <em>levels at the cut</em> column is 1 on every one of the twenty-four cuts, and that is
+what the absence of T-junctions rests on rather than a separate property to be hoped for:
+the operator refines every crossed cell until its spacing is at or below the
+target, so the leaves that carry polygons come out at one level and meet edge to edge. No edge in
+any of the cuts is shared by more than two triangles, and the edges used once are the rim. The
+precondition section&nbsp;S3.3.2 states is therefore met by every cut this implementation takes.
+What would break it is an adaptive criterion that refined part of the band further than the rest;
+there is none here, and section&nbsp;S3.3.4 names it as an open lever on the cost. The worst
+plane-equation residual over every vertex of every cut is 6.66e&#8722;16, and it is exactly zero
+wherever the plane is axis-aligned.</p>
+
+<h4>S3.3.4&ensp;What the operations cost</h4>
+
+<p>The paper repeatedly calls the lattice's operations cheap &mdash; connectivity, piece identity
+and collision are integer queries &mdash; and a claim of cheapness with no wall-clock number is an
+assertion. Each operation is timed as it is used rather than in a microbenchmark: the cut is a whole
+cut on a whole object, and the collision query is against the number of particles the solver
+actually has. Orange, 770,182 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
+
+<div class="tw"><p class="tnum">Table S32</p><table>
+<thead><tr><th>operation</th><th>time</th><th>rate</th></tr></thead>
+<tbody>
+<tr><td>read the model from disk</td><td>36.6&nbsp;ms</td><td></td></tr>
+<tr><td>occupancy: close and fill</td><td>2,623.3&nbsp;ms</td><td class="mut">once per object</td></tr>
+<tr><td>single cut: refine the band, label the pieces</td><td><strong>4,733.5&nbsp;ms</strong></td><td></td></tr>
+<tr><td>cut face: the exact polygons</td><td><strong>6,029.5&nbsp;ms</strong></td><td></td></tr>
+<tr><td>collision index: build it</td><td>115.2&nbsp;ms</td><td class="mut">once per cut</td></tr>
+<tr><td>collision: label every particle by piece <span class="mut">(1,162,387 particles, one per route&nbsp;1 cell)</span></td><td>911.6&nbsp;ms</td><td>1,275,116 particles/s</td></tr>
+<tr><td>collision: one occupancy query over the particle set</td><td>223.0&nbsp;ms</td>
+    <td><strong>5,212,602 queries/s</strong></td></tr>
+<tr><td>reference alignment: six angular profiles and their cross-correlations</td><td>126&nbsp;ms</td><td class="mut">once per object, equation&nbsp;(4)</td></tr>
+<tr><td>the joint phase and assignment solve of equation&nbsp;(5)</td><td>166,000&nbsp;ms</td><td class="mut">once, offline; not in the pipeline</td></tr>
+<tr><td>peak device memory during training</td><td>5.2 to 5.9&nbsp;GB</td><td class="mut">one card, at the settings of section&nbsp;3.1</td></tr>
+<tr><td>triangles emitted by one cut</td><td>85,960 to 112,753 distinct</td><td class="mut">doubled to 171,920&ndash;225,506 by two-sided emission</td></tr>
+</tbody></table></div>
+
+<p><strong>Which cut is which.</strong> Timings of "a cut" appear in this paper and in the
+supplement, and they are different operations on different lattices, so every one of them is
+set out together here rather than left to be reconciled.</p>
+
+<div class="tw"><p class="tnum">Table S33</p><table>
+<thead><tr><th>what was timed</th><th>lattice</th><th>seconds</th><th>where</th></tr></thead>
+<tbody>
+<tr><td>refine the band and label the pieces, adjacency rebuilt over every leaf</td>
+    <td>894,304 cells</td><td>13.76</td><td class="mut">section&nbsp;3.3</td></tr>
+<tr><td>the same, adjacency outside the band reused</td><td>894,304 cells</td><td><strong>2.91</strong></td>
+    <td class="mut">section&nbsp;3.3</td></tr>
+<tr><td>refine and label, as the pipeline runs it</td><td>770,182 cells</td><td>4.73</td>
+    <td class="mut">this section</td></tr>
+<tr><td>emit the exact polygons</td><td>770,182 cells</td><td>6.03</td><td class="mut">this section</td></tr>
+<tr><td>refine the band and label the pieces, as the supplement times it</td><td>877,494 cells</td><td>12.96</td><td class="mut">supplement S2.8</td></tr>
+<tr><td>emit the exact polygons, as the supplement times it</td><td>877,494 cells</td><td>14.25</td><td class="mut">supplement S2.8</td></tr>
+<tr><td class="mut">both, end to end</td><td class="mut">770,182 cells</td><td class="mut">10.76</td>
+    <td class="mut">this section</td></tr>
+</tbody></table></div>
+
+<p>The 2.91&nbsp;s figure is the labelling alone with the adjacency reuse in place, on a lattice
+16% larger; the 4.73 is the same stage timed inside the pipeline, where the reuse is not wired in.
+Nothing in this paper is an interactive cut, and the two levers on the remaining cost are named at
+the end of this section.</p>
+
+<p><strong>What the cost scales with.</strong> The labelling itself is linear in the leaves the cut touches, but the implementation is not: adjacency is rebuilt and the component structure allocated over every leaf, so the measured cost follows the object rather than the band. The cost is flat against the total and rises against the band:</p>
+
+<div class="tw"><p class="tnum">Table S34</p><table>
+<thead><tr><th>ball, cells</th><th>ms per 1000 cells</th><th>ms per 1000 band leaves</th></tr></thead>
+<tbody>
+<tr><td>17k</td><td>0.0091</td><td>0.0185</td></tr>
+<tr><td>58k</td><td>0.0059</td><td class="mut">&mdash;</td></tr>
+<tr><td>137k</td><td>0.0054</td><td class="mut">&mdash;</td></tr>
+<tr><td>268k</td><td>0.0056</td><td>0.0286</td></tr>
+</tbody></table></div>
+
+<p>Each ball is cut by one oblique plane. Reusing the adjacency outside the band is what took a cut on the orange from 13.76 to 2.91&nbsp;s, and taking the rest of the way to a cost proportional to the band is open.</p>
+
+<p>The two halves of the claim come apart here and both are reported. Contact is cheap as claimed:
+a floor division and a table lookup run at 4.9 million queries per second against the solver's own
+particle set, which is what makes physics on this representation practical. <strong>Cutting is
+not interactive.</strong> A cut costs about eleven seconds end to end at this resolution, dominated
+by refining the band and by emitting one polygon per crossed cell. The geometry is linear in the crossed cells; the implementation's total cost is not, and the scaling measurement below separates the two; an adaptive refinement of the band and a GPU formulation of the same passes are the two levers on it.</p>
+
+<h4>S3.3.5&ensp;Storage, static and during a cut</h4>
+
+<p>The other half of the memory line, and the one the coarse interior exists for: storage should be
+proportional to hidden spatial complexity, with the high-resolution cost paid only where a cut has
+made something visible and returned when it has not. Counted as fields rather than as process memory: a Gaussian stores position, scale, rotation, opacity and colour; a cube cell stores
+a feature, a level and its membership, with the position implicit in the address.</p>
+
+<p>Three accountings, and they answer different questions. Holding the count fixed and changing
+only the per-element fields is 1.6&times;. Paying for the integer coordinates a sparse lattice has
+to store, which every structure built over it keys on, takes that to 1.2&times;. Adding the
+dual-grid exterior, which the method needs and a Gaussian model carries inside its own primitives,
+takes the orange past parity: 55.6&nbsp;MiB against 46.9 for route 1. The saving against the
+published models is therefore almost entirely in <em>how many things there are</em>, not in what
+each one costs, and on an object whose lattice is mostly fine cells it can vanish. None of these
+figures is measured against a compressed Gaussian model, which would move them again.</p>
+
+<div class="tw"><p class="tnum">Table S35</p><table>
+<thead><tr><th>orange</th><th>as Gaussians</th><th>as cube cells</th><th>a cut, while live</th><th>folded back</th></tr></thead>
+<tbody>
+<tr><td>route 1, 1,162,387 cells</td><td>62.1 MiB</td>
+    <td>37.7 MiB <span class="mut">(1.6&times;)</span> / <strong>51.0 with the index</strong></td>
+    <td>+90,881 leaves, 1.5 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
+<tr><td>route 2, 951,640 cells</td><td>50.8 MiB</td>
+    <td>30.9 MiB <span class="mut">(1.6&times;)</span> / <strong>41.7 with the index</strong></td>
+    <td>+74,767 leaves, 1.2 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
+</tbody></table></div>
+
+<h3 id="ablations">S3.4&ensp;Ablations</h3>
+
+<p>Three arms, each the orange with exactly one thing changed, trained by the same program on the
+same references for the same two hundred iterations and scored in one run: twelve held-out cuts at one fixed seed in the band 0.30 to 0.70, DreamSim from each render to
+the nearest of the six photographs, and the detail statistic the trainer already computes for its
+own targets &mdash; the mean absolute Laplacian of luminance over the foreground &mdash; applied to
+the renders instead. The control is the object&#8217;s own run, re-rendered and re-scored here
+rather than quoted, and it comes back at 0.0763, which is the number section&nbsp;S3.1 reports and
+is what says the protocol is the same one. The spread to clear is the 0.0003 DreamSim between two
+runs of one configuration that section&nbsp;S3.1.5 measures.</p>
+
+<div class="tw"><p class="tnum">Table S36</p><table>
+<thead><tr><th>arm</th><th>what changed</th><th>cells</th><th>DreamSim &darr;</th>
+<th>against the control</th><th>detail, e&#8722;3</th></tr></thead>
+<tbody>
+<tr><td><strong>orange</strong> <span class="mut">(control)</span></td><td class="mut">&mdash;</td>
+    <td>1,162,387</td><td><strong>0.0763</strong></td><td class="mut">&mdash;</td><td>28.51</td></tr>
+<tr><td>abl_nostat</td><td>the band term of&nbsp;(9) removed</td>
+    <td>1,162,387</td><td>0.0826</td><td><strong>+0.0063 worse</strong></td><td>27.05</td></tr>
+<tr><td>abl_noblend</td><td>the block rule instead of&nbsp;(7)</td>
+    <td>1,162,387</td><td>0.0738</td><td><strong>&minus;0.0025 better</strong></td><td>28.35</td></tr>
+<tr><td>abl_lvl1</td><td>one level: refine=1, coarse and fine spacing equal</td>
+    <td>820,805 <span class="mut">(&minus;29%)</span></td><td>0.0771</td><td>+0.0008</td><td>24.94</td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">&mdash;</td>
+    <td class="mut">&mdash;</td><td class="mut">0.0424</td><td class="mut">&mdash;</td>
+    <td class="mut">34.64</td></tr>
+</tbody></table></div>
+
+<p><strong>The band statistic.</strong> Removing the per-crop band term of equation&nbsp;(9) costs
+0.0063 DreamSim, twenty-one times the run-to-run spread, and it is the largest of the three effects.
+The detail statistic moves in the direction the term is there for &mdash; 28.51 to 27.05, five per
+cent less high-frequency content in the renders &mdash; but that difference is well inside the
+spread across the six cuts, which is 4.35 and 2.14, so on six images it does not carry the claim by
+itself. What carries it is the perceptual distance, and the honest reading is that the term helps
+and that this measurement does not establish <em>over-smoothing</em> as the mechanism.</p>
+
+<p><strong>The depth assignment.</strong> The block rule scores 0.0025 <em>better</em> than the
+continuous assignment of equation&nbsp;(7), eight times the run-to-run spread and in the opposite
+direction to the design. Section&nbsp;4.1.9 has the rest: the two rules differ by a factor of eleven
+in what they ask adjacent planes for and by nothing measurable in what the trained volumes do. On
+this object, on this evidence, equation&nbsp;(7) is not paying for itself.</p>
+
+<p><strong>The second level.</strong> The single-level lattice is 820,805 cells against the
+two-level 1,162,387, twenty-nine per cent fewer, and it costs 0.0008 DreamSim &mdash; under three
+times the run-to-run spread and the smallest of the three effects. So the second level does not pay
+for itself in cut appearance, and the case for it is not there. It is in the detail column, where
+the single level is 24.94 against 28.51, the largest drop of the three arms and the signature of a
+skin resolved at the coarse spacing rather than at half of it. The other is section&nbsp;S3.2.1,
+whose criterion is the ratio of the shell&#8217;s thickness to the solver&#8217;s grid, a ratio that
+a shell one coarse cell thick cannot improve. Both of those are claims about the shell rather than
+about the interior, which is what the two levels were built to separate.</p>
+
 
 
 <h2 id="withdrawn">Held for future reference</h2>
@@ -826,7 +2325,7 @@ names, and the arm has to be rebuilt before anything is claimed from it.</p>
 photograph uniformly at random on every iteration instead, and changing nothing else, costs
 <strong>0.067</strong> of DreamSim on held-out transverse cuts of the orange: 0.1367 against
 0.0700 for the fixed rule, both arms rendered in one batch on the same planes, against a released
-model at 0.1290 in that batch. The paper reports the number in section 4.1.6. What follows is the
+model at 0.1290 in that batch. The paper reports the number in section S3.1.6 What follows is the
 reason it was run and what the renders show, which the number alone does not carry.</p>
 
 <p>The motivation was that a fixed assignment might be why the interior is smoother than a real
@@ -858,7 +2357,7 @@ The random draw produces <strong>26% less</strong> of it, and is lower on three 
 The renders show the same thing: the top row's radial fibres and pith change direction and shape
 from depth to depth, and the bottom row is six sizes of one picture.</p>
 
-<p>The mechanism is the one section 3.2.4 measures for explicit averaging. Under the random draw
+<p>The mechanism is the one section 3.2 measures for explicit averaging. Under the random draw
 a plane is pulled towards a different photograph on every pass, so what it converges to is their
 mean; every plane is pulled towards the same mean, so the planes become more alike. Randomising
 the assignment raises the variance of the target a single position sees and lowers the variance
@@ -1101,7 +2600,7 @@ whether matching a population is the same as looking right, and the second readi
 GaussianFluent also spends 45 spherical-harmonic bands on view-dependent appearance that this
 representation cannot express at all. And the slicing row is now an implementation rather than an
 asymptotic hope: reusing the object's adjacency outside the band takes a cut from 13.8&nbsp;s to
-2.9&nbsp;s with an identical result. That is still not interactive, and section 3.3.1 says where the
+2.9&nbsp;s with an identical result. That is still not interactive, and section 3.3 says where the
 remaining time goes.</p>
 
 <p>Three things about that field. It is not equation&nbsp;(23): it is the weak two-rule field of <code>material_field.py</code>, level deciding
@@ -1116,7 +2615,7 @@ it was measured to reach, so 1.33&times; is a bound and not a measurement.</p>
 
 <h3>A.4&ensp;Which grid the resolvability criterion refers to</h3>
 
-<p>The criterion in section 3.5 is a ratio to the solver's grid spacing, and two grids in the pipeline could supply it. Reading it off the wrong one scaled every value by four and put builds above a threshold that, computed correctly, none of them crosses. It is here because it is a property of one solver's configuration rather than of the method.</p>
+<p>The criterion in section 3.4 is a ratio to the solver's grid spacing, and two grids in the pipeline could supply it. Reading it off the wrong one scaled every value by four and put builds above a threshold that, computed correctly, none of them crosses. It is here because it is a property of one solver's configuration rather than of the method.</p>
 
 <div class="note"><strong>Which grid \(\Delta x\) refers to decides the whole criterion.</strong>
 An MPM pipeline carries two, and they serve different purposes. The <em>filling</em> grid decides
@@ -1133,14 +2632,14 @@ for that reason. Against the transfer grid the shells read <strong>0.31</strong>
 (watermelon) and 0.22 (doughnut), and the band sweep reads
 0.29, 0.39, 0.52 and 0.65 at \(\beta_s = 3, 5, 7, 9\). Every build in reach of this lattice is
 therefore below the kernel's support width, which is what the solver's insensitivity to the band in
-section 4.2.3 reflects, and reaching \(\tau_s \gtrsim 2\) on these objects needs either a finer
+section S3.2.3 reflects, and reaching \(\tau_s \gtrsim 2\) on these objects needs either a finer
 transfer grid or a band several times wider than any built here. The criterion tells a builder that
 before the run rather than after it.</div>
 
 
 <h3>A.5&ensp;The \(\rho\) sweep: why it was run and how</h3>
 
-<p>The sweep table stayed in section 4.1.2.1. The reply it answers, and the protocol it was measured under, are here.</p>
+<p>The sweep table stayed in section S3.1.2.1 The reply it answers, and the protocol it was measured under, are here.</p>
 
 <p>The obvious reply to any of this is that a Gaussian's support is a free parameter, so make it
 bigger. FruitNinja [3] asserts the trade in the form \(\rho \ll 1\) leaves holes in the volume and
