@@ -57,13 +57,22 @@ class P:
     debug = False
 
 
-def photo_for(spec, idx, n, size):
-    """The photograph training would use for plane idx of n, as an array."""
+def photo_for(spec, idx, n):
+    """The photograph training would use for plane idx of n, with its own disc.
+
+    The disc matters and getting it wrong is the whole difference between a section and a
+    smear. A reference is a hand-framed photograph: its section sits somewhere in the frame at
+    some radius, surrounded by white. Mapping the object's silhouette onto the *frame* puts the
+    section's edge somewhere inside the object and white everywhere beyond it -- which is
+    exactly what the first version of this file did, and it showed up as a shrunken pomegranate
+    with grey where no photograph reached. `_disc` is the function sds_demo uses to find that
+    circle, so the mapping here and the mapping training uses agree by construction.
+    """
     sds_demo._PLANE["idx"], sds_demo._PLANE["n"] = idx, n
     im = (sds_demo._solved_photo(spec) if sds_demo.REF_PHASE_MODE == "solve"
-          else sds_demo._photo(spec))
-    a = np.asarray(im.convert("RGB"), dtype=np.float32) / 255.
-    return cv2.resize(a, (size, size))
+          else sds_demo._photo(spec)).convert("RGB")
+    cy, cx, r = sds_demo._disc(im)
+    return np.asarray(im, dtype=np.float32) / 255., (cy, cx, max(r, 1e-6))
 
 
 def sweep(world, cam_of, spec, n_planes, size, tag):
@@ -78,10 +87,13 @@ def sweep(world, cam_of, spec, n_planes, size, tag):
     wsum = torch.zeros(N, 1, device=DEV)
     for j in range(n_planes):
         cam, plane, centre_ndc, r_sil, ndc, dist = cam_of(j)
-        img = torch.from_numpy(photo_for(spec, j, n_planes, size)).to(DEV)
+        arr, (cy, cx, r) = photo_for(spec, j, n_planes)
+        H, W = arr.shape[:2]
+        img = torch.from_numpy(arr).to(DEV)
+        # The object's silhouette maps onto the photograph's own disc, radius to radius.
         uv = (ndc - centre_ndc[None]) / r_sil
-        px = ((uv[:, 0] * .5 + .5) * (size - 1)).round().long().clamp(0, size - 1)
-        py = ((uv[:, 1] * .5 + .5) * (size - 1)).round().long().clamp(0, size - 1)
+        px = (cx + uv[:, 0] * r).round().long().clamp(0, W - 1)
+        py = (cy + uv[:, 1] * r).round().long().clamp(0, H - 1)
         c = img[py, px]
         # white is background in every reference set; a cell that lands there learns nothing
         keep = (c.mean(1) < 0.96) & (uv.abs().max(1).values <= 1.0)
