@@ -63,7 +63,21 @@ def sdf_ellipsoid(p, radii, **kw):
     return (k - 1.0) * float(r.min())
 
 
-SHAPES = {"sphere": sdf_sphere, "torus": sdf_torus, "ellipsoid": sdf_ellipsoid}
+def sdf_box(p, radii, round=0.0, **kw):
+    """Half-extents per axis, the exact distance. A loaf is not an ellipsoid -- measured against
+    its released model, its half-extents are 0.778, 0.537 and 0.354, isotropy 0.455, and forcing
+    a rounded shape onto it would compare this route against the wrong solid rather than against
+    route 1. `round` softens the edges by a radius, which is what a tin loaf's corners are.
+    """
+    r = torch.as_tensor(radii, dtype=p.dtype, device=p.device) - float(round)
+    q = p.abs() - r
+    outside = torch.clamp(q, min=0.0).norm(dim=1)
+    inside = torch.clamp(q.max(dim=1).values, max=0.0)
+    return outside + inside - float(round)
+
+
+SHAPES = {"sphere": sdf_sphere, "torus": sdf_torus, "ellipsoid": sdf_ellipsoid,
+          "box": sdf_box}
 
 
 def build(shape, dx, refine=2, skin=None, **kw):
@@ -168,13 +182,17 @@ def main():
     ap.add_argument("--refine", type=int, default=2)
     ap.add_argument("--skin", type=float, default=None)
     ap.add_argument("--axis", type=int, default=1)
+    ap.add_argument("--round", type=float, default=0.0,
+                    help="corner radius for box, in world units")
     a = ap.parse_args()
 
     kw = {"radius": a.radius}
     if a.shape == "torus":
         kw.update(tube=a.tube, axis=a.axis)
-    if a.shape == "ellipsoid":
+    if a.shape in ("ellipsoid", "box"):
         kw = {"radii": a.radii or [a.radius] * 3}
+    if a.shape == "box":
+        kw["round"] = a.round
     coarse, fine, hf = build(a.shape, a.dx, a.refine, a.skin, **kw)
     nrm = normals(a.shape, torch.cat([coarse, fine]).double(), hf * 0.25, **kw).float()
     n = write(a.out_dir, coarse, fine, a.dx, hf, nrm=nrm)
