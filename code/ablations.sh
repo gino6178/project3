@@ -43,8 +43,10 @@ if [ ! -f build_orange_lvl1/lattice/gs_fill.ply ]; then
   echo "$(date -u +%H:%M:%S) building the single-level lattice"
   src=$(grep -m1 '^SRC=' "$H/objects/orange.conf" | cut -d= -f2- | sed 's/ *#.*//')
   dx=$(grep -m1 '^COARSE_DX=' "$H/objects/orange.conf" | cut -d= -f2- | sed 's/ *#.*//')
-  CUDA_VISIBLE_DEVICES=1 $PY "$H/src/voxelize.py" "$src" build_orange_lvl1/lattice 1 0 "$dx" \
-    > "$LOGS/lvl1.log" 2>&1
+  # voxelize.py loads the released model through the reconstruction's own GaussianModel, so it
+  # needs that package on the path. The trainer gets it from stages.sh; this call is outside it.
+  CUDA_VISIBLE_DEVICES=${LATGPU:-1} PYTHONPATH="$R:${GS_ROOT:-}" \
+    $PY "$H/src/voxelize.py" "$src" build_orange_lvl1/lattice 1 0 "$dx" > "$LOGS/lvl1.log" 2>&1
 fi
 
 # --- the arms ------------------------------------------------------------------------------
