@@ -795,61 +795,73 @@ appearance but the skin, where the detail statistic falls furthest when it is re
 
 <h3>5.1&ensp;Conclusion</h3>
 
-<p>We have presented a decoupled volumetric representation for objects that are meant to be cut:
-continuous surface rendering on an explicit dual-grid boundary, discrete volumetric occupancy on a
-two-level feature lattice, and no primitive asked to serve both roles at once. The representational
-tension that decoupling removes is substantial across four orders of magnitude of primitive support
-scale, where splatting baselines trade boundary bleeding against unpainted voids.</p>
+<p>We have presented a decoupled volumetric representation for 3D objects subjected to virtual
+cutting: continuous surface rendering on an explicit dual-grid boundary, discrete volumetric
+occupancy on a two-level feature lattice, and no rendering primitive asked to serve both roles
+simultaneously. The representational tension eliminated by this decoupling is substantial across
+four orders of magnitude in primitive support scale, where prior splatting-based baselines struggle
+between boundary bleeding and unpainted void artifacts.</p>
 
-<p>The contribution is the supervision rather than the container. A high-fidelity interior can be
-reconstructed directly from a sparse set of unaligned 2D cross-section photographs, with no
-per-object diffusion fine-tuning and no score distillation. Under leave-one-out over six reference
-photographs the method reaches a DreamSim distance of 0.1006 against 0.1474 for a released model
-whose generator was fine-tuned on the very photograph being scored, and it is ahead on every one of
-the six folds individually. Holding a photograph out costs 0.0191 &mdash; 0.1006 against 0.0815 for
-the same procedure trained on all six &mdash; which is 1.6 times the fold-to-fold spread and is the
-honest size of what a sixth photograph is worth. Because every cutting plane addresses the same
-cells through one decoder, contradictions between independent photographs resolve in the volume
-before anything is rasterised, and 96.5% of the variation between references survives along the
-axes they share rather than being flattened.</p>
+<p>Our core contribution centres on supervision rather than mere volumetric container design:</p>
 
-<p>Geometrically, the cutting operator evaluates cell-edge intersections in closed form inside the
-crossed cells. The exposed faces satisfy the plane equation to machine precision, the cut-area
-error falls to 0.09% under refinement, and the polygons meet edge to edge with no T-junctions and
-no edge shared by more than two triangles. Through one appearance-neutral codec the representation
-is 9.3&nbsp;MiB against 26.5 and 58.3 for the baselines, and its cut face is 0.06% unpainted at
-2048&nbsp;px &mdash; a compact and physically usable basis for what happens after the cut.</p>
+<ul>
+  <li><strong>Pose-free and generative-free supervision.</strong> High-fidelity internal structures
+      are reconstructed directly from a sparse set of unaligned 2D cross-section photographs,
+      without per-object diffusion fine-tuning or generative score distillation. Under leave-one-out
+      cross-validation across six reference photographs our method reaches a DreamSim perceptual
+      distance of 0.1006 against 0.1474 for a baseline whose generator was fine-tuned on the very
+      photograph being scored, and it is ahead on every individual fold. Withholding a reference
+      costs 0.0191 &mdash; 1.6 times the fold-to-fold variance, and 41% of the margin to the
+      baseline &mdash; so a sixth photograph is worth having and the model is not indifferent to
+      it.</li>
+  <li><strong>Implicit 3D reconciliation.</strong> Because every cutting plane addresses the same
+      shared cell features through a common decoder, spatial contradictions between independent
+      photographs resolve in 3D before rasterisation, retaining 96.5% of the structural variation
+      along shared intersection axes without low-pass flattening.</li>
+  <li><strong>Machine-precision geometry and a compact footprint.</strong> The closed-form planar
+      cutting operator evaluates analytical cell-edge intersections within crossed cells. The
+      exposed faces satisfy the plane equation to machine precision, cut-area error falls to 0.09%
+      under refinement, and 2-manifold topology holds with no T-junctions. Through one
+      appearance-neutral codec the representation is 9.3&nbsp;MiB against 26.5 and 58.3 for the
+      baselines, with an unpainted void ratio of 0.06% at 2048&nbsp;&times;&nbsp;2048 &mdash; a
+      compact, physically compatible foundation for downstream simulation.</li>
+</ul>
 
 <h3>5.2&ensp;Limitations and future work</h3>
 
 <ul>
-  <li><strong>The cut is an unbounded plane.</strong> Piece identity comes from connected
-      components on the integer lattice under a global sign code per plane, so an incision that
-      stops inside the object cannot be expressed without over-shattering it &mdash; \(Q\) planes
-      give up to \(2^Q\) fragments. The cell-local edge intersection generalises to the tangent
-      planes of a smooth curved cut; the topological partition does not, and would need virtual-node
-      duplication or per-element state.</li>
-  <li><strong>Cutting is not interactive.</strong> End to end a cut is about eleven seconds &mdash;
-      4.7 for refining the band and labelling, 6.0 for emitting the polygons. The geometry is linear
-      in the crossed cells rather than in the volume, but the constants are a CPU implementation's.
-      GPU traversal and an error-bounded adaptive refinement are the direct path to interactive
-      rates, and neither is benchmarked here.</li>
-  <li><strong>The physics is compatibility, not validation.</strong> Contact resolves on integer
-      queries at 5.2 million per second and closes 1,543 of 553,720 penetrations to zero, and a
-      criterion predicts before the first timestep whether a shell is resolvable on the transfer
-      grid. Dynamics are not compared against a reference finite-element solver, and continuum
-      damage and fracture are not implemented.</li>
-  <li><strong>The interior is of the category, not of the specimen.</strong> Supervision from
-      loose, unregistered photographs produces an interior representative of the kind of object
-      &mdash; plausible segment membranes and seeds for a citrus &mdash; and not the anatomy of the
-      particular fruit that was scanned.</li>
-  <li><strong>Future work.</strong> The volume resolves inconsistent references downstream;
-      conditioning each newly generated slice on the features already committed along the chords it
-      crosses would prevent the conflict at its source. Any such consistency term has to be paired
-      with a constraint against flattening, since the explicit version we measured cost 0.012
-      DreamSim by averaging seeds into smudges. And because the distribution metrics are
-      sample-starved at these reference counts, a two-alternative forced-choice study is the
-      instrument that would actually settle cut-face realism.</li>
+  <li><strong>Unbounded planar cut formulation.</strong> Piece identity is derived from connected
+      components over an integer lattice using global sign codes per cutting plane. Partial
+      incisions that terminate within the interior therefore cannot be natively expressed without
+      over-shattering the object. Extending to curved or stopping cuts requires virtual-node cell
+      duplication or per-element state tracking.</li>
+  <li><strong>Non-interactive cutting runtime.</strong> The end-to-end pipeline currently requires
+      about 11 seconds &mdash; 4.7&nbsp;s for band refinement and labelling, 6.0&nbsp;s for polygon
+      emission. Although geometric complexity scales as \(\mathcal{O}(K)\) in the crossed cells
+      rather than \(\mathcal{O}(N)\) in the volume, GPU-parallelised traversal and adaptive
+      error-bounded refinement are the direct path toward interactive rates.</li>
+  <li><strong>Simulation compatibility, not dynamic validation.</strong> The framework establishes
+      representation compatibility: contact resolves at 5.2 million integer queries per second, and
+      a criterion predicts shell-stiffness resolvability across MPM transfer grids. Dynamics are not
+      benchmarked against reference finite-element solvers, and continuum damage and fracture are
+      not implemented.</li>
+  <li><strong>Category-level exemplar reconstruction.</strong> Supervision from loose, unregistered
+      photographs generates an interior representative of the object category &mdash; plausible
+      citrus segment membranes and seeds &mdash; rather than recovering the exact internal anatomy
+      of the specific specimen scanned.</li>
+  <li><strong>Future work.</strong>
+    <ul>
+      <li><em>Upstream conditioned generation:</em> condition newly generated reference slices on
+          the features already committed along intersecting chords, preventing conflicts at the
+          source.</li>
+      <li><em>Regularisation against flattening:</em> enforce multi-slice consistency paired with
+          anti-smoothing constraints, since the explicit version we measured cost 0.012 DreamSim by
+          averaging seeds into smudges.</li>
+      <li><em>Human perceptual benchmarking:</em> establish large-scale two-alternative
+          forced-choice observer studies to evaluate cut-face realism systematically, since the
+          distribution metrics are sample-starved at these reference counts.</li>
+    </ul>
+  </li>
 </ul>
 
 
