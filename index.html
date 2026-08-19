@@ -1122,7 +1122,16 @@ what the object is made of.</p>
 <p><strong>Choosing the phases rather than inheriting them.</strong> The phase each transverse
 reference is given is a free parameter, and the pipeline sets it by cross-correlating that
 photograph against the first of its family. That makes one family internally coherent and says
-nothing about the other. Since the two families meet in lines that are known before training, the
+nothing about the other.
+
+What that costs is not paid where the references are. It is paid everywhere else. The references
+constrain the volume only along the planes they supervise, and a cut taken at a depth and an
+orientation none of them took is drawn from cells no reference ever saw directly; what makes that
+cut coherent is that the cells the references <em>did</em> see were never asked for contradictory
+values. Two families that disagree where they cross leave the volume between them holding the
+average of two rotations, and the average of two structures at different phases is no structure at
+all &mdash; so the plane nobody photographed comes out flat. Since the two families meet in lines
+that are known before training, the
 phases can instead be chosen against the disagreement they produce there, which is a mixed discrete&ndash;continuous problem over a permutation and a set of angles, solved to a coordinate-wise optimum in seconds.
 Section 4.1.9 gives the formulation and what it measures: it lowers cross-family disagreement, most
 visibly on cuts at orientations neither family supervised, and does not change similarity to the
@@ -3335,7 +3344,7 @@ mechanism.</p>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
-  <figcaption><span class="fnum">Figure 13</span><br>The line two references share. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice. It has to be described the same way: a cell holds one colour, and two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at, so the phases are what make the two descriptions comparable at all &mdash; without them the lattice is averaging two structures at different rotations, and the average of those is no structure. The two profiles along the chord are drawn under the greedy alignment of&nbsp;(11) and under the phases and assignment&nbsp;(27) solves jointly, 0.1178 and 0.1122. Drawn by <code>code/figures/chords_fig.py</code> from <code>phaseopt.py</code>&#8217;s own samplers and the phases it wrote.</figcaption>
+  <figcaption><span class="fnum">Figure 13</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(11), 0.1178, and under the phases and assignment&nbsp;(27) solves jointly, 0.1122. Drawn by <code>code/figures/chords_fig.py</code> from <code>phaseopt.py</code>&#8217;s own samplers and the phases it wrote.</figcaption>
 </figure>
 
 
