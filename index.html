@@ -755,7 +755,7 @@ component of the complement that reaches the bounding box. What is left is insid
 construction rather than by a threshold. The count of connected components is the read-out.</p>
 
 <div class="tw"><p class="tnum">Table 7</p><table>
-<thead><tr><th>object</th><th>coarse cells</th><th>pieces before</th><th>pieces after</th></tr></thead>
+<thead><tr><th>object</th><th>occupied at \(h_c\), before &rarr; after sealing</th><th>pieces before</th><th>pieces after</th></tr></thead>
 <tbody>
 <tr><td>doughnut</td><td>630,816 &rarr; 642,394 <span class="mut">(+1.8%)</span></td><td>1</td><td><strong>1</strong></td></tr>
 <tr><td>orange</td><td>440,867 &rarr; 889,183 <span class="mut">(+101.7%)</span></td><td>884</td><td><strong>1</strong></td></tr>
@@ -766,7 +766,7 @@ construction rather than by a threshold. The count of connected components is th
 <tr><td>cake</td><td>169,375 &rarr; 478,734 <span class="mut">(+182.6%)</span></td><td>12,930</td><td>19</td></tr>
 </tbody></table></div>
 
-<p>A sponge falls into many
+<p>The count is the occupancy at the coarse spacing &mdash; every primitive quantised to \(h_c\) &mdash; not the lattice's own coarse level, which is larger because the surface is stored at \(h_f\): the orange's occupancy is 440,867 cells against a coarse level of 682,100. It is the right thing to count here, because what is being asked is whether the shape the reconstruction describes is solid, not how many cells the lattice spends on it. A sponge falls into many
 connected components and a solid into one, so the component count of the <em>uncut</em> object is
 a direct read-out of whether the occupancy is solid, and it says these are holes rather than
 fragments on six of the seven. The cake is the exception: 19 components survive the closing, so
@@ -797,10 +797,14 @@ paths are how the lattice gets populated rather than the claim being made; the s
 </tbody></table></div>
 
 <p>What the route needs is a field and six views, and where those come from is a separate question
-from what the route does with them. Of the three objects here only the doughnut had no
-reconstruction to begin with; for the orange and the watermelon the field and the six views are
-derived from the released model, so those two demonstrate that the route reaches the same lattice
-and not that it can do without a scan. The <a href="supplement.html#limits">limitations</a> state what that leaves unproven.</p>
+from what the route does with them. Six objects take this route here: the doughnut, which had no
+reconstruction to begin with, and the orange, watermelon, apple, pomegranate and loaf, whose
+field and six views are derived from the released model. Those five demonstrate that the route
+reaches the same lattice, not that it can do without a scan; only the doughnut shows that. The
+loaf takes a box rather than an ellipsoid, at half-extents 0.778, 0.537 and 0.354 &mdash; its
+isotropy is 0.455 and fitting a rounded solid to it would be comparing the route against the
+wrong shape. The cake is the one object with no route&nbsp;2 arm: at isotropy 0.620 and 12,930
+components before sealing, no primitive in the library describes it. The <a href="supplement.html#limits">limitations</a> state what that leaves unproven.</p>
 
 <p>Route 2 does not quantise anything. The topology comes from a signed-distance field
 \(\phi\) evaluated at the cell centres, and the same field gives the normal and the skin band,
