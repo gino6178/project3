@@ -77,11 +77,16 @@ def slab(ax, xyz, rgb, axis=2, frac=0.5, half=0.02, s=0.6):
     return int(m.sum())
 
 
+_PANEL = [0]
+
+
 def panel(ax, title, sub=None):
     """The title, and nothing under it. A figure that has to explain itself inside the frame
     is competing with its own caption; the sub-line each panel used to carry is dropped rather
     than shortened, and what it said belongs to the prose."""
-    ax.set_title(title, fontsize=10, pad=10, weight="bold")
+    _PANEL[0] += 1
+    tag = "abcdefghijklmn"[_PANEL[0] - 1]
+    ax.set_title(f"({tag})  {title}", fontsize=9.5, pad=8)
 
 
 def main(obj, out):
@@ -95,7 +100,7 @@ def main(obj, out):
 
     fig = plt.figure(figsize=(13.6, 14.4))
     gs = fig.add_gridspec(4, 4, hspace=0.46, wspace=0.10,
-                          left=0.075, right=0.985, top=0.912, bottom=0.075)
+                          left=0.045, right=0.985, top=0.955, bottom=0.075)
 
     # --- route 1: the shell a scan gives, then filled ---------------------------------
     ax = fig.add_subplot(gs[0, 0])
@@ -123,17 +128,7 @@ def main(obj, out):
           + (f"\n(mean drift {drift:.4f} over 200 iterations)" if drift is not None else ""))
 
     ax = fig.add_subplot(gs[0, 3]); ax.set_axis_off()
-    ax.text(0.0, 1.02,
-            "A 3D scan gives a shell.\n\n"
-            "That is the whole input on\nthis route: an outer surface,\n"
-            "with nothing behind it. The\nvolume inside is filled so the\n"
-            "object is solid, and those\ncells start with no colour of\n"
-            "their own.\n\n"
-            "We have no scan files, so a\nreleased reconstruction stands\n"
-            "in -- used the way a scan\nwould be, for its surface only.\n"
-            "Whatever it carries inside is\ndiscarded, because a scan\n"
-            "would not have supplied it.",
-            transform=ax.transAxes, fontsize=7.6, va="top", color="#333", linespacing=1.45)
+    
 
     # --- route 2: the same three beats, with no scan at all ---------------------------
     if have2:
@@ -161,21 +156,16 @@ def main(obj, out):
         ax.set_axis_off()
         panel(ax, "the surface, projected", f"{len(six)} views of the outside, onto the same cells")
 
-    for y, lab, col in ((0.930, "BUILDING THE REPRESENTATION  \u2014  route 1, a scan", "#c0392b"),
-                        (0.722, "\u2014  route 2, a shape from its equation", "#2e7d5b"),
-                        (0.500, "SUPERVISING THE INTERIOR  \u2014  the photographs, and nothing "
-                         "else, ever writes inside", "#8a6d1f"),
-                        (0.258, "WHAT THE LATTICE IS FOR  \u2014  an exact cut, its pieces, and "
-                         "a solver's particles", "#4a4a8a")):
-        fig.text(0.02, y, lab, fontsize=9, weight="bold", color=col)
+    for y, lab in ((0.845, "Route 1: from a scan"),
+                   (0.610, "Route 2: from an equation"),
+                   (0.375, "Supervision"),
+                   (0.140, "Cutting and simulation")):
+        fig.text(0.016, y, lab, fontsize=8.5, style="italic", color="#444",
+                 rotation=90, ha="center", va="center")
     band_supervision(fig, gs, 2, obj, FN, None, conf)
     band_downstream(fig, gs, 3, xyz1, rgb1, lvl1, hc1)
 
-    fig.suptitle("One object through the whole method",
-                 fontsize=12.5, y=0.985)
-    fig.text(0.5, 0.942, "a shell, filled; either route, never both \u2014 and neither route "
-             "ever writes inside the object",
-             fontsize=8.8, color="#555", ha="center")
+    fig.suptitle("", fontsize=1)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     fig.savefig(out, dpi=150, facecolor="white")
     print(f"  -> {out}")
