@@ -14,8 +14,10 @@ lattice whose interior looks the same.
 Panels and where each comes from, so nothing here is an illustration of something unmeasured:
 
   1a  the released ply, its own primitives, orthographic
-  1b  a slab of the coarse occupancy before and after close_and_fill -- white is what sealing
-      added, which is the hole a quantised surface leaves
+  1b  the same slab with the interior colour the reconstruction actually carried, recovered by
+      taking each cell's nearest primitive in the source ply.  Without this panel the figure has
+      no before to put beside its after, which is the defect the first version of this tool had:
+      it drew the current lattice twice and called one of them "sealed"
   1c  a slab of the lattice as route 1 now writes it: skin cells at their own colour, interior
       cells flat.  This is the panel the figure was missing
   1d  the exterior, pinned: the skin cells alone
@@ -93,8 +95,8 @@ def main(obj, out):
         xyz2, rgb2, lvl2 = read(lat2)
 
     fig = plt.figure(figsize=(13.6, 7.2))
-    gs = fig.add_gridspec(2, 4, hspace=0.42, wspace=0.10,
-                          left=0.02, right=0.98, top=0.88, bottom=0.08)
+    gs = fig.add_gridspec(2, 4, hspace=0.46, wspace=0.10,
+                          left=0.075, right=0.985, top=0.855, bottom=0.075)
 
     # --- route 1 -----------------------------------------------------------------------
     ax = fig.add_subplot(gs[0, 0])
@@ -108,8 +110,15 @@ def main(obj, out):
     panel(ax, "a released reconstruction", f"{len(p):,} primitives, taken as they are")
 
     ax = fig.add_subplot(gs[0, 1])
-    n = slab(ax, xyz1, rgb1, s=0.5)
-    panel(ax, "quantised, and sealed", "close_and_fill: a sponge becomes a solid")
+    # The interior the reconstruction carried, recovered rather than assumed: each cell takes
+    # the colour of its nearest primitive in the source ply, which is what quantising it did.
+    from scipy.spatial import cKDTree
+    inh = rgb1.copy()
+    ii = lvl1 == 0
+    inh[ii] = c[cKDTree(p[k]).query(xyz1[ii], k=1)[1]]
+    slab(ax, xyz1, inh, s=0.5)
+    panel(ax, "quantised, and sealed",
+          "close_and_fill; the inside is the reconstruction's")
 
     ax = fig.add_subplot(gs[0, 2])
     flat = rgb1.copy(); flat[lvl1 == 0] = 0.5
@@ -129,31 +138,50 @@ def main(obj, out):
         panel(ax, "a shape from its equation", "sphere, ellipsoid, box, torus; nothing to repair")
 
         ax = fig.add_subplot(gs[1, 1])
-        sk2 = lvl2 == 1
-        slab(ax, xyz2[sk2], rgb2[sk2], s=0.5)
-        panel(ax, "six views, projected", "skin_project, onto the same cells")
+        import cv2
+        d6 = os.path.join(FN, conf("REFS6", obj) or "")
+        six = sorted(g for g in os.listdir(d6) if g.endswith((".png", ".jpg"))) if os.path.isdir(d6) else []
+        if six:
+            tiles = [cv2.imread(os.path.join(d6, f))[:, :, ::-1] for f in six[:6]]
+            h = min(t.shape[0] for t in tiles); w = min(t.shape[1] for t in tiles)
+            tiles = [cv2.resize(t, (w, h)) for t in tiles]
+            while len(tiles) < 6:
+                tiles.append(np.full_like(tiles[0], 255))
+            ax.imshow(np.vstack([np.hstack(tiles[:3]), np.hstack(tiles[3:6])]))
+        ax.set_axis_off()
+        panel(ax, "six views of the object", f"{len(six)} images, rendered or generated")
 
         ax = fig.add_subplot(gs[1, 2])
-        slab(ax, xyz2, f2, s=0.5)
-        panel(ax, "the same lattice", "flat inside, painted outside, either way")
+        p2 = rgb2.copy(); p2[lvl2 == 0] = 0.5
+        slab(ax, xyz2, p2, s=0.5)
+        panel(ax, "projected onto the same cells",
+              "skin_project; flat inside, painted outside")
 
     ax = fig.add_subplot(gs[1, 3])
     ax.set_axis_off()
     ax.text(0.02, 0.92,
-            "What the two routes share, and what they do not.\n\n"
-            "They differ in where the shape and the exterior come\n"
-            "from: a released reconstruction, or an equation and six\n"
-            "views. They do not differ inside. On both routes the\n"
-            "interior begins at a flat 0.5 in every channel and every\n"
-            "structure in it is put there by the photographs.\n\n"
-            "INTERIOR_FROM_PLY=1 restores the older route 1, which\n"
-            "took the reconstruction's interior with it.",
-            transform=ax.transAxes, fontsize=8.4, va="top", color="#333", linespacing=1.55)
+            "What the routes share, and\nwhat they do not.\n\n"
+            "They differ in where the shape\nand the exterior come from:\n"
+            "a released reconstruction, or\nan equation and six views.\n\n"
+            "They do not differ inside. On\nboth routes the interior begins\n"
+            "at a flat 0.5 in every channel,\nand every structure in it is put\n"
+            "there by the photographs.\n\n"
+            "INTERIOR_FROM_PLY=1 restores\nthe older route 1, which took the\n"
+            "reconstruction's interior too.",
+            transform=ax.transAxes, fontsize=8.0, va="top", color="#333", linespacing=1.5)
 
     for y, lab, col in ((0.905, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
                         (0.455, "ROUTE 2  —  from an equation and six views", "#2e7d5b")):
         fig.text(0.02, y, lab, fontsize=9, weight="bold", color=col)
 
+    fig.text(0.022, 0.665, "ROUTE 1", fontsize=10.5, weight="bold", color="#c0392b",
+             rotation=90, ha="center", va="center")
+    fig.text(0.042, 0.665, "from a released reconstruction", fontsize=8, color="#c0392b",
+             rotation=90, ha="center", va="center")
+    fig.text(0.022, 0.245, "ROUTE 2", fontsize=10.5, weight="bold", color="#2e7d5b",
+             rotation=90, ha="center", va="center")
+    fig.text(0.042, 0.245, "from an equation and six views", fontsize=8, color="#2e7d5b",
+             rotation=90, ha="center", va="center")
     fig.suptitle("Building the representation: either route, never both — and neither brings "
                  "an interior", fontsize=11.5, y=0.965)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
