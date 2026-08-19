@@ -1,4 +1,4 @@
-"""Figure 13, from phaseopt's own samplers and the phases it actually solved.
+"""Figure 12, from phaseopt's own samplers and the phases it actually solved.
 
     python code/figures/chords_fig.py H_DIR V_DIR OUT.png
 """

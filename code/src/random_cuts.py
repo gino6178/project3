@@ -60,9 +60,14 @@ class P:
     debug = False
 
 
-def main(ply, cfg, demo, out_dir, n=12, size=512, seed=7):
-    os.makedirs(out_dir, exist_ok=True)
-    random.seed(seed)
+def build_renderer(ply, cfg, demo, size=512):
+    """The trainer's own camera, model and cutting, as a function of (azimuth, elevation, depth).
+
+    Factored out of main because a figure that renders at depths it chooses -- the continuity
+    sweep of code/figures/blend_fig.py is the one that needed it -- must cut exactly the way the
+    evaluation does, and the only way to guarantee that is to call the same code rather than a
+    copy of it.
+    """
     (mat, bc, tp, pre, cam_p) = decode_param_json(cfg)
     # Load at the degree the file actually carries. `load_ply_zero_sh` reads only f_dc and
     # discards every higher band, and our models carry 24 f_rest coefficients whose mean
@@ -121,6 +126,29 @@ def main(ply, cfg, demo, out_dir, n=12, size=512, seed=7):
                             colors_precomp=col, opacities=op[mask_suf], scales=None,
                             rotations=None, cov3D_precomp=cov[mask_suf])
         return img.permute(1, 2, 0).detach().clamp(0, 1).cpu().numpy()
+
+    return render
+
+
+def sweep(ply, cfg, demo, out_dir, depths, az=0.0, el=None, size=512):
+    """Render one transverse section per depth fraction, in the order given."""
+    os.makedirs(out_dir, exist_ok=True)
+    render = build_renderer(ply, cfg, demo, size)
+    el = float(os.environ.get("CUT_EL", "-90")) if el is None else el
+    out = []
+    for i, f in enumerate(depths):
+        a = render(az, el, float(f))
+        q = os.path.join(out_dir, f"d{i:03d}.png")
+        cv2.imwrite(q, (a[:, :, ::-1] * 255).astype(np.uint8))
+        out.append(q)
+    print(f"  -> {out_dir}  ({len(out)} sections over depth {depths[0]:.3f}..{depths[-1]:.3f})")
+    return out
+
+
+def main(ply, cfg, demo, out_dir, n=12, size=512, seed=7):
+    os.makedirs(out_dir, exist_ok=True)
+    random.seed(seed)
+    render = build_renderer(ply, cfg, demo, size)
 
     # Horizontal cuts at depths the trainer never used. It supervises centers[4:20] of 24, so
     # the held-out depths are the outer eighths, plus the fractional positions between its
