@@ -482,14 +482,18 @@ there is no threshold whose setting could change how many pieces the cut produce
 
 <p class="mut"><strong>The orange, counted once.</strong> Four cell counts for this fruit appear
 in this paper and they are four different quantities, so they are set out here rather than left to
-be reconciled. The lattice as route&nbsp;1 builds it is <strong>877,494</strong> cells &mdash;
-759,353 coarse and 118,141 fine &mdash; and this is the configuration every appearance number is
-measured on. Route&nbsp;2 builds 1,231,312 for the same fruit, 892,808 coarse and 338,504 fine,
-because its skin band is set rather than inherited. The single-level ablation is 801,929. The
-remaining two are the coarse level after closing: <strong>848,021</strong> is what the closing of
-section&nbsp;3.2.2 produces from 759,353, and 894,304 is the same quantity in a build whose fine
-level differs; the geometry tables below say which of the two each timing was taken on. No
-appearance result depends on the difference.</p>
+be reconciled. The lattice as route&nbsp;1 builds it is <strong>1,162,387</strong> cells &mdash;
+682,100 coarse and 480,287 fine &mdash; and this is the configuration every appearance number is
+measured on. Route&nbsp;2 builds 951,640 for the same fruit, 568,000 coarse and 383,640 fine,
+because its skin band is set rather than inherited. The single-level build, \(h_f = h_c\), is
+820,805. The last is the coarse level after closing: the occupancy of the reconstruction at
+\(h_c\) is 440,867 cells, and the closing of section&nbsp;3.2.2 takes it to
+<strong>889,183</strong>, which is what the geometry and timing tables are measured on.</p>
+<p class="mut">These are read from the lattice files the current pipeline writes. An earlier
+version of this paragraph gave 877,494, 759,353 and 118,141, from a build whose skin was decided by
+a radius rather than by <code>occupancy.surface_cells</code>; the fine level is four times larger
+under the rule now used, and the numbers here are what <code>cell_level.pt</code> holds. Anything
+below that still quotes the old counts is marked.</p>
 
 <div class="tw"><p class="tnum">Table 4</p><table>
 <thead><tr><th>symbol</th><th>meaning</th><th>value or domain</th></tr></thead>
@@ -3628,19 +3632,19 @@ card.</p>
 and collision are integer queries &mdash; and a claim of cheapness with no wall-clock number is an
 assertion. Each operation is timed as it is used rather than in a microbenchmark: the cut is a whole
 cut on a whole object, and the collision query is against the number of particles the solver
-actually has. Orange, 848,021 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
+actually has. Orange, 770,182 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 
 <div class="tw"><p class="tnum">Table 42</p><table>
 <thead><tr><th>operation</th><th>time</th><th>rate</th></tr></thead>
 <tbody>
-<tr><td>read the model from disk</td><td>23.7&nbsp;ms</td><td></td></tr>
-<tr><td>occupancy: close and fill</td><td>1,676.5&nbsp;ms</td><td class="mut">once per object</td></tr>
-<tr><td>single cut: refine the band, label the pieces</td><td><strong>4,883.9&nbsp;ms</strong></td><td></td></tr>
-<tr><td>cut face: the exact polygons</td><td><strong>6,206.2&nbsp;ms</strong></td><td></td></tr>
-<tr><td>collision index: build it</td><td>156.9&nbsp;ms</td><td class="mut">once per cut</td></tr>
-<tr><td>collision: label every particle by piece <span class="mut">(877,494 particles, one per route&nbsp;1 cell)</span></td><td>556.6&nbsp;ms</td><td>1,576,452 particles/s</td></tr>
-<tr><td>collision: one occupancy query over the particle set</td><td>179.0&nbsp;ms</td>
-    <td><strong>4,902,612 queries/s</strong></td></tr>
+<tr><td>read the model from disk</td><td>36.6&nbsp;ms</td><td></td></tr>
+<tr><td>occupancy: close and fill</td><td>2,623.3&nbsp;ms</td><td class="mut">once per object</td></tr>
+<tr><td>single cut: refine the band, label the pieces</td><td><strong>4,733.5&nbsp;ms</strong></td><td></td></tr>
+<tr><td>cut face: the exact polygons</td><td><strong>6,029.5&nbsp;ms</strong></td><td></td></tr>
+<tr><td>collision index: build it</td><td>115.2&nbsp;ms</td><td class="mut">once per cut</td></tr>
+<tr><td>collision: label every particle by piece <span class="mut">(1,162,387 particles, one per route&nbsp;1 cell)</span></td><td>911.6&nbsp;ms</td><td>1,275,116 particles/s</td></tr>
+<tr><td>collision: one occupancy query over the particle set</td><td>223.0&nbsp;ms</td>
+    <td><strong>5,212,602 queries/s</strong></td></tr>
 <tr><td>reference alignment: six angular profiles and their cross-correlations</td><td>126&nbsp;ms</td><td class="mut">once per object, equation&nbsp;(11)</td></tr>
 <tr><td>the joint phase and assignment solve of section&nbsp;4.1.6</td><td>166,000&nbsp;ms</td><td class="mut">once, offline; not in the pipeline</td></tr>
 <tr><td>peak device memory during training</td><td>5.2 to 5.9&nbsp;GB</td><td class="mut">one card, at the settings of section 3.1.2</td></tr>
@@ -3658,17 +3662,17 @@ set out together here rather than left to be reconciled.</p>
     <td>894,304 cells</td><td>13.76</td><td class="mut">section 3.4.1</td></tr>
 <tr><td>the same, adjacency outside the band reused</td><td>894,304 cells</td><td><strong>2.91</strong></td>
     <td class="mut">section 3.4.1</td></tr>
-<tr><td>refine and label, as the pipeline runs it</td><td>848,021 cells</td><td>4.88</td>
+<tr><td>refine and label, as the pipeline runs it</td><td>770,182 cells</td><td>4.73</td>
     <td class="mut">this section</td></tr>
-<tr><td>emit the exact polygons</td><td>848,021 cells</td><td>6.21</td><td class="mut">this section</td></tr>
+<tr><td>emit the exact polygons</td><td>770,182 cells</td><td>6.03</td><td class="mut">this section</td></tr>
 <tr><td>refine the band and label the pieces, as the supplement times it</td><td>877,494 cells</td><td>12.96</td><td class="mut">supplement S2.8</td></tr>
 <tr><td>emit the exact polygons, as the supplement times it</td><td>877,494 cells</td><td>14.25</td><td class="mut">supplement S2.8</td></tr>
-<tr><td class="mut">both, end to end</td><td class="mut">848,021 cells</td><td class="mut">11.1</td>
+<tr><td class="mut">both, end to end</td><td class="mut">770,182 cells</td><td class="mut">10.76</td>
     <td class="mut">this section</td></tr>
 </tbody></table></div>
 
 <p>The 2.91&nbsp;s figure is the labelling alone with the adjacency reuse in place, on a lattice
-5% larger; the 4.88 is the same stage timed inside the pipeline, where the reuse is not wired in.
+16% larger; the 4.73 is the same stage timed inside the pipeline, where the reuse is not wired in.
 Nothing in this paper is an interactive cut, and the two levers on the remaining cost are named at
 the end of this section.</p>
 
@@ -3710,14 +3714,12 @@ figures is measured against a compressed Gaussian model, which would move them a
 <div class="tw"><p class="tnum">Table 45</p><table>
 <thead><tr><th>orange</th><th>as Gaussians</th><th>as cube cells</th><th>a cut, while live</th><th>folded back</th></tr></thead>
 <tbody>
-<tr><td>route 1, 877,494 cells</td><td>46.9 MiB</td>
-    <td>28.5 MiB <span class="mut">(1.6&times;)</span> / <strong>38.5 with the index</strong>
-        / 55.6 with the exterior</td>
-    <td>+98,714 leaves, 1.6 MiB <span class="mut">(4.2%)</span></td><td>exactly returned</td></tr>
-<tr><td>route 2, 1,231,312 cells</td><td>65.8 MiB</td>
-    <td>39.9 MiB <span class="mut">(1.6&times;)</span> / <strong>54.0 with the index</strong>
-        / 71.7 with the exterior</td>
-    <td>+97,209 leaves, 1.6 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
+<tr><td>route 1, 1,162,387 cells</td><td>62.1 MiB</td>
+    <td>37.7 MiB <span class="mut">(1.6&times;)</span> / <strong>51.0 with the index</strong></td>
+    <td>+90,881 leaves, 1.5 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
+<tr><td>route 2, 951,640 cells</td><td>50.8 MiB</td>
+    <td>30.9 MiB <span class="mut">(1.6&times;)</span> / <strong>41.7 with the index</strong></td>
+    <td>+74,767 leaves, 1.2 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
 </tbody></table></div>
 
 <h2 id="conclusion">5&ensp;Conclusion and limitations</h2>
