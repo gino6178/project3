@@ -795,75 +795,63 @@ appearance but the skin, where the detail statistic falls furthest when it is re
 
 <h3>5.1&ensp;Conclusion</h3>
 
-<p>We have presented a decoupled representation for objects that are cut open: continuous surface
-rendering on a dual-grid boundary, discrete volumetric occupancy on a two-level feature lattice, and
-no primitive asked to do both. The tension that separation removes is real and we measured it over
-four decades of support scale, with FruitNinja's released model far outside the window where
-neither branch of it bites.</p>
+<p>We have presented a decoupled volumetric representation for objects that are meant to be cut:
+continuous surface rendering on an explicit dual-grid boundary, discrete volumetric occupancy on a
+two-level feature lattice, and no primitive asked to serve both roles at once. The representational
+tension that decoupling removes is substantial across four orders of magnitude of primitive support
+scale, where splatting baselines trade boundary bleeding against unpainted voids.</p>
 
-<p>The result is about supervision rather than representation. An interior reaching 0.1006 DreamSim under leave-one-out can be built from a sparse set of
-<em>unaligned</em> cross-section photographs used
-directly as the target, with no per-object diffusion fine-tuning and no score distillation. Under
-leave-one-out over six references, scored against the photograph its own run never saw, this is
-0.1006 DreamSim against 0.1474 for a released model whose generator was fine-tuned on that
-photograph, ahead on all six folds; and holding a photograph out costs 0.0044, less than half the
-spread across folds. The mechanism is not a loss term. Every plane reads the same cells and a cell
-holds one value, so references that disagree resolve to one answer before anything is rendered, and
-they do so without flattening: 96.5% of the variation the references carry along their shared axis
-survives in the model. That is what makes loose exemplars sufficient, and it is the part that transfers.</p>
+<p>The contribution is the supervision rather than the container. A high-fidelity interior can be
+reconstructed directly from a sparse set of unaligned 2D cross-section photographs, with no
+per-object diffusion fine-tuning and no score distillation. Under leave-one-out over six reference
+photographs the method reaches a DreamSim distance of 0.1006 against 0.1474 for a released model
+whose generator was fine-tuned on the very photograph being scored, and it is ahead on every one of
+the six folds individually. Holding a photograph out costs 0.0191 &mdash; 0.1006 against 0.0815 for
+the same procedure trained on all six &mdash; which is 1.6 times the fold-to-fold spread and is the
+honest size of what a sixth photograph is worth. Because every cutting plane addresses the same
+cells through one decoder, contradictions between independent photographs resolve in the volume
+before anything is rasterised, and 96.5% of the variation between references survives along the
+axes they share rather than being flattened.</p>
 
-<p>On geometry the claim is narrower and firmer. A planar cut is one convex polygon per crossed
-cell in closed form &mdash; planar to machine epsilon on an oblique off-grid plane, cut-area error falling to 0.09%, no edge of the triangulation shared by more than two triangles &mdash; and a splatted interior does not define these quantities at all, so the comparison
-is between having them and not. Through one appearance-neutral codec the same object is 9.3&nbsp;MiB
-against 26.5 and 58.3, and the cut face drawn as a cube volume holds 0.06% unpainted at
-2048&nbsp;px where our own splatted lattice reaches 3.3%: the property belongs to the volume, not to
-the method's name.</p>
+<p>Geometrically, the cutting operator evaluates cell-edge intersections in closed form inside the
+crossed cells. The exposed faces satisfy the plane equation to machine precision, the cut-area
+error falls to 0.09% under refinement, and the polygons meet edge to edge with no T-junctions and
+no edge shared by more than two triangles. Through one appearance-neutral codec the representation
+is 9.3&nbsp;MiB against 26.5 and 58.3 for the baselines, and its cut face is 0.06% unpainted at
+2048&nbsp;px &mdash; a compact and physically usable basis for what happens after the cut.</p>
 
 <h3>5.2&ensp;Limitations and future work</h3>
 
-<p>The <a href="supplement.html#limits">limitations</a> list nineteen items in full. Six decide how
-far the results should be carried.</p>
-
-<ol>
-  <li><strong>Six objects, and they are one group's release.</strong> Every object FruitNinja
-      released is evaluated here, which is what makes each comparison a comparison against a
-      published result. That is enough to show a property holds or that a
-      claimed one fails; it is not enough to say a margin generalises to fruit, to food, or to
-      objects at large.</li>
-  <li><strong>Cutting is not interactive.</strong> A cut is about eleven seconds as the pipeline runs it, 4.9 for the band and the labelling and 6.2 for the polygons; the supplement sets out which timing belongs to which operation and lattice, including the 2.91&nbsp;s the labelling reaches with the adjacency reuse in place. Nothing in this paper
-      is a real-time result. The geometry is linear in the crossed cells and the implementation's constant is
-      large; the adaptive criterion and a GPU formulation of the same passes are the two levers,
-      and neither is benchmarked.</li>
+<ul>
+  <li><strong>The cut is an unbounded plane.</strong> Piece identity comes from connected
+      components on the integer lattice under a global sign code per plane, so an incision that
+      stops inside the object cannot be expressed without over-shattering it &mdash; \(Q\) planes
+      give up to \(2^Q\) fragments. The cell-local edge intersection generalises to the tangent
+      planes of a smooth curved cut; the topological partition does not, and would need virtual-node
+      duplication or per-element state.</li>
+  <li><strong>Cutting is not interactive.</strong> End to end a cut is about eleven seconds &mdash;
+      4.7 for refining the band and labelling, 6.0 for emitting the polygons. The geometry is linear
+      in the crossed cells rather than in the volume, but the constants are a CPU implementation's.
+      GPU traversal and an error-bounded adaptive refinement are the direct path to interactive
+      rates, and neither is benchmarked here.</li>
   <li><strong>The physics is compatibility, not validation.</strong> Contact resolves on integer
-      queries at 4.9 million per second and closes 1,543 of 553,720 penetrations to zero, and a
-      criterion predicts before the first timestep whether a transfer grid resolves the skin. There
-      is no reference solver, no deformation or stress error, no fracture &mdash; the formulation
-      does not implement it &mdash; and no interactive frame rate.</li>
-  <li><strong>Cuts are unbounded planes.</strong> A piece is a class under a global sign code, so
-      an incision that enters, travels and stops has no expression, and a curved cut approximated by
-      \(Q\) planes shatters into up to \(2^Q\) regions. The face survives curvature &mdash; a
-      smooth surface is planar to first order over a cell, so the same twelve-edge construction
-      applies to the local tangent plane and the cost is more leaves, not a different algorithm.
-      What fails is the labelling, and the virtual-node construction is the specific extension.</li>
-  <li><strong>The evaluation is in-sample except where stated.</strong> Only the leave-one-out study
-      holds a reference out. Every other appearance number, ours and the baselines', is scored
-      against images that were in some way available to the method producing them.</li>
-  <li><strong>The interior is of that kind of object, not of that object.</strong> Loose exemplars
-      are the strength and the limit in one: what is produced is a plausible interior of an orange,
-      not the interior of the orange that was scanned, and nothing here recovers the latter.</li>
-</ol>
+      queries at 5.2 million per second and closes 1,543 of 553,720 penetrations to zero, and a
+      criterion predicts before the first timestep whether a shell is resolvable on the transfer
+      grid. Dynamics are not compared against a reference finite-element solver, and continuum
+      damage and fracture are not implemented.</li>
+  <li><strong>The interior is of the category, not of the specimen.</strong> Supervision from
+      loose, unregistered photographs produces an interior representative of the kind of object
+      &mdash; plausible segment membranes and seeds for a citrus &mdash; and not the anatomy of the
+      particular fruit that was scanned.</li>
+  <li><strong>Future work.</strong> The volume resolves inconsistent references downstream;
+      conditioning each newly generated slice on the features already committed along the chords it
+      crosses would prevent the conflict at its source. Any such consistency term has to be paired
+      with a constraint against flattening, since the explicit version we measured cost 0.012
+      DreamSim by averaging seeds into smudges. And because the distribution metrics are
+      sample-starved at these reference counts, a two-alternative forced-choice study is the
+      instrument that would actually settle cut-face realism.</li>
+</ul>
 
-<p><strong>Future work.</strong> Three directions follow from measurements in this paper rather than
-from speculation. First, the volume already reconciles contradictory supervision without losing
-detail, which means the remaining gain is <em>upstream</em>: the conflict is created by drawing each
-section independently, and conditioning each new reference on what the volume already holds along
-its intersections with the references drawn so far would remove it at source rather than average it
-away. Second, that has to be done carefully: the downstream version was tried and failed by the
-0.012 DreamSim of section&nbsp;3.2.2, so any consistency term must be paired with one that
-penalises flattening. Third, the field needs better instruments
-at this sample size: two identical runs of ours differ by 5.0 FID and 0.0003 DreamSim, so a table
-turning on four points of FID is reporting its seed, and a forced-choice study against human
-observers is what would actually settle cut-face realism.</p>
 
 <h2 id="refs">References</h2>
 
