@@ -1410,7 +1410,7 @@ explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
-  <figcaption><span class="fnum">Figure 9</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(11), 0.1178, and under the phases and assignment&nbsp;(27) solves jointly, 0.1122. Drawn by <code>code/figures/chords_fig.py</code> from <code>phaseopt.py</code>&#8217;s own samplers and the phases it wrote.</figcaption>
+  <figcaption><span class="fnum">Figure 9</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(4), 0.1178, and under the phases and assignment&nbsp;(5) solves jointly, 0.1122. Drawn by <code>code/figures/chords_fig.py</code> from <code>phaseopt.py</code>&#8217;s own samplers and the phases it wrote.</figcaption>
 </figure>
 
 
@@ -1419,15 +1419,8 @@ explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
 is a function of the phases alone and can be minimised before training. Where a transverse section
 at height \(z\), rotated by \(\delta\), is met by a longitudinal plane at azimuth \(a\), the
 shared line is that section's diameter at angle \(a + \delta\) and that longitudinal section's row
-at height \(z\). Both are one-dimensional signals of one physical line, so</p>
-
-<div class="eq"><div class="body">
-$$\min_{\pi,\;\{\delta_k\}} \;\sum_{j,\,j'} \bigl\lVert\,
-\mathbf{T}_{\pi(j)}^{\delta} - \mathbf{T}_{\pi(j')}^{\delta} \,\bigr\rVert_{\,\Pi_j \cap
-\Pi_{j'}} $$
-</div><div class="num">(27)</div></div>
-
-<p>is a mixed discrete&ndash;continuous problem small enough to solve to a coordinate-wise optimum: the phases by
+at height \(z\). Both are one-dimensional signals of one physical line, and equation&nbsp;(5) is
+the disagreement between them summed over every such line. It is a mixed discrete&ndash;continuous problem small enough to solve to a coordinate-wise optimum: the phases by
 coordinate descent over 72 candidate angles, which is exhaustive per coordinate and therefore
 monotone, converging in two sweeps; the assignment by enumerating all \(6!\) permutations. Seconds,
 once, before any gradient. Against the pipeline's own alignment &mdash; each photograph
@@ -1587,7 +1580,7 @@ behalf.</p>
     <td>180.9</td><td>4.1.7</td></tr>
 <tr><td>view-dependent appearance</td><td class="mut">none</td><td>45 SH bands</td><td class="mut">none</td><td>4.1.1</td></tr>
 <tr><td>slicing and piece labelling</td><td class="mut">not addressed</td><td class="mut">damage field</td>
-    <td>face \(O(K)\); labelling \(\Theta(N)\), 2.9&nbsp;s</td><td>4.3.3</td></tr>
+    <td>face \(O(K)\); labelling \(\Theta(N)\), 2.9&nbsp;s</td><td>4.3.4</td></tr>
 </tbody></table></div>
 
 <p>The view-dependence row is a bound rather than a measurement, and it is the one honest way to
@@ -1599,6 +1592,36 @@ capability difference: we do not pay for view-dependent appearance because we do
 and a fair reading of the compressed row is 9.3&nbsp;MiB for a Lambertian volume against
 26.5&nbsp;MiB for one that also carries a third-order angular field.</p>
 
+
+<h4>4.1.9&ensp;A plane moved through the object</h4>
+
+<p>Every appearance number above scores one cut against one photograph. A viewer who drags a
+cutting plane sees a sequence instead, and a representation can be right about every member of that
+sequence and wrong about the transitions between them. Equation&nbsp;(7) is about the transitions:
+a plane at depth \(t\) takes the two photographs it falls between, mixed at the fractional part,
+where the rule it replaced takes \(\lfloor t \rfloor\) alone and therefore hands the same
+photograph to two or three adjacent planes.</p>
+
+<p>What each rule asks for can be measured with no model and no renderer at all, on the orange&#8217;s
+six transverse photographs over the sixteen planes the trainer supervises, with
+<code>sds_demo</code>&#8217;s own canonicalisation applied under both so that the assignment is the
+only difference. Under the block rule ten of the fifteen steps ask for no change whatever and the
+other five ask for 0.22 to 0.26 of 1&nbsp;&minus;&nbsp;SSIM; under&nbsp;(7) every step lies between
+0.036 and 0.070. The jerk &mdash; the standard deviation of the per-step change, which is what
+flicker is &mdash; is 0.1134 against 0.0102, eleven times smaller. The mean step is 0.0799 against
+0.0503, so the block rule is not asking for less change overall. It is asking for the same change in
+a third of the places.</p>
+
+<!--SECTIONS-PARA-->
+
+<figure>
+  <img src="assets/depthsweep.png" alt="The per-step change between adjacent targets under the two
+       assignment rules, and between adjacent rendered sections of the two models trained under
+       them">
+  <figcaption><span class="fnum">Figure 12</span><br>What the two assignment rules ask adjacent
+  planes for, and what the models trained under them do when the plane is walked through the
+  object. Drawn by <code>code/figures/depthsweep.py</code>.</figcaption>
+</figure>
 
 <h3 id="phys-res">4.2&ensp;Materials, collision and a shell the solver can resolve</h3>
 
@@ -1729,7 +1752,7 @@ the extent of the quantitative physics in this paper.</p>
 
 <h4>4.2.5&ensp;Collision</h4>
 
-<p>Equation (22) is two tests, and the second is the one that earns its place. At rest, with the
+<p>Equation&nbsp;(12) is two tests, and the second is the one that earns its place. At rest, with the
 two halves exactly as the cut left them, occupancy alone reports 1,543 particles of the orange
 inside the other piece and 1,413 of the watermelon; the sign test takes both to zero. On the
 doughnut occupancy alone already reports none, which is not a stronger result but a property of
@@ -1748,7 +1771,7 @@ grow with separation and nothing in the construction forces it to.</p>
 <figure>
   <img src="assets/collision.png" alt="A slab through the contact region, particles coloured by
        what the collision test says about them, at four separations">
-  <figcaption><span class="fnum">Figure 12</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. Drawn by <code>code/figures/collision_fig.py</code>, which drives <code>evaluate/physics.py</code>&#8217;s own index and contact test, so the picture and the counts cannot disagree.</figcaption>
+  <figcaption><span class="fnum">Figure 13</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. Drawn by <code>code/figures/collision_fig.py</code>, which drives <code>evaluate/physics.py</code>&#8217;s own index and contact test, so the picture and the counts cannot disagree.</figcaption>
 </figure>
 
 <div class="tw"><p class="tnum">Table 27</p><table>
@@ -1769,13 +1792,13 @@ and it does, on every object. </p>
 
 <h4>4.2.6&ensp;Surface binding</h4>
 
-<p>Collision moves pieces; binding is what carries the visible surface with them. Equation (25)
-fixes each surface vertex to its own piece's nearest particles at bind time, so the surface follows
+<p>Collision moves pieces; binding is what carries the visible surface with them. The surface
+binding of section&nbsp;3.4 fixes each surface vertex to its own piece's nearest particles at bind time, so the surface follows
 whatever the solver does to them, including deformations no rigid transform can express.</p>
 
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption><span class="fnum">Figure 13</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
+  <figcaption><span class="fnum">Figure 14</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
   the same particles driving it two ways: a per-piece rigid fit on the left, which is the best a
   single transform can do, and the particle binding on the right, both coloured by how far
   each vertex has left its material on one shared scale: blue at 0.00 fine cells, red at 2.00 and
@@ -1785,6 +1808,51 @@ whatever the solver does to them, including deformations no rigid transform can 
   and 442,956 surface vertices carried on 1.23M, 1.07M and 0.94M particles. The surface is the whole O&#8209;Voxel exterior now rather than a cut patch, so what is bound is every
   visible vertex the object has.</figcaption>
 </figure>
+
+<h4>4.2.7&ensp;The classes the mapping is applied to</h4>
+
+<p>Equation&nbsp;(13) orders material classes and maps the ordering onto a stiffness range. What it
+is applied to is a decomposition nothing supervised: the trained per-cell feature is clustered,
+classes whose appearance centroids agree are merged, and no object is told that an orange has a
+pith or a loaf a crust. Both halves are now in <code>code/evaluate/material_segment.py</code> and
+<code>code/evaluate/material.py</code>. They were outside the shipped tooling until now: the
+material figures in the <a href="supplement.html">supplement</a> were drawn by a script the
+repository did not carry, so they could not be corrected when the models were retrained. The
+numbers below were produced by the shipped copy, on the models this page reports, and the
+same call regenerates that figure.</p>
+
+<div class="tw"><p class="tnum">Table 28</p><table>
+<thead><tr><th>class, ordered by \(u_j\)</th><th>cells</th><th>\(\beta_j\), share on the skin band</th>
+<th>mean luminance</th><th>\(u_j\)</th><th>\(E_j\)</th></tr></thead>
+<tbody>
+<tr><td>orange, four classes from the anchor feature</td><td colspan="5"></td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the skin class</td><td>470,243 <span class="mut">(40.5%)</span></td>
+    <td><strong>1.00</strong></td><td>0.531</td><td>0.765</td><td><strong>5.00e6</strong></td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the pale interior class</td><td>139,383 <span class="mut">(12.0%)</span></td>
+    <td>0.07</td><td>0.775</td><td>0.396</td><td>3.37e6</td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the mid interior class</td><td>324,649 <span class="mut">(27.9%)</span></td>
+    <td>0.00</td><td>0.598</td><td>0.233</td><td>1.73e6</td></tr>
+<tr><td class="mut">&nbsp;&nbsp;the dark interior class</td><td>228,112 <span class="mut">(19.6%)</span></td>
+    <td>0.01</td><td>0.527</td><td>0.004</td><td><strong>1.00e5</strong></td></tr>
+<tr><td>watermelon, the skin class</td><td>537,924 <span class="mut">(43.2%)</span></td>
+    <td><strong>0.98</strong></td><td>0.517</td><td>0.755</td><td><strong>5.00e6</strong></td></tr>
+<tr><td>watermelon, the darkest interior class</td><td>194,211 <span class="mut">(15.6%)</span></td>
+    <td>0.00</td><td>0.443</td><td>0.000</td><td><strong>1.00e5</strong></td></tr>
+<tr><td>doughnut, the skin class</td><td>529,750 <span class="mut">(47.3%)</span></td>
+    <td><strong>0.99</strong></td><td>0.576</td><td>0.879</td><td><strong>5.00e6</strong></td></tr>
+<tr><td>doughnut, the darkest interior class</td><td>189,643 <span class="mut">(16.9%)</span></td>
+    <td>0.14</td><td>0.414</td><td>0.090</td><td><strong>1.00e5</strong></td></tr>
+</tbody></table></div>
+
+<p>On all three objects one of the four classes comes out sitting almost entirely on the skin band
+&mdash; \(\beta_j\) of 0.98 to 1.00 &mdash; without any term in the clustering that asks for a
+shell, and it is that class equation&nbsp;(13) puts at the top of the ordering. The interior classes
+are then ordered by luminance, which puts the orange&#8217;s pale pith and albedo above its flesh.
+The contrast between the ends of the mapping is 50&times; on every object, because the range is
+fixed and the ordering is what is being claimed. <strong>What this does not say is that the
+contrast reaches the solver as a shell.</strong> That is section&nbsp;4.2.1&#8217;s question, it is
+answered against the grid momentum is transferred on rather than the finer grid particles are
+seeded on, and the answer there is that none of these shells is resolvable.</p>
 
 <h3 id="correctness">4.3&ensp;Correctness, storage and runtime</h3>
 
@@ -1796,7 +1864,7 @@ convex polygon, obtained by intersecting the plane with the cell's twelve edges 
 A method whose cut face is determined by the primitives near the plane does not define these
 quantities, so neither can be reported for it.</p>
 
-<div class="tw"><p class="tnum">Table 28</p><table>
+<div class="tw"><p class="tnum">Table 29</p><table>
 <thead><tr><th>ball, radius in cells</th><th>plane</th><th>cut area</th><th>\(\pi r^2\)</th>
 <th>area error</th><th>worst vertex off the plane</th></tr></thead>
 <tbody>
@@ -1827,19 +1895,87 @@ edge&ndash;plane intersection solved from the plane equation, so the residual
 \(|\mathbf{n}\cdot\mathbf{v}+d|\) is at machine precision on an oblique off-grid plane rather
 than at a tolerance. Area: the error against the closed form falls from 0.97% at six cells of radius to 0.09% at forty-eight. Gaps and manifoldness: a cut face is a 2-manifold <em>with boundary</em> &mdash; a disc for a convex object, an annulus for the doughnut cut across its axis &mdash; interior edges shared by exactly two triangles, and a rim of edges belonging to one. On the orange, cut axis-aligned and obliquely, that is what it is:</p>
 
-<div class="tw"><p class="tnum">Table 29</p><table>
+<div class="tw"><p class="tnum">Table 30</p><table>
 <thead><tr><th>orange, one cut</th><th>distinct triangles</th><th>edges used twice</th><th>edges used once</th><th>edges used more than twice</th></tr></thead>
 <tbody>
 <tr><td>axis-aligned</td><td>85,960</td><td>128,430</td><td>1,020</td><td><strong>0</strong></td></tr>
 <tr><td>oblique, off-grid</td><td>112,753</td><td>168,570</td><td>1,119</td><td><strong>0</strong></td></tr>
 </tbody></table></div>
 
-<p>The edges used once form the rim &mdash; a count consistent with the silhouette's own length divided by the leaf size. There are no non-manifold edges and no interior gaps. This is measured under uniform refinement of the band, which is the precondition section&nbsp;3.3 states: polygons meet edge to edge because every crossed cell is at the same level. Under an adaptive refinement of the band that precondition does not hold, and the measurement has not been repeated there. (The mesh is emitted double-sided, one triangle per winding, so the counts above are taken after reducing each face to one instance; counting on the emitted mesh doubles every edge and hides the rim.)</p>
+<p>The edges used once form the rim &mdash; a count consistent with the silhouette's own length divided by the leaf size. There are no non-manifold edges and no interior gaps. This is measured under uniform refinement of the band, which is the precondition section&nbsp;3.3 states: polygons meet edge to edge because every crossed cell is at the same level. That precondition is not an assumption here but a property of the refinement the operator performs, and section&nbsp;4.3.3 repeats the measurement on all six objects and four planes each to check it &mdash; one level at the cut and no non-manifold edge on any of the twenty-four. Under an adaptive refinement of the band it would not hold, and there is no adaptive refinement here. (The mesh is emitted double-sided, one triangle per winding, so the counts above are taken after reducing each face to one instance; counting on the emitted mesh doubles every edge and hides the rim.)</p>
 
 <p>Peak device memory during training is 5.2 to 5.9&nbsp;GB at the settings used here, on one
 card.</p>
 
-<h4>4.3.3&ensp;What the operations cost</h4>
+<h4>4.3.3&ensp;The band a plane crosses, on every object</h4>
+
+<p>Section&nbsp;3.3 claims that a cut changes adjacency only inside the crossed band, so it costs
+what it touches rather than what the object contains. That is worth a number, and the number has
+to say which band it counts. Equation&nbsp;(10) returns a set of cells on the lattice as it is
+stored; the operator then refines every one of them to the fine spacing, which multiplies the
+count by four and produces the leaves that carry a polygon. Both are below, on an oblique
+off-grid plane through each object&#8217;s centroid, because the first is the set whose adjacency
+has to be rebuilt and the second is what the polygon pass runs over.</p>
+
+<div class="tw"><p class="tnum">Table 31</p><table>
+<thead><tr><th>object, one oblique plane</th><th>\(N\)</th><th>\(K\), equation&nbsp;(10)</th>
+<th>\(K/N\)</th><th>leaves after refinement</th><th>of \(N\)</th><th>levels at the cut</th>
+<th>edges used once</th><th>used twice</th><th>used more than twice</th>
+<th>worst \(|\mathbf{n}\cdot\mathbf{v}+d|\)</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>770,182</td><td>17,036</td><td>2.21%</td><td>68,191</td><td>8.85%</td>
+    <td>1</td><td>1,299</td><td>203,937</td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
+<tr><td>watermelon</td><td>709,368</td><td>16,369</td><td>2.31%</td><td>65,530</td><td>9.24%</td>
+    <td>1</td><td>1,266</td><td>195,978</td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
+<tr><td>apple</td><td>756,905</td><td>16,951</td><td>2.24%</td><td>67,830</td><td>8.96%</td>
+    <td>1</td><td>1,352</td><td>202,832</td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
+<tr><td>bread</td><td>396,075</td><td>11,795</td><td>2.98%</td><td>47,188</td><td>11.91%</td>
+    <td>1</td><td>1,125</td><td>141,006</td><td><strong>0</strong></td><td>3.33e&#8722;16</td></tr>
+<tr><td>cake</td><td>395,613</td><td>10,440</td><td>2.64%</td><td>41,703</td><td>10.54%</td>
+    <td>1</td><td>1,084</td><td>124,570</td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
+<tr><td>doughnut</td><td>544,568</td><td>5,586</td><td>1.03%</td><td>22,367</td><td>4.11%</td>
+    <td>1</td><td>1,149</td><td>66,540</td><td><strong>0</strong></td><td>4.44e&#8722;16</td></tr>
+</tbody></table></div>
+
+<p>Over the three axis-aligned planes as well, twenty-four cuts in all, equation&nbsp;(10) returns
+0.51% to 3.03% of an object&#8217;s cells and the refined band that carries polygons is 2.04% to
+12.12%. <strong>The draft this section was written from put that fraction at 4.0% to 10.7%, and
+neither measured range is that.</strong> The refined band brackets it and is wider at both ends;
+the crossed set itself is three to four times smaller than the figure claimed. Which of the two is
+meant has to be said, and the extremes are both the doughnut, for a reason that is about the shape
+rather than about the method: a plane across the torus&#8217;s axis meets it in two annular bands
+and crosses 12.12%, while the same plane turned ninety degrees passes through the hole and
+crosses 2.04%.</p>
+
+<p>Whether that fraction is a property of these six objects or of the resolution they are held at
+is answerable by holding the object and changing the resolution. Coarsening each object&#8217;s own
+occupancy by successive factors of two gives four resolutions of one shape, and the slope of
+\(\log K\) against \(\log N\) over them is 0.641 to 0.685 on twenty-four object-and-normal
+pairs, mean 0.666 against the \(2/3\) a surface through a volume predicts. So \(K/N\) falls as
+\(N^{-1/3}\): the band is small because the lattice is fine, and refining it further makes the
+band a smaller fraction rather than a larger one.</p>
+
+<figure>
+  <img src="assets/bandfrac.png" alt="K against N over four resolutions of each object, and the
+       crossed and refined band as a percentage of the object">
+  <figcaption><span class="fnum">Figure 15</span><br>The crossed band against the object it is cut
+  from, on each object&#8217;s own lattice and on three coarsenings of it. Drawn by
+  <code>code/figures/bandfrac.py</code>, which calls <code>subdivide.crossed</code> rather than
+  restating it.</figcaption>
+</figure>
+
+<p>The <em>levels at the cut</em> column is 1 on every one of the twenty-four cuts, and that is
+what the absence of T-junctions rests on rather than a separate property to be hoped for:
+<code>subdivide.refine</code> refines every crossed cell until its spacing is at or below the
+target, so the leaves that carry polygons come out at one level and meet edge to edge. No edge in
+any of the cuts is shared by more than two triangles, and the edges used once are the rim. The
+precondition section&nbsp;4.3.2 states is therefore met by every cut this implementation takes.
+What would break it is an adaptive criterion that refined part of the band further than the rest;
+there is none here, and section&nbsp;4.3.4 names it as an open lever on the cost. The worst
+plane-equation residual over every vertex of every cut is 6.66e&#8722;16, and it is exactly zero
+wherever the plane is axis-aligned.</p>
+
+<h4>4.3.4&ensp;What the operations cost</h4>
 
 <p>The paper repeatedly calls the lattice's operations cheap &mdash; connectivity, piece identity
 and collision are integer queries &mdash; and a claim of cheapness with no wall-clock number is an
@@ -1847,7 +1983,7 @@ assertion. Each operation is timed as it is used rather than in a microbenchmark
 cut on a whole object, and the collision query is against the number of particles the solver
 actually has. Orange, 770,182 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 
-<div class="tw"><p class="tnum">Table 30</p><table>
+<div class="tw"><p class="tnum">Table 32</p><table>
 <thead><tr><th>operation</th><th>time</th><th>rate</th></tr></thead>
 <tbody>
 <tr><td>read the model from disk</td><td>36.6&nbsp;ms</td><td></td></tr>
@@ -1868,7 +2004,7 @@ actually has. Orange, 770,182 solid coarse cells, \(h_f = 0.0059\), one GPU.</p>
 supplement, and they are different operations on different lattices, so every one of them is
 set out together here rather than left to be reconciled.</p>
 
-<div class="tw"><p class="tnum">Table 31</p><table>
+<div class="tw"><p class="tnum">Table 33</p><table>
 <thead><tr><th>what was timed</th><th>lattice</th><th>seconds</th><th>where</th></tr></thead>
 <tbody>
 <tr><td>refine the band and label the pieces, adjacency rebuilt over every leaf</td>
@@ -1891,7 +2027,7 @@ the end of this section.</p>
 
 <p><strong>What the cost scales with.</strong> The labelling itself is linear in the leaves the cut touches, but the implementation is not: adjacency is rebuilt and the component structure allocated over every leaf, so the measured cost follows the object rather than the band. The cost is flat against the total and rises against the band:</p>
 
-<div class="tw"><p class="tnum">Table 32</p><table>
+<div class="tw"><p class="tnum">Table 34</p><table>
 <thead><tr><th>ball, cells</th><th>ms per 1000 cells</th><th>ms per 1000 band leaves</th></tr></thead>
 <tbody>
 <tr><td>17k</td><td>0.0091</td><td>0.0185</td></tr>
@@ -1908,7 +2044,7 @@ particle set, which is what makes physics on this representation practical. <str
 not interactive.</strong> A cut costs about eleven seconds end to end at this resolution, dominated
 by refining the band and by emitting one polygon per crossed cell. The geometry is linear in the crossed cells; the implementation's total cost is not, and the scaling measurement below separates the two; an adaptive refinement of the band and a GPU formulation of the same passes are the two levers on it.</p>
 
-<h4>4.3.4&ensp;Storage, static and during a cut</h4>
+<h4>4.3.5&ensp;Storage, static and during a cut</h4>
 
 <p>The other half of the memory line, and the one the coarse interior exists for: storage should be
 proportional to hidden spatial complexity, with the high-resolution cost paid only where a cut has
@@ -1924,7 +2060,7 @@ published models is therefore almost entirely in <em>how many things there are</
 each one costs, and on an object whose lattice is mostly fine cells it can vanish. None of these
 figures is measured against a compressed Gaussian model, which would move them again.</p>
 
-<div class="tw"><p class="tnum">Table 33</p><table>
+<div class="tw"><p class="tnum">Table 35</p><table>
 <thead><tr><th>orange</th><th>as Gaussians</th><th>as cube cells</th><th>a cut, while live</th><th>folded back</th></tr></thead>
 <tbody>
 <tr><td>route 1, 1,162,387 cells</td><td>62.1 MiB</td>
@@ -1974,7 +2110,7 @@ far the results should be carried.</p>
       published result. That is enough to show a property holds or that a
       claimed one fails; it is not enough to say a margin generalises to fruit, to food, or to
       objects at large.</li>
-  <li><strong>Cutting is not interactive.</strong> A cut is about eleven seconds as the pipeline runs it, 4.9 for the band and the labelling and 6.2 for the polygons; section 4.3.3 sets out which timing belongs to which operation and lattice, including the 2.91&nbsp;s the labelling reaches with the adjacency reuse in place. Nothing in this paper
+  <li><strong>Cutting is not interactive.</strong> A cut is about eleven seconds as the pipeline runs it, 4.9 for the band and the labelling and 6.2 for the polygons; section 4.3.4 sets out which timing belongs to which operation and lattice, including the 2.91&nbsp;s the labelling reaches with the adjacency reuse in place. Nothing in this paper
       is a real-time result. The geometry is linear in the crossed cells and the implementation's constant is
       large; the adaptive criterion and a GPU formulation of the same passes are the two levers,
       and neither is benchmarked.</li>

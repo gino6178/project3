@@ -100,15 +100,17 @@ first thing below.</p>
       should be read that way.</li>
   <li><strong>Two of the four runtime figures are not reported.</strong> The specification asks for
       initial load, single-cut update, O&#8209;Voxel conversion and render rate. The first two are in
-      section 4.3.3. The O&#8209;Voxel conversion is not timed because the extension is not built on
+      section 4.3.4. The O&#8209;Voxel conversion is not timed because the extension is not built on
       the machine the timings were taken on, and the interactive render rate is not timed because
       the harness fails to produce it. Neither absence is evidence either way about the cost of
       those operations.</li>
   <li><strong>The two levers on cutting cost are unbenchmarked.</strong> A cut is about eleven
       seconds at the resolution used, and the face geometry is linear in the crossed cells; the labelling as implemented is not,
-      and section 4.3.3 measures the cost as flat per total cell. The adaptive refinement criterion of section 3.3.2 and a GPU formulation of the same
-      passes are the two ways to reduce it; the first is measured for leaf count but not for time,
-      and the second exists in the repository without a timing.</li>
+      and section 4.3.4 measures the cost as flat per total cell. An adaptive refinement of the band and a GPU formulation of the same
+      passes are the two ways to reduce it, and neither is implemented here: the operator refines
+      every crossed cell to the same spacing, which is what section&nbsp;4.3.3 measures as one
+      level at the cut on all twenty-four cuts, and the GPU formulation exists in the repository
+      without a timing.</li>
   <li><strong>No modulus here is measured.</strong> \(E_{\min}\) and \(E_{\max}\) are the ends
       of a range that an ordering of material classes is mapped onto. No absolute Young's modulus,
       Poisson ratio or yield stress is claimed for any material in this paper, and the stiffness
@@ -170,7 +172,7 @@ first thing below.</p>
   <li><strong>The interior features are not retrained.</strong> The per-cell features are still
       the ones the Gaussian run learned; refitting them for the cube renderer flattened the
       orange's segment walls twice, and the criterion for "the walls survived", the angular oscillation of a section over its middle radii, is in place but the fit is not.</li>
-  <li><strong>Cutting is not fast.</strong> Eleven to fifteen seconds depending on which stage and which lattice; the paper's section 4.3.3 sets the four timings side by side. Where we call the cut
+  <li><strong>Cutting is not fast.</strong> Eleven to fifteen seconds depending on which stage and which lattice; the paper's section 4.3.4 sets the four timings side by side. Where we call the cut
       cheap it means in operations, not in time; it is single-threaded NumPy on the CPU and the
       design asked for a GPU-friendly band subdivision, which is not what was built.</li>  <li><strong>Resolution bounds what the representation can hold.</strong> Occupancy is a
       decision per cell, so a feature narrower than a cell is either absorbed into its neighbours
