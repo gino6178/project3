@@ -319,6 +319,19 @@ def _photo(spec):
     # implemented, measured, and absent from this file, so every model in the repository until
     # now was trained by the block rule instead. REF_DEPTH_BLEND=0 restores that rule, which is
     # what the numbers measured before this change were produced under.
+    # The ablation the paragraph above names. Section 4.1.6 asks what the fixed assignment is
+    # worth by removing it: a plane draws a photograph afresh every time it is supervised, so
+    # over a run each plane sees all of them and the interior can only converge to their
+    # average. It is off, it exists to be measured against, and it was described here in a
+    # comment for some time before it was a switch anyone could throw -- which is not a
+    # measurement, so here it is.
+    if os.environ.get("REF_RANDOM_ASSIGN", "0") == "1" and len(files) > 1:
+        import random
+        k = random.randrange(len(files))
+        key = (spec, "rand", k)
+        if key not in _PHOTOS:
+            _PHOTOS[key] = Image.open(files[k]).convert("RGB")
+        return _PHOTOS[key]
     if os.environ.get("REF_DEPTH_BLEND", "1") == "1" and len(files) > 1:
         t = _PLANE["idx"] * len(files) / max(_PLANE["n"], 1)
         k0 = int(t) % len(files)
