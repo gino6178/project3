@@ -385,14 +385,25 @@ around.</p>
 <figure style="margin:18px 0 30px">
   <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
        alt="a shell, filled, its surface pinned, and the cross-section photographs that write the interior">
-  <figcaption><span class="fnum">Figure 2</span><br><strong>A scanner sees a surface, never an
-  interior, and neither route is given one.</strong> A 3D scan gives a shell; the volume behind it
-  is filled so the object is solid, and those cells begin with no colour of their own.
-  Route&nbsp;1 stands in for the scan this work does not have &mdash; a released reconstruction,
-  used the way a scan would be, for its shape and its outer surface, with whatever it carries
-  inside discarded. Route&nbsp;2 is the same three beats with no scan at all. Neither route ever
-  writes inside the object; the photographs of cross-sections are the only thing that does. Drawn
-  by <code>code/figures/pipeline_fig.py</code>.</figcaption>
+  <figcaption><span class="fnum">Figure 2</span><br><strong>One object through the whole method.</strong>
+  <em>Building the representation:</em> a 3D scan gives a shell, the volume behind it is filled so
+  the object is solid, and those cells begin with no colour of their own. Route&nbsp;1 stands in
+  for the scan this work does not have &mdash; a released reconstruction, used the way a scan
+  would be, for its shape and its outer surface, with whatever it carries inside discarded.
+  Route&nbsp;2 is the same three beats with no scan at all. The third panel of route&nbsp;1 is the
+  first again, on purpose: <code>SHELL_PIN</code> means training does not move the surface, and
+  the drift it does show over two hundred iterations is 0.0018.
+  <em>Supervising the interior:</em> the photographs arrive unposed, are turned to a common phase
+  by equations&nbsp;(4) and&nbsp;(5) before any gradient is taken, and each is fitted to the
+  silhouette its own plane renders by equation&nbsp;(6) &mdash; which is what replaces a pose. The
+  last panel is the volume's own answer at a depth training never sampled.
+  <em>What the lattice is for:</em> the plane's crossed cells by the integer test of
+  equation&nbsp;(10), the 15,482 polygons of the exposed face by equation&nbsp;(11), the pieces
+  from connected components on that grid, and the particles a solver receives, one per cell, with
+  the contact band in black. Every panel is computed from the orange's own lattice by
+  <code>code/figures/pipeline_fig.py</code>; the panels of the first two bands are slabs rather
+  than projections, because the interior is the subject and a projection of a solid shows only its
+  skin.</figcaption>
 </figure>
 
 <p>We decouple the surface from the interior. The visible outer hull is carried by a flexible dual

@@ -38,6 +38,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, FN)
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "src"))
 
+import glob
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt                                        # noqa: E402
@@ -85,13 +87,14 @@ def main(obj, out):
     lat1 = os.path.join(FN, f"build_{obj}", "lattice")
     lat2 = os.path.join(FN, f"build_{obj}_r2", "skin")
     xyz1, rgb1, lvl1 = read(lat1)
+    hc1 = float(torch.load(os.path.join(lat1, 'lattice.pt'))['coarse_dx'])
     have2 = os.path.exists(os.path.join(lat2, "gs_fill.ply"))
     if have2:
         xyz2, rgb2, lvl2 = read(lat2)
 
-    fig = plt.figure(figsize=(13.6, 7.2))
-    gs = fig.add_gridspec(2, 4, hspace=0.46, wspace=0.10,
-                          left=0.075, right=0.985, top=0.815, bottom=0.075)
+    fig = plt.figure(figsize=(13.6, 14.4))
+    gs = fig.add_gridspec(4, 4, hspace=0.46, wspace=0.10,
+                          left=0.075, right=0.985, top=0.912, bottom=0.075)
 
     # --- route 1: the shell a scan gives, then filled ---------------------------------
     ax = fig.add_subplot(gs[0, 0])
@@ -167,11 +170,17 @@ def main(obj, out):
     panel(ax, "and then the interior",
           "photographs of cross-sections are the only thing\nthat ever writes inside; section 3.2")
 
-    for y, lab, col in ((0.884, "ROUTE 1  \u2014  a scan (a released reconstruction stands in)", "#c0392b"),
-                        (0.448, "ROUTE 2  \u2014  a shape from its equation", "#2e7d5b")):
+    for y, lab, col in ((0.930, "BUILDING THE REPRESENTATION  \u2014  route 1, a scan", "#c0392b"),
+                        (0.722, "\u2014  route 2, a shape from its equation", "#2e7d5b"),
+                        (0.500, "SUPERVISING THE INTERIOR  \u2014  the photographs, and nothing "
+                         "else, ever writes inside", "#8a6d1f"),
+                        (0.258, "WHAT THE LATTICE IS FOR  \u2014  an exact cut, its pieces, and "
+                         "a solver's particles", "#4a4a8a")):
         fig.text(0.02, y, lab, fontsize=9, weight="bold", color=col)
+    band_supervision(fig, gs, 2, obj, FN, None, conf)
+    band_downstream(fig, gs, 3, xyz1, rgb1, lvl1, hc1)
 
-    fig.suptitle("From a scanned shell, the interior is generated \u2014 not carried in",
+    fig.suptitle("One object through the whole method: a scanned shell, an interior the photographs\nwrite, and a cut that is computed",
                  fontsize=12.5, y=0.985)
     fig.text(0.5, 0.942, "a shell, filled; either route, never both \u2014 and neither route "
              "ever writes inside the object",
@@ -184,6 +193,112 @@ def main(obj, out):
         print(f"  route 2: {len(xyz2):,} cells, {int((lvl2 == 1).sum()):,} skin")
 
 
+def band_supervision(fig, gs, row, obj, FN, slab, conf):
+    """What supervises the interior: photographs, aligned, fitted, and the volume's answer."""
+    import sds_demo, section_match as sm, cv2, torch
+    ref_h = conf("REF_H", obj)
+    files = sorted(sds_demo._photos_in(os.path.join(FN, ref_h)))
+
+    ax = fig.add_subplot(gs[row, 0])
+    t = [cv2.imread(f)[:, :, ::-1] for f in files[:4]]
+    h = min(i.shape[0] for i in t); w = min(i.shape[1] for i in t)
+    ax.imshow(np.vstack([np.hstack([cv2.resize(x, (w, h)) for x in t[:2]]),
+                         np.hstack([cv2.resize(x, (w, h)) for x in t[2:4]])]))
+    ax.set_axis_off()
+    panel(ax, "photographs, as they arrive",
+          f"{len(files)} transverse and as many longitudinal, unposed")
+
+    ax = fig.add_subplot(gs[row, 1])
+    al = []
+    for j in range(4):
+        sds_demo._PLANE["idx"], sds_demo._PLANE["n"] = j, 4
+        al.append(np.asarray(sds_demo._solved_photo(os.path.join(FN, ref_h)).convert("RGB")))
+    h = min(i.shape[0] for i in al); w = min(i.shape[1] for i in al)
+    ax.imshow(np.vstack([np.hstack([cv2.resize(x, (w, h)) for x in al[:2]]),
+                         np.hstack([cv2.resize(x, (w, h)) for x in al[2:4]])]))
+    ax.set_axis_off()
+    panel(ax, "turned to a common phase", "equations (4) and (5), before any gradient")
+
+    cuts = sorted(glob.glob(os.path.join(FN, "measurements", obj, "cuts", "rh*_init_0.png")))
+    ax = fig.add_subplot(gs[row, 2])
+    if cuts:
+        r = cv2.imread(cuts[0])[:, :, ::-1].astype(np.float32) / 255.
+        rt = torch.from_numpy(r).permute(2, 0, 1)
+        tgt = sm.section_target(rt, np.asarray(al[0], np.float32) / 255.)
+        ax.imshow(tgt.permute(1, 2, 0).clamp(0, 1).numpy())
+    ax.set_axis_off()
+    panel(ax, "fitted to the silhouette it renders", "equation (6); this is what replaces a pose")
+
+    ax = fig.add_subplot(gs[row, 3])
+    if len(cuts) > 1:
+        ax.imshow(cv2.imread(cuts[1])[:, :, ::-1])
+    ax.set_axis_off()
+    panel(ax, "what the volume answers", "a depth training never sampled")
+
+
+def band_downstream(fig, gs, row, xyz, rgb, lvl, hc):
+    """What the lattice is for: an exact cut, the pieces, and the particles a solver gets."""
+    from matplotlib.patches import Polygon as MplPolygon
+    coarse = lvl == 0
+    P, C = xyz[coarse], rgb[coarse]
+    n = np.array([0.55, 0.48, 0.68]); n /= np.linalg.norm(n)
+    ctr = P.mean(0); d = -float(n @ ctr)
+    s = P @ n + d
+    band = np.abs(s) <= 0.5 * hc * np.abs(n).sum()
+    m = np.abs(P[:, 1] - ctr[1]) < 0.5 * hc
+
+    ax = fig.add_subplot(gs[row, 0])
+    for sel, col in ((m & (s > 0) & ~band, "#cfe0f0"), (m & (s < 0) & ~band, "#f6ddd0")):
+        q = P[sel]; ax.scatter(q[:, 0], q[:, 2], s=2.6, c=col, marker="s", linewidths=0)
+    q = P[m & band]; ax.scatter(q[:, 0], q[:, 2], s=3.0, c="#c0392b", marker="s", linewidths=0)
+    ax.set_aspect("equal"); ax.set_axis_off()
+    panel(ax, "a plane, and the cells it crosses", "equation (10), an integer test")
+
+    e1 = np.array([-n[2], 0.0, n[0]]); e1 /= np.linalg.norm(e1); e2 = np.cross(n, e1)
+    flat = lambda Q: np.stack([(Q - ctr) @ e1, (Q - ctr) @ e2], 1)
+    ax = fig.add_subplot(gs[row, 1])
+    CORN = np.array([[i, j, k] for i in (0, 1) for j in (0, 1) for k in (0, 1)], float)
+    EDGE = [(a, b) for a in range(8) for b in range(a + 1, 8) if bin(a ^ b).count("1") == 1]
+    npoly = 0
+    for cell in P[band]:
+        Vv = (cell - 0.5 * hc)[None] + CORN * hc
+        ss = Vv @ n + d
+        pl = [Vv[a] + (ss[a] / (ss[a] - ss[b])) * (Vv[b] - Vv[a])
+              for a, b in EDGE if (ss[a] < 0) != (ss[b] < 0)]
+        if len(pl) < 3:
+            continue
+        pl = flat(np.array(pl))
+        an = np.arctan2(pl[:, 1] - pl[:, 1].mean(), pl[:, 0] - pl[:, 0].mean())
+        ax.add_patch(MplPolygon(pl[np.argsort(an)], closed=True, facecolor="#c0392b",
+                                alpha=0.55, edgecolor="#8e2b1f", lw=0.3))
+        npoly += 1
+    ax.autoscale_view(); ax.set_aspect("equal"); ax.set_axis_off()
+    panel(ax, "the face it exposes", f"{npoly:,} polygons, equation (11), machine precision")
+
+    ax = fig.add_subplot(gs[row, 2])
+    # Coloured by piece, not by the cells' own colour: the lattice's interior starts flat, so
+    # drawing it here would show a grey disc and say nothing about the labelling.
+    off = 0.12 * (P[:, 0].max() - P[:, 0].min())
+    for sel, sh, col in ((m & (s > 0), +off, "#4a7ba7"), (m & (s < 0), -off, "#c0392b")):
+        q = P[sel]
+        ax.scatter(q[:, 0] + sh * n[0], q[:, 2] + sh * n[2], s=2.6, c=col, marker="s",
+                   linewidths=0)
+    ax.set_aspect("equal"); ax.set_axis_off()
+    panel(ax, "the pieces, drawn apart", "connected components on the integer grid")
+
+    ax = fig.add_subplot(gs[row, 3])
+    q = P[m]
+    col = np.where((q @ n + d)[:, None] > 0, np.array([[0.29, 0.48, 0.65]]),
+                   np.array([[0.75, 0.22, 0.16]]))
+    ax.scatter(q[:, 0], q[:, 2], s=2.6, c=col, marker="s", linewidths=0)
+    qb = P[m & band]
+    ax.scatter(qb[:, 0], qb[:, 2], s=3.4, c="#111", marker="s", linewidths=0)
+    ax.set_aspect("equal"); ax.set_axis_off()
+    panel(ax, "particles a solver receives", "one per cell, labelled; black is the contact band")
+
+
 if __name__ == "__main__":
     main(sys.argv[1] if len(sys.argv) > 1 else "orange",
          sys.argv[2] if len(sys.argv) > 2 else "out/pipeline_routes.png")
+
+
