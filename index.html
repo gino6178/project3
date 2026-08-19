@@ -3677,14 +3677,7 @@ grow with separation and nothing in the construction forces it to.</p>
 <figure>
   <img src="assets/collision.png" alt="A slab through the contact region, particles coloured by
        what the collision test says about them, at four separations">
-  <figcaption><span class="fnum">Figure 16</span><br>A slab through the contact region of the cut orange, every particle drawn as what
-  the test says about it: grey for outside the other piece, orange for claimed by occupancy alone,
-  red for still claimed once the sign test against \(\Pi\) is applied. Which piece a particle
-  belongs to is decided by the plane and not by the leaf it sits in, because asking whether a
-  particle labelled by its own leaf falls inside a different leaf is circular and answers zero
-  against zero. At rest the orange band is the leaves the cut straddles, 1,543 particles wide, and
-  no particle survives the sign test. Pushing one piece into the other turns the band red and grows
-  it in proportion, which is what makes this a contact test rather than a coincidence.</figcaption>
+  <figcaption><span class="fnum">Figure 16</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. Drawn by <code>code/figures/collision_fig.py</code>, which drives <code>evaluate/physics.py</code>&#8217;s own index and contact test, so the picture and the counts cannot disagree.</figcaption>
 </figure>
 
 <div class="tw"><p class="tnum">Table 42</p><table>
