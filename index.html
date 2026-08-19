@@ -10,8 +10,7 @@
         integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
         integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
-        onload="renderMathInElement(document.body,{delimiters:[{left:'<div class="eq"><div class="body">
-$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
 <style>
   :root{ --ink:#111; --mut:#5c5c5c; --line:#e6e6e6; --acc:#a8412a; --panel:#f7f7f7; }
   *{box-sizing:border-box}
@@ -416,6 +415,7 @@ partition a cut induces (Q2), and the surface a cut exposes (Q3).</p>
 \(\mathcal{V}_1\) has spacing \(h_f = h_c/2\) and covers only the skin band adjacent to
 \(\partial\Omega\). Cell indices, the fine level and the face adjacency \(\mathcal{A}\) are</p>
 
+<div class="eq"><div class="body">
 $$h_\ell = \frac{h_c}{2^\ell}, \qquad
 \mathbf{k}_\ell(\mathbf{x}) = \left\lfloor \frac{\mathbf{x} - \mathbf{o}}{h_\ell} \right\rfloor,
 \qquad
