@@ -1020,6 +1020,56 @@ appearance but the skin, where the detail statistic falls furthest when it is re
 24.94, and the shell thickness a solver can resolve, which the supplement measures.</p>
 
 
+<h4>4.4.1&ensp;How many cross-sections the interior is worth</h4>
+
+<p>The watermelon was retrained on 1, 3, 5, 10 and all 20 of its transverse photographs, with
+the longitudinal family untouched in every arm and everything else identical. The subsets are
+nested, so the curve separates how many photographs from which ones. Scoring is against the ten
+photographs that no arm below twenty was trained on; the twenty-photograph arm saw all ten and
+is drawn hollow because it is answering an easier question.</p>
+
+<div class="tw"><p class="tnum">Table 7</p><table>
+<thead><tr><th>transverse photographs</th><th>DreamSim to the held-out ten &darr;</th>
+<th>section-to-section difference, mean</th><th>&hellip; its spread</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>0.1798</td><td>4.23e&#8722;3</td><td>0.15e&#8722;3</td></tr>
+<tr><td>3</td><td><strong>0.1793</strong></td><td>4.31e&#8722;3</td><td>0.30e&#8722;3</td></tr>
+<tr><td>5</td><td>0.1819</td><td>4.53e&#8722;3</td><td>0.33e&#8722;3</td></tr>
+<tr><td>10</td><td>0.1873</td><td>4.47e&#8722;3</td><td><strong>0.54e&#8722;3</strong></td></tr>
+<tr><td class="mut">20, not held out</td><td class="mut">0.1926</td>
+    <td class="mut">4.06e&#8722;3</td><td class="mut">0.44e&#8722;3</td></tr>
+</tbody></table></div>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/slicecount.png" style="width:100%;border-radius:4px"
+       alt="DreamSim and depth variation against the number of training photographs">
+  <figcaption><span class="fnum">Figure 14</span><br>The same five models, measured on what a
+  section looks like and on how the interior changes with depth. The mean of the
+  section-to-section difference is flat across the whole sweep, 4.06 to 4.53e&#8722;3, and is not
+  drawn.</figcaption>
+</figure>
+
+<p><strong>The perceptual score saturates at one photograph.</strong> From 1 to 5 it moves by
+0.0026, which is a fifth of the fold-to-fold spread the same measurement shows on the orange, and
+beyond 5 it drifts the wrong way. This is a property of the question DreamSim asks: it takes each
+rendered section to its nearest reference, and a volume that repeats one plausible section
+everywhere answers that well. One cross-section is enough to make a section that looks like a
+watermelon.</p>
+
+<p><strong>What more photographs buy is depth.</strong> The spread of the section-to-section
+difference along a 96-plane sweep rises from 0.15e&#8722;3 at one photograph to 0.54e&#8722;3 at
+ten, while its mean stays flat. A volume built from one section changes along depth at a constant
+featureless rate &#8212; it is interpolating. A volume built from ten changes fast in some places
+and slowly in others, which is what a seed boundary and a stretch of uniform flesh are. That is
+the structure the extra photographs put there, and no per-section metric can see it.</p>
+
+<p>Two things are not claimed. The twenty-photograph arm breaks the trend in the second column
+(0.44e&#8722;3 against ten&#8217;s 0.54e&#8722;3) and we do not have a mechanism for it. And the
+first column gets monotonically worse with more supervision; we report it because it is what the
+measurement says, and because the reading that fits both columns &#8212; that the metric rewards
+a confident single guess over a volume that varies &#8212; is a criticism of the metric that we
+cannot verify from five points.</p>
+
 <h3>4.5&ensp;Where it fails, and why</h3>
 
 <p>The cake is the one object in Table&nbsp;1 this method loses on: 0.3318 of DreamSim against
