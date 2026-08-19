@@ -3011,14 +3011,14 @@ run as three leave-one-out folds instead and the spread across folds is reported
 The released model is re-rendered against each evaluation set in the same batch, because a number
 measured against a different set is not comparable.</p>
 
-<div class="tw"><p class="stale"><b>Not re-measured.</b> The models on this page were retrained after the exterior and the lattice were corrected (see the repository README). This table compares against arms &mdash; released models, other folds, other settings &mdash; that have not been re-run, so re-scoring only our column would mix two pipelines in one table. It is left as it was measured and marked rather than partially updated.</p><p class="tnum">Table 26</p><table>
+<div class="tw"><p class="tnum">Table 26</p><table>
 <thead><tr><th>DreamSim to the nearest held-out photograph &darr;</th><th>this work</th><th>FruitNinja, released</th><th class="mut">the held-out photographs against each other</th><th class="mut">train / held out</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td><strong>0.0997</strong></td><td>0.1293</td><td class="mut">0.0551</td><td class="mut">3 / 3</td></tr>
-<tr><td>watermelon</td><td><strong>0.1934</strong></td><td>0.2390</td><td class="mut">0.0724</td><td class="mut">10 / 10</td></tr>
-<tr><td>apple</td><td><strong>0.2892</strong></td><td>0.3876</td><td class="mut">0.2120</td><td class="mut">4 / 4</td></tr>
-<tr><td>bread</td><td><strong>0.4502</strong></td><td>0.4949</td><td class="mut">0.2215</td><td class="mut">3 / 2</td></tr>
-<tr><td>cake <span class="mut">(3 folds)</span></td><td>0.3852 &plusmn; 0.0228</td><td><strong>0.3159 &plusmn; 0.0359</strong></td><td class="mut">one image per fold</td><td class="mut">2 / 1</td></tr>
+<tr><td>orange</td><td><strong>0.1231</strong></td><td>0.1303</td><td class="mut">0.0551</td><td class="mut">3 / 3</td></tr>
+<tr><td>watermelon</td><td><strong>0.1805</strong></td><td>0.2338</td><td class="mut">0.0724</td><td class="mut">10 / 10</td></tr>
+<tr><td>apple <span class="mut">(3 folds)</span></td><td><strong>0.3105 &plusmn; 0.0152</strong></td><td>0.4323 &plusmn; 0.0236</td><td class="mut">one image per fold</td><td class="mut">2 / 1</td></tr>
+<tr><td>bread</td><td><strong>0.3924</strong></td><td>0.4983</td><td class="mut">0.2215</td><td class="mut">3 / 2</td></tr>
+<tr><td>cake <span class="mut">(3 folds)</span></td><td>0.4188 &plusmn; 0.0681</td><td><strong>0.3165 &plusmn; 0.0447</strong></td><td class="mut">one image per fold</td><td class="mut">2 / 1</td></tr>
 <tr><td>doughnut <span class="mut">(topology, not appearance)</span></td><td><strong>20 of 20</strong> held-out sections read as an annulus</td><td class="mut">no released model of this genus</td><td class="mut">&mdash;</td><td class="mut">1 / &mdash;</td></tr>
 </tbody></table></div>
 
