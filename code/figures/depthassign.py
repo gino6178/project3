@@ -21,9 +21,9 @@ method and the second is what a viewer sees.
               inherited the steps shows them here; one that smoothed them away does not, and that
               is a result either way.
 
-    python code/figures/depthsweep.py targets  OUT.png REF_DIR [n_planes]
-    python code/figures/depthsweep.py sections OUT.png CFG DEMO name=MODEL.ply ...
-    python code/figures/depthsweep.py both OUT.png REF_DIR n_planes CFG DEMO name=MODEL.ply ...
+    python code/figures/depthassign.py targets  OUT.png REF_DIR [n_planes]
+    python code/figures/depthassign.py sections OUT.png CFG DEMO name=MODEL.ply ...
+    python code/figures/depthassign.py both OUT.png REF_DIR n_planes CFG DEMO name=MODEL.ply ...
 
 `both` draws the two beside each other and is what the page carries. It reuses whatever `sections`
 already rendered, so running it after `sections` costs the targets alone.
@@ -95,7 +95,16 @@ def targets(out, ref_dir, n_planes=16, ax=None):
 
 
 def sections(out, cfg, demo, *specs, n=None, ax=None):
-    """The trained models, swept over the same depths."""
+    """The trained models, swept over the same depths.
+
+    Through `random_cuts.sweep` rather than `random_cuts.main`, and with `n_depth` four times the
+    sweep, because the cut renderer indexes a fixed list of plane centres and the trainer's own
+    list has 24 of them. A denser sweep against that list returns the same picture several times
+    over and then jumps, which is a step function of the indexing and not of the volume: run this
+    way first, both arms came back with 38 of 47 steps at exactly zero and the same nine spikes in
+    the same places, which is the renderer and not the models. `random_cuts.sweep`'s own docstring
+    says so, and this is what it is for.
+    """
     import random_cuts as rc
     import cv2
     n = int(n or _os.environ.get("SWEEP_STEPS", "48"))
@@ -104,17 +113,10 @@ def sections(out, cfg, demo, *specs, n=None, ax=None):
     for spec in specs:
         name, _, model = spec.partition("=")
         d = _os.path.join(_os.path.dirname(out) or ".", f"sweep_{name}")
-        frames = []
-        for i, dp in enumerate(depths):
-            # a degenerate band falls back to random depths, so open it by a hair
-            _os.environ["HELDOUT_BAND"] = f"{dp:.6f},{dp + 1e-5:.6f}"
-            _os.environ["FULL_SH"] = "1"
-            sub = _os.path.join(d, f"s{i:03d}")
-            if not glob.glob(_os.path.join(sub, "rh*_init_0.png")):
-                rc.main(model, cfg, demo, sub, n=2, size=512)
-            got = sorted(glob.glob(_os.path.join(sub, "rh*_init_0.png")))
-            if got:
-                frames.append(cv2.imread(got[0]).astype(np.float32) / 255.0)
+        got = sorted(glob.glob(_os.path.join(d, "d*.png")))
+        if len(got) != n:
+            got = rc.sweep(model, cfg, demo, d, depths, size=512, n_depth=4 * n)
+        frames = [cv2.imread(q).astype(np.float32) / 255.0 for q in got]
         if len(frames) < 3:
             print(f"  {name}: too few frames"); continue
         dd = np.array([1.0 - _ssim(frames[i], frames[i + 1]) for i in range(len(frames) - 1)])

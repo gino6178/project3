@@ -69,3 +69,47 @@ The occupancy lookup is axis-agnostic. What is left is the ray-plane constructio
 equator.
 
 Do not quote a figure from this file as a property of the dual grid until that is closed.
+
+## The four tools section 4 gained, and what each answers
+
+None of these is in `measure.py`'s battery: each answers one claim, on every object at once, and
+is run on its own.
+
+```bash
+$FN_PY       code/evaluate/cutface.py orange=build_orange/lattice watermelon=... apple=... \
+                                      bread=... cake=... doughnut=...
+$FN_PY       code/figures/bandfrac.py assets/bandfrac.png orange=build_orange/lattice ...
+$FN_PY       code/evaluate/detail.py "the photographs=secref_orraw_hsep" "orange=<cuts>" ...
+$FN_PY       code/evaluate/material_segment.py MODEL.ply LATTICE OUT.png 4 ANCHOR.pt
+$FN_PY       code/evaluate/material.py LATTICE MODEL.ply CFG OUT_labels.npy DEMO OUT.png
+```
+
+`cutface.py` drives `figures/cutmesh.py` itself, so the polygon counts and the geometry cannot
+come apart, and it prints both band counts side by side. **They differ by a factor of four and the
+difference is not an error.** `crossed` returns the cells of the stored lattice that the plane
+straddles; the operator then refines every one of them, and the leaves that carry a polygon are
+four times as many. A figure of 4.0 to 10.7% was carried for this and matches neither: on the six
+objects the first is 0.51 to 3.03% and the second 2.04 to 12.12%.
+
+`bandfrac.py` coarsens each object's own occupancy to get four resolutions of one shape, which is
+what turns that fraction into a scaling result rather than a property of six fruit.
+
+`material.py`'s class table and stiffness ordering are equation (13). Its resolvability verdict is
+computed against the particle-filling grid and section 4.2.1 of the page uses the transfer grid,
+which is coarser; the file says so where it prints it. Read the ordering, not the verdict.
+
+## Two ways a sweep over depth measures the harness
+
+Both were hit, both are cheap to hit again.
+
+**The cut view quantises the plane.** `random_cuts.build_renderer` indexes a fixed list of
+`n_depth` plane centres, 24 by default, so any sweep denser than that list returns the same image
+several times and then jumps. Driving it through `random_cuts.main` and `HELDOUT_BAND`, two
+different models came back with 38 of 47 steps at exactly zero and the same nine spikes in the
+same places — a step function of the indexing, identical for both, and it would have read as a
+result. Use `random_cuts.sweep`, which takes `n_depth`; `figures/depthassign.py` passes four times
+the sweep density.
+
+**A per-step ratio against the median divides by nothing.** Under the block assignment most steps
+are exactly zero, so `worst / median` is whatever the epsilon was. The count of steps below 1e-6
+says the same thing and survives.

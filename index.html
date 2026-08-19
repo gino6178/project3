@@ -106,7 +106,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.5 Simulation interface</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#physics">3.5 Simulation interface</a><a href="#results">4 Experiments</a><a href="#prior">4.1 Prior work</a><a href="#phys-res">4.2 Materials and collision</a><a href="#correctness">4.3 Correctness and cost</a><a href="#ablations">4.4 Ablations</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="#bibtex">BibTeX</a>
 </nav>
 
 <div class="cutstrip"><video src="assets/cut_orange.mp4" autoplay loop muted playsinline preload="metadata" aria-label="orange, cut into pieces and drawn apart"></video><video src="assets/cut_watermelon.mp4" autoplay loop muted playsinline preload="metadata" aria-label="watermelon, cut into pieces and drawn apart"></video><video src="assets/cut_apple.mp4" autoplay loop muted playsinline preload="metadata" aria-label="apple, cut into pieces and drawn apart"></video><video src="assets/cut_bread.mp4" autoplay loop muted playsinline preload="metadata" aria-label="bread, cut into pieces and drawn apart"></video><video src="assets/cut_cake.mp4" autoplay loop muted playsinline preload="metadata" aria-label="cake, cut into pieces and drawn apart"></video><video src="assets/cut_doughnut.mp4" autoplay loop muted playsinline preload="metadata" aria-label="doughnut, cut into pieces and drawn apart"></video></div>
@@ -1612,15 +1612,35 @@ flicker is &mdash; is 0.1134 against 0.0102, eleven times smaller. The mean step
 0.0503, so the block rule is not asking for less change overall. It is asking for the same change in
 a third of the places.</p>
 
-<!--SECTIONS-PARA-->
+<p>Whether that survives into the model is a different question, and the answer is that it
+does not. Two runs of the same program on the same lattice and the same references, differing only
+in <code>REF_DEPTH_BLEND</code>, swept over the same forty-eight depths through the middle of the
+orange: the step-to-step change is 0.1306 in the mean under&nbsp;(7) and 0.1281 under the block
+rule, and the jerk is 0.0408 against 0.0405. The two curves lie on top of each other, step for
+step, and neither carries a spike where the block boundaries fall. On held-out cuts the block arm
+is 0.0025 <em>better</em> in DreamSim, which section&nbsp;4.4 reports with the rest of it.
+<strong>Equation&nbsp;(7) changes what the supervision asks for by a factor of eleven and does not
+measurably change what the volume does.</strong> The reason is the one section&nbsp;4.1.5 gives for
+a different question: a cell holds one value and every plane that crosses it reads that value, so a
+volume cannot be piecewise constant along an axis its cells run continuously along. The
+discontinuity is in the targets, and the geometry absorbs it before anything is rendered.</p>
+
+<p class="mut">The first version of this sweep measured the renderer instead, and the way it failed
+is worth keeping. The cut view indexes a fixed list of twenty-four plane centres, so a sweep denser
+than that list returns the same picture several times over and then jumps: both arms came back with
+38 of 47 steps at exactly zero and the same nine spikes in the same places, which is a step function
+of the indexing and not of either volume. <code>random_cuts.sweep</code> exists for this and takes
+<code>n_depth</code>; the numbers above are through it at four times the sweep density, and no step
+is zero.</p>
+
 
 <figure>
-  <img src="assets/depthsweep.png" alt="The per-step change between adjacent targets under the two
+  <img src="assets/depthassign.png" alt="The per-step change between adjacent targets under the two
        assignment rules, and between adjacent rendered sections of the two models trained under
        them">
   <figcaption><span class="fnum">Figure 12</span><br>What the two assignment rules ask adjacent
   planes for, and what the models trained under them do when the plane is walked through the
-  object. Drawn by <code>code/figures/depthsweep.py</code>.</figcaption>
+  object. Drawn by <code>code/figures/depthassign.py</code>.</figcaption>
 </figure>
 
 <h3 id="phys-res">4.2&ensp;Materials, collision and a shell the solver can resolve</h3>
@@ -1939,9 +1959,11 @@ has to be rebuilt and the second is what the polygon pass runs over.</p>
 
 <p>Over the three axis-aligned planes as well, twenty-four cuts in all, equation&nbsp;(10) returns
 0.51% to 3.03% of an object&#8217;s cells and the refined band that carries polygons is 2.04% to
-12.12%. <strong>The draft this section was written from put that fraction at 4.0% to 10.7%, and
-neither measured range is that.</strong> The refined band brackets it and is wider at both ends;
-the crossed set itself is three to four times smaller than the figure claimed. Which of the two is
+12.12%. <strong>A figure of 4.0% to 10.7% had been carried for this, and neither measured range is
+that.</strong> The refined band brackets it and is wider at both ends; the crossed set itself is
+three to four times smaller than either. The operator&#8217;s own docstring made the same slip in
+both directions at once &mdash; 4 to 11% in one place and about nine thousand cells of 877,495,
+which is 1.0%, in another &mdash; and the two are the two counts, not a disagreement. Which is
 meant has to be said, and the extremes are both the doughnut, for a reason that is about the shape
 rather than about the method: a plane across the torus&#8217;s axis meets it in two annular bands
 and crosses 12.12%, while the same plane turned ninety degrees passes through the hole and
@@ -2070,6 +2092,59 @@ figures is measured against a compressed Gaussian model, which would move them a
     <td>30.9 MiB <span class="mut">(1.6&times;)</span> / <strong>41.7 with the index</strong></td>
     <td>+74,767 leaves, 1.2 MiB <span class="mut">(2.9%)</span></td><td>exactly returned</td></tr>
 </tbody></table></div>
+
+<h3 id="ablations">4.4&ensp;Ablations</h3>
+
+<p>Three arms, each the orange with exactly one thing changed, trained by the same program on the
+same references for the same two hundred iterations and scored in one run: twelve held-out cuts at
+<code>random_cuts.py</code>&#8217;s fixed seed in the band 0.30 to 0.70, DreamSim from each render to
+the nearest of the six photographs, and the detail statistic the trainer already computes for its
+own targets &mdash; the mean absolute Laplacian of luminance over the foreground &mdash; applied to
+the renders instead. The control is the object&#8217;s own run, re-rendered and re-scored here
+rather than quoted, and it comes back at 0.0763, which is the number section&nbsp;4.1 reports and
+is what says the protocol is the same one. The spread to clear is the 0.0003 DreamSim between two
+runs of one configuration that section&nbsp;4.1.5 measures.</p>
+
+<div class="tw"><p class="tnum">Table 36</p><table>
+<thead><tr><th>arm</th><th>what changed</th><th>cells</th><th>DreamSim &darr;</th>
+<th>against the control</th><th>detail, e&#8722;3</th></tr></thead>
+<tbody>
+<tr><td><strong>orange</strong> <span class="mut">(control)</span></td><td class="mut">&mdash;</td>
+    <td>1,162,387</td><td><strong>0.0763</strong></td><td class="mut">&mdash;</td><td>28.51</td></tr>
+<tr><td>abl_nostat</td><td><code>SEC_PATCH_STAT=0</code>, the band term of&nbsp;(9) removed</td>
+    <td>1,162,387</td><td>0.0826</td><td><strong>+0.0063 worse</strong></td><td>27.05</td></tr>
+<tr><td>abl_noblend</td><td><code>REF_DEPTH_BLEND=0</code>, the block rule instead of&nbsp;(7)</td>
+    <td>1,162,387</td><td>0.0738</td><td><strong>&minus;0.0025 better</strong></td><td>28.35</td></tr>
+<tr><td>abl_lvl1</td><td>one level: refine=1, coarse and fine spacing equal</td>
+    <td>820,805 <span class="mut">(&minus;29%)</span></td><td>0.0771</td><td>+0.0008</td><td>24.94</td></tr>
+<tr><td class="mut">the photographs against each other</td><td class="mut">&mdash;</td>
+    <td class="mut">&mdash;</td><td class="mut">0.0424</td><td class="mut">&mdash;</td>
+    <td class="mut">34.64</td></tr>
+</tbody></table></div>
+
+<p><strong>The band statistic.</strong> Removing the per-crop band term of equation&nbsp;(9) costs
+0.0063 DreamSim, twenty-one times the run-to-run spread, and it is the largest of the three effects.
+The detail statistic moves in the direction the term is there for &mdash; 28.51 to 27.05, five per
+cent less high-frequency content in the renders &mdash; but that difference is well inside the
+spread across the six cuts, which is 4.35 and 2.14, so on six images it does not carry the claim by
+itself. What carries it is the perceptual distance, and the honest reading is that the term helps
+and that this measurement does not establish <em>over-smoothing</em> as the mechanism.</p>
+
+<p><strong>The depth assignment.</strong> The block rule scores 0.0025 <em>better</em> than the
+continuous assignment of equation&nbsp;(7), eight times the run-to-run spread and in the opposite
+direction to the design. Section&nbsp;4.1.9 has the rest: the two rules differ by a factor of eleven
+in what they ask adjacent planes for and by nothing measurable in what the trained volumes do. On
+this object, on this evidence, equation&nbsp;(7) is not paying for itself.</p>
+
+<p><strong>The second level.</strong> The single-level lattice is 820,805 cells against the
+two-level 1,162,387, twenty-nine per cent fewer, and it costs 0.0008 DreamSim &mdash; under three
+times the run-to-run spread and the smallest of the three effects. So the second level does not pay
+for itself in cut appearance, and the case for it is not there. It is in the detail column, where
+the single level is 24.94 against 28.51, the largest drop of the three arms and the signature of a
+skin resolved at the coarse spacing rather than at half of it. The other is section&nbsp;4.2.1,
+whose criterion is the ratio of the shell&#8217;s thickness to the solver&#8217;s grid, a ratio that
+a shell one coarse cell thick cannot improve. Both of those are claims about the shell rather than
+about the interior, which is what the two levels were built to separate.</p>
 
 <h2 id="conclusion">5&ensp;Conclusion and limitations</h2>
 

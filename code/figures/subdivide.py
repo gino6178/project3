@@ -271,10 +271,12 @@ def cut(coords, h, n, d, h_target, levels_max=8, base_edges=None):
     the cut touches rather than what the object contains. A plane changes connectivity only where
     it refines: a pair of unrefined leaves is adjacent after the cut exactly when it was adjacent
     before, so those pairs are reused, and only the pairs with a refined leaf on either end are
-    recomputed. The recomputation is over the band, which is O(N^2/3) of the volume and measures
-    4 to 11% of the cells here, so the whole step is linear in the crossed cells rather than in
-    the object. Computed with `adjacency(coords, zeros, 0)` once per object and reused for every
-    cut that object ever takes.
+    recomputed. The recomputation is over the band, which is O(N^(2/3)) of the volume, so the
+    whole step is linear in the crossed cells rather than in the object. Two counts, measured on
+    the six objects by code/evaluate/cutface.py and not to be confused: `crossed` returns 0.51 to
+    3.03% of the cells, and after this function has refined every one of them the leaves that
+    carry a polygon are 2.04 to 12.12%. Computed with `adjacency(coords, zeros, 0)` once per
+    object and reused for every cut that object ever takes.
     """
     n = np.asarray(n, np.float64)
     leaf, lvl, par, top = refine(np.asarray(coords), h, n, d, h_target, levels_max)
