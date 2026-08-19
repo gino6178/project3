@@ -64,7 +64,7 @@ stage_lattice () {
     return
   fi
   case "$SRC" in
-    sphere|torus|ellipsoid)
+    sphere|torus|ellipsoid|box)
       # A shape with an equation needs no mesh and no scan: occupancy is a comparison. This is
       # the second route's actual starting point, and until now nothing called make_shape.py --
       # the doughnut pointed at a lattice directory built from a torus.obj that is not on disk
