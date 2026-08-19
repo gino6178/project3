@@ -75,28 +75,48 @@ def photo_for(spec, idx, n):
     return np.asarray(im, dtype=np.float32) / 255., (cy, cx, max(r, 1e-6))
 
 
-def sweep(world, cam_of, spec, n_planes, size, tag):
+def sweep(world, cam_of, spec, n_planes, size, tag, rgb0, lvl):
     """One family: colour every cell from the photograph of the plane nearest to it.
+
+    The photograph is placed on the section by `section_match.section_target` -- the same
+    function, on the same kind of silhouette, that places it during training. This matters more
+    than it looks. That function warps the reference per component along its own ray
+    coordinate, so a lobed section is matched shape to shape; a scalar radius, which is what
+    this file used first, matches only a circle. Initialising with one mapping and supervising
+    with another puts every structure at a radius the loss then asks to move, and training
+    spends itself undoing the start it was given.
+
+    The silhouette here is the cells themselves, splatted to pixels, rather than a rasteriser
+    render: it is the same set of primitives the renderer would draw, and it keeps this file
+    free of the Gaussian pipeline.
 
     Returns (colour, weight). The weight is a hat over the plane spacing, so a cell between two
     planes takes a mixture rather than a side, which is equation (14)'s idea applied in space
     instead of in the plane index.
     """
+    import section_match as sm
     N = world.shape[0]
     col = torch.zeros(N, 3, device=DEV)
     wsum = torch.zeros(N, 1, device=DEV)
     for j in range(n_planes):
         cam, plane, centre_ndc, r_sil, ndc, dist = cam_of(j)
-        arr, (cy, cx, r) = photo_for(spec, j, n_planes)
-        H, W = arr.shape[:2]
-        img = torch.from_numpy(arr).to(DEV)
-        # The object's silhouette maps onto the photograph's own disc, radius to radius.
+        arr, _ = photo_for(spec, j, n_planes)
         uv = (ndc - centre_ndc[None]) / r_sil
-        px = (cx + uv[:, 0] * r).round().long().clamp(0, W - 1)
-        py = (cy + uv[:, 1] * r).round().long().clamp(0, H - 1)
-        c = img[py, px]
-        # white is background in every reference set; a cell that lands there learns nothing
-        keep = (c.mean(1) < 0.96) & (uv.abs().max(1).values <= 1.0)
+        px = ((uv[:, 0] * .5 + .5) * (size - 1)).round().long().clamp(0, size - 1)
+        py = ((uv[:, 1] * .5 + .5) * (size - 1)).round().long().clamp(0, size - 1)
+        near = dist < 0.5
+        if int(near.sum()) < 64:
+            continue
+        # the section as this plane's own cells draw it
+        img = torch.ones(size, size, 3, device=DEV)
+        cov = torch.zeros(size, size, device=DEV)
+        flat = py[near] * size + px[near]
+        img.view(-1, 3).index_copy_(0, flat, rgb0[near])
+        cov.view(-1).index_fill_(0, flat, 1.0)
+        tgt = sm.section_target(img.permute(2, 0, 1), arr, alpha=cov[None])
+        t = tgt.permute(1, 2, 0)
+        c = t[py, px]
+        keep = near & (cov[py, px] > 0.5) & (c.mean(1) < 0.98)
         w = (1.0 - dist).clamp(min=0.0) * keep.float()
         col += w[:, None] * c
         wsum += w[:, None]
@@ -155,11 +175,12 @@ def main(lattice_dir, cfg, demo, ref_h, ref_v, out_dir, size=512):
         return cam_of
 
     print(f"  {N:,} cells, {int((lvl == 0).sum()):,} interior")
+    rgb0 = (g._features_dc.detach().to(DEV).squeeze(1) * C0 + 0.5).clamp(0, 1)
     ch, wh = sweep(world, maker(lambda j: 0.0, float(_os.environ.get("CUT_EL", "-90")),
                                 H_HI - H_LO, lambda j: H_LO + j),
-                   ref_h, H_HI - H_LO, size, "transverse")
+                   ref_h, H_HI - H_LO, size, "transverse", rgb0, lvl)
     cv_, wv = sweep(world, maker(lambda j: (180.0 / NV) * j, 0.0, NV, lambda j: 12),
-                    ref_v, NV, size, "longitudinal")
+                    ref_v, NV, size, "longitudinal", rgb0, lvl)
 
     col = (ch + cv_) / (wh + wv).clamp(min=1e-6)
     got = ((wh + wv)[:, 0] > 1e-6) & (lvl == 0)
