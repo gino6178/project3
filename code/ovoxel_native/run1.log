@@ -1,0 +1,51 @@
+held-out cut depths d = [-0.877  -0.9435 -0.6777 -1.0099 -0.7442 -0.8106]
+training depths: 17 planes in [-1.050, -0.638], nearest to a held-out one 0.0080
+6 reference photographs, (512, 512, 3)
+  init -> /workspace/ovoxel_native/run1/eval_init
+  it    0  d -1.0499  L1 0.04327  cells 8,199  tris 3,050,506  0.4s
+  it   10  d -0.8026  L1 0.02763  cells 9,978  tris 2,292,030  2.3s
+  it   20  d -0.9675  L1 0.02589  cells 9,032  tris 2,784,278  3.2s
+  it   30  d -0.7202  L1 0.02118  cells 10,012  tris 2,075,010  4.0s
+  it   40  d -0.8850  L1 0.02739  cells 9,666  tris 2,524,886  4.8s
+  it   50  d -0.6377  L1 0.02151  cells 9,623  tris 1,842,251  5.6s
+  it   60  d -0.8232  L1 0.02794  cells 9,917  tris 2,353,553  6.4s
+  it   70  d -0.9881  L1 0.02253  cells 8,826  tris 2,844,246  7.2s
+  it   80  d -0.7614  L1 0.02009  cells 10,028  tris 2,183,533  8.0s
+  it   90  d -0.9057  L1 0.02922  cells 9,509  tris 2,587,531  8.8s
+  it  100  d -0.6583  L1 0.02573  cells 9,770  tris 1,907,444  9.6s
+  it  110  d -0.8438  L1 0.02847  cells 9,842  tris 2,406,611  10.4s
+  it  120  d -1.0293  L1 0.02408  cells 8,458  tris 2,981,039  11.2s
+  it  130  d -0.7820  L1 0.02549  cells 10,003  tris 2,241,540  12.0s
+  it  140  d -0.9263  L1 0.02422  cells 9,344  tris 2,648,452  12.8s
+  it  150  d -0.6996  L1 0.02139  cells 9,974  tris 2,024,709  13.6s
+  it  160  d -0.8644  L1 0.02970  cells 9,740  tris 2,469,649  14.5s
+  it  170  d -1.0499  L1 0.02269  cells 8,199  tris 3,050,506  15.3s
+  it  180  d -0.8026  L1 0.02088  cells 9,978  tris 2,291,999  16.1s
+  it  190  d -0.9675  L1 0.02911  cells 9,032  tris 2,784,278  17.0s
+  it  200  d -0.7202  L1 0.02688  cells 10,012  tris 2,075,010  17.7s
+  it  210  d -0.8850  L1 0.02745  cells 9,666  tris 2,524,783  18.5s
+  it  220  d -0.6377  L1 0.02390  cells 9,623  tris 1,842,251  19.3s
+  it  230  d -0.8232  L1 0.02566  cells 9,917  tris 2,353,437  20.1s
+  it  240  d -0.9881  L1 0.02403  cells 8,826  tris 2,844,158  20.9s
+  it  250  d -0.7614  L1 0.02297  cells 10,028  tris 2,183,492  21.7s
+  it  260  d -0.9057  L1 0.02921  cells 9,509  tris 2,587,389  22.6s
+  it  270  d -0.6583  L1 0.02565  cells 9,770  tris 1,907,430  23.4s
+  it  280  d -0.8438  L1 0.02138  cells 9,842  tris 2,406,563  24.3s
+  it  290  d -1.0293  L1 0.02908  cells 8,458  tris 2,981,029  25.1s
+  it  300  d -0.7820  L1 0.02768  cells 10,003  tris 2,241,449  25.9s
+  it  310  d -0.9263  L1 0.02791  cells 9,344  tris 2,648,449  26.7s
+  it  320  d -0.6996  L1 0.02536  cells 9,974  tris 2,024,649  27.5s
+  it  330  d -0.8644  L1 0.02583  cells 9,740  tris 2,469,388  28.3s
+  it  340  d -1.0499  L1 0.02420  cells 8,199  tris 3,050,506  29.1s
+  it  350  d -0.8026  L1 0.02330  cells 9,978  tris 2,291,941  29.9s
+  it  360  d -0.9675  L1 0.02934  cells 9,032  tris 2,784,280  30.7s
+  it  370  d -0.7202  L1 0.02699  cells 10,012  tris 2,074,994  31.5s
+  it  380  d -0.8850  L1 0.02147  cells 9,666  tris 2,524,752  32.3s
+  it  390  d -0.6377  L1 0.01837  cells 9,623  tris 1,842,239  33.0s
+  it  399  d -0.8438  L1 0.02855  cells 9,842  tris 2,406,561  33.8s
+
+trained 400 iterations in 33.8s
+  L1 first 10 mean 0.03278 -> last 10 mean 0.02782
+  dual vertices moved: mean 3.572e-03 of a voxel, max 5.200e-01
+  final -> /workspace/ovoxel_native/run1/eval_final
+TRAIN_OK

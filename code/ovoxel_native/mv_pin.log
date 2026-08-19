@@ -1,0 +1,35 @@
+16 transverse depths (d +0.2127 .. +1.2092, step +0.0664), 10 longitudinal azimuths, 0 exterior views []
+SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512
+  sections skip the exterior, 2 cells deep by the occupancy: 129,528 of 770,182 coarse cells (16.8%)
+  trainable: 2,310,546 floats of 8,614,438 (interior only, the exterior is pinned)
+  references: 16 transverse targets from secref_orraw_hsep, 10 longitudinal from secref_orraw_vsep, 0 exterior from cube_or6_prep
+  -> /workspace/ovoxel_native/mv_pin/eval_init
+  probe at 0: 0.03281
+  outer    1/200  steps 26  L1 0.03029  probe 0.03099  5s
+  outer   20/200  steps 520  L1 0.02336  probe 0.03650  41s
+  outer   40/200  steps 1,040  L1 0.02278  probe 0.03628  80s
+  outer   60/200  steps 1,560  L1 0.02206  probe 0.03499  118s
+  outer   80/200  steps 2,080  L1 0.02251  probe 0.03658  157s
+  outer  100/200  steps 2,600  L1 0.02251  probe 0.03534  194s
+  outer  120/200  steps 3,120  L1 0.02340  probe 0.03549  233s
+  outer  140/200  steps 3,640  L1 0.02329  probe 0.03667  271s
+  outer  160/200  steps 4,160  L1 0.02266  probe 0.03670  310s
+  outer  180/200  steps 4,680  L1 0.02310  probe 0.03588  347s
+  outer  200/200  steps 5,200  L1 0.02312  probe 0.03555  385s
+
+trained 200 outer iterations = 5,200 gradient steps in 385.0s (74 ms/step)
+  L1 first 26 mean 0.03029 -> last 26 mean 0.02312
+
+coverage over the schedule actually run (with jitter):
+  dual_v             0 /   900,556  (  0.0%)
+  split_w            0 /   900,556  (  0.0%)
+  surf_rgb           0 /   900,556  (  0.0%)
+  interior     736,367 /   770,182  ( 95.6%)
+moved from init:
+  dual_v     mean 0.0000e+00  max 0.0000e+00  rows changed 0
+  split_w    mean 0.0000e+00  max 0.0000e+00  rows changed 0
+  surf_rgb   mean 0.0000e+00  max 0.0000e+00  rows changed 0
+  interior   mean 2.2042e-01  max 1.6480e+00  rows changed 621,812
+  -> /workspace/ovoxel_native/mv_pin/eval_final
+probe curve: 0:0.03281  1:0.03099  20:0.03650  40:0.03628  60:0.03499  80:0.03658  100:0.03534  120:0.03549  140:0.03667  160:0.03670  180:0.03588  200:0.03555
+TRAIN_OK

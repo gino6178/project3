@@ -1,0 +1,41 @@
+16 transverse depths (d +0.2127 .. +1.2092, step +0.0664), 10 longitudinal azimuths, 6 exterior views ['up', 'down', 'front', 'right', 'back', 'left']
+SHELL_PIN=0  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512
+  sections skip the exterior, 2 cells deep by the occupancy: 129,528 of 770,182 coarse cells (16.8%)
+  trainable: 8,614,438 floats of 8,614,438 (all four tensors)
+  references: 16 transverse targets from secref_orraw_hsep, 10 longitudinal from secref_orraw_vsep, 6 exterior from cube_or6_prep
+  -> /workspace/ovoxel_native/mv_free_vs/eval_init
+  probe at 0: 0.03281
+  outer    1/200  steps 32  L1 0.03307  probe 0.03099  7s
+  outer   20/200  steps 640  L1 0.02226  probe 0.03480  59s
+  voxel smoothing at outer 30: interior 621,829/770,182 trained, 134,410 untrained cells filled from trained neighbours; surf_rgb 486,214
+  outer   40/200  steps 1,280  L1 0.02201  probe 0.03539  114s
+  outer   60/200  steps 1,920  L1 0.02102  probe 0.03552  168s
+  voxel smoothing at outer 60: interior 621,829/770,182 trained, 134,410 untrained cells filled from trained neighbours; surf_rgb 482,709
+  outer   80/200  steps 2,560  L1 0.02042  probe 0.03561  223s
+  voxel smoothing at outer 90: interior 621,829/770,182 trained, 134,410 untrained cells filled from trained neighbours; surf_rgb 480,428
+  outer  100/200  steps 3,200  L1 0.02118  probe 0.03638  279s
+  outer  120/200  steps 3,840  L1 0.02113  probe 0.03717  333s
+  voxel smoothing at outer 120: interior 621,829/770,182 trained, 134,410 untrained cells filled from trained neighbours; surf_rgb 478,816
+  outer  140/200  steps 4,480  L1 0.02215  probe 0.03660  389s
+  voxel smoothing at outer 150: interior 621,829/770,182 trained, 134,410 untrained cells filled from trained neighbours; surf_rgb 477,507
+  outer  160/200  steps 5,120  L1 0.02042  probe 0.03727  444s
+  outer  180/200  steps 5,760  L1 0.02141  probe 0.03740  498s
+  voxel smoothing at outer 180: interior 621,829/770,182 trained, 134,410 untrained cells filled from trained neighbours; surf_rgb 476,296
+  outer  200/200  steps 6,400  L1 0.02109  probe 0.03549  554s
+
+trained 200 outer iterations = 6,400 gradient steps in 553.8s (87 ms/step)
+  L1 first 32 mean 0.03307 -> last 32 mean 0.02109
+
+coverage over the schedule actually run (with jitter):
+  dual_v       768,028 /   900,556  ( 85.3%)
+  split_w      767,500 /   900,556  ( 85.2%)
+  surf_rgb     768,704 /   900,556  ( 85.4%)
+  interior     736,367 /   770,182  ( 95.6%)
+moved from init:
+  dual_v     mean 9.9374e-02  max 2.1431e+00  rows changed 412,783
+  split_w    mean 4.3349e-02  max 4.9900e-01  rows changed 412,766
+  surf_rgb   mean 3.4517e-01  max 1.6608e+00  rows changed 887,775
+  interior   mean 2.7370e-01  max 1.5733e+00  rows changed 756,218
+  -> /workspace/ovoxel_native/mv_free_vs/eval_final
+probe curve: 0:0.03281  1:0.03099  20:0.03480  40:0.03539  60:0.03552  80:0.03561  100:0.03638  120:0.03717  140:0.03660  160:0.03727  180:0.03740  200:0.03549
+TRAIN_OK

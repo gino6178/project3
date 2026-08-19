@@ -1,0 +1,56 @@
++ R=/workspace/rebuild
++ W=/workspace/ovoxel_native
++ export PATH=/workspace/rebuild/mc/bin:/opt/venv/bin:/usr/local/lib/python3.12/dist-packages/torch_tensorrt/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/mpi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ucx/bin:/opt/amazon/efa/bin:/opt/tensorrt/bin
++ PATH=/workspace/rebuild/mc/bin:/opt/venv/bin:/usr/local/lib/python3.12/dist-packages/torch_tensorrt/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/mpi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ucx/bin:/opt/amazon/efa/bin:/opt/tensorrt/bin
++ unset PYTHONHOME LD_LIBRARY_PATH
++ export PYTHONPATH=
++ PYTHONPATH=
++ export CONDA_NO_PLUGINS=true CONDA_SOLVER=classic
++ CONDA_NO_PLUGINS=true
++ CONDA_SOLVER=classic
++ mkdir -p /workspace/ovoxel_native
++ date -u +%H:%M:%S
+01:57:26
++ '[' '!' -x /workspace/ovoxel_native/env/bin/python ']'
++ conda create -y -q -p /workspace/ovoxel_native/env --clone /workspace/rebuild/mc/envs/score
+Source:      /workspace/rebuild/mc/envs/score
+Destination: /workspace/ovoxel_native/env
+Packages: 32
+Files: 33359
+Preparing transaction: ...working... done
+Verifying transaction: ...working... done
+Executing transaction: ...working... done
++ date -u +%H:%M:%S
+01:57:42
++ PY=/workspace/ovoxel_native/env/bin/python
++ /workspace/ovoxel_native/env/bin/python -c 'import torch;print('\''torch'\'',torch.__version__,torch.version.cuda)'
+torch 2.7.1+cu118 11.8
++ export CUDA_HOME=/workspace/rebuild/mc/envs/cu118
++ CUDA_HOME=/workspace/rebuild/mc/envs/cu118
++ export PATH=/workspace/rebuild/mc/envs/cu118/bin:/workspace/rebuild/mc/bin:/opt/venv/bin:/usr/local/lib/python3.12/dist-packages/torch_tensorrt/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/mpi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ucx/bin:/opt/amazon/efa/bin:/opt/tensorrt/bin
++ PATH=/workspace/rebuild/mc/envs/cu118/bin:/workspace/rebuild/mc/bin:/opt/venv/bin:/usr/local/lib/python3.12/dist-packages/torch_tensorrt/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/mpi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ucx/bin:/opt/amazon/efa/bin:/opt/tensorrt/bin
+++ head -1
+++ ls /workspace/rebuild/mc/envs/cu118/bin/x86_64-conda-linux-gnu-gcc /workspace/rebuild/mc/envs/cu118/bin/x86_64-conda_cos6-linux-gnu-gcc
++ export CC=/workspace/rebuild/mc/envs/cu118/bin/x86_64-conda-linux-gnu-gcc
++ CC=/workspace/rebuild/mc/envs/cu118/bin/x86_64-conda-linux-gnu-gcc
+++ head -1
+++ ls /workspace/rebuild/mc/envs/cu118/bin/x86_64-conda-linux-gnu-g++ /workspace/rebuild/mc/envs/cu118/bin/x86_64-conda_cos6-linux-gnu-g++
++ export CXX=/workspace/rebuild/mc/envs/cu118/bin/x86_64-conda-linux-gnu-g++
++ CXX=/workspace/rebuild/mc/envs/cu118/bin/x86_64-conda-linux-gnu-g++
++ export TORCH_CUDA_ARCH_LIST=8.9
++ TORCH_CUDA_ARCH_LIST=8.9
++ nvcc --version
++ tail -2
+Cuda compilation tools, release 11.8, V11.8.89
+Build cuda_11.8.r11.8/compiler.31833905_0
++ /workspace/ovoxel_native/env/bin/python -m pip install -q ninja imageio matplotlib
+[33mWARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.[0m[33m
+[0m+ /workspace/ovoxel_native/env/bin/python -c 'import nvdiffrast'
++ /workspace/ovoxel_native/env/bin/python -m pip install -q --no-build-isolation git+https://github.com/NVlabs/nvdiffrast
+[33mWARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.[0m[33m
+[0m+ /workspace/ovoxel_native/env/bin/python -c 'import nvdiffrast, os; print('\''nvdiffrast at'\'', os.path.dirname(nvdiffrast.__file__))'
+nvdiffrast at /workspace/ovoxel_native/env/lib/python3.10/site-packages/nvdiffrast
++ echo SETUP_OK
+SETUP_OK
++ date -u +%H:%M:%S
+01:58:19
