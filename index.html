@@ -2463,8 +2463,22 @@ rather than about what happens to it afterwards. Objects are chosen by whether a
 model of a prior method exists for them, so that every comparison is against a published result
 rather than a reimplementation. Where a comparison comes out against this work it is reported in the
 same place as the ones that do not. Comparisons against other work sit on the same
-footing with one exception, stated in section 4.1: route 1 quantises a released model, and the
-released watermelon's interior came from a fine-tuned checkpoint, so that lattice inherits one.</p>
+footing, and the one exception that used to stand here is gone. Route&nbsp;1 quantises a released
+model, and it used to take that model's interior with it: every coarse cell arrived carrying the
+colour of the primitives that fell in it, which on a fine-tuned baseline is a diffusion model's
+guess about the inside of a fruit. It now takes the shape and the exterior and nothing else. The
+interior starts at a flat 0.5 in every channel &mdash; the value route&nbsp;2's lattice starts at,
+measured, with zero spread &mdash; so on both routes every structure inside the object was put
+there by the photographs.</p>
+
+<p class="mut">What that costs, since it is not free. Scored against the photographs that
+supervised them, the flat start is 0.0026 worse on the orange, 0.0166 on the watermelon, 0.0308 on
+the bread and 0.0373 on the apple, and the ordering is the point: the cost is smallest where the
+photographs constrain the interior most and largest where they constrain it least, which is what
+an initialisation carrying real information looks like when it is taken away. It is taken away
+anyway, because a claim about where the interior comes from is worth more than three hundredths of
+a perceptual distance. <code>INTERIOR_FROM_PLY=1</code> restores the old behaviour for anyone who
+wants to reproduce the difference.</p>
 
 <div class="tw"><p class="tnum">Table 14</p><table>
 <thead><tr><th>the comparison</th><th>what it answers</th><th>its figure</th></tr></thead>
