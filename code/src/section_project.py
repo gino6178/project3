@@ -153,6 +153,22 @@ def main(lattice_dir, cfg, demo, ref_h, ref_v, out_dir, size=512):
     got = ((wh + wv)[:, 0] > 1e-6) & (lvl == 0)
     rgb = (g._features_dc.detach().to(DEV).squeeze(1) * C0 + 0.5).clamp(0, 1)
     rgb[got] = col[got]
+
+    # The cells no plane reached. They are at the periphery, where the sweep runs out of
+    # photograph before it runs out of object, and leaving them at 0.5 puts grey blocks in a
+    # pomegranate -- which is worse than an approximate colour, because grey is not a colour
+    # anything in this object has. Each takes its nearest reached neighbour, which is the same
+    # rule voxel_smooth_anchors applies during training and is applied here so the starting
+    # point is not something training has to undo first.
+    miss = (lvl == 0) & ~got
+    if int(miss.sum()):
+        from scipy.spatial import cKDTree
+        src = world[got].detach().cpu().numpy()
+        dst = world[miss].detach().cpu().numpy()
+        idx = cKDTree(src).query(dst, k=1)[1]
+        rgb[miss] = rgb[got][torch.as_tensor(idx, device=DEV)]
+        print(f"  {int(miss.sum()):,} cells no plane reached, filled from their nearest "
+              f"neighbour that one did")
     print(f"  interior initialised from the photographs: {int(got.sum()):,} cells, "
           f"mean {rgb[lvl == 0].mean(0).detach().cpu().numpy().round(3)}, "
           f"spread {float(rgb[lvl == 0].std(0).mean()):.4f}")
