@@ -160,14 +160,15 @@ def main(obj, out):
     ax = fig.add_subplot(gs[1, 3])
     ax.set_axis_off()
     ax.text(0.0, 1.02,
-            "What the routes share, and\nwhat they do not.\n\n"
-            "They differ in where the shape\nand the exterior come from:\n"
-            "a released reconstruction, or\nan equation and six views.\n\n"
-            "They do not differ inside. On\nboth routes the interior begins\n"
-            "at a flat 0.5 in every channel,\nand every structure in it is put\n"
-            "there by the photographs.\n\n"
-            "INTERIOR_FROM_PLY=1 restores\nthe older route 1, which took the\n"
-            "reconstruction's interior too.",
+            "A scanner sees the outside of\nan object and nothing else.\n\n"
+            "That is the situation both\nroutes start from. Route 2 has\n"
+            "no interior to give: the shape\ncomes from an equation.\n"
+            "Route 1 stands in for the scan\nwe do not have -- a released\n"
+            "reconstruction, used the way a\nscan would be, for its shape\n"
+            "and its outer surface only.\n\n"
+            "So neither route brings an\ninterior. Both begin at a flat\n"
+            "0.5, and everything inside is\nput there by the photographs.\n\n"
+            "INTERIOR_FROM_PLY=1 restores\nthe older route 1.",
             transform=ax.transAxes, fontsize=7.6, va="top", color="#333", linespacing=1.45)
 
     for y, lab, col in ((0.900, "ROUTE 1  —  from a released reconstruction", "#c0392b"),

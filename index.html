@@ -700,16 +700,26 @@ four voxels to the nodes that survived, and with nothing merged that reproduces 
 <h4>3.2.1&ensp;Which route an object takes</h4>
 
 <p>The two routes are not alternatives to be chosen on preference; each answers a different
-question about what exists before the pipeline starts.</p>
+question about what exists before the pipeline starts. Both start from the same premise, which is
+the situation this work is for: <strong>a scanner sees the outside of an object and nothing
+else.</strong> Whatever is inside a real fruit is behind its skin, no instrument that images the
+surface has any access to it, and a method that requires an interior to begin with is not
+addressing the problem. So neither route is given one. Route&nbsp;2 has none to give &mdash; the
+shape comes from an equation. Route&nbsp;1 stands in for the scan we do not have: a released
+reconstruction is used as the scan would be used, for its shape and its outer surface, and its
+interior is discarded rather than inherited. Discarding it is not a scruple about credit; it is
+what makes route&nbsp;1 a simulation of scanning rather than a way of reusing someone else's
+guess about the inside of a fruit.</p>
 
 <div class="tw"><p class="tnum">Table 6</p><table>
 <thead><tr><th>what is available</th><th>route</th><th>why</th></tr></thead>
 <tbody>
-<tr><td>A reconstruction of a real object, with an interior already generated into it</td>
+<tr><td>A scan of a real object &mdash; or, standing in for one, a released reconstruction of it</td>
     <td><strong>Route 1</strong>, quantise</td>
-    <td>The interior exists and is the thing to preserve. Quantisation keeps it and pays only the
-    repair cost of a scan's voids: closing adds 101.7% of cells on the orange and takes the uncut
-    object from 884 components to one.</td></tr>
+    <td>The shape and the outer surface are measured, and nothing inside is. Quantisation keeps
+    both and pays the repair cost of a scan's voids: closing adds 101.7% of cells on the orange and
+    takes the uncut object from 884 components to one. Whatever interior the stand-in happens to
+    carry is discarded, because a scan would not have supplied it.</td></tr>
 <tr><td>A shape with no reconstruction, or one whose shell thickness matters to a solver</td>
     <td><strong>Route 2</strong>, generate</td>
     <td>The topology comes from a field, so it is solid by construction (closing adds 0.1%) and the
@@ -2479,8 +2489,9 @@ supervised them, the flat start is 0.0026 worse on the orange, 0.0166 on the wat
 the bread and 0.0373 on the apple, and the ordering is the point: the cost is smallest where the
 photographs constrain the interior most and largest where they constrain it least, which is what
 an initialisation carrying real information looks like when it is taken away. It is taken away
-anyway, because a claim about where the interior comes from is worth more than three hundredths of
-a perceptual distance. <code>INTERIOR_FROM_PLY=1</code> restores the old behaviour for anyone who
+anyway, and not as a trade. A scanner cannot see inside an object, so a run that begins from an
+interior is answering an easier question than the one posed; the numbers above are what it costs to
+answer the posed one. <code>INTERIOR_FROM_PLY=1</code> restores the old behaviour for anyone who
 wants to reproduce the difference.</p>
 
 <div class="tw"><p class="tnum">Table 14</p><table>
