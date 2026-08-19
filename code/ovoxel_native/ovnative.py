@@ -286,12 +286,42 @@ def surface_mesh(st, colour=True):
     return mv, mf, mc
 
 
-def render_section(st, glctx, mvp, n, d, res, bg=1.0, exterior=True, aa=True):
+def render_section(st, glctx, mvp, n, d, res, bg=1.0, exterior=True, aa=True,
+                   thickness=0.0, n_sub=7):
     """One cross-section: the exposed cut face, plus whatever exterior is behind the plane.
 
     Both go into a single nvdiffrast pass, so the depth test composes them and the exposed face
     is occluded by nothing it should not be.
+
+    `thickness` is the half-width of a SLAB, in lattice units, and it exists because the pipeline's
+    cut face is one and this one was not. `train_voxel.py:2007` and `random_cuts.py` both call
+    `plane_filter(..., surf_dis=avg_dis/2, include_double=True)` and splat every primitive inside
+    that band, so what they draw is an integral over a slab; `cut_polygons` + `sample_interior` is
+    a trilinear sample on a mathematically zero-thickness plane. Those are different physical
+    quantities, and the difference is a low-pass filter several cells wide.
+
+    Measured on this orange rather than assumed: avg = 0.04348 in the transformed frame the plane
+    is stated in, surf_dis = avg/2 = 0.02174 there, and the transformed-to-lattice scale is
+    1.5281, so surf_dis is 0.03322 in lattice units = 2.82 coarse cells, and the slab the pipeline
+    integrates is 5.63 cells thick.
+
+    Uniform weighting over `n_sub` sub-planes. That is the right first version here and not merely
+    the simplest: OPACITY_FREEZE holds every interior primitive at opacity 1.0 and SCALE_FREEZE
+    holds every cell's footprint at the same size, so the pipeline's slab is close to an unweighted
+    average over depth. It is still an approximation -- the real thing composites front-to-back
+    through overlapping Gaussians -- and it is stated as one.
     """
+    if thickness > 0 and n_sub > 1:
+        offs = np.linspace(-thickness, thickness, n_sub)
+        acc_i = acc_a = None
+        K = nf = 0
+        for o in offs:
+            im, al, k_, nf_ = render_section(st, glctx, mvp, n, d + float(o), res, bg=bg,
+                                             exterior=exterior, aa=aa, thickness=0.0)
+            acc_i = im if acc_i is None else acc_i + im
+            acc_a = al if acc_a is None else acc_a + al
+            K, nf = max(K, k_), max(nf, nf_)
+        return acc_i / len(offs), acc_a / len(offs), K, nf
     import nvdiffrast.torch as dr
     dev = st["interior"].device
     parts_v, parts_c, parts_f, off = [], [], [], 0
