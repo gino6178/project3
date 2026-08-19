@@ -884,6 +884,44 @@ the operator, so it is left out of what is timed.</p>
   table is timed on, at one scale.</figcaption>
 </figure>
 
+<h4>4.2.1&ensp;What the method costs</h4>
+
+<p>The cost that separates this from the prior work is not in the table below but missing from
+it: no generative model is fine-tuned at any point, on any object, so there is no per-object
+training of a diffusion checkpoint to account for. What remains is the lattice optimisation, and
+it is minutes on one card.</p>
+
+<div class="tw"><p class="tnum">Table 4</p><table>
+<thead><tr><th>stage</th><th>what is measured</th><th>cost</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">optimisation<br><span class="mut">200 iterations, one L40</span></td>
+    <td>wall clock, fastest object (doughnut)</td><td>29&nbsp;min</td></tr>
+<tr><td>wall clock, slowest object (orange)</td><td>45&nbsp;min</td></tr>
+<tr><td>resident device memory</td><td>7.0&nbsp;GB</td></tr>
+<tr><td rowspan="2">a cut<br><span class="mut">orange, 770,182 cells</span></td>
+    <td>one plane: refine, label and emit</td>
+    <td><strong>226&nbsp;ms</strong> &nbsp;<span class="mut">4.4 per second</span></td></tr>
+<tr><td>peak allocated during that cut</td><td>1.76&nbsp;GB</td></tr>
+<tr><td rowspan="2">five cuts<br><span class="mut">same object</span></td>
+    <td>five planes together</td>
+    <td><strong>583&nbsp;ms</strong> &nbsp;<span class="mut">1.7 per second</span></td></tr>
+<tr><td>peak allocated</td><td>2.58&nbsp;GB</td></tr>
+<tr><td>the model</td><td>on disk, one object</td><td>9.3&nbsp;MiB</td></tr>
+</tbody></table></div>
+
+<p>The memory figures are the allocator&#8217;s own peak, reset before the measurement, and not
+what the driver reports for the process; the latter includes the CUDA context and whatever the
+caching allocator still holds, and is a property of the process rather than of the cut. The
+optimisation times are read from checkpoint timestamps between iterations 20 and 180 and scaled
+to 200, and the runs shared the machine, so they are upper bounds.</p>
+
+<p>The two baselines are absent from this table on purpose. Their optimisation could not be
+reproduced here &#8212; neither releases the fine-tuning data or the schedule for the checkpoint
+its interior depends on &#8212; so a training time for them would be quoted rather than measured,
+and a quoted number against a measured one is not a comparison. What can be said without
+measuring either is structural and is in Table&nbsp;1: their interiors are supervised through a
+generative model fitted to the object, and this one by the photographs directly.</p>
+
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
@@ -923,7 +961,7 @@ fruit has a peel.</p>
 same references for the same two hundred iterations and scored in one run against twelve held-out
 cuts. Two of them come out the other way, and both are reported as they fell.</p>
 
-<div class="tw"><p class="tnum">Table 4</p><table>
+<div class="tw"><p class="tnum">Table 5</p><table>
 <thead><tr><th>arm</th><th>cells</th><th>DreamSim &darr;</th><th>against the control</th>
 <th>detail, e&#8722;3</th></tr></thead>
 <tbody>
