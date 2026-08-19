@@ -173,12 +173,15 @@ def main(obj, out):
             "the stand-in's interior too.",
             transform=ax.transAxes, fontsize=7.6, va="top", color="#333", linespacing=1.45)
 
-    for y, lab, col in ((0.900, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
-                        (0.455, "ROUTE 2  —  from an equation and six views", "#2e7d5b")):
+    for y, lab, col in ((0.884, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
+                        (0.448, "ROUTE 2  —  from an equation and six views", "#2e7d5b")):
         fig.text(0.02, y, lab, fontsize=9, weight="bold", color=col)
 
-    fig.suptitle("Building the representation: either route, never both — and neither brings "
-                 "an interior", fontsize=11.5, y=0.965)
+    fig.suptitle("A scanner sees a surface, never an interior. Neither route is given one.",
+                 fontsize=12.5, y=0.985)
+    fig.text(0.5, 0.942, "either route, never both — and both end at a lattice that is "
+             "blind inside until the photographs are applied",
+             fontsize=8.8, color="#555", ha="center")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     fig.savefig(out, dpi=150, facecolor="white")
     print(f"  -> {out}")
