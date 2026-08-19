@@ -385,25 +385,13 @@ around.</p>
 <figure style="margin:18px 0 30px">
   <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
        alt="a shell, filled, its surface pinned, and the cross-section photographs that write the interior">
-  <figcaption><span class="fnum">Figure 2</span><br><strong>One object through the whole method.</strong>
-  <em>Building the representation:</em> a 3D scan gives a shell, the volume behind it is filled so
-  the object is solid, and those cells begin with no colour of their own. Route&nbsp;1 stands in
-  for the scan this work does not have &mdash; a released reconstruction, used the way a scan
-  would be, for its shape and its outer surface, with whatever it carries inside discarded.
-  Route&nbsp;2 is the same three beats with no scan at all. The third panel of route&nbsp;1 is the
-  first again, on purpose: <code>SHELL_PIN</code> means training does not move the surface, and
-  the drift it does show over two hundred iterations is 0.0018.
-  <em>Supervising the interior:</em> the photographs arrive unposed, are turned to a common phase
-  by equations&nbsp;(4) and&nbsp;(5) before any gradient is taken, and each is fitted to the
-  silhouette its own plane renders by equation&nbsp;(6) &mdash; which is what replaces a pose. The
-  last panel is the volume's own answer at a depth training never sampled.
-  <em>What the lattice is for:</em> the plane's crossed cells by the integer test of
-  equation&nbsp;(10), the 15,482 polygons of the exposed face by equation&nbsp;(11), the pieces
-  from connected components on that grid, and the particles a solver receives, one per cell, with
-  the contact band in black. Every panel is computed from the orange's own lattice by
-  <code>code/figures/pipeline_fig.py</code>; the panels of the first two bands are slabs rather
-  than projections, because the interior is the subject and a projection of a solid shows only its
-  skin.</figcaption>
+  <figcaption><span class="fnum">Figure 2</span><br>One object through the whole method. <em>Top,</em> the two
+  routes to a filled shell, neither carrying an interior. <em>Middle,</em> the photographs that
+  write it: as they arrive, turned to a common phase by equations&nbsp;(4) and&nbsp;(5), fitted to
+  the silhouette their plane renders by equation&nbsp;(6), and the volume's answer at an unsampled
+  depth. <em>Bottom,</em> what a cut produces: the crossed cells, the exposed face, the pieces,
+  and the particles a solver receives. Computed from the orange's own lattice by
+  <code>code/figures/pipeline_fig.py</code>.</figcaption>
 </figure>
 
 <p>We decouple the surface from the interior. The visible outer hull is carried by a flexible dual
@@ -490,20 +478,11 @@ degenerating, the system calibrates the references before and during training.</
 <figure style="margin:16px 0 26px">
   <img src="assets/chord.png" style="width:100%;border-radius:4px"
        alt="two planes meeting in a chord, and 45 degree cuts from the two ways of choosing the phases">
-  <figcaption><span class="fnum">Figure 3</span><br>Why the phases are solved on the chords, and
-  what it is worth. <strong>(a)</strong> a transverse plane and a longitudinal one meet in a
-  one-dimensional chord, where a transverse section's diameter at one angle and a longitudinal
-  section's row at one height are the same physical line read twice. Equation&nbsp;(4) aligns each
-  family to itself and leaves the two free to disagree there; equation&nbsp;(5) chooses the angles
-  and the assignment together so they do not. <strong>(b)</strong> and <strong>(c)</strong> are
-  45&deg; cuts &mdash; supervised by neither family, so they inherit whatever the two could not
-  agree about &mdash; from two models trained by the same program on the same lattice with the
-  same references, differing only in <code>REF_PHASE_MODE</code>. <strong>They look alike, and
-  that is the honest result at this size.</strong> <strong>(d)</strong> is where they differ, at
-  4&times;: the mean absolute difference is 0.0465 on the same plane against 0.1006 between two
-  different planes of one model, so the two phase choices sit about 46% of the way apart that two
-  different cuts do. The difference is real, measurable, and distributed rather than structural.
-  Drawn by <code>code/figures/chordfig.py</code>.</figcaption>
+  <figcaption><span class="fnum">Figure 3</span><br>Two planes meet in a chord, where the two families describe
+  one line twice. <em>(b)</em> and <em>(c)</em> are 45&deg; cuts &mdash; supervised by neither
+  family &mdash; from models differing only in how the phases were chosen, equation&nbsp;(4)
+  against equation&nbsp;(5). They look alike at this size; <em>(d)</em> is their difference at
+  4&times;, 0.0465 against the 0.1006 between two different cuts of one model.</figcaption>
 </figure>
 
 <h4>3.2.1&ensp;Geometric consistency calibration</h4>
@@ -598,21 +577,11 @@ when the two targets are averaged and 0.012 more when one family is made to win.
 <figure style="margin:16px 0 26px">
   <img src="assets/cutgeom.png" style="width:100%;border-radius:4px"
        alt="the crossed band, one cell's contributing edges, and the whole cut face against the exterior">
-  <figcaption><span class="fnum">Figure 4</span><br>The cut, in the three states the operator
-  passes through, computed on the orange's own lattice by
-  <code>code/figures/cutgeom_fig.py</code> rather than drawn. <strong>(a)</strong> one slab, one
-  cell thick, with the plane's trace across it; cells carry the sign of their centre and the red
-  band is the set equation&nbsp;(10) returns &mdash; 174 of the slab's 9,138 cells &mdash; which
-  is a test on the cell's half-extent along the normal, not a distance threshold.
-  <strong>(b)</strong> one crossed cell, isometric. Its corners carry the sign of the plane
-  equation, the six edges whose endpoints disagree are the ones that contribute, and each gives
-  one point at the \(t_e\) of equation&nbsp;(11). Ordering them by angle about their own
-  centroid closes the hexagon, with no case table anywhere. A plane parallel to an axis always
-  gives four edges; this one is oblique, which is the general case. <strong>(c)</strong> the
-  whole face, seen along the normal: 15,482 polygons, and the exterior drawn around them on the
-  same cells. The two are one surface, because every rim vertex of a cut polygon is a point on a
-  cell edge and the cell owning that edge is the one the exterior is drawn on. The white specks
-  are cells the occupancy never filled, not gaps the construction leaves.</figcaption>
+  <figcaption><span class="fnum">Figure 4</span><br>The cut, computed on the orange's lattice.
+  <em>(a)</em> the cells the plane crosses, by the integer test of equation&nbsp;(10).
+  <em>(b)</em> one cell, isometric: six edges disagree, and their intersection points close a
+  convex polygon by equation&nbsp;(11). <em>(c)</em> all 15,482 polygons of the face, with the
+  exterior drawn around them on the same cells.</figcaption>
 </figure>
 
 <h3>3.3&ensp;Closed-form planar cutting operator</h3>
