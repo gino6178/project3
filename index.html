@@ -989,6 +989,40 @@ appearance but the skin, where the detail statistic falls furthest when it is re
 24.94, and the shell thickness a solver can resolve, which the supplement measures.</p>
 
 
+<h3>4.5&ensp;Where it fails, and why</h3>
+
+<p>The cake is the one object in Table&nbsp;1 this method loses on: 0.3318 of DreamSim against
+FruitNinja&#8217;s 0.2670. The cause is not in the operator or the representation, and it is
+visible in the object&#8217;s own configuration rather than inferred from the score.</p>
+
+<p><strong>It has three photographs, and the same three stand for both families.</strong> Of the
+six objects, the cake has the fewest cross-sections, and its transverse and longitudinal
+reference directories are one directory. Supervising both families from one set asserts that a
+section across the object and a section along it look alike. For an orange that is nearly true
+&#8212; it is a body of revolution about no particular axis, and its segments read the same
+either way. For a layer cake it is false in the sharpest possible way: perpendicular to the
+layers a section is one uniform disc, and along them it is a stack of bands. The supervision
+cannot express the difference, so the volume does not contain it.</p>
+
+<p><strong>Its axis is inherited.</strong> The cake&#8217;s configuration takes the
+orange&#8217;s, whose upward direction is the canonical \((0,-1,0)\); the watermelon&#8217;s is
+a fitted \((0.119, 0.990, -0.075)\). The plane families the trainer sweeps are therefore not
+aligned with the direction the cake is layered along, so even the three photographs it has are
+being asked about planes that are not the object&#8217;s own.</p>
+
+<p><strong>Why the baseline wins there and nowhere else.</strong> A generative interior supplies
+plausible structure wherever the photographs do not constrain it, and layering is exactly the
+structure a diffusion model fine-tuned on cake photographs has a strong prior for. This method
+has no such prior by construction: what the photographs do not show, the volume does not contain.
+That is the trade, and the cake is where it is paid. It is also why the same property wins on the
+five objects whose photographs do constrain their interiors &#8212; the bread, whose references
+are also a single shared directory but five images of a genuinely helical crumb, is 0.3693
+against 0.4983.</p>
+
+<p>Neither cause is a limitation of the method as specified; both are properties of the data this
+object was given, and both are repairable by photographing the cake along two axes. We report the
+score as it stands rather than re-photographing the one object that loses.</p>
+
 <h2 id="conclusion">5&ensp;Conclusion and limitations</h2>
 
 <h3>5.1&ensp;Conclusion</h3>
