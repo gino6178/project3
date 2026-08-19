@@ -602,6 +602,37 @@ $$\mathcal{L}_j = \frac{1}{N_c}\sum_{c=1}^{N_c} \Bigl[
 + 0.3\,\mathcal{L}_{\mathrm{band}}(\hat{\mathbf{C}}_j^c, \mathbf{T}_j^c) \Bigr]$$
 </div><div class="num">(9)</div></div>
 
+<p>The objective the reported runs minimise is that loss summed over both families of planes,
+with one further term. \(\mathcal{S}\) is the set of skin cells, fixed by
+\(\texttt{occupancy}\)&#8217;s own surface rule and shared with the exterior stage, and
+\(\hat{\mathbf{c}}\) is what the exterior put on them; the term holds the decoder to that
+while the interior is free to move underneath it:</p>
+
+<div class="eq"><div class="body">
+$$\mathcal{L}_{\mathrm{total}} \;=\;
+\sum_{j \in \mathcal{J}_{\perp} \cup \mathcal{J}_{\parallel}} \mathcal{L}_j
+\;+\; \lambda_{\mathcal{S}}\,\frac{1}{|\mathcal{S}|}\sum_{v \in \mathcal{S}}
+\bigl\lVert D_\theta(\mathbf{f}_v) - \hat{\mathbf{c}}_v \bigr\rVert_2^2 ,
+\qquad \lambda_{\mathcal{S}} = 3$$
+</div><div class="num">(10)</div></div>
+
+<p>There is no third term. The implementation carries three more &#8212; a gradient-matching
+loss, an axial smoothness prior on neighbouring cells, and a floor on luminance &#8212; and all
+three are at weight zero in every run this paper reports, so they are named here and not written
+into the objective.</p>
+
+<p><strong>How an unregistered photograph reaches a cell.</strong> The photographs carry no pose
+and none is estimated. A photograph enters only as \(\mathbf{T}_j\), which equation&nbsp;(6)
+fits to the silhouette that \(\Pi_j\) itself renders, and equation&nbsp;(8) then holds it by a
+stop-gradient, so nothing differentiates through the fit. The gradient that does flow runs
+backwards through the rasteriser to the colour of every cell whose slab the plane touched, from
+there through the shared decoder \(D_\theta\) to that cell&#8217;s 8-dimensional feature
+\(\mathbf{f}_v\), and through \(\theta\) to every other cell at once. The occupancy is what
+makes this global rather than per-plane: a cell belongs to the object, not to a photograph, so
+two planes that cross the same cell write to the same feature and their disagreement is resolved
+by that cell holding one value &#8212; which is the same mechanism, stated in
+section&nbsp;3.2.2, that makes an explicit consistency penalty unnecessary.</p>
+
 <p>What reconciles contradictory references is not a consistency penalty but the geometry: a cell
 has one value and every plane that crosses it reads that value. We implemented the explicit
 alternative &mdash; reconciling each pair of targets along the chord their planes share &mdash;
@@ -626,7 +657,7 @@ located by the separating-axis test</p>
 <div class="eq"><div class="body">
 $$\bigl\lvert \mathbf{n}\cdot\mathbf{x} + d \bigr\rvert \;\le\;
 \tfrac{1}{2} h \sum_{a \in \{x,y,z\}} \lvert n_a \rvert$$
-</div><div class="num">(10)</div></div>
+</div><div class="num">(11)</div></div>
 
 <p>and every other cell carries the sign of its centre,
 \(q(\mathbf{k}) = \operatorname{sgn}(\mathbf{n}\cdot\mathbf{x_k} + d)\). An adjacency is kept only
@@ -642,7 +673,7 @@ $$\mathcal{P}_c = \operatorname{conv}\bigl\{ \mathbf{a}_e + t_e (\mathbf{b}_e - 
 e \in E_c^{\pm} \bigr\}, \qquad
 t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)}
 \in [0,1]$$
-</div><div class="num">(11)</div></div>
+</div><div class="num">(12)</div></div>
 
 <p>The exposed surface is \(\mathcal{P} = \bigcup_{c \in \mathcal{B}} \mathcal{P}_c\). Every vertex
 satisfies the plane equation to machine precision, so the face is planar by construction rather
@@ -663,7 +694,7 @@ is already there.</p>
 <table><thead><tr><th>a plane arrives; the pieces and the exposed face leave</th><th>cost</th></tr></thead>
 <tbody>
 <tr><td>1&ensp;\(\mathcal{B} \leftarrow \{c : |\mathbf{n}\cdot\mathbf{x}_c + d| \le \tfrac12 h\sum_a|n_a|\}\)
-    &ensp;<span class="mut">the crossed band, equation&nbsp;(10)</span></td>
+    &ensp;<span class="mut">the crossed band, equation&nbsp;(11)</span></td>
     <td>\(\mathcal{O}(N)\)</td></tr>
 <tr><td>2&ensp;refine every \(c \in \mathcal{B}\) to \(h_f\)
     &ensp;<span class="mut">one level at the cut, which is what removes T-junctions</span></td>
@@ -676,7 +707,7 @@ is already there.</p>
 <tr><td>5&ensp;pieces \(\leftarrow\) connected components of \(\mathcal{E}\)</td>
     <td>\(\mathcal{O}(|\mathcal{E}|\,\alpha)\)</td></tr>
 <tr><td>6&ensp;for each \(c \in \mathcal{B}\): intersect its twelve edges, order the points by angle
-    about their centroid, emit \(\mathcal{P}_c\) &ensp;<span class="mut">equation&nbsp;(11)</span></td>
+    about their centroid, emit \(\mathcal{P}_c\) &ensp;<span class="mut">equation&nbsp;(12)</span></td>
     <td>\(\mathcal{O}(K)\)</td></tr>
 </tbody></table></div>
 
@@ -697,14 +728,14 @@ with no marching cubes and no tetrahedralisation.</p>
       <div class="eq"><div class="body">
 $$\operatorname{occ}_P(\mathbf{x}) = \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr]
       \;\wedge\; \bigl[\, q_P\,(\mathbf{n}\cdot\mathbf{x} + d) > 0 \,\bigr]$$
-</div><div class="num">(12)</div></div></li>
+</div><div class="num">(13)</div></div></li>
   <li><strong>Material ordering.</strong> Cell features are clustered into \(K_m\) material
       classes and ordered by how much of each class lies in the skin band, \(\beta_j\), and by its
       mean luminance \(L_j\):
       <div class="eq"><div class="body">
 $$u_j = 0.65\,\beta_j + 0.35\,\operatorname{rank}(L)_j, \qquad
       E_j = E_{\min} + \operatorname{rank}(u)_j\,\bigl( E_{\max} - E_{\min} \bigr)$$
-</div><div class="num">(13)</div></div>
+</div><div class="num">(14)</div></div>
       The weights are fixed rather than fitted, and what is claimed is the ordering they produce,
       not the values.</li>
   <li><strong>Surface binding.</strong> Each dual-grid vertex is bound to the particles around it
@@ -765,7 +796,7 @@ contribution it was taken for.</p>
 <h3>4.2&ensp;Cutting precision and local complexity</h3>
 
 <p><strong>The band is a small, resolution-determined fraction.</strong> Two counts are involved
-and they differ by exactly four: the cells the separating-axis test of equation&nbsp;(10) returns,
+and they differ by exactly four: the cells the separating-axis test of equation&nbsp;(11) returns,
 and the leaves those become once the operator refines each to \(h_f\). On one oblique plane per
 object the crossed set is 1.03% to 2.98% of the lattice and the refined band 4.11% to 11.91%;
 over four planes per object the ranges widen to 0.51&ndash;3.03% and 2.04&ndash;12.12%. Everything
@@ -866,14 +897,14 @@ the operator, so it is left out of what is timed.</p>
 halves exactly as the cut left them, a leaf-containment test alone reports 1,543 particles of the
 orange inside the other piece and 1,413 of the watermelon &mdash; those are the particles in a leaf
 the plane straddles, which is the case the narrow phase exists for. Pairing it with the plane's own
-sign, equation&nbsp;(12), takes both to zero. Pushed one, two and four coarse cells in, the band
+sign, equation&nbsp;(13), takes both to zero. Pushed one, two and four coarse cells in, the band
 thickens to 7,956, 17,518 and 38,767 on the orange, so penetration is detected from the first cell
 and grows with the push: the zero at rest is a property of the predicate and not an insensitive
 test. The doughnut reports none from occupancy alone, which is a property of where its cut falls
 rather than evidence for the sign test, and it is the push column that carries the claim.</p>
 
 <p><strong>A shell the solver can tell from its interior.</strong> Clustering the trained per-cell
-feature and ordering the classes by equation&nbsp;(13) puts a class sitting almost entirely in the
+feature and ordering the classes by equation&nbsp;(14) puts a class sitting almost entirely in the
 skin band &mdash; \(\beta = 0.98\) to \(1.00\) on the orange, the watermelon and the doughnut
 &mdash; at the stiff end, a contrast of fifty times, with nothing in the clustering told that a
 fruit has a peel.</p>
