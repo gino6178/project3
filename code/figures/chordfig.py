@@ -51,11 +51,6 @@ def chord_panel(ax):
     ax.text(0.0, 0.44, "the chord", fontsize=9, ha="center", color="#111")
     ax.text(-1.06, 0.16, r"$\Pi_j$", fontsize=11, color="#4a7ba7")
     ax.text(0.36, 1.10, r"$\Pi_{j'}$", fontsize=11, color="#c0392b")
-    ax.text(0.0, -1.16,
-            "a transverse section's diameter at one angle,\n"
-            "and a longitudinal section's row at one height,\n"
-            "are one physical line, read twice",
-            fontsize=8.4, ha="center", color="#555")
     ax.set_xlim(-1.25, 1.25); ax.set_ylim(-1.5, 1.45)
     ax.set_aspect("equal"); ax.set_axis_off()
 
@@ -67,8 +62,8 @@ def strip(ax, paths, label, sub):
     h = min(i.shape[0] for i in ims); w = min(i.shape[1] for i in ims)
     ax.imshow(np.hstack([cv2.resize(i, (w, h)) for i in ims]))
     ax.set_axis_off()
-    ax.set_title(label, fontsize=9.5, loc="left")
-    ax.text(0.0, -0.06, sub, transform=ax.transAxes, fontsize=8.4, va="top", color="#555")
+    ax.set_title(label, fontsize=10, loc="left")
+
 
 
 def main(a_run, b_run, out):
@@ -94,23 +89,20 @@ def main(a_run, b_run, out):
     gs = fig.add_gridspec(3, 2, width_ratios=[0.62, 1.38], hspace=0.46, wspace=0.10,
                           left=0.02, right=0.985, top=0.89, bottom=0.09)
     axg = fig.add_subplot(gs[:, 0]); chord_panel(axg)
-    axg.set_title("(a)  where the two families meet", fontsize=9.5, loc="left")
-    strip(fig.add_subplot(gs[0, 1]), pa, "(b)  phases from equation (4), each family to itself",
+    axg.set_title("(a)  the chord the two families share", fontsize=10, loc="left")
+    strip(fig.add_subplot(gs[0, 1]), pa, "(b)  phases from equation (4)",
           "45° cuts, supervised by neither family")
-    strip(fig.add_subplot(gs[1, 1]), pb, "(c)  phases from equation (5), solved on the chords",
+    strip(fig.add_subplot(gs[1, 1]), pb, "(c)  phases from equation (5)",
           "the same cuts, the same lattice, the same references")
     axd = fig.add_subplot(gs[2, 1])
     ims = [np.clip(a * 4.0, 0, 1)[:, :, ::-1] for a, _ in dif]
     h = min(i.shape[0] for i in ims); w = min(i.shape[1] for i in ims)
     axd.imshow(np.hstack([cv2.resize(i, (w, h)) for i in ims]))
     axd.set_axis_off()
-    axd.set_title("(d)  where they differ, at 4×", fontsize=9.5, loc="left")
-    axd.text(0.0, -0.06, f"mean |difference| {md:.4f} on the same plane, against {ms:.4f} "
-             f"between two different planes of one model:\nthe two phase choices are "
-             f"{100*md/ms:.0f}% of the way apart that two different cuts are",
-             transform=axd.transAxes, fontsize=8.4, va="top", color="#555")
-    fig.suptitle("The phases are chosen where the two families disagree, and paid off where "
-                 "neither of them looked", fontsize=11, y=0.975)
+    axd.set_title(f"(d)  their difference at 4×:  {md:.4f}, against {ms:.4f} between two cuts",
+                  fontsize=10, loc="left")
+    fig.suptitle("Chordal consistency, on 45° cuts neither family supervised",
+                 fontsize=12, y=0.975)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     fig.savefig(out, dpi=150, facecolor="white")
     print(f"  -> {out}  ({len(pa)} and {len(pb)} cuts)")

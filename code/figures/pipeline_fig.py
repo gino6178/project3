@@ -77,10 +77,11 @@ def slab(ax, xyz, rgb, axis=2, frac=0.5, half=0.02, s=0.6):
     return int(m.sum())
 
 
-def panel(ax, title, sub):
-    ax.set_title(title, fontsize=9.5, pad=14, weight="bold")
-    ax.text(0.5, -0.055, sub, transform=ax.transAxes, ha="center", va="top",
-            fontsize=7.6, color="#555")
+def panel(ax, title, sub=None):
+    """The title, and nothing under it. A figure that has to explain itself inside the frame
+    is competing with its own caption; the sub-line each panel used to carry is dropped rather
+    than shortened, and what it said belongs to the prose."""
+    ax.set_title(title, fontsize=10, pad=10, weight="bold")
 
 
 def main(obj, out):
@@ -160,16 +161,6 @@ def main(obj, out):
         ax.set_axis_off()
         panel(ax, "the surface, projected", f"{len(six)} views of the outside, onto the same cells")
 
-    ax = fig.add_subplot(gs[1, 3]); ax.set_axis_off()
-    ph = sorted(os.listdir(os.path.join(FN, conf("REF_H", obj))))
-    ph = [f for f in ph if f.endswith((".png", ".jpg")) and "_depth" not in f]
-    if ph:
-        import cv2 as _cv
-        im = _cv.imread(os.path.join(FN, conf("REF_H", obj), ph[0]))[:, :, ::-1]
-        ax.imshow(im)
-    panel(ax, "and then the interior",
-          "photographs of cross-sections are the only thing\nthat ever writes inside; section 3.2")
-
     for y, lab, col in ((0.930, "BUILDING THE REPRESENTATION  \u2014  route 1, a scan", "#c0392b"),
                         (0.722, "\u2014  route 2, a shape from its equation", "#2e7d5b"),
                         (0.500, "SUPERVISING THE INTERIOR  \u2014  the photographs, and nothing "
@@ -180,7 +171,7 @@ def main(obj, out):
     band_supervision(fig, gs, 2, obj, FN, None, conf)
     band_downstream(fig, gs, 3, xyz1, rgb1, lvl1, hc1)
 
-    fig.suptitle("One object through the whole method: a scanned shell, an interior the photographs\nwrite, and a cut that is computed",
+    fig.suptitle("One object through the whole method",
                  fontsize=12.5, y=0.985)
     fig.text(0.5, 0.942, "a shell, filled; either route, never both \u2014 and neither route "
              "ever writes inside the object",

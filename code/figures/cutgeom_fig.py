@@ -69,7 +69,7 @@ def main(obj="orange", out="out/cutgeom.png"):
     band = np.abs(S @ n + d) <= 0.5 * hc * np.abs(n).sum()      # equation (10)
 
     fig = plt.figure(figsize=(13.2, 4.5))
-    gs = fig.add_gridspec(1, 3, wspace=0.16, left=0.03, right=0.985, top=0.86, bottom=0.16)
+    gs = fig.add_gridspec(1, 3, wspace=0.16, left=0.03, right=0.985, top=0.86, bottom=0.05)
 
     # --- (a) the slab, the signs, the crossed band --------------------------------------
     ax = fig.add_subplot(gs[0, 0])
@@ -84,10 +84,7 @@ def main(obj="orange", out="out/cutgeom.png"):
     zs = (-d - n[0] * np.array([lo, hi]) - n[1] * ctr[1]) / n[2]
     ax.plot([lo, hi], zs, color="#222", lw=1.3)
     ax.set_aspect("equal"); ax.set_axis_off()
-    ax.set_title("(a)  the crossed band is a test, not a threshold", fontsize=9.5, loc="left")
-    ax.text(0.0, -0.04, f"{int(band.sum()):,} of {len(S):,} cells in this slab cross the plane;\n"
-            r"$|\mathbf{n}\cdot\mathbf{x}+d| \leq \frac{1}{2}h\sum_a |n_a|$",
-            transform=ax.transAxes, fontsize=8.2, va="top", color="#555")
+    ax.set_title("(a)  the cells the plane crosses", fontsize=10, loc="left")
 
     # --- (b) one crossed cell ------------------------------------------------------------
     ax = fig.add_subplot(gs[0, 1])
@@ -133,10 +130,7 @@ def main(obj="orange", out="out/cutgeom.png"):
                             edgecolor="#c0392b", lw=1.8, zorder=2))
     ax.scatter(pp[:, 0], pp[:, 1], s=34, c="#c0392b", zorder=5)
     ax.set_aspect("equal"); ax.set_axis_off()
-    ax.set_title(f"(b)  {len(pts)} edges disagree, one convex polygon", fontsize=9.5, loc="left")
-    ax.text(0.0, -0.04, "corners carry the sign of the plane equation; each contributing\n"
-            r"edge gives one point at $t_e$, ordered by angle about their centroid",
-            transform=ax.transAxes, fontsize=8.2, va="top", color="#555")
+    ax.set_title(f"(b)  one cell: {len(pts)} edges disagree", fontsize=10, loc="left")
 
     # --- (c) the polygons at the skin ----------------------------------------------------
     ax = fig.add_subplot(gs[0, 2])
@@ -166,13 +160,9 @@ def main(obj="orange", out="out/cutgeom.png"):
                                 alpha=0.5, edgecolor="#8e2b1f", lw=0.35, zorder=3))
         npoly += 1
     ax.set_aspect("equal"); ax.set_axis_off()
-    ax.set_title("(c)  the face and the exterior are one surface", fontsize=9.5, loc="left")
-    ax.text(0.0, -0.04, f"{npoly:,} polygons across the whole face, each rim vertex a point on\n"
-            "a cell edge, on cells the exterior is drawn on",
-            transform=ax.transAxes, fontsize=8.2, va="top", color="#555")
+    ax.set_title("(c)  the exposed face", fontsize=10, loc="left")
 
-    fig.suptitle("The exposed face is computed, not approximated: a sign test, twelve edges, "
-                 "and a convex polygon per crossed cell", fontsize=11, y=0.965)
+    fig.suptitle("The closed-form cut", fontsize=12, y=0.965)
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     fig.savefig(out, dpi=150, facecolor="white")
     print(f"  -> {out}")
