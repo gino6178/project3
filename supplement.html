@@ -2144,19 +2144,31 @@ set out together here rather than left to be reconciled.</p>
     <td>894,304 cells</td><td>13.76</td><td class="mut">section&nbsp;3.3</td></tr>
 <tr><td>the same, adjacency outside the band reused</td><td>894,304 cells</td><td><strong>2.91</strong></td>
     <td class="mut">section&nbsp;3.3</td></tr>
-<tr><td>refine and label, as the pipeline runs it</td><td>770,182 cells</td><td>4.73</td>
+<tr><td>refine and label, as the pipeline runs it</td><td>770,182 cells</td><td>4.72</td>
     <td class="mut">this section</td></tr>
-<tr><td>emit the exact polygons</td><td>770,182 cells</td><td>6.03</td><td class="mut">this section</td></tr>
+<tr><td>emit the exact polygons</td><td>770,182 cells</td><td>1.35</td><td class="mut">this section</td></tr>
+<tr><td>refine, label and emit, on the device</td><td>770,182 cells</td><td><strong>0.23</strong></td>
+    <td class="mut">this section</td></tr>
 <tr><td>refine the band and label the pieces, as the supplement times it</td><td>877,494 cells</td><td>12.96</td><td class="mut">supplement S2.8</td></tr>
 <tr><td>emit the exact polygons, as the supplement times it</td><td>877,494 cells</td><td>14.25</td><td class="mut">supplement S2.8</td></tr>
-<tr><td class="mut">both, end to end</td><td class="mut">770,182 cells</td><td class="mut">10.76</td>
+<tr><td class="mut">all of it, end to end, on the host</td><td class="mut">770,182 cells</td><td class="mut">6.07</td>
     <td class="mut">this section</td></tr>
 </tbody></table></div>
 
-<p>The 2.91&nbsp;s figure is the labelling alone with the adjacency reuse in place, on a lattice
-16% larger; the 4.73 is the same stage timed inside the pipeline, where the reuse is not wired in.
-Nothing in this paper is an interactive cut, and the two levers on the remaining cost are named at
-the end of this section.</p>
+<p>The 2.91&nbsp;s figure is the labelling alone with the adjacency reuse in place, on a
+lattice 16% larger; the 4.72 is the same stage timed inside the pipeline, where the reuse is not
+wired in. Two of these rows were wrong and are corrected here. The polygon row read 6.03 and was
+not the polygons: it was the whole operator, refinement included, so the 10.76 beneath it added
+the refinement in twice and the body inherited that as &ldquo;about eleven seconds&rdquo;. Emitting
+the polygons costs 1.35&nbsp;s and the host path end to end costs 6.07. The two rows timed on
+877,494 cells are from a run we have not repeated and may carry the same fault; they are left as
+they were rather than adjusted by analogy.</p>
+
+<p>On the device the same operator takes 0.234&nbsp;s, a factor of 26, and returns the same 52,489
+vertices, 103,878 triangles, five pieces and cut area as the host. Every timing here is a median of
+five after two warm-ups: the first call on a device carries context creation and kernel
+compilation, which measured cold made one object look 8.4&times; faster and the next 23.9&times;
+on the same code at the same size.</p>
 
 <p><strong>What the cost scales with.</strong> The labelling itself is linear in the leaves the cut touches, but the implementation is not: adjacency is rebuilt and the component structure allocated over every leaf, so the measured cost follows the object rather than the band. The cost is flat against the total and rises against the band:</p>
 
@@ -4614,9 +4626,8 @@ distribution metric and a human-aligned one disagree this sharply, the disagreem
 whether matching a population is the same as looking right, and the second reading is the one the numbers support.
 GaussianFluent also spends 45 spherical-harmonic bands on view-dependent appearance that this
 representation cannot express at all. And the slicing row is now an implementation rather than an
-asymptotic hope: reusing the object's adjacency outside the band takes a cut from 13.8&nbsp;s to
-2.9&nbsp;s with an identical result. That is still not interactive, and section 3.3 says where the
-remaining time goes.</p>
+asymptotic hope: reusing the object's adjacency outside the band takes a cut from 13.8&nbsp;s to 2.9&nbsp;s with an identical result, and moving the
+whole operator to the device takes the orange&#8217;s cut to 0.234&nbsp;s, which is interactive.</p>
 
 <p>Three things about that field. It is not equation&nbsp;(23): it is the weak two-rule field, level deciding
 skin from interior and lightness grading the interior, which is the version a learned decomposition

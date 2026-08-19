@@ -800,6 +800,17 @@ No edge is shared by more than two triangles on any object.</p>
     <td><strong>1</strong></td><td><strong>0</strong></td><td>4.44e&#8722;16</td></tr>
 </tbody></table></div>
 
+<p><strong>A cut is interactive.</strong> The whole operator is data-parallel over the
+coarse cell &mdash; the corner sign test, the compaction, the dense child block, the classification
+of the children, the six adjacency passes, and the twelve edge intersections that emit the polygons
+&mdash; and moving it to the device is a transcription rather than a redesign. On the orange&#8217;s
+770,182 solid cells the host takes 6.07&nbsp;s end to end, 4.72&nbsp;s of it refinement and
+labelling and 1.35&nbsp;s polygon emission; the device takes <strong>0.234&nbsp;s</strong>, a factor
+of 26. The watermelon&#8217;s 709,368 cells go from 5.73&nbsp;s to 0.259&nbsp;s. Both are medians of
+five timings after two warm-ups, and both produce the same 52,489 and 53,974 vertices, the same
+103,878 and 106,853 triangles, the same pieces and the same cut area as the host path. Component
+labelling stays on the host, where it costs milliseconds.</p>
+
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
@@ -911,12 +922,16 @@ between boundary bleeding and unpainted void artifacts.</p>
       incisions that terminate within the interior therefore cannot be natively expressed without
       over-shattering the object. Extending to curved or stopping cuts requires virtual-node cell
       duplication or per-element state tracking.</li>
-  <li><strong>Non-interactive cutting runtime.</strong> The end-to-end pipeline currently requires
-      about 11 seconds &mdash; 4.7&nbsp;s for band refinement and labelling, 6.0&nbsp;s for polygon
-      emission. Although geometric complexity scales as \(\mathcal{O}(K)\) in the crossed cells
-      rather than \(\mathcal{O}(N)\) in the volume, GPU-parallelised traversal and adaptive
-      error-bounded refinement are the direct path toward interactive rates.</li>
-  <li><strong>Simulation compatibility, not dynamic validation.</strong> The framework establishes
+  <li><strong>One plane, and only a plane.</strong> The operator cuts a half-space. A
+      curved cut, or one that stops inside the object, needs the cell to hold more than one
+      piece &mdash; virtual-node duplication or per-element state &mdash; and nothing here
+      provides it.</li>
+
+  <li><strong>The cost still follows the object, not the cut.</strong> A cut is
+      \(\mathcal{O}(K)\) in the cells it crosses, but adjacency is built and the component
+      structure allocated over every leaf, so the measured cost tracks the lattice rather than
+      the band. Reusing the adjacency outside the band removes most of it; making the whole
+      operator proportional to \(K\) is open.</li>  <li><strong>Simulation compatibility, not dynamic validation.</strong> The framework establishes
       representation compatibility: contact resolves at 5.2 million integer queries per second, and
       a criterion predicts shell-stiffness resolvability across MPM transfer grids. Dynamics are not
       benchmarked against reference finite-element solvers, and continuum damage and fracture are
