@@ -180,8 +180,16 @@ def main(lattice_dir, ply, cfg, demo, out_gif, n_frames=72, size=440, ss=2, k_sa
         v = v / np.linalg.norm(v)
         return (v, float(-ctr @ v) + off * hc)
 
-    planes = [P([0.13, 0.97, -0.21], 0.37), P([0.91, 0.05, 0.41], -0.23),
-              P([-0.22, 0.33, 0.92], 0.11)]
+    # The three hand-picked planes remain the default. CUT_Q asks for the same family the
+    # timing table uses instead, so the animation and the table are the same cuts and not two
+    # different sets of planes that happen to share a count.
+    q = int(_os.environ.get("CUT_Q", "0"))
+    if q:
+        import gpumulti
+        planes = gpumulti.make_planes(solid, hc, q)
+    else:
+        planes = [P([0.13, 0.97, -0.21], 0.37), P([0.91, 0.05, 0.41], -0.23),
+                  P([-0.22, 0.33, 0.92], 0.11)]
 
     t0 = time.time()
     st = mc.cut(solid, hc, planes, hf, min_cells=MIN_CELLS)

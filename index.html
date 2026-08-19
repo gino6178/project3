@@ -811,6 +811,37 @@ five timings after two warm-ups, and both produce the same 52,489 and 53,974 ver
 103,878 and 106,853 triangles, the same pieces and the same cut area as the host path. Component
 labelling stays on the host, where it costs milliseconds.</p>
 
+<p><strong>And a second cut costs less than the first.</strong> Planes given together share one
+refinement: a leaf is subdivided while <em>some</em> plane still crosses it, and where two bands
+overlap they are one band. Five planes through the orange leave 1,249,325 leaves against one
+plane&#8217;s 869,106 &#8212; 44% more work for five times the cuts &#8212; and the device time
+rises by a factor of 2.6, not 5.</p>
+
+<div class="tw"><p class="tnum">Table 3</p><table>
+<thead><tr><th>object</th><th>cuts</th><th>leaves</th><th>pieces</th><th>triangles</th>
+<th>host</th><th>device</th><th>speed-up</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">orange<br><span class="mut">770,182 cells</span></td>
+    <td>1</td><td>869,106</td><td>5</td><td>113,109</td><td>6.13&nbsp;s</td>
+    <td><strong>0.224&nbsp;s</strong></td><td>27.4&times;</td></tr>
+<tr><td>3</td><td>1,069,964</td><td>14</td><td>349,994</td><td>10.61&nbsp;s</td>
+    <td><strong>0.537&nbsp;s</strong></td><td>19.8&times;</td></tr>
+<tr><td>5</td><td>1,249,325</td><td>53</td><td>571,478</td><td>16.28&nbsp;s</td>
+    <td><strong>0.591&nbsp;s</strong></td><td>27.5&times;</td></tr>
+<tr><td rowspan="3">watermelon<br><span class="mut">709,368 cells</span></td>
+    <td>1</td><td>808,537</td><td>2</td><td>113,258</td><td>5.65&nbsp;s</td>
+    <td><strong>0.199&nbsp;s</strong></td><td>28.4&times;</td></tr>
+<tr><td>3</td><td>1,000,323</td><td>11</td><td>341,150</td><td>9.87&nbsp;s</td>
+    <td><strong>0.307&nbsp;s</strong></td><td>32.2&times;</td></tr>
+<tr><td>5</td><td>1,174,287</td><td>35</td><td>553,769</td><td>15.04&nbsp;s</td>
+    <td><strong>0.370&nbsp;s</strong></td><td>40.6&times;</td></tr>
+</tbody></table></div>
+
+<p>Both paths return the same leaves, the same pieces and the same triangle count at every row.
+The piece counts are raw: where several planes meet they carve genuine slivers, one cell across
+and \(10^{-7}\) of the object, and merging those is a presentation choice rather than part of
+the operator, so it is left out of what is timed.</p>
+
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
@@ -850,7 +881,7 @@ fruit has a peel.</p>
 same references for the same two hundred iterations and scored in one run against twelve held-out
 cuts. Two of them come out the other way, and both are reported as they fell.</p>
 
-<div class="tw"><p class="tnum">Table 3</p><table>
+<div class="tw"><p class="tnum">Table 4</p><table>
 <thead><tr><th>arm</th><th>cells</th><th>DreamSim &darr;</th><th>against the control</th>
 <th>detail, e&#8722;3</th></tr></thead>
 <tbody>
