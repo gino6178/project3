@@ -2783,13 +2783,7 @@ are given so they are not read as one:</p>
 <figure>
   <img src="assets/zoom2048.png" alt="The same watermelon cut at 2048 px from four representations,
        each with a zoomed crop of the flesh">
-  <figcaption><span class="fnum">Figure 10</span><br>The same held-out plane at 2048&nbsp;px, each model through its own renderer, with a
-  300&nbsp;px crop of the flesh magnified on the right. What the coverage numbers are counting is
-  visible directly: GaussianFluent's section is mostly the background showing between primitives,
-  FruitNinja's is dense but speckled, and this work's own splatted lattice is mottled in the same
-  way because a route-2 cell is a Gaussian like any other. The cube volume is continuous. Its cost
-  is the other thing the crop shows, the cell quantisation, which is the silhouette error of section
-  4.3.1 seen from inside: a cube covers exactly and it covers at the resolution of a cell.</figcaption>
+  <figcaption><span class="fnum">Figure 10</span><br>The same held-out plane of the watermelon at 2048&nbsp;px, each released model through the same cutter, with a box of its own section magnified beside it. What the magnification shows is what each representation is made of: GaussianFluent leaves white between its primitives, FruitNinja&#8217;s flesh carries salt-and-pepper over a saturated red, and the splatted lattice draws a continuous fibre with the seeds whole. A fourth row, the same section drawn as a cube volume, is withdrawn: the renderer that produces it is under-drawing transverse sections by half their silhouette, which <code>code/evaluate/README.md</code> records, and a picture from a renderer with a known defect is not evidence about a representation.</figcaption>
 </figure>
 
 <p> Coverage from a splatted
