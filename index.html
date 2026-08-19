@@ -385,14 +385,13 @@ around.</p>
 <figure style="margin:18px 0 30px">
   <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
        alt="a shell, filled, its surface pinned, and the cross-section photographs that write the interior">
-  <figcaption><span class="fnum">Figure 2</span><br>One object through the whole method. <em>Top,</em> the two
-  routes to a filled shell, neither carrying an interior. <em>Middle,</em> the photographs that
-  write it: as they arrive, turned to a common phase by equations&nbsp;(4) and&nbsp;(5), fitted to
-  the silhouette their plane renders by equation&nbsp;(6), and the volume's answer at an unsampled
-  depth. <em>Bottom,</em> what a cut produces: the crossed cells, the exposed face, the pieces,
-  and the particles a solver receives. Computed from the orange's own lattice by
-  <code>code/figures/pipeline_fig.py</code>.</figcaption>
+  <figcaption><span class="fnum">Figure 2</span><br>One object through the whole method: the two routes, the
+  photographs that supervise the interior, and what a cut produces.</figcaption>
 </figure>
+
+<p class="mut">Every figure in this section is computed from the object's own lattice, by
+<code>code/figures/pipeline_fig.py</code>, <code>chordfig.py</code> and
+<code>cutgeom_fig.py</code>.</p>
 
 <p>We decouple the surface from the interior. The visible outer hull is carried by a flexible dual
 grid; the solid interior is a discrete two-level lattice whose cells store latent features rather
@@ -478,11 +477,8 @@ degenerating, the system calibrates the references before and during training.</
 <figure style="margin:16px 0 26px">
   <img src="assets/chord.png" style="width:100%;border-radius:4px"
        alt="two planes meeting in a chord, and 45 degree cuts from the two ways of choosing the phases">
-  <figcaption><span class="fnum">Figure 3</span><br>Two planes meet in a chord, where the two families describe
-  one line twice. <em>(b)</em> and <em>(c)</em> are 45&deg; cuts &mdash; supervised by neither
-  family &mdash; from models differing only in how the phases were chosen, equation&nbsp;(4)
-  against equation&nbsp;(5). They look alike at this size; <em>(d)</em> is their difference at
-  4&times;, 0.0465 against the 0.1006 between two different cuts of one model.</figcaption>
+  <figcaption><span class="fnum">Figure 3</span><br>Two planes meet in a chord. 45&deg; cuts from the phases of
+  equation&nbsp;(4) and of equation&nbsp;(5), and their difference at 4&times;.</figcaption>
 </figure>
 
 <h4>3.2.1&ensp;Geometric consistency calibration</h4>
@@ -577,11 +573,8 @@ when the two targets are averaged and 0.012 more when one family is made to win.
 <figure style="margin:16px 0 26px">
   <img src="assets/cutgeom.png" style="width:100%;border-radius:4px"
        alt="the crossed band, one cell's contributing edges, and the whole cut face against the exterior">
-  <figcaption><span class="fnum">Figure 4</span><br>The cut, computed on the orange's lattice.
-  <em>(a)</em> the cells the plane crosses, by the integer test of equation&nbsp;(10).
-  <em>(b)</em> one cell, isometric: six edges disagree, and their intersection points close a
-  convex polygon by equation&nbsp;(11). <em>(c)</em> all 15,482 polygons of the face, with the
-  exterior drawn around them on the same cells.</figcaption>
+  <figcaption><span class="fnum">Figure 4</span><br>The cells a plane crosses, one cell's contributing edges and
+  its polygon, and the whole exposed face.</figcaption>
 </figure>
 
 <h3>3.3&ensp;Closed-form planar cutting operator</h3>
