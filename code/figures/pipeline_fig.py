@@ -96,7 +96,7 @@ def main(obj, out):
 
     fig = plt.figure(figsize=(13.6, 7.2))
     gs = fig.add_gridspec(2, 4, hspace=0.46, wspace=0.10,
-                          left=0.075, right=0.985, top=0.855, bottom=0.075)
+                          left=0.075, right=0.985, top=0.835, bottom=0.075)
 
     # --- route 1 -----------------------------------------------------------------------
     ax = fig.add_subplot(gs[0, 0])
@@ -170,8 +170,8 @@ def main(obj, out):
             "reconstruction's interior too.",
             transform=ax.transAxes, fontsize=7.6, va="top", color="#333", linespacing=1.45)
 
-    for y, lab, col in ((0.935, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
-                        (0.487, "ROUTE 2  —  from an equation and six views", "#2e7d5b")):
+    for y, lab, col in ((0.900, "ROUTE 1  —  from a released reconstruction", "#c0392b"),
+                        (0.455, "ROUTE 2  —  from an equation and six views", "#2e7d5b")):
         fig.text(0.02, y, lab, fontsize=9, weight="bold", color=col)
 
     fig.suptitle("Building the representation: either route, never both — and neither brings "
