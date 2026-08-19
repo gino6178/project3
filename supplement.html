@@ -1464,12 +1464,6 @@ different cake, and it is worse than what a diffusion model fine-tuned on the sa
 That is the boundary of supervision by photograph: it holds where the families between them see
 the structure, and the cake is the case where they do not.</p>
 
-<figure>
-  <img src="assets/six_objects.png" alt="Six objects, one held-out plane each: a photograph of a
-       real cut of that kind, this work, and the released model each was quantised from">
-  <figcaption><span class="fnum">Figure S6</span><br>Every object, one held-out plane each, every column rendered in one batch at the same depths with the same settings and the released models re-rendered rather than quoted. The left column is a photograph of a real cut of that kind and is not that plane, since no photograph is; it is each object's own evaluation set. GaussianFluent publishes eighteen objects and two are ours, so that column is the watermelon and the cake; the doughnut has no released model of any kind, which is why it is the one object whose interior owes nothing to a reconstruction. What the rows show is where each method spends its fidelity: the seeds and pith of the watermelon, the five-pointed core of the apple, the spiral of the loaf.</figcaption>
-</figure>
-
 <p class="mut">Every row here is in-sample: each model is scored against the photographs that
 supervised it, as is the released model it is compared with, whose generator was fine-tuned on
 them. The orange is the one object with a leave-one-out study, in section S3.1.2 The reference
@@ -1552,7 +1546,7 @@ explicitly costs 0.012 DreamSim, forty times the run-to-run spread.</p>
 
 <figure id="chords">
   <img src="assets/chords.png" alt="The chord two references share, under two choices of phase">
-  <figcaption><span class="fnum">Figure S7</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(4), 0.1178, and under the phases and assignment&nbsp;(5) solves jointly, 0.1122.</figcaption>
+  <figcaption><span class="fnum">Figure S6</span><br>Why a plane nobody photographed still has structure. A transverse plane and a longitudinal plane meet in a chord, so the cells on that chord are in both sections and the same material is described twice &mdash; and a cell holds one colour, so two references that disagree there are asking it for two. Neither photograph carries the angle it was cut at. Aligning the phases is what lets the two descriptions agree where they meet, and that agreement is what carries: the references constrain the volume only where they look, and a cut taken at a depth and an angle none of them took is drawn from cells no reference saw directly. What makes that cut coherent is that the cells the references did see were never asked for contradictory values, so the structure runs continuously between them instead of flattening to the average of two rotations. The profiles along the chord are drawn under the greedy alignment of&nbsp;(4), 0.1178, and under the phases and assignment&nbsp;(5) solves jointly, 0.1122.</figcaption>
 </figure>
 
 
@@ -1669,29 +1663,6 @@ volume, not about winning a distribution metric at 100 samples against a referen
 <p>These FID values are not the ones in the six-cut table above, which scores six cuts rather than a
 hundred; the two tables are internally consistent and should not be read across.</p>
 
-<figure>
-  <img src="assets/prior_or.png" alt="Held-out transverse cuts of the orange from three arms of
-       this work, FruitNinja's released model, and the photographs">
-  <figcaption><span class="fnum">Figure S8</span><br>The same six held-out transverse planes of the orange, rendered from every model,
-  with the photographs underneath. FruitNinja's released model runs saturated and its pith ring is
-  brighter and thinner than any photograph. The row below it is the same pipeline with the stock
-  checkpoint in place of the fine-tuned one and nothing else changed, which is the reproduction
-  anyone outside the group can perform: the flesh goes brown and the segment walls become a crust.
-  The third row from the top is this work with no fine-tuned model anywhere in its run, and
-  it is hard to tell from the two rows above it.</figcaption>
-</figure>
-
-<figure>
-  <img src="assets/prior_wm.png" alt="Held-out transverse cuts of the watermelon from two routes,
-       FruitNinja's released model, and the photographs">
-  <figcaption><span class="fnum">Figure S9</span><br>The same for the watermelon, with GaussianFluent's own released model in the fourth
-  row. FruitNinja's resolves fewer seeds than ours and softens the ones it keeps. GaussianFluent's
-  is a different fruit, cut in a frame whose upright axis is not published and which we chose in
-  its favour: its rind and pith read thicker than any photograph and its seeds smear along one
-  direction, and it still takes the best FID in the table. The metric is measuring the colour
-  statistics of a slice, not whether the slice is a plane.</figcaption>
-</figure>
-
 <h4>S3.1.8&ensp;The comparison in one table</h4>
 
 <p>Each cell is measured by the section named, on the watermelon unless the row says otherwise,
@@ -1778,7 +1749,7 @@ is zero.</p>
   <img src="assets/depthassign.png" alt="The per-step change between adjacent targets under the two
        assignment rules, and between adjacent rendered sections of the two models trained under
        them">
-  <figcaption><span class="fnum">Figure S10</span><br>The orange, six transverse
+  <figcaption><span class="fnum">Figure S7</span><br>The orange, six transverse
   photographs over sixteen supervised planes; the body carries the same comparison on the
   watermelon at three. What the two assignment rules ask adjacent
   planes for, and what the models trained under them do when the plane is walked through the
@@ -1933,7 +1904,7 @@ grow with separation and nothing in the construction forces it to.</p>
 <figure>
   <img src="assets/collision.png" alt="A slab through the contact region, particles coloured by
        what the collision test says about them, at four separations">
-  <figcaption><span class="fnum">Figure S11</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. The picture and the counts come from the same index and contact test, so they cannot disagree.</figcaption>
+  <figcaption><span class="fnum">Figure S8</span><br>A slab through the contact region of the cut orange, every particle drawn as what the narrow phase calls it: grey for clear, red for penetrating. At rest the voxel test alone reports 1,543 particles inside the other piece and the plane test reports none &mdash; those 1,543 are the ones in a leaf the cut straddles, which is the case the narrow phase exists for. Pushed one, two and four coarse cells in, the band thickens to 7,956, 17,518 and 38,767, so penetration is detected from the first cell and grows with the push. The picture and the counts come from the same index and contact test, so they cannot disagree.</figcaption>
 </figure>
 
 <div class="tw"><p class="tnum">Table S27</p><table>
@@ -1960,7 +1931,7 @@ whatever the solver does to them, including deformations no rigid transform can 
 
 <figure>
   <video src="assets/binding.mp4" autoplay loop muted playsinline controls preload="metadata"></video>
-  <figcaption><span class="fnum">Figure S12</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
+  <figcaption><span class="fnum">Figure S9</span><br>One piece under a non-affine deformation, its surface bound to the particles, and
   the same particles driving it two ways: a per-piece rigid fit on the left, which is the best a
   single transform can do, and the particle binding on the right, both coloured by how far
   each vertex has left its material on one shared scale: blue at 0.00 fine cells, red at 2.00 and
@@ -2121,7 +2092,7 @@ band a smaller fraction rather than a larger one.</p>
 <figure>
   <img src="assets/bandfrac.png" alt="K against N over four resolutions of each object, and the
        crossed and refined band as a percentage of the object">
-  <figcaption><span class="fnum">Figure S13</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure S10</span><br>The crossed band against the object it is cut
   from, on each object&#8217;s own lattice and on three coarsenings of it. The band comes from the
   operator's own test rather than from a restatement of it.</figcaption>
 </figure>
@@ -2236,7 +2207,7 @@ figures is measured against a compressed Gaussian model, which would move them a
 <figure style="margin:18px 0 26px">
   <img src="assets/voids2048.png" style="width:100%;border-radius:4px"
        alt="the same cut face at 2048 px from a photograph and three methods">
-  <figcaption><span class="fnum">Figure S14</span><br>The same held-out plane of the watermelon,
+  <figcaption><span class="fnum">Figure S11</span><br>The same held-out plane of the watermelon,
   each method through its own renderer rather than through a common cutter. Top: a quadrant of
   the section. Bottom: the marked square, at the scale of a few cells. The renders are
   2048&nbsp;px and the photograph 512&nbsp;px, and neither row is resampled.</figcaption>

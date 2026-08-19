@@ -237,6 +237,30 @@ high-fidelity 3D interiors directly from sparse, unaligned 2D cross-section phot
       lattice operations.</li>
 </ul>
 
+<figure style="margin:22px 0 26px">
+  <img src="assets/six_objects.png" style="width:100%;border-radius:4px"
+       alt="every object, one held-out plane each, from every method">
+  <figcaption><span class="fnum">Figure 2</span><br>Every object, one held-out plane each,
+  rendered in one batch at the same depths with the same settings, the released models
+  re-rendered rather than quoted. The left column is a photograph of a real cut of that kind
+  and is not that plane, since no photograph is.</figcaption>
+</figure>
+
+<figure style="margin:22px 0 26px">
+  <img src="assets/prior_or.png" style="width:100%;border-radius:4px"
+       alt="six held-out planes of the orange from every model, with the photographs">
+  <figcaption><span class="fnum">Figure 3</span><br>Six held-out transverse planes of the
+  orange from every model, the photographs underneath. The third row from the top is this work,
+  with no fine-tuned model anywhere in its run.</figcaption>
+</figure>
+
+<figure style="margin:22px 0 30px">
+  <img src="assets/prior_wm.png" style="width:100%;border-radius:4px"
+       alt="six held-out planes of the watermelon from every model, with the photographs">
+  <figcaption><span class="fnum">Figure 4</span><br>The same for the watermelon, with
+  GaussianFluent&#8217;s released model in the fourth row.</figcaption>
+</figure>
+
 <h2 id="related">2&ensp;Related work</h2>
 
 <h3>2.1&ensp;Interior generation from 2D generative priors</h3>
@@ -385,7 +409,7 @@ around.</p>
 <figure style="margin:18px 0 30px">
   <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
        alt="a shell, filled, its surface pinned, and the cross-section photographs that write the interior">
-  <figcaption><span class="fnum">Figure 2</span><br>One object through the whole method: the two routes, the
+  <figcaption><span class="fnum">Figure 5</span><br>One object through the whole method: the two routes, the
   photographs that supervise the interior, and what a cut produces.</figcaption>
 </figure>
 
@@ -475,7 +499,7 @@ degenerating, the system calibrates the references before and during training.</
 <figure style="margin:16px 0 26px">
   <img src="assets/chord.png" style="width:100%;border-radius:4px"
        alt="two planes meeting in a chord, and 45 degree cuts from the two ways of choosing the phases">
-  <figcaption><span class="fnum">Figure 3</span><br>Two planes meet in a chord. 45&deg; cuts from the phases of
+  <figcaption><span class="fnum">Figure 6</span><br>Two planes meet in a chord. 45&deg; cuts from the phases of
   equation&nbsp;(4) and of equation&nbsp;(5), and their difference at 4&times;.</figcaption>
 </figure>
 
@@ -498,7 +522,7 @@ discarded; it appears at a different angle.</p>
 <figure style="margin:20px 0 26px">
   <img src="assets/cutface_zoom.png" style="width:100%;border-radius:4px"
        alt="the same held-out plane three ways, with the interior magnified">
-  <figcaption><span class="fnum">Figure 4</span><br>The same held-out plane, three ways, with
+  <figcaption><span class="fnum">Figure 7</span><br>The same held-out plane, three ways, with
   the box magnified beside each section. The left column is a photograph of a real cut orange
   and is not that plane, since no photograph is.</figcaption>
 </figure>
@@ -548,7 +572,7 @@ $$\mathbf{T}_j \;=\; (1 - \{t\})\,\Psi\bigl(\mathbf{I}_{\lfloor t \rfloor}\bigr)
 <figure style="margin:20px 0 26px">
   <img src="assets/eq7targets.png" style="width:100%;border-radius:4px"
        alt="the target each supervised plane is given, under both rules">
-  <figcaption><span class="fnum">Figure 5</span><br>The target each of the sixteen supervised
+  <figcaption><span class="fnum">Figure 8</span><br>The target each of the sixteen supervised
   planes is given, from three transverse photographs of the watermelon. Red marks where the
   block rule changes photograph.</figcaption>
 </figure>
@@ -587,7 +611,7 @@ when the two targets are averaged and 0.012 more when one family is made to win.
 <figure style="margin:16px 0 26px">
   <img src="assets/cutgeom.png" style="width:100%;border-radius:4px"
        alt="the crossed band, one cell's contributing edges, and the whole cut face against the exterior">
-  <figcaption><span class="fnum">Figure 6</span><br>The cells a plane crosses, one cell's contributing edges and
+  <figcaption><span class="fnum">Figure 9</span><br>The cells a plane crosses, one cell's contributing edges and
   its polygon, and the whole exposed face.</figcaption>
 </figure>
 
@@ -706,7 +730,7 @@ numbered S1 onward. The method section as it was first written, with its notatio
 <figure style="margin:16px 0 26px">
   <img src="assets/zoom2048.png" style="width:100%;max-width:620px;border-radius:4px"
        alt="the same watermelon plane at 2048 px from three representations, each magnified">
-  <figcaption><span class="fnum">Figure 7</span><br>The same held-out plane of the watermelon
+  <figcaption><span class="fnum">Figure 10</span><br>The same held-out plane of the watermelon
   at 2048&nbsp;px, each released model through the same cutter, with a box of its own section
   magnified beside it. GaussianFluent leaves white between its primitives; FruitNinja&#8217;s
   flesh carries salt-and-pepper over a saturated red; the splatted lattice draws a continuous
@@ -779,7 +803,7 @@ No edge is shared by more than two triangles on any object.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
-  <figcaption><span class="fnum">Figure 8</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure 11</span><br>The crossed band against the object it is cut
   from, on each object's own lattice and on three coarsenings of it.</figcaption>
 </figure>
 
@@ -804,7 +828,7 @@ fruit has a peel.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/collision.png" style="width:100%;border-radius:4px"
        alt="a slab through the contact region at four separations">
-  <figcaption><span class="fnum">Figure 9</span><br>A slab through the contact region of the cut
+  <figcaption><span class="fnum">Figure 12</span><br>A slab through the contact region of the cut
   orange, every particle drawn as what the narrow phase calls it: grey for clear, red for
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
