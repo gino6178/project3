@@ -1,0 +1,47 @@
+route 1: /workspace/ovoxel_native/state_r1.pt
+  770,182 solid coarse cells, 900,556 dual vertices
+16 transverse depths (d +0.2127 .. +1.2092, step +0.0664), 10 longitudinal azimuths, 6 exterior views ['up', 'down', 'front', 'right', 'back', 'left']
+ANCHOR=1  SHELL_PIN=0  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512
+  sections skip the exterior, 2 cells deep by the occupancy: 129,528 of 770,182 coarse cells (16.8%)
+  prefit interior     0  mse 0.037849  distinct colours 1
+  prefit interior   200  mse 0.000445  distinct colours 1,234
+  prefit interior   400  mse 0.000060  distinct colours 18,815
+  prefit interior   600  mse 0.000070  distinct colours 19,984
+  prefit interior converged at step 617, mse 0.000050
+  prefit interior done: mse 0.000050, mean |decode - seed| 0.00247
+  prefit surf_rgb     0  mse 0.024575  distinct colours 1
+  prefit surf_rgb   200  mse 0.000235  distinct colours 30,409
+  prefit surf_rgb   400  mse 0.000142  distinct colours 36,925
+  prefit surf_rgb   600  mse 0.000086  distinct colours 64,119
+  prefit surf_rgb   799  mse 0.000053  distinct colours 98,175
+  prefit surf_rgb done: mse 0.000053, mean |decode - seed| 0.00433
+  prefit took 37s
+  decoder: feat 8-d per cell, stage1 8->128->128->16, stage2 16->64->3, two heads (ANCHOR_SPLIT)
+  trainable: 17,010,150 floats (interior and exterior)
+  references: 16 transverse, 10 longitudinal, 6 exterior
+  -> /workspace/ovoxel_native/r1_free/eval_init
+  probe at 0: 0.03265
+  outer    1/200  steps 32  L1 0.03170  probe 0.02843  7s
+  outer   20/200  steps 640  L1 0.01922  probe 0.03168  77s
+  outer   40/200  steps 1,280  L1 0.01731  probe 0.03268  151s
+  outer   60/200  steps 1,920  L1 0.01726  probe 0.03247  287s
+  outer   80/200  steps 2,560  L1 0.01622  probe 0.03177  377s
+  outer  100/200  steps 3,200  L1 0.01569  probe 0.03219  469s
+  outer  120/200  steps 3,840  L1 0.01559  probe 0.03211  561s
+  outer  140/200  steps 4,480  L1 0.01593  probe 0.03247  654s
+  outer  160/200  steps 5,120  L1 0.01484  probe 0.03204  747s
+  outer  180/200  steps 5,760  L1 0.01585  probe 0.03179  839s
+  outer  200/200  steps 6,400  L1 0.01532  probe 0.03244  931s
+
+trained 200 outer iterations = 6,400 gradient steps in 931.4s (146 ms/step)
+  L1 first 32 mean 0.03170 -> last 32 mean 0.01532
+coverage over the schedule actually run (with jitter):
+  feat_i       736,367 /   770,182  ( 95.6%)
+  feat_s       770,554 /   900,556  ( 85.6%)
+  dual_v       771,297 /   900,556  ( 85.6%)
+  split_w      771,247 /   900,556  ( 85.6%)
+  interior   moved mean 0.2165 max 1.4824; decoded spread [0.0396 0.1297 0.2269]
+  surf_rgb   moved mean 0.2855 max 1.7280; decoded spread [0.082  0.1646 0.2411]
+  -> /workspace/ovoxel_native/r1_free/eval_final
+probe curve: 0:0.03265  1:0.02843  20:0.03168  40:0.03268  60:0.03247  80:0.03177  100:0.03219  120:0.03211  140:0.03247  160:0.03204  180:0.03179  200:0.03244
+TRAIN_OK

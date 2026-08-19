@@ -1,0 +1,41 @@
+16 transverse depths (d +0.2127 .. +1.2092, step +0.0664), 10 longitudinal azimuths, 0 exterior views []
+SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512
+  sections skip the exterior, 2 cells deep by the occupancy: 129,528 of 770,182 coarse cells (16.8%)
+  trainable: 2,310,546 floats of 8,614,438 (interior only, the exterior is pinned)
+  references: 16 transverse targets from secref_orraw_hsep, 10 longitudinal from secref_orraw_vsep, 0 exterior from cube_or6_prep
+  -> /workspace/ovoxel_native/mv_pin_v2/eval_init
+  probe at 0: 0.03281
+  outer    1/200  steps 26  L1 0.03029  probe 0.03099  4s
+  outer   20/200  steps 520  L1 0.02336  probe 0.03650  33s
+  voxel smoothing at outer 30: interior 621,829/770,182 trained, 18,825 untrained cells filled from trained neighbours; surf_rgb 0
+  outer   40/200  steps 1,040  L1 0.02278  probe 0.03614  64s
+  outer   60/200  steps 1,560  L1 0.02206  probe 0.03485  94s
+  voxel smoothing at outer 60: interior 621,829/770,182 trained, 18,825 untrained cells filled from trained neighbours; surf_rgb 0
+  outer   80/200  steps 2,080  L1 0.02251  probe 0.03647  124s
+  voxel smoothing at outer 90: interior 621,829/770,182 trained, 18,825 untrained cells filled from trained neighbours; surf_rgb 0
+  outer  100/200  steps 2,600  L1 0.02253  probe 0.03519  155s
+  outer  120/200  steps 3,120  L1 0.02340  probe 0.03539  186s
+  voxel smoothing at outer 120: interior 621,829/770,182 trained, 18,825 untrained cells filled from trained neighbours; surf_rgb 0
+  outer  140/200  steps 3,640  L1 0.02327  probe 0.03651  216s
+  voxel smoothing at outer 150: interior 621,829/770,182 trained, 18,825 untrained cells filled from trained neighbours; surf_rgb 0
+  outer  160/200  steps 4,160  L1 0.02262  probe 0.03654  246s
+  outer  180/200  steps 4,680  L1 0.02312  probe 0.03586  276s
+  voxel smoothing at outer 180: interior 621,829/770,182 trained, 18,825 untrained cells filled from trained neighbours; surf_rgb 0
+  outer  200/200  steps 5,200  L1 0.02312  probe 0.03553  307s
+
+trained 200 outer iterations = 5,200 gradient steps in 306.6s (59 ms/step)
+  L1 first 26 mean 0.03029 -> last 26 mean 0.02312
+
+coverage over the schedule actually run (with jitter):
+  dual_v             0 /   900,556  (  0.0%)
+  split_w            0 /   900,556  (  0.0%)
+  surf_rgb           0 /   900,556  (  0.0%)
+  interior     736,367 /   770,182  ( 95.6%)
+moved from init:
+  dual_v     mean 0.0000e+00  max 0.0000e+00  rows changed 0
+  split_w    mean 0.0000e+00  max 0.0000e+00  rows changed 0
+  surf_rgb   mean 0.0000e+00  max 0.0000e+00  rows changed 0
+  interior   mean 2.2825e-01  max 1.6454e+00  rows changed 640,637
+  -> /workspace/ovoxel_native/mv_pin_v2/eval_final
+probe curve: 0:0.03281  1:0.03099  20:0.03650  40:0.03614  60:0.03485  80:0.03647  100:0.03519  120:0.03539  140:0.03651  160:0.03654  180:0.03586  200:0.03553
+TRAIN_OK

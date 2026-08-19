@@ -1,0 +1,35 @@
+16 transverse depths (d +0.2127 .. +1.2092, step +0.0664), 10 longitudinal azimuths, 6 exterior views ['up', 'down', 'front', 'right', 'back', 'left']
+SHELL_PIN=0  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512
+  sections skip the exterior, 2 cells deep by the occupancy: 129,528 of 770,182 coarse cells (16.8%)
+  trainable: 8,614,438 floats of 8,614,438 (all four tensors)
+  references: 16 transverse targets from secref_orraw_hsep, 10 longitudinal from secref_orraw_vsep, 6 exterior from cube_or6_prep
+  -> /workspace/ovoxel_native/mv_free/eval_init
+  probe at 0: 0.03281
+  outer    1/200  steps 32  L1 0.03307  probe 0.03099  7s
+  outer   20/200  steps 640  L1 0.02226  probe 0.03480  58s
+  outer   40/200  steps 1,280  L1 0.02180  probe 0.03445  111s
+  outer   60/200  steps 1,920  L1 0.02095  probe 0.03454  164s
+  outer   80/200  steps 2,560  L1 0.02075  probe 0.03511  217s
+  outer  100/200  steps 3,200  L1 0.02126  probe 0.03551  270s
+  outer  120/200  steps 3,840  L1 0.02129  probe 0.03635  324s
+  outer  140/200  steps 4,480  L1 0.02241  probe 0.03591  378s
+  outer  160/200  steps 5,120  L1 0.02050  probe 0.03650  431s
+  outer  180/200  steps 5,760  L1 0.02151  probe 0.03663  484s
+  outer  200/200  steps 6,400  L1 0.02153  probe 0.03475  539s
+
+trained 200 outer iterations = 6,400 gradient steps in 538.5s (84 ms/step)
+  L1 first 32 mean 0.03307 -> last 32 mean 0.02153
+
+coverage over the schedule actually run (with jitter):
+  dual_v       762,961 /   900,556  ( 84.7%)
+  split_w      760,474 /   900,556  ( 84.4%)
+  surf_rgb     768,608 /   900,556  ( 85.3%)
+  interior     736,367 /   770,182  ( 95.6%)
+moved from init:
+  dual_v     mean 9.9343e-02  max 2.3368e+00  rows changed 412,680
+  split_w    mean 4.3284e-02  max 4.9900e-01  rows changed 412,665
+  surf_rgb   mean 1.5594e-01  max 1.6713e+00  rows changed 411,747
+  interior   mean 2.1606e-01  max 1.6480e+00  rows changed 621,812
+  -> /workspace/ovoxel_native/mv_free/eval_final
+probe curve: 0:0.03281  1:0.03099  20:0.03480  40:0.03445  60:0.03454  80:0.03511  100:0.03551  120:0.03635  140:0.03591  160:0.03650  180:0.03663  200:0.03475
+TRAIN_OK
