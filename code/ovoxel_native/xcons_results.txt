@@ -1,0 +1,16 @@
+=== the pipeline: cross-family reconciliation against its own control ===
+  orange       orange                                        0.000    0.000     0.0743
+  xc_copy      xc_copy                                       0.000    0.000     0.0867
+  xc_mean      xc_mean                                       0.000    0.000     0.0826
+  pom_photo    pom_photo                                       nan      nan     0.6211
+=== O-Voxel: reconciliation against full parity ===
+/workspace/rebuild/mc/envs/score/lib/python3.10/site-packages/torch/nn/utils/weight_norm.py:143: FutureWarning: `torch.nn.utils.weight_norm` is deprecated in favor of `torch.nn.utils.parametrizations.weight_norm`.
+  WeightNorm.apply(module, name, dim)
+/workspace/rebuild/mc/envs/score/lib/python3.10/site-packages/peft/tuners/tuners_utils.py:305: UserWarning: Already found a `peft_config` attribute in the model. This will lead to having multiple adapters in the model. Make sure to know what you are doing!
+  warnings.warn(
+  arm                              DS rh   DS rv
+  r1_pin_full  (full parity)      0.0599  0.2315
+  r1_xc_copy   (+ reconcile)      0.0588  0.2901
+  r2_pin_full  (full parity)      0.1018  0.2731
+  r2_xc_copy   (+ reconcile)      0.1019  0.3092
+SCOREALL_DONE
