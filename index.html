@@ -537,6 +537,14 @@ $$\mathbf{T}_j \;=\; (1 - \{t\})\,\Psi\bigl(\mathbf{I}_{\lfloor t \rfloor}\bigr)
 \;+\; \{t\}\,\Psi\bigl(\mathbf{I}_{\lfloor t \rfloor + 1}\bigr)$$
 </div><div class="num">(7)</div></div>
 
+<figure style="margin:20px 0 26px">
+  <img src="assets/eq7targets.png" style="width:100%;border-radius:4px"
+       alt="the target each supervised plane is given, under both rules">
+  <figcaption><span class="fnum">Figure 4</span><br>The target each of the sixteen supervised
+  planes is given, from three transverse photographs of the watermelon. Red marks where the
+  block rule changes photograph.</figcaption>
+</figure>
+
 <h4>3.2.2&ensp;Jittered sampling and alternating optimisation</h4>
 
 <p>The aligned target is held by a stop-gradient, and the training plane is jittered within its
@@ -571,7 +579,7 @@ when the two targets are averaged and 0.012 more when one family is made to win.
 <figure style="margin:16px 0 26px">
   <img src="assets/cutgeom.png" style="width:100%;border-radius:4px"
        alt="the crossed band, one cell's contributing edges, and the whole cut face against the exterior">
-  <figcaption><span class="fnum">Figure 4</span><br>The cells a plane crosses, one cell's contributing edges and
+  <figcaption><span class="fnum">Figure 5</span><br>The cells a plane crosses, one cell's contributing edges and
   its polygon, and the whole exposed face.</figcaption>
 </figure>
 
@@ -690,7 +698,7 @@ numbered S1 onward. The method section as it was first written, with its notatio
 <figure style="margin:16px 0 26px">
   <img src="assets/voids2048.png" style="width:100%;border-radius:4px"
        alt="the same cut face at 2048 px from a photograph and three methods">
-  <figcaption><span class="fnum">Figure 5</span><br>The same held-out plane of the watermelon,
+  <figcaption><span class="fnum">Figure 6</span><br>The same held-out plane of the watermelon,
   each method through its own renderer. Top: a quadrant of the section. Bottom: the marked
   square, at the scale of a few cells. The renders are 2048&nbsp;px and the photograph
   512&nbsp;px, and neither row is resampled.</figcaption>
@@ -724,7 +732,7 @@ contribution it was taken for.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/depthassign.png" style="width:100%;border-radius:4px"
        alt="what the two assignment rules ask for, and what the models trained under them do">
-  <figcaption><span class="fnum">Figure 6</span><br>What the two assignment rules ask adjacent
+  <figcaption><span class="fnum">Figure 7</span><br>What the two assignment rules ask adjacent
   planes for, and what the models trained under them do when the plane is walked through the
   object.</figcaption>
 </figure>
@@ -770,7 +778,7 @@ No edge is shared by more than two triangles on any object.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
-  <figcaption><span class="fnum">Figure 7</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure 8</span><br>The crossed band against the object it is cut
   from, on each object's own lattice and on three coarsenings of it.</figcaption>
 </figure>
 
@@ -795,7 +803,7 @@ fruit has a peel.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/collision.png" style="width:100%;border-radius:4px"
        alt="a slab through the contact region at four separations">
-  <figcaption><span class="fnum">Figure 8</span><br>A slab through the contact region of the cut
+  <figcaption><span class="fnum">Figure 9</span><br>A slab through the contact region of the cut
   orange, every particle drawn as what the narrow phase calls it: grey for clear, red for
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
