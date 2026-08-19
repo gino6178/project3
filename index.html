@@ -800,22 +800,19 @@ No edge is shared by more than two triangles on any object.</p>
     <td><strong>1</strong></td><td><strong>0</strong></td><td>4.44e&#8722;16</td></tr>
 </tbody></table></div>
 
-<p><strong>A cut is interactive.</strong> The whole operator is data-parallel over the
-coarse cell &mdash; the corner sign test, the compaction, the dense child block, the classification
-of the children, the six adjacency passes, and the twelve edge intersections that emit the polygons
-&mdash; and moving it to the device is a transcription rather than a redesign. On the orange&#8217;s
-770,182 solid cells the host takes 6.07&nbsp;s end to end, 4.72&nbsp;s of it refinement and
-labelling and 1.35&nbsp;s polygon emission; the device takes <strong>0.234&nbsp;s</strong>, a factor
-of 26. The watermelon&#8217;s 709,368 cells go from 5.73&nbsp;s to 0.259&nbsp;s. Both are medians of
-five timings after two warm-ups, and both produce the same 52,489 and 53,974 vertices, the same
-103,878 and 106,853 triangles, the same pieces and the same cut area as the host path. Component
-labelling stays on the host, where it costs milliseconds.</p>
+<p><strong>A cut is interactive.</strong> The whole operator is data-parallel over the coarse
+cell &#8212; the corner sign test, the compaction, the dense child block, the classification of the
+children, the six adjacency passes, and the twelve edge intersections that emit the polygons
+&#8212; so it runs on the device as a transcription rather than a redesign. A single plane through
+the orange&#8217;s 770,182 solid cells takes <strong>0.224&nbsp;s</strong>, and through the
+watermelon&#8217;s 709,368 cells <strong>0.199&nbsp;s</strong>. Component labelling stays on the
+host, where it costs milliseconds.</p>
 
-<p><strong>And a second cut costs less than the first.</strong> Planes given together share one
-refinement: a leaf is subdivided while <em>some</em> plane still crosses it, and where two bands
-overlap they are one band. Five planes through the orange leave 1,249,325 leaves against one
-plane&#8217;s 869,106 &#8212; 44% more work for five times the cuts &#8212; and the device time
-rises by a factor of 2.6, not 5.</p>
+<p><strong>And the fifth cut is nearly free.</strong> Planes given together share one refinement:
+a leaf is subdivided while <em>some</em> plane still crosses it, and where two bands overlap they
+are one band. Five planes leave 1,249,325 leaves against a single plane&#8217;s 869,106 &#8212;
+44% more work for five times the cuts &#8212; and five cuts of the orange take
+<strong>0.591&nbsp;s</strong>, 2.6 times one cut rather than five.</p>
 
 <div class="tw"><p class="tnum">Table 3</p><table>
 <thead><tr><th>object</th><th>cuts</th><th>leaves</th><th>pieces</th><th>triangles</th>
@@ -842,10 +839,24 @@ The piece counts are raw: where several planes meet they carve genuine slivers, 
 and \(10^{-7}\) of the object, and merging those is a presentation choice rather than part of
 the operator, so it is left out of what is timed.</p>
 
+<figure style="margin:18px 0 26px">
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <img src="assets/cuts1.gif" style="width:31%;min-width:180px;border-radius:4px"
+         alt="the orange under one plane, its pieces separating">
+    <img src="assets/cuts3.gif" style="width:31%;min-width:180px;border-radius:4px"
+         alt="the orange under three planes">
+    <img src="assets/cuts5.gif" style="width:31%;min-width:180px;border-radius:4px"
+         alt="the orange under five planes">
+  </div>
+  <figcaption><span class="fnum">Figure 11</span><br>One, three and five planes through the
+  orange, the pieces drawn apart along their own outward directions and back. The same planes the
+  table is timed on, at one scale.</figcaption>
+</figure>
+
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
-  <figcaption><span class="fnum">Figure 11</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure 12</span><br>The crossed band against the object it is cut
   from, on each object's own lattice and on three coarsenings of it.</figcaption>
 </figure>
 
@@ -870,7 +881,7 @@ fruit has a peel.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/collision.png" style="width:100%;border-radius:4px"
        alt="a slab through the contact region at four separations">
-  <figcaption><span class="fnum">Figure 12</span><br>A slab through the contact region of the cut
+  <figcaption><span class="fnum">Figure 13</span><br>A slab through the contact region of the cut
   orange, every particle drawn as what the narrow phase calls it: grey for clear, red for
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
