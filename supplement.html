@@ -146,7 +146,7 @@ first thing below.</p>
       illumination the references were taken in, and the storage comparison should be read as a
       Lambertian volume against representations that also carry an angular field.</li>
   <li><strong>Route 2 is the least reproducible thing here.</strong> It has no
-      stage in <code>run.sh</code> and no object configuration: its three steps are run by hand
+      stage in the driver and no object configuration: its three steps are run by hand
       against a lattice, and the radii that produced the orange and the watermelon are not written
       down anywhere, so only the doughnut can be rebuilt from what is published. And for two of the
       three objects the six views are renders of the released reconstruction, so the route that is
@@ -217,7 +217,7 @@ order that depends on both. So a margin is only evidence if it is larger than wh
 the scale for reading every other table here.</p>
 
 <p>Two runs, both on the orange, both route 2, both trained on the same lattice from the same
-<code>gs_fill.ply</code> for the same 200 iterations with the same object configuration. They were
+source file for the same 200 iterations with the same object configuration. They were
 launched as an experiment and a control, and a check afterwards showed the experimental flag never
 reached the code it gates &mdash; the target and the render differ at the shared axis by 0.0643 in
 one and 0.0647 in the other, where the flag, had it fired, would have made the first zero by
@@ -578,8 +578,8 @@ cells, but the whole object does.</p>
   <img src="assets/ext_ovox_doughnut.png" alt="The doughnut's O-Voxel exterior in six views"
        style="margin-top:10px">
   <figcaption>Each object's exterior as an O&#8209;Voxel dual grid, from the six painting
-  directions: top row <code>up</code>, <code>front</code>, <code>right</code>, bottom row
-  <code>down</code>, <code>back</code>, <code>left</code>. The doughnut's icing is on its top and
+  directions: top row up, front, right, bottom row
+  down, back, left. The doughnut's icing is on its top and
   its crumb underneath, which is the normal being read off the field rather than off the centroid;
   the watermelon's stripes continue across the boundaries between views; the orange's underside is
   dark because the object it was rendered from was photographed sitting on a surface, and that
@@ -2320,11 +2320,10 @@ about the interior, which is what the two levels were built to separate.</p>
   interior to discard, filled, and painted from six views of the outside. Neither route ever
   writes inside the object. The photographs of cross-sections are the only thing that does, and
   that is section&nbsp;S4.2 &mdash; the last panel is where this figure hands over to it. The third
-  panel of route&nbsp;1 is the first panel again, on purpose: <code>SHELL_PIN</code> means training
+  panel of route&nbsp;1 is the first panel again, on purpose: pinning the shell means training
   does not move the surface, and the drift it does show over two hundred iterations is 0.0015.
   Every panel is a slab of the lattice rather than a projection, because the interior is the
-  subject and a projection of a solid shows only its skin. Drawn by
-  <code>code/figures/pipeline_fig.py</code>.</figcaption>
+  subject and a projection of a solid shows only its skin.</figcaption>
 </figure>
 
 
@@ -2401,8 +2400,8 @@ because its skin band is set rather than inherited. The single-level build, \(h_
 <strong>889,183</strong>, which is what the geometry and timing tables are measured on.</p>
 <p class="mut">These are read from the lattice files the current pipeline writes. An earlier
 version of this paragraph gave 877,494, 759,353 and 118,141, from a build whose skin was decided by
-a radius rather than by <code>occupancy.surface_cells</code>; the fine level is four times larger
-under the rule now used, and the numbers here are what <code>cell_level.pt</code> holds. Anything
+a radius rather than by the occupancy; the fine level is four times larger
+under the rule now used, and the numbers here are what the lattice files hold. Anything
 below that still quotes the old counts is marked.</p>
 
 <div class="tw"><p class="tnum">Table T3</p><table>
@@ -2434,7 +2433,7 @@ rate \(10^{-3}\). Sixteen transverse and \(N_v = 10\) longitudinal planes per it
 takes twenty-four steps and the trainer supervises centres 4 through 19 &mdash;
 drawn with \(J = 0.5\); six 128-pixel crops per plane and a band weight of 0.3; the skin held
 fixed and the outer 10% by radius left to the exterior views. Peak device memory 5.2 to
-5.9&nbsp;GB on one card. Values for the orange, the watermelon and the doughnut are read from the object configurations in the repository; every object's configuration file is published under <code>code/method/objects/</code>, including the ten fold and ablation variants of the orange.</p>
+5.9&nbsp;GB on one card. Values for the orange, the watermelon and the doughnut are read from the object configurations in the repository; every object's configuration file is published with the method, including the ten fold and ablation variants of the orange.</p>
 
 <p>The spacing is derived rather than tuned, so what it buys and what it costs belong in one
 place. Halving and doubling \(h_c\) on every object, with that object's primitive set held
@@ -4366,9 +4365,8 @@ labelled with the reason it is not a result.</p>
 
 <p><strong>Why A.1 is withdrawn.</strong> The section reports an arm supervised by a stock
 depth2img checkpoint and a text prompt, with the photographs removed, and states that removing the
-photograph directory is all it takes. It is not. A run launched with <code>REF_PHOTO</code> and
-<code>REF_PHOTO_V</code> both cleared still writes targets that are photographs fitted to the
-render's silhouette: replaying <code>_fit_disc(photograph, render)</code> reproduces the stored
+photograph directory is all it takes. It is not. A run launched with both photograph directories cleared still writes targets that are photographs fitted to the
+render's silhouette: replaying that fit reproduces the stored
 target to 0.0000, and the target is neither the render (0.0251 away) nor the raw photograph
 (0.1185 away), so the fit is real and the photograph is in it. Every trained run on the machine
 behaves this way. The numbers below therefore cannot be attributed to the supervision the section
@@ -4495,7 +4493,7 @@ works on one object and not the other is a fact about the statistic.</p>
 
 <p class="mut">Measured on two objects that share an arrangement, so this is a repetition rather
 than a survey. The renderer had to be corrected first: the slab a cut keeps was tied to the depth
-resolution through <code>surf_dis = avg/2</code>, so asking for depths a hundredth apart thinned
+resolution, at half the average spacing between depths, so asking for depths a hundredth apart thinned
 every section to 5.8% of the frame and turned it pale. The two are now separate parameters.</p>
 
 
@@ -4658,10 +4656,10 @@ asymptotic hope: reusing the object's adjacency outside the band takes a cut fro
 2.9&nbsp;s with an identical result. That is still not interactive, and section 3.3 says where the
 remaining time goes.</p>
 
-<p>Three things about that field. It is not equation&nbsp;(23): it is the weak two-rule field of <code>material_field.py</code>, level deciding
+<p>Three things about that field. It is not equation&nbsp;(23): it is the weak two-rule field, level deciding
 skin from interior and lightness grading the interior, which is the version a learned decomposition
 has to beat rather than the clustered one equation&nbsp;(23) defines. Its numbers are the
-<code>orange</code> preset, 8.0e6 against 6.0e5, applied to the doughnut. And the interior is
+orange preset, 8.0e6 against 6.0e5, applied to the doughnut. And the interior is
 graded rather than constant, spanning 6.0e5 to 6.0e6, so the contrast between the shell and the
 stiffest interior is 1.33&times; and not the 13&times; a shell-against-softest reading gives. A 1.33&times; contrast is a weak thing to look for a threshold with, and it is part of why the effect
 is small. The 6.0e6 top of that interior range is what the grading rule can reach rather than what
