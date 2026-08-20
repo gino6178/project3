@@ -997,6 +997,32 @@ object &#8212; the last column of Table&nbsp;2, 4.44 to 6.66\(\times 10^{-16}\) 
 a piece is a set of whole cells and a cut moves cells between sets rather than resampling
 them.</p>
 
+<p><strong>Cutting a body that is already moving.</strong> The demonstration below is one
+run: the orange is dropped, a plane arrives at frame&nbsp;20 and a second at frame&nbsp;95, and
+at each the pieces are <em>discovered</em> rather than declared &#8212; adjacency on the lattice
+is re-evaluated, connected components are labelled, and one solver is built per component
+carrying its particles&#8217; current positions and velocities. Labelling 1,162,387 particles
+into two pieces takes 120&nbsp;ms and into four takes 492&nbsp;ms. The material is the two-rule
+field of Table&nbsp;5 rather than one substance, so the peel at
+8.0&times;10<sup>6</sup>&nbsp;Pa and the interior at 6.0&times;10<sup>5</sup> to
+6.0&times;10<sup>6</sup> deform by different amounts under the same contact.</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/dyncut.gif" style="width:100%;max-width:720px;border-radius:4px"
+       alt="the orange cut twice while it is moving, its four pieces separating">
+  <figcaption><span class="fnum">Figure 14</span><br>One run, 210 frames: a plane at
+  frame&nbsp;20 and another at frame&nbsp;95, one solver per discovered piece, and the
+  two-material field throughout.</figcaption>
+</figure>
+
+<p>The step size is where the stiff peel is felt. The solver is stable at
+\(\Delta t = 3\times 10^{-4}\) for a single material at
+1.2&times;10<sup>6</sup>&nbsp;Pa; at seven times that stiffness the CFL limit falls as
+\(1/\sqrt{E}\) and the same step diverges, and after the second cut the four smaller bodies
+tighten it again. This run uses \(\Delta t = 5\times 10^{-5}\) with 180 substeps per frame.
+That is a cost of the material contrast and we report it rather than choosing a softer peel to
+avoid it.</p>
+
 <h3>4.4&ensp;Ablations</h3>
 
 <p>Four arms, each the orange with exactly one thing changed, trained by the same program on the
@@ -1054,7 +1080,7 @@ is drawn hollow because it is answering an easier question.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/slicecount.png" style="width:100%;border-radius:4px"
        alt="DreamSim and depth variation against the number of training photographs">
-  <figcaption><span class="fnum">Figure 14</span><br>The same five models, measured on what a
+  <figcaption><span class="fnum">Figure 15</span><br>The same five models, measured on what a
   section looks like and on how the interior changes with depth. The mean of the
   section-to-section difference is flat across the whole sweep, 4.06 to 4.53e&#8722;3, and is not
   drawn.</figcaption>
