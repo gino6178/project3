@@ -145,7 +145,7 @@
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
-Interactive 3D applications &mdash; such as virtual cutting, dissection, and fracture simulation
+Interactive 3D applications &mdash; such as planar slicing, sectioning and fracture simulation
 &mdash; require an explicit, realistic internal structure rather than a hollow shell. Existing
 methods rely either on generative score distillation (which blurs structural membranes and
 requires expensive per-object fine-tuning) or volumetric splatting (which suffers from boundary
@@ -187,9 +187,10 @@ planarity on the discretized volume.
 <h2 id="intro">1&ensp;Introduction</h2>
 
 <p><strong>Motivation.</strong> Standard 3D reconstruction from exterior views yields a hollow
-shell. However, interactive downstream applications &mdash; including virtual cutting, robotic
-dissection, and fracture simulation &mdash; fundamentally demand an explicit, physically coherent
-interior. When an object is sliced, the exposed cross-section must exhibit crisp structural detail
+shell. However, interactive downstream applications &mdash; including planar slicing, sectioning
+and fracture simulation &mdash; demand an explicit, physically coherent interior. What is
+demonstrated here is the planar case: a half-space cut, resolved in closed form. A curved or
+partial incision is outside the operator as specified, and section&nbsp;5.2 says so. When an object is sliced, the exposed cross-section must exhibit crisp structural detail
 rather than empty space or blurred approximations.</p>
 
 <p><strong>Limitations of prior work.</strong> Existing interior synthesis approaches fall into
