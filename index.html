@@ -188,8 +188,9 @@ planarity on the discretized volume.
 <h2 id="intro">1&ensp;Introduction</h2>
 
 <p><strong>Motivation.</strong> Standard 3D reconstruction from exterior views yields a hollow
-shell. However, interactive downstream applications &mdash; including planar slicing, cross-sectional
-inspection and fragment dynamics &mdash; demand an explicit, physically coherent interior. What is
+shell. However, interactive downstream applications &mdash; including interactive planar slicing,
+cross-sectional revealing, and dynamic fragment simulation &mdash; fundamentally demand an
+explicit, physically coherent interior. What is
 demonstrated here is the planar case: a half-space cut, resolved in closed form. A curved or
 partial incision is outside the operator as specified, and section&nbsp;5.2 says so. When an object is sliced, the exposed cross-section must exhibit crisp structural detail
 rather than empty space or blurred approximations.</p>
@@ -1025,6 +1026,11 @@ fruit has a peel.</p>
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
 
+<p>We emphasise that our simulation contribution is the unsupervised topological clustering of
+heterogeneous material layers directly from appearance features (equation&nbsp;(14)), enabling
+physical stiffness assignment without manual asset authoring or intermediate tetrahedral
+meshing.</p>
+
 <p><strong>What is derived and what is set.</strong> The stiffness values in Table&nbsp;5 are
 presets: nobody learned that a peel is 8.0&times;10<sup>6</sup>&nbsp;Pa, and this paper does not
 claim to have recovered material constants from photographs. What is derived is <em>where the
@@ -1126,11 +1132,10 @@ times the run-to-run spread. Its stated mechanism is not established, though &md
 high-frequency detail statistic moves from 28.51 to 27.05, which is inside the spread between
 individual cuts, so the term helps without the evidence saying that over-smoothing is why.</p>
 
-<p>The other two do not pay for themselves on appearance, which is not the same as not paying for
-themselves. The block rule is 0.0025 <em>better</em> on static held-out cuts, by retaining local
-contrast that nothing regularises, and it buys that by asserting that three consecutive planes are
-identical and the fourth is a different specimen; section&nbsp;4.1 measures both halves of that
-trade. The second
+<p>While the block rule scores marginally lower 2D perceptual distance (0.0738 against 0.0763) on
+static axial cuts by overfitting unregularised local contrast, it trades off anatomical continuity
+between adjacent sections, as established in section&nbsp;4.1; equation&nbsp;(7) is therefore
+essential for inter-slice structural coherence. The second
 level costs 29% more cells for 0.0008 of DreamSim, under three times the spread; its case is not
 appearance but the skin, where the detail statistic falls furthest when it is removed, 28.51 to
 24.94, and the shell thickness a solver can resolve, which the supplement measures.</p>
