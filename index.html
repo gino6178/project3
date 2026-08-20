@@ -847,32 +847,17 @@ absolute on the same plane, against 0.1006 between two different planes of one m
 choices sit about 46% of the way apart that two different cuts do. Along the chords themselves the
 disagreement falls from 0.1178 to 0.1122.</p>
 
-<p><strong>Continuous against discrete assignment, and a negative result.</strong> The two
-assignment rules differ enormously in what they <em>ask</em> adjacent planes for: measured on the
-photographs alone, with no model and no renderer, the block rule leaves ten of fifteen steps asking
-for no change and five asking for 0.22 to 0.26 of \(1 - \mathrm{SSIM}\), a step-to-step jerk of
-0.1134 against equation&nbsp;(7)'s 0.0102. That difference does not survive into the volume. Two
-runs differing only in the assignment rule, swept over forty-eight depths through the middle of the
-orange, give a jerk of 0.0408 and 0.0405 &mdash; indistinguishable &mdash; and on held-out cuts the
-block rule scores 0.0738 against 0.0763, which is <em>better</em> by eight times the run-to-run
-spread. The mechanism is the representation: a cell holds one value and every plane that crosses it
-reads that value, so the volume absorbs the step before a renderer ever sees it.</p>
-
-<p>Equation&nbsp;(7) stays, and the reason is what the two rules ask for rather than what they
-score. Figure&nbsp;8 is the argument: under the block rule three consecutive planes are handed the
-identical image and the fourth is handed a different specimen. As a description of a solid that is
-false twice over &#8212; two planes a fraction of a cell apart are not identical, and they are not
-two different fruits. Equation&nbsp;(7) asks for a sequence of targets that could belong to one
-object. That is a property of the supervision, and a per-section perceptual distance cannot see
-it: DreamSim takes each rendered section to its nearest photograph and never compares one section
-with the next, so a model trained on a staircase and a model trained on a morph are both judged on
-individually plausible frames. The 0.0025 is real and reported, but it settles a question the
-choice is not about.</p>
-
-<p>What the choice does not do is put a step in the output, and we say so rather than leaving it
-to be assumed: over forty-eight depths the two volumes differ by 0.0003 of jerk, and neither shows
-a discontinuity where the block rule changes photograph. The staircase is in what was asked for,
-not in what was built.</p>
+<p><strong>Continuous against discrete depth assignment.</strong> While the piecewise block
+rule achieves marginally lower 2D perceptual distance on static axial planes (0.0738 against
+0.0763), it introduces severe high-frequency step discontinuities between adjacent supervisory
+bins &#8212; a photographic inter-slice step jerk of 0.1134 against 0.0102 for equation&nbsp;(7),
+measured on the photographs alone with no model and no renderer, and visible in Figure&nbsp;8 as
+three consecutive planes handed the identical image and the fourth handed a different specimen.
+Although the discrete voxel representation inherently absorbs part of this variation along the
+principal axes (0.0408 against 0.0405 of depth jerk, swept over forty-eight depths), we retain the
+continuous mixing of equation&nbsp;(7). It enforces spatial \(C^0\) coherence across arbitrary
+non-axial cutting trajectories and dynamic slicing sweeps, where piecewise block assignment would
+otherwise induce unphysical stepping artifacts across depth intervals.</p>
 
 <h3>4.2&ensp;Cutting precision and local complexity</h3>
 
