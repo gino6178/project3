@@ -459,6 +459,21 @@ these lattices loses 49% of the cells.</p>
 by a dual grid whose vertices are collapsed adaptively under a quadric error metric, which is what
 removes the staircase an axis-aligned lattice would otherwise show.</p>
 
+<p><strong>What is stored, and how it is read.</strong> The lattice is kept as a sparse list of
+occupied cells &#8212; an integer coordinate and a level tag per cell, with the origin and the two
+spacings held once &#8212; not as a dense array, and not in a tree. A dense occupancy grid exists
+only inside the fill that builds it and is discarded; two levels fixed in advance make the index
+an integer division, so there is nothing for an octree or a VDB to accelerate. For the orange that
+is 682,100 coarse cells and 480,287 fine ones, and 9.3&nbsp;MiB on disk under one codec.</p>
+
+<p><strong>Feature lookup is piecewise-constant.</strong> A query at \(\mathbf{x}\) returns the
+feature of the cell containing it. There is no trilinear interpolation between cells, and this is
+load-bearing rather than an economy: because a cell holds one value, every plane that crosses it
+reads the same value, so two photographs that disagree about the same material are averaged on
+that cell by the representation and not by a penalty. An interpolated field would let each plane
+see a different combination of neighbours and would put that reconciliation back into the loss.
+Section&nbsp;3.2.2 reports what happened when we added the penalty anyway.</p>
+
 <h4>3.1.2&ensp;Two routes to a solid</h4>
 
 <p>Two routes produce the solid geometry, and which one an object takes is read off its input
@@ -507,9 +522,16 @@ degenerating, the system calibrates the references before and during training.</
 <h4>3.2.1&ensp;Geometric consistency calibration</h4>
 
 <p><strong>Phase alignment within a family.</strong> The angular intensity profile
-\(a_k(\varphi)\) about a section's own centroid, sampled at \(P = 360\) bins, is the only thing in
-a transverse section that is a function of angle alone. The family is brought to a common phase by
-the circular cross-correlation that maximises agreement with the first member:</p>
+\(a_k(\varphi)\) about a section's own centroid is the only thing in a transverse section that is
+a function of angle alone. It is the mean luminance over an annulus, sampled at \(P = 360\) bins,
+$$a_k(\varphi_p) = \frac{1}{|A_p|}\sum_{\mathbf{u} \in A_p} \ell\bigl(\mathbf{I}_k(\mathbf{u})\bigr),
+\qquad A_p = \bigl\{\mathbf{u} : \arg(\mathbf{u} - \mathbf{c}_k) \in \varphi_p \pm \tfrac{\pi}{P},\;
+0.25\,R_k \le \lVert \mathbf{u} - \mathbf{c}_k \rVert \le 0.80\,R_k \bigr\}$$
+with \(\mathbf{c}_k\) and \(R_k\) the section's own centre and radius. The bounds are not free
+parameters chosen for a result: inside \(0.25R\) the angle is undefined at the core, and outside
+\(0.80R\) the radius estimate is least stable at the rim. The family is brought to a common phase
+by the circular cross-correlation that maximises agreement with the first member, which the DFT
+gives in closed form:</p>
 
 <div class="eq"><div class="body">
 $$\delta_k = \frac{2\pi}{P}\,\arg\max_{m}\;
@@ -519,6 +541,16 @@ $$\delta_k = \frac{2\pi}{P}\,\arg\max_{m}\;
 
 <p>Rotation is the only degree of freedom used, so nothing a photograph shows is invented or
 discarded; it appears at a different angle.</p>
+
+<p><strong>Scale and translation are not free parameters.</strong> A registration of a photograph
+against a volume would have four: an in-plane rotation, a scale and two translations. Here three
+of them are determined rather than searched. \(\Phi\) in equation&nbsp;(6) fits the reference to
+the silhouette that \(\Pi_j\) itself renders, so the scale and the centre follow from the
+cross-sectional moments of the current geometry and change as it changes. Only the in-plane
+rotation is unconstrained by the object, and that is what equation&nbsp;(4) solves &#8212; on a
+one-dimensional profile, in closed form, once, before training. The registration is
+one-dimensional not because a smaller problem was chosen but because the other three dimensions
+are not unknowns.</p>
 
 <figure style="margin:20px 0 26px">
   <img src="assets/cutface_zoom.png" style="width:100%;border-radius:4px"
@@ -634,6 +666,38 @@ two planes that cross the same cell write to the same feature and their disagree
 by that cell holding one value &#8212; which is the same mechanism, stated in
 section&nbsp;3.2.2, that makes an explicit consistency penalty unnecessary.</p>
 
+<p><strong>The alignment is not differentiated, and it is not a choice to withhold a gradient.</strong>
+\(\Phi\) is built by operations that have no derivative: the reference is resampled by a Lanczos
+kernel and pasted at an integer offset, and the render reaches it only after leaving the graph.
+The \(\mathrm{sg}[\cdot]\) in equation&nbsp;(8) records that rather than imposing it. The phases
+\(\delta_k\) and the assignment \(\pi\) are solved once before training and never move; the
+optimisation is over \(\mathcal{F}\) and \(\theta\) alone.</p>
+
+<p><strong>What happens if it is differentiated.</strong> The objection is that \(\Phi\) ought to
+be learned jointly, so we implemented it: three parameters per plane, a scale and a translation,
+applied to the same reference by a differentiable sampler, initialised at the moment fit so the
+arm begins exactly where the method begins, and optimised by the same loss. The alignment does not
+stay put. Over 200 iterations the scale travels \(|\Delta \log s| = 2.43\) from its
+initialisation &#8212; a factor of eleven, and ninety-five on the worst plane &#8212; which is 3.4
+times the distance a random walk of the same optimiser and step count would cover, so it is a
+persistent gradient and not noise. The translation saturates at 1.27 in grid units, which is where
+the target leaves the frame, and the pull transfers to the scale.</p>
+
+<figure style="margin:18px 0 26px">
+  <img src="assets/diffalign.png" style="width:100%;border-radius:4px"
+       alt="held-out sections and the alignment drift, with and without a differentiable fit">
+  <figcaption><span class="fnum">Figure 9</span><br>The same held-out planes under the same seed,
+  differing only in whether the alignment is optimised with the volume, and how far those
+  parameters travel from the fit that initialised them.</figcaption>
+</figure>
+
+<p>The volume pays for it. Held-out sections score 0.5585 of DreamSim against 0.0763 for the
+method as specified, and the failure is legible rather than numerical: the optimiser shrinks each
+target until it is white, the loss falls because a white render matches a white target, and the
+interior is erased. What survives is the peel, which equation&nbsp;(10)&#8217;s skin term holds in
+place and this shortcut cannot reach. A target that can move is a cheaper thing to optimise than a
+volume that has to be right, and the geometry is what stops it moving.</p>
+
 <p>What reconciles contradictory references is not a consistency penalty but the geometry: a cell
 has one value and every plane that crosses it reads that value. We implemented the explicit
 alternative &mdash; reconciling each pair of targets along the chord their planes share &mdash;
@@ -643,7 +707,7 @@ when the two targets are averaged and 0.012 more when one family is made to win.
 <figure style="margin:16px 0 26px">
   <img src="assets/cutgeom.png" style="width:100%;border-radius:4px"
        alt="the crossed band, one cell's contributing edges, and the whole cut face against the exterior">
-  <figcaption><span class="fnum">Figure 9</span><br>The cells a plane crosses, one cell's contributing edges and
+  <figcaption><span class="fnum">Figure 10</span><br>The cells a plane crosses, one cell's contributing edges and
   its polygon, and the whole exposed face.</figcaption>
 </figure>
 
@@ -763,7 +827,7 @@ numbered S1 onward. The method section as it was first written, with its notatio
 <figure style="margin:16px 0 26px">
   <img src="assets/zoom2048.png" style="width:100%;max-width:620px;border-radius:4px"
        alt="the same watermelon plane at 2048 px from three representations, each magnified">
-  <figcaption><span class="fnum">Figure 10</span><br>The same held-out plane of the watermelon
+  <figcaption><span class="fnum">Figure 11</span><br>The same held-out plane of the watermelon
   at 2048&nbsp;px, each released model through the same cutter, with a box of its own section
   magnified beside it. GaussianFluent leaves white between its primitives; FruitNinja&#8217;s
   flesh carries salt-and-pepper over a saturated red; the splatted lattice draws a continuous
@@ -882,7 +946,7 @@ what is timed.</p>
     <img src="assets/cuts5.gif" style="width:31%;min-width:180px;border-radius:4px"
          alt="the orange under five planes">
   </div>
-  <figcaption><span class="fnum">Figure 11</span><br>One, three and five planes through the
+  <figcaption><span class="fnum">Figure 12</span><br>One, three and five planes through the
   orange, the pieces drawn apart along their own outward directions and back. The same planes the
   table is timed on, at one scale.</figcaption>
 </figure>
@@ -919,7 +983,7 @@ measured on the same card, at the settings each method&#8217;s own code uses.</p
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
-  <figcaption><span class="fnum">Figure 12</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure 13</span><br>The crossed band against the object it is cut
   from, on each object's own lattice and on three coarsenings of it.</figcaption>
 </figure>
 
@@ -944,7 +1008,7 @@ fruit has a peel.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/collision.png" style="width:100%;border-radius:4px"
        alt="a slab through the contact region at four separations">
-  <figcaption><span class="fnum">Figure 13</span><br>A slab through the contact region of the cut
+  <figcaption><span class="fnum">Figure 14</span><br>A slab through the contact region of the cut
   orange, every particle drawn as what the narrow phase calls it: grey for clear, red for
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
@@ -993,7 +1057,7 @@ field of Table&nbsp;5 rather than one substance, so the peel at
 <figure style="margin:16px 0 26px">
   <img src="assets/dyncut.gif" style="width:100%;max-width:720px;border-radius:4px"
        alt="the orange cut twice while it is moving, its four pieces separating">
-  <figcaption><span class="fnum">Figure 14</span><br>One run, 210 frames: a plane at
+  <figcaption><span class="fnum">Figure 15</span><br>One run, 210 frames: a plane at
   frame&nbsp;20 and another at frame&nbsp;95, one solver per discovered piece, and the
   two-material field throughout.</figcaption>
 </figure>
@@ -1063,7 +1127,7 @@ is drawn hollow because it is answering an easier question.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/slicecount.png" style="width:100%;border-radius:4px"
        alt="DreamSim and depth variation against the number of training photographs">
-  <figcaption><span class="fnum">Figure 15</span><br>The same five models, measured on what a
+  <figcaption><span class="fnum">Figure 16</span><br>The same five models, measured on what a
   section looks like and on how the interior changes with depth. The mean of the
   section-to-section difference is flat across the whole sweep, 4.06 to 4.53e&#8722;3, and is not
   drawn.</figcaption>
