@@ -38,6 +38,7 @@ from sds_demo import *
 # disc fit -- the reference has to be put on the render's silhouette before they are compared.
 from sds_demo import _fit_disc
 from section_match import section_target
+import diffalign
 import section_consistency
 
 import os as _os
@@ -972,6 +973,7 @@ if __name__ == "__main__":
                 _lum = _c.mean(1)
                 loss = loss + DARK_W * torch.relu(DARK_FLOOR - _lum).pow(2).mean()
         loss.backward()
+        diffalign.step()
         if DDP_WORLD > 1 and _dec is not None:
             import torch.distributed as dist
             for _p in _dec.parameters():
@@ -1903,6 +1905,11 @@ if __name__ == "__main__":
             else:
                 ground_truth_tensor = (section_target(rendering, np.asarray(ref), alpha_r)
                                        if SECTION_MATCH else transform(ref).to(device))
+                if diffalign.ON:
+                    # The same reference, placed by three learnable parameters instead of by
+                    # moments, and left attached to the graph so the loss can move them.
+                    ground_truth_tensor = diffalign.target(
+                        f"v{i}", transform(ref).to(device), rendering)
             if SEC_XCONS > 0 and j >= SEC_XCONS_AT:
                 _held[f"v{i}"] = ground_truth_tensor
                 # Keep this family's target with the geometry that produced it. The transverse
@@ -2046,6 +2053,9 @@ if __name__ == "__main__":
                 ref = Image.open(os.path.join(args.output_path, f"h{i}_ref.png"))
             ground_truth_tensor = (section_target(rendering, np.asarray(ref), alpha_r)
                                    if SECTION_MATCH else transform(ref).to(device))
+            if diffalign.ON:
+                ground_truth_tensor = diffalign.target(
+                    f"h{i}", transform(ref).to(device), rendering)
             if PHASE_ALIGN:
                 ground_truth_tensor = _align_phase(rendering, ground_truth_tensor)
             if SEC_XCONS_HOLD and j > SEC_XCONS_AT and _held.get(f"h{i}") is not None:

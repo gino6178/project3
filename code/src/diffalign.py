@@ -15,6 +15,9 @@ the measurement.
     DIFF_ALIGN=1        enable
     DIFF_ALIGN_LR=0.01  step size for the three parameters (Adam)
 
+Not to be combined with PHASE_ALIGN, which rotates the target after it is built and would detach
+the warp from its parameters. PHASE_ALIGN is off by default and no run in the paper sets it.
+
 Nothing here is used when the flag is off; `target()` is the only entry point the trainer calls.
 """
 import os
@@ -98,6 +101,11 @@ def step():
     step between it and the loss detaches, or because the crops miss it -- every parameter comes
     back with no gradient and the arm silently becomes the method it was meant to contrast with.
     """
+    if not ON:
+        # `_bw` calls this after every backward, so the ordinary run reaches it too. Without
+        # this the counter still advances and the report still fires, putting a line about an
+        # arm that is not running into every training log.
+        return
     _N[0] += 1
     for d in _P.values():
         if d["par"].grad is not None and float(d["par"].grad.abs().sum()) > 0:
