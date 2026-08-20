@@ -313,8 +313,9 @@ is given its own representation.</p>
 <p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O&#8209;Voxel [10], the surface stage of a structured-latent 3D generator [11], is a
 field-free sparse voxel surface: a Flexible Dual Grid in which every active voxel carries a dual
 vertex and grid-edge intersection flags, handling open, non-manifold and fully enclosed internal
-surfaces. We use its official encoder without reimplementing it, for the cut face and then for the
-whole exterior.</p>
+surfaces. We use its official encoder without reimplementing it. Nothing reported in this paper is rendered through it: the
+exterior and every cut face measured here are the lattice's own primitives through the Gaussian
+rasteriser, and the conversion is evaluated on its own terms in the supplement.</p>
 
 <p><strong>Dual contouring.</strong> The dual vertex is a quadric's minimiser [5], and quadrics
 are additive over their planes. That is what lets an adaptive grid be built by collapsing, and the
@@ -345,8 +346,8 @@ accelerates or compresses a primitive set whose job is still to be splatted. The
 is about survives all of them, because a kernel wide enough to close volumetric pinholes bleeds
 across internal materials and a narrow one leaves voids, and a point primitive has no surface for a
 slice to be defined against. We keep the structured grid and remove the rendering primitive from
-the interior instead: discrete occupancy with one feature per cell for the volume, and a separate
-dual-grid boundary for what is seen.</p>
+the interior instead: discrete occupancy with one feature per cell for the volume, and one
+primitive per cell for what is seen.</p>
 
 <h3>2.3&ensp;Virtual cutting and physical simulation</h3>
 
@@ -458,13 +459,8 @@ these lattices loses 49% of the cells.</p>
 
 <p>Each cell \(\mathbf{k}\) stores an eight-dimensional latent feature \(\mathbf{f_k} \in
 \mathbb{R}^8\) and nothing else. Colour is produced by a small globally shared decoder
-\(g_\theta(\mathbf{f_k})\); occupancy and adjacency are integer lookups. The outer hull is wrapped
-by a dual grid whose vertices are collapsed adaptively under a quadric error metric. What that
-buys is an opaque surface and a node count that trades against surface error, not a smoother
-silhouette: a dual vertex moves inside its own cell and the connectivity stays the occupancy's,
-so the staircase is still there at the cell size. The reason to convert at all is that a Gaussian
-shell covers only 7 to 20% of the frame above half alpha, so a cut face shows through from the
-side it should be hidden on; a surface cannot.</p>
+\(g_\theta(\mathbf{f_k})\); occupancy and adjacency are integer lookups. A surface representation for the hull &#8212; a dual grid, which the supplement
+evaluates &#8212; is not used for anything measured here.</p>
 
 <p><strong>What is stored, and how it is read.</strong> The lattice is kept as a sparse list of
 occupied cells &#8212; an integer coordinate and a level tag per cell, with the origin and the two
@@ -1211,9 +1207,8 @@ cannot verify from five points.</p>
 <h3>5.1&ensp;Conclusion</h3>
 
 <p>We have presented a decoupled volumetric representation for 3D objects subjected to virtual
-cutting: continuous surface rendering on an explicit dual-grid boundary, discrete volumetric
-occupancy on a two-level feature lattice, and no rendering primitive asked to serve both roles
-simultaneously. The representational tension eliminated by this decoupling is substantial across
+cutting: discrete volumetric occupancy on a two-level feature lattice, one primitive per cell for what
+is seen, and no rendering primitive asked to carry the interior. The representational tension eliminated by this decoupling is substantial across
 four orders of magnitude in primitive support scale, where prior splatting-based baselines struggle
 between boundary bleeding and unpainted void artifacts.</p>
 

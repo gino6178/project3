@@ -2486,7 +2486,20 @@ $$ \mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') :
 
 <h4>S4.1.3&ensp;The boundary as a dual grid</h4>
 
-<p>Converting the boundary to a dual grid is necessary rather than convenient: a Gaussian shell
+<p><strong>Read this section as an evaluated option, not as the reported path.</strong> Nothing in
+the paper is rendered through the dual grid. Every number in the body &#8212; the perceptual
+distances, the unpainted fraction, the cut timings, the storage &#8212; comes from the lattice's
+own primitives through the Gaussian rasteriser, and every cut face is the exact polygon of
+equation&nbsp;(11) rather than a converted surface. What follows measures the conversion on its
+own terms, and two of its properties are worth stating plainly before the detail. It is not our
+construction: the Flexible Dual Grid is TRELLIS.2's [10], the adaptive collapse is Ju et
+al.'s&nbsp;[5], the additivity is Garland and Heckbert's&nbsp;[8], and what is new here is
+expressing the tolerance as a length. And it does not remove the staircase: a dual vertex moves
+inside its own cell while the connectivity stays the occupancy's, so on a ball of cells the
+surface error is 0.3735 of a cell before the conversion and 0.3654 after, unchanged from a dual
+voxel of one cell up to six.</p>
+
+<p>What the conversion does buy is opacity, and that is a real defect it repairs: a Gaussian shell
 covers only 7 to 20% of the frame at alpha above one half, so at the silhouette a cut face shows
 through from the side it should be hidden on.</p>
 
