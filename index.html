@@ -856,9 +856,23 @@ runs differing only in the assignment rule, swept over forty-eight depths throug
 orange, give a jerk of 0.0408 and 0.0405 &mdash; indistinguishable &mdash; and on held-out cuts the
 block rule scores 0.0738 against 0.0763, which is <em>better</em> by eight times the run-to-run
 spread. The mechanism is the representation: a cell holds one value and every plane that crosses it
-reads that value, so the volume absorbs the step before a renderer ever sees it. We report the
-continuous rule as the one the system uses and this measurement as the reason it is not the
-contribution it was taken for.</p>
+reads that value, so the volume absorbs the step before a renderer ever sees it.</p>
+
+<p>Equation&nbsp;(7) stays, and the reason is what the two rules ask for rather than what they
+score. Figure&nbsp;8 is the argument: under the block rule three consecutive planes are handed the
+identical image and the fourth is handed a different specimen. As a description of a solid that is
+false twice over &#8212; two planes a fraction of a cell apart are not identical, and they are not
+two different fruits. Equation&nbsp;(7) asks for a sequence of targets that could belong to one
+object. That is a property of the supervision, and a per-section perceptual distance cannot see
+it: DreamSim takes each rendered section to its nearest photograph and never compares one section
+with the next, so a model trained on a staircase and a model trained on a morph are both judged on
+individually plausible frames. The 0.0025 is real and reported, but it settles a question the
+choice is not about.</p>
+
+<p>What the choice does not do is put a step in the output, and we say so rather than leaving it
+to be assumed: over forty-eight depths the two volumes differ by 0.0003 of jerk, and neither shows
+a discontinuity where the block rule changes photograph. The staircase is in what was asked for,
+not in what was built.</p>
 
 <h3>4.2&ensp;Cutting precision and local complexity</h3>
 
