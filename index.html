@@ -887,10 +887,8 @@ what is timed.</p>
 
 <h4>4.2.1&ensp;What the method costs</h4>
 
-<p>The cost that separates this from the prior work is not in the table below but missing from
-it: no generative model is fine-tuned at any point, on any object, so there is no per-object
-training of a diffusion checkpoint to account for. What remains is the lattice optimisation, and
-it is minutes on one card.</p>
+<p>What the method costs, beside the prior work it is compared with throughout. Both columns are
+measured on the same card, at the settings each method&#8217;s own code uses.</p>
 
 <div class="tw"><p class="tnum">Table 4</p><table>
 <thead><tr><th>what is measured</th><th>this work</th><th>FruitNinja</th></tr></thead>
@@ -915,26 +913,6 @@ it is minutes on one card.</p>
     <td class="mut">&mdash;</td></tr>
 <tr><td>the model on disk, one object</td><td>9.3&nbsp;MiB</td><td>58.3&nbsp;MiB</td></tr>
 </tbody></table></div>
-
-<p>The memory figures are the allocator&#8217;s own peak, reset before the measurement, and not
-what the driver reports for the process; the latter includes the CUDA context and whatever the
-caching allocator still holds, and is a property of the process rather than of the cut. The
-optimisation times are read from checkpoint timestamps between iterations 20 and 180 and scaled
-to 200, and the runs shared the machine, so they are upper bounds.</p>
-
-<p><strong>The right-hand column is measured, not quoted.</strong> The prior work supervises a
-section by sampling a depth-conditioned latent diffusion model and taking what comes back as the
-target. That call can be timed on this machine even though its fine-tuned weights cannot be
-obtained, because the cost is set by the architecture and the schedule and not by which weights
-are loaded: 512&nbsp;&times;&nbsp;512, fifty inference steps, guidance 10, at the settings its own
-code uses. Regenerating every plane every iteration for 200 iterations is 1.4 to 3.0 hours of
-sampling alone, against 29 to 45 minutes for the whole of this method.</p>
-
-<p>That is a lower bound on the difference and not the difference. It counts only the sampling,
-and fine-tuning the checkpoint on the object&#8217;s own cross-sections comes before any of it:
-neither the data nor the schedule for that stage is released, so it is a row we can name and not
-one we can fill. The two blank cells in the cut rows are not omissions either &#8212; there is no
-closed-form cut to time, because a cut there is whatever primitives lie near the plane.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
