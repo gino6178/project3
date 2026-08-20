@@ -847,28 +847,29 @@ are one band. Five planes leave 1,249,325 leaves against a single plane&#8217;s 
 
 <div class="tw"><p class="tnum">Table 3</p><table>
 <thead><tr><th>object</th><th>cuts</th><th>leaves</th><th>pieces</th><th>triangles</th>
-<th>host</th><th>device</th><th>speed-up</th></tr></thead>
+<th>time</th></tr></thead>
 <tbody>
 <tr><td rowspan="3">orange<br><span class="mut">770,182 cells</span></td>
-    <td>1</td><td>869,106</td><td>5</td><td>113,109</td><td>6.13&nbsp;s</td>
-    <td><strong>0.224&nbsp;s</strong></td><td>27.4&times;</td></tr>
-<tr><td>3</td><td>1,069,964</td><td>14</td><td>349,994</td><td>10.61&nbsp;s</td>
-    <td><strong>0.537&nbsp;s</strong></td><td>19.8&times;</td></tr>
-<tr><td>5</td><td>1,249,325</td><td>53</td><td>571,478</td><td>16.28&nbsp;s</td>
-    <td><strong>0.591&nbsp;s</strong></td><td>27.5&times;</td></tr>
+    <td>1</td><td>869,106</td><td>5</td><td>113,109</td>
+    <td><strong>0.224&nbsp;s</strong></td></tr>
+<tr><td>3</td><td>1,069,964</td><td>14</td><td>349,994</td>
+    <td><strong>0.537&nbsp;s</strong></td></tr>
+<tr><td>5</td><td>1,249,325</td><td>53</td><td>571,478</td>
+    <td><strong>0.591&nbsp;s</strong></td></tr>
 <tr><td rowspan="3">watermelon<br><span class="mut">709,368 cells</span></td>
-    <td>1</td><td>808,537</td><td>2</td><td>113,258</td><td>5.65&nbsp;s</td>
-    <td><strong>0.199&nbsp;s</strong></td><td>28.4&times;</td></tr>
-<tr><td>3</td><td>1,000,323</td><td>11</td><td>341,150</td><td>9.87&nbsp;s</td>
-    <td><strong>0.307&nbsp;s</strong></td><td>32.2&times;</td></tr>
-<tr><td>5</td><td>1,174,287</td><td>35</td><td>553,769</td><td>15.04&nbsp;s</td>
-    <td><strong>0.370&nbsp;s</strong></td><td>40.6&times;</td></tr>
+    <td>1</td><td>808,537</td><td>2</td><td>113,258</td>
+    <td><strong>0.199&nbsp;s</strong></td></tr>
+<tr><td>3</td><td>1,000,323</td><td>11</td><td>341,150</td>
+    <td><strong>0.307&nbsp;s</strong></td></tr>
+<tr><td>5</td><td>1,174,287</td><td>35</td><td>553,769</td>
+    <td><strong>0.370&nbsp;s</strong></td></tr>
 </tbody></table></div>
 
-<p>Both paths return the same leaves, the same pieces and the same triangle count at every row.
-The piece counts are raw: where several planes meet they carve genuine slivers, one cell across
-and \(10^{-7}\) of the object, and merging those is a presentation choice rather than part of
-the operator, so it is left out of what is timed.</p>
+<p>Every row was checked against a host implementation of the same operator and returns the
+same leaves, the same pieces and the same triangle count. The piece counts are raw: where several
+planes meet they carve genuine slivers, one cell across and \(10^{-7}\) of the object, and
+merging those is a presentation choice rather than part of the operator, so it is left out of
+what is timed.</p>
 
 <figure style="margin:18px 0 26px">
   <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
