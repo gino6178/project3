@@ -847,17 +847,20 @@ absolute on the same plane, against 0.1006 between two different planes of one m
 choices sit about 46% of the way apart that two different cuts do. Along the chords themselves the
 disagreement falls from 0.1178 to 0.1122.</p>
 
-<p><strong>Continuous against discrete depth assignment.</strong> While the piecewise block
-rule achieves marginally lower 2D perceptual distance on static axial planes (0.0738 against
-0.0763), it introduces severe high-frequency step discontinuities between adjacent supervisory
-bins &#8212; a photographic inter-slice step jerk of 0.1134 against 0.0102 for equation&nbsp;(7),
-measured on the photographs alone with no model and no renderer, and visible in Figure&nbsp;8 as
-three consecutive planes handed the identical image and the fourth handed a different specimen.
-Although the discrete voxel representation inherently absorbs part of this variation along the
-principal axes (0.0408 against 0.0405 of depth jerk, swept over forty-eight depths), we retain the
-continuous mixing of equation&nbsp;(7). It enforces spatial \(C^0\) coherence across arbitrary
-non-axial cutting trajectories and dynamic slicing sweeps, where piecewise block assignment would
-otherwise induce unphysical stepping artifacts across depth intervals.</p>
+<p><strong>Continuous against discrete depth assignment.</strong> Real physical structures
+&#8212; vascular bundles, pulp segments &#8212; evolve continuously across depth rather than
+changing abruptly between discrete tiers. Evaluated on the reference sequence alone, the
+piecewise block rule introduces severe inter-slice discontinuity: a step-to-step jerk of 0.1134
+across adjacent supervisory bins against 0.0102 for the continuous mixing of equation&nbsp;(7),
+and in Figure&nbsp;8 three consecutive planes handed the identical image before the fourth is
+handed a different specimen. When mapped into the volume the shared voxel lattice acts as a
+geometric regulariser and the two become indistinguishable: swept over forty-eight depths the
+axial jerk is 0.0405 for the block rule and 0.0408 for equation&nbsp;(7). While the piecewise
+rule achieves a marginally lower perceptual distance on static held-out cuts (0.0738 against
+0.0763) by retaining unregularised local contrast, we retain equation&nbsp;(7) as the default. It
+enforces continuity between adjacent cross-sections, which is what the supervision is a
+description of, and the depth axis is the one along which a staircase would otherwise be
+asserted.</p>
 
 <h3>4.2&ensp;Cutting precision and local complexity</h3>
 
