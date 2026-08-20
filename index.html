@@ -96,7 +96,7 @@
 
 <header>
   <h1>Decoupling Surface and Interior: Explicit Volumetric Occupancy from Unaligned Slices for Exact Planar Cutting</h1>
-  <p class="sub">A two-level occupancy lattice supervised by cross-section photographs of different specimens, with no camera pose and no registration</p>
+  <p class="sub">A two-level occupancy lattice supervised by cross-section photographs of different specimens, aligned by unsupervised phase correlation on unoriented sections rather than by camera pose</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
   <div class="links">
@@ -119,7 +119,7 @@
 <tr><td>interior supervision</td><td><strong>photographs, directly</strong></td>
     <td class="mut">a diffusion model fine-tuned per object</td><td class="mut">generative priors</td></tr>
 <tr><td>cut formulation</td><td><strong>closed form</strong></td>
-    <td class="mut">whatever lies near the plane</td><td class="mut">whatever lies near the plane</td></tr>
+    <td class="mut">nearest-primitive retrieval</td><td class="mut">nearest-primitive retrieval</td></tr>
 <tr><td>cut face unpainted at 2048&nbsp;px &darr;</td><td><strong>0.06%</strong></td>
     <td>2.37%</td><td>8.29%</td></tr>
 <tr><td>through one codec &darr;</td><td><strong>9.3&nbsp;MiB</strong></td>
@@ -155,8 +155,9 @@ bleeding and unpainted void artifacts).
 <p class="lead">
 We introduce a decoupled volumetric representation that reconstructs photorealistic, explicit 3D
 interiors directly from a sparse set of <strong>unaligned 2D cross-section photographs</strong>,
-completely eliminating the need for generative priors, per-object fine-tuning, or camera pose
-registration. By decoupling the visible exterior surface from an internal two-level occupancy
+without generative priors, per-object fine-tuning, or camera pose estimation: the sections are
+brought into a common frame by unsupervised phase alignment, and their residual disagreement is
+resolved by the occupancy itself. By decoupling the visible exterior surface from an internal two-level occupancy
 lattice, unaligned references are implicitly reconciled via global cell occupancy. Furthermore,
 our representation seamlessly discretizes into an explicit voxel grid, enabling analytical
 closed-form planar cutting via cell-edge intersections and direct integration with grid-based
@@ -649,7 +650,8 @@ when the two targets are averaged and 0.012 more when one family is made to win.
 <h3>3.3&ensp;Closed-form planar cutting operator</h3>
 
 <p>Given an arbitrary plane \(\Pi = (\mathbf{n}, d)\), the exposed face and the fragment topology
-are produced analytically rather than approximated from whatever primitives lie nearby.</p>
+are produced analytically, rather than approximated by retrieving the primitives nearest the
+plane without an explicit planar clip.</p>
 
 <p><strong>The crossed band, and the sign of a cell.</strong> The cells the plane crosses are
 located by the separating-axis test</p>
