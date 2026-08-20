@@ -543,6 +543,14 @@ $$\delta_k = \frac{2\pi}{P}\,\arg\max_{m}\;
 <p>Rotation is the only degree of freedom used, so nothing a photograph shows is invented or
 discarded; it appears at a different angle.</p>
 
+<p><strong>What the profile assumes.</strong> A one-dimensional circular correlation on an
+angular profile assumes approximate radial coherence about a topological core, which is what a
+fruit, a loaf and a cabbage have. On a severely irregular or non-concentric interior the peak of
+the inverse transform is not sharp and the angle it returns is not meaningful; there the chordal
+solve of equation&nbsp;(5) is what resolves the rotation, because it constrains the two families
+against each other on the lines they share rather than against a profile. We have not measured an
+object of that kind, and section&nbsp;5.2 records it.</p>
+
 <p><strong>Scale and translation are not free parameters.</strong> A registration of a photograph
 against a volume would have four: an in-plane rotation, a scale and two translations. Here three
 of them are determined rather than searched. \(\Phi\) in equation&nbsp;(6) fits the reference to
@@ -1016,6 +1024,15 @@ fruit has a peel.</p>
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
 
+<p><strong>What is derived and what is set.</strong> The stiffness values in Table&nbsp;5 are
+presets: nobody learned that a peel is 8.0&times;10<sup>6</sup>&nbsp;Pa, and this paper does not
+claim to have recovered material constants from photographs. What is derived is <em>where the
+materials are</em>. Clustering the trained per-cell feature and ordering the classes by
+equation&nbsp;(14) puts a class almost entirely inside the skin band at the stiff end, with
+nothing in the clustering told that a fruit has a peel, so a heterogeneous body can be handed to
+a solver without anyone authoring a segmentation by hand. The numbers below are what that
+segmentation is then filled with.</p>
+
 <p><strong>The parameters the solver is given.</strong> The constitutive model is elastic:
 each particle carries a Young&#8217;s modulus, a Poisson ratio and a density, and there is no
 plasticity and therefore no yield stress &#8212; a piece that is pushed returns, and what the
@@ -1108,8 +1125,11 @@ times the run-to-run spread. Its stated mechanism is not established, though &md
 high-frequency detail statistic moves from 28.51 to 27.05, which is inside the spread between
 individual cuts, so the term helps without the evidence saying that over-smoothing is why.</p>
 
-<p>The other two do not pay for themselves on appearance. The block rule is 0.0025 <em>better</em>
-than the continuous assignment it replaced, for the reason given in section&nbsp;4.1. The second
+<p>The other two do not pay for themselves on appearance, which is not the same as not paying for
+themselves. The block rule is 0.0025 <em>better</em> on static held-out cuts, by retaining local
+contrast that nothing regularises, and it buys that by asserting that three consecutive planes are
+identical and the fourth is a different specimen; section&nbsp;4.1 measures both halves of that
+trade. The second
 level costs 29% more cells for 0.0008 of DreamSim, under three times the spread; its case is not
 appearance but the skin, where the detail statistic falls furthest when it is removed, 28.51 to
 24.94, and the shell thickness a solver can resolve, which the supplement measures.</p>
@@ -1157,6 +1177,17 @@ ten, while its mean stays flat. A volume built from one section changes along de
 featureless rate &#8212; it is interpolating. A volume built from ten changes fast in some places
 and slowly in others, which is what a seed boundary and a stretch of uniform flesh are. That is
 the structure the extra photographs put there, and no per-section metric can see it.</p>
+
+<p><strong>What the extra photographs put there.</strong> Along the same 96-plane sweep we
+threshold the dark structure inside the flesh &#8212; the seeds and the shadow around them &#8212;
+and ask how much the mask at one depth overlaps the mask twenty planes away. At one photograph the
+overlap is 0.553: the same dark shapes stand at both depths, because a volume built from one
+section can only repeat that section down the axis. At ten it is 0.217 and at twenty 0.054. Over
+the same range the spread of how much of each section is dark rises from 2.5 to 11.6 percentage
+points, so some depths are dense with seed and others nearly clear. A volume supervised by one
+cross-section is a stretched extrusion of it; the extra cross-sections are what put structure at
+particular depths, and DreamSim is blind to the difference because it never compares one section
+with the next.</p>
 
 <p>Two things are not claimed. The twenty-photograph arm breaks the trend in the second column
 (0.44e&#8722;3 against ten&#8217;s 0.54e&#8722;3) and we do not have a mechanism for it. And the
