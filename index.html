@@ -1049,10 +1049,18 @@ run: the orange is dropped, a plane arrives at frame&nbsp;20 and a second at fra
 at each the pieces are <em>discovered</em> rather than declared &#8212; adjacency on the lattice
 is re-evaluated, connected components are labelled, and one solver is built per component
 carrying its particles&#8217; current positions and velocities. Labelling 1,162,387 particles
-into two pieces takes 120&nbsp;ms and into four takes 492&nbsp;ms. The material is the two-rule
-field of Table&nbsp;5 rather than one substance, so the peel at
-8.0&times;10<sup>6</sup>&nbsp;Pa and the interior at 6.0&times;10<sup>5</sup> to
-6.0&times;10<sup>6</sup> deform by different amounts under the same contact.</p>
+into two pieces takes 120&nbsp;ms and into four takes 492&nbsp;ms, and the material is the two-rule
+field of Table&nbsp;5 rather than one substance.</p>
+
+<p><strong>What this run does and does not show.</strong> It shows that the topology survives:
+particles keep their identity across two cuts, each piece is integrated separately, and the
+pieces fall and collide without the lattice being rebuilt. It does not show large deformation,
+and we measured rather than assumed that. Removing the best rigid transform between the dumped
+states leaves a non-rigid residual of 0.08 to 0.55 of a coarse cell over twelve piece-pairs, and
+the residual on the stiff peel and on the soft interior differs by a factor of 0.93 to 1.02
+&#8212; that is, not at all at this contact. The material contrast is in the solver and does not
+show at these forces: the pieces separate and land, they do not squash. A demonstration of
+elastic response under load is a different experiment and is not in this paper.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/dyncut.gif" style="width:100%;max-width:720px;border-radius:4px"
