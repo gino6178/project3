@@ -29,17 +29,40 @@ import torch
 TRELLIS = os.environ.get("TRELLIS2_ROOT", "/workspace/rebuild/TRELLIS.2")
 
 
+def _ext_for_this_python(base):
+    """The compiled `_C` in `base` built for the running interpreter, or None.
+
+    `build_ext --inplace` writes into the source tree, so a directory can hold one `_C` per
+    interpreter that has ever built there -- and this box now has both a 3.10 and a 3.12. Taking
+    the first match fails at import with a version mismatch several frames deep, which is not
+    where the reader will look for it.
+    """
+    import importlib.machinery
+    for suf in importlib.machinery.EXTENSION_SUFFIXES:
+        hit = glob.glob(os.path.join(base, "_C" + suf))
+        if hit:
+            return hit[0]
+    return None
+
+
 def _load_ovoxel():
     """o_voxel's submodules by path, skipping the package __init__ (which wants flex_gemm)."""
     cands = [os.path.join(TRELLIS, "o-voxel", "o_voxel")]
     cands += glob.glob(os.path.join(TRELLIS, "o-voxel", "build", "lib.*", "o_voxel"))
-    base = next(b for b in cands if glob.glob(os.path.join(b, "_C.*.so"))
-                and os.path.exists(os.path.join(b, "convert", "flexible_dual_grid.py")))
+    ok = [b for b in cands if _ext_for_this_python(b)
+          and os.path.exists(os.path.join(b, "convert", "flexible_dual_grid.py"))]
+    if not ok:
+        import sys as _s
+        raise SystemExit(
+            f"no o_voxel _C built for CPython {_s.version_info[0]}.{_s.version_info[1]} under "
+            f"{TRELLIS}/o-voxel -- rebuild it with this interpreter (build_ovox.sh); found "
+            f"{[os.path.basename(x) for b in cands for x in glob.glob(os.path.join(b, '_C*.so'))]}")
+    base = ok[0]
     if "o_voxel" not in sys.modules:
         pkg = types.ModuleType("o_voxel"); pkg.__path__ = [base]; sys.modules["o_voxel"] = pkg
         sub = types.ModuleType("o_voxel.convert"); sub.__path__ = [os.path.join(base, "convert")]
         sys.modules["o_voxel.convert"] = sub
-        for nm, p in [("o_voxel._C", glob.glob(os.path.join(base, "_C.*.so"))[0]),
+        for nm, p in [("o_voxel._C", _ext_for_this_python(base)),
                       ("o_voxel.convert.flexible_dual_grid",
                        os.path.join(base, "convert", "flexible_dual_grid.py"))]:
             spec = importlib.util.spec_from_file_location(nm, p)

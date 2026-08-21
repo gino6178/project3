@@ -17,7 +17,11 @@ import ovnative as ON
 
 FN = os.environ.get("FN_ROOT", "/workspace/rebuild/worktree")
 ROUTE = os.environ.get("ROUTE", "1")
-LATDIR = {"1": f"{FN}/build_orange/lattice", "2": f"{FN}/build_orange_r2/skin"}[ROUTE]
+# The route still names the *kind* of directory -- a quantised release or a projected skin -- but
+# which object's is now the caller's, because the same program has to build a state for each of
+# them and the orange was only ever the first.
+LATDIR = os.environ.get(
+    "LATDIR", {"1": f"{FN}/build_orange/lattice", "2": f"{FN}/build_orange_r2/skin"}[ROUTE])
 OUT = os.environ.get("STATE", f"/workspace/ovoxel_native/state_r{ROUTE}.pt")
 dev = "cuda"
 

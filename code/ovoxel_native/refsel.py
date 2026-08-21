@@ -48,8 +48,13 @@ def _disc(img):
     return (cy, cx, float(np.percentile(rr, 98)))
 
 
-def _blend_canonical(path, size=512, frac=0.38):
-    im = Image.open(path).convert("RGB")
+def _canonical(im, size=512, frac=0.38):
+    """One photograph on a common disc: its section centred and scaled to a fixed radius.
+
+    Two photographs of two different oranges are framed differently, so mixing them as they sit
+    mixes a section with its neighbour's background. On the disc they are the same size in the
+    same place and the mix is between the sections.
+    """
     cy, cx, r = _disc(im)
     scale = (frac * size) / max(r, 1e-6)
     w, h = im.size
@@ -57,6 +62,16 @@ def _blend_canonical(path, size=512, frac=0.38):
     out = Image.new("RGB", (size, size), (255, 255, 255))
     out.paste(im2, (int(round(size / 2 - cx * scale)), int(round(size / 2 - cy * scale))))
     return np.asarray(out, np.float32) / 255.0
+
+
+def _blend_canonical(path, size=512, frac=0.38):
+    return _canonical(Image.open(path).convert("RGB"), size, frac)
+
+
+def _blend_images(a, b, w):
+    """Two photographs already in hand, mixed on the common disc."""
+    m = np.clip((1.0 - w) * _canonical(a) + w * _canonical(b), 0, 1)
+    return Image.fromarray((m * 255).astype("uint8"))
 
 
 def _blend_on_disc(pa, pb, w):
@@ -99,6 +114,66 @@ def _angular_profile(img, nb=360, r_lo=0.25, r_hi=0.80):
     return prof / nn if nn > 1e-9 else None
 
 
+def _depth_pick(spec, idx, n, one):
+    """This depth's target, from whichever per-photograph rule `one` is.
+
+    `REF_TRANS_BLEND` extends the continuous depth assignment to the transverse family. It had
+    only ever been given to the longitudinal one -- `photo` blends and this family did not -- and
+    the rule here is `idx * len(files) // n`, integer division, so the photograph changes abruptly
+    at len(files) - 1 depths and every plane between two changes is supervised by whichever
+    photograph its side of the switch fell on.
+
+    Measured on the O-Voxel arms, that is what the horizontal banding in a longitudinal cut is:
+    the mean axial profile of `r1_free` steps at 0.500, 0.658 and 0.816 against switches at
+    0.500, 0.667 and 0.833, while the pipeline's own profile over the same six held-out planes
+    has no step there. The transverse planes stack along the polar axis, so each switch draws a
+    line across it and a longitudinal cut crosses every one.
+
+        1  the two photographs either side of the depth, mixed at the fractional part (default)
+        2  the nearer photograph alone, but on the same common disc as 1
+        0  the block rule, and what every arm before r1_tb1 was trained under
+
+    2 exists because 1 changes two things at once: it interpolates, and it re-centres and
+    re-scales each photograph onto a common disc, which is a change to the target even where the
+    mixing weight is 0 or 1. Without 2 an improvement cannot be attributed to either -- and it
+    could not have been. Measured against r1_pin_full on the orange, the jump at the five switch
+    depths, in units of the profile's own median jump, is 5.14 for the block rule, 5.20 for the
+    disc alone and 3.78 for the blend, against the pipeline's 3.38: the re-framing does nothing
+    for the banding. What the re-framing does do is the held-out probe, 0.03081 -> 0.03023, and
+    the blend carries that further to 0.02958, lowest at every checkpoint after the twentieth.
+
+    1 by default from that measurement. It does not touch the other defect in the same picture:
+    the vertical streaks are a cut plane meeting a per-cell field on an axis-aligned lattice,
+    they are identical in all three arms, and no assignment rule reaches them.
+
+    It wraps the rule rather than living inside one, because which rule is in force is not the
+    caller's choice to make: `REF_PHASE_MODE=solve` falls through to the greedy alignment whenever
+    a reference set has no `phase_opt.npz`, and none of them on this box has one, so every arm so
+    far has run `phase_aligned` under a label that says `solved_photo`.
+    """
+    files = sorted(photos_in(spec))
+    L = len(files)
+    mode = os.environ.get("REF_TRANS_BLEND", "1")
+    if mode not in ("1", "2") or L < 2:
+        return one((idx * L // max(n, 1)) % L)
+    # The stack is a stack and not a cycle. `idx * L / n` with the pair taken modulo L sends the
+    # last segment back to the first photograph, so the deepest planes are supervised by the
+    # shallowest section: on the apple, with two references and sixteen planes, planes 8 to 15
+    # blend 1 -> 0 while planes 0 to 7 blend 0 -> 1, and the assignment runs backwards over half
+    # the object. Spanning [0, L-1] instead puts the first plane on the first photograph and the
+    # last on the last, monotonically, and agrees with the block rule at both ends.
+    t = idx * (L - 1) / max(n - 1, 1)
+    j0 = min(int(t), L - 2)
+    j1 = j0 + 1
+    w = float(t - j0)
+    if mode == "2":
+        w = float(round(w))
+    key = (spec, "tb", mode, j0, j1, round(w, 3))
+    if key not in _PHOTOS:
+        _PHOTOS[key] = _blend_images(one(j0), one(j1), w)
+    return _PHOTOS[key]
+
+
 def phase_aligned(spec, idx, n):
     """Equation (11): this plane's own photograph, turned to the family's angular phase.
 
@@ -106,8 +181,12 @@ def phase_aligned(spec, idx, n):
     here so that an object with no phase_opt.npz runs the same experiment this one did -- falling
     through to `photo`, with no alignment at all, would quietly be a different method.
     """
+    return _depth_pick(spec, idx, n, lambda k: _phase_one(spec, k))
+
+
+def _phase_one(spec, k):
+    """Photograph k of the family, turned to the phase of the first."""
     files = sorted(photos_in(spec))
-    k = (idx * len(files) // max(n, 1)) % len(files)
     key = (spec, k, "phase")
     if key in _PHOTOS:
         return _PHOTOS[key]
@@ -130,24 +209,58 @@ def phase_aligned(spec, idx, n):
     return out
 
 
+def _solved_one(spec, files, phases, perm, j):
+    """Photograph j of the transverse family, turned to its own solved phase."""
+    k = int(perm[j]) if j < len(perm) else j
+    key = (spec, k, "solved")
+    if key not in _PHOTOS:
+        deg = float(np.degrees(phases[k])) if k < len(phases) else 0.0
+        img = Image.open(files[k]).convert("RGB")
+        if abs(deg) > 1e-6:
+            img = img.rotate(-deg, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
+        _PHOTOS[key] = img
+    return _PHOTOS[key]
+
+
 def solved_photo(spec, idx, n):
-    """The transverse family: equation (27)'s assignment, at its solved phase."""
+    """The transverse family: equation (27)'s assignment, at its solved phase.
+
+    `REF_TRANS_BLEND` extends the continuous depth assignment to this family. It had only ever
+    been given to the longitudinal one -- `photo` blends and this did not -- and the assignment
+    here is `idx * len(files) // n`, integer division, so the photograph changes abruptly at
+    len(files) - 1 depths and every plane between two changes is supervised by whichever
+    photograph its side of the switch fell on.
+
+    Measured on the O-Voxel arms, that is what the horizontal banding in a longitudinal cut is:
+    the mean axial profile of `r1_free` steps at 0.500, 0.658 and 0.816 against switches at
+    0.500, 0.667 and 0.833, while the pipeline's own profile over the same six held-out planes
+    has no step there. The transverse planes stack along the polar axis, so each switch draws a
+    line across it and a longitudinal cut crosses every one.
+
+        1  the two photographs either side of the depth, mixed at the fractional part (default)
+        2  the nearer photograph alone, but on the same common disc as 1
+        0  the block rule, and what every arm before r1_tb1 was trained under
+
+    2 exists because 1 changes two things at once: it interpolates, and it re-centres and
+    re-scales each photograph onto a common disc, which is a change to the target even where the
+    mixing weight is 0 or 1. Without 2 an improvement cannot be attributed to either -- and it
+    could not have been. Measured against r1_pin_full on the orange, the jump at the five switch
+    depths, in units of the profile's own median jump, is 5.14 for the block rule, 5.20 for the
+    disc alone and 3.78 for the blend, against the pipeline's 3.38: the re-framing does nothing
+    for the banding. What the re-framing does do is the held-out probe, 0.03081 -> 0.03023, and
+    the blend carries that further to 0.02958, lowest at every checkpoint after the twentieth.
+
+    1 by default from that measurement. It does not touch the other defect in the same picture:
+    the vertical streaks are a cut plane meeting a per-cell field on an axis-aligned lattice,
+    they are identical in all three arms, and no assignment rule reaches them.
+    """
     got = _solved(spec)
-    files = sorted(photos_in(spec))
     if got is None:
         return phase_aligned(spec, idx, n)
     phases, perm = got
-    k = (idx * len(files) // max(n, 1)) % len(files)
-    k = int(perm[k]) if k < len(perm) else k
-    key = (spec, k, "solved")
-    if key in _PHOTOS:
-        return _PHOTOS[key]
-    deg = float(np.degrees(phases[k])) if k < len(phases) else 0.0
-    img = Image.open(files[k]).convert("RGB")
-    if abs(deg) > 1e-6:
-        img = img.rotate(-deg, resample=Image.BICUBIC, fillcolor=(255, 255, 255))
-    _PHOTOS[key] = img
-    return img
+    files = sorted(photos_in(spec))
+    return _depth_pick(spec, idx, n,
+                       lambda j: _solved_one(spec, files, phases, perm, j))
 
 
 def photo(spec, idx, n):

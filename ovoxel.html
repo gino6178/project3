@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The object as an O-Voxel grid, end to end</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+      integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+        integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<style>
+  :root{ --ink:#111; --mut:#5c5c5c; --line:#e6e6e6; --acc:#a8412a; --panel:#f7f7f7; }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:#fff;color:var(--ink);
+       font:17px/1.7 "Charter","Georgia","Times New Roman",serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  .eq{display:flex;align-items:center;gap:14px;margin:20px 0}
+  .eq .body{flex:1;overflow-x:auto;overflow-y:hidden;text-align:center}
+  .eq .num{color:var(--mut);font-size:14px;flex:none}
+  .katex{font-size:1.02em}
+  header{padding:56px 0 30px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(27px,4.4vw,40px);line-height:1.22;margin:0 0 10px;font-weight:600;
+     letter-spacing:-.01em}
+  .sub{color:var(--mut);font-size:clamp(15px,2.2vw,19px);margin:0 0 6px;font-style:italic}
+  .authors{font-size:17px;margin:14px 0 2px}
+  .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:16px;margin-top:16px}
+  .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.35);
+           padding-bottom:1px}
+  .links a:hover{border-bottom-color:var(--acc)}
+  h2{font-size:25px;margin:52px 0 10px;font-weight:600;letter-spacing:-.01em;text-align:left}
+  h3{font-size:19px;margin:34px 0 8px;font-weight:600}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:26px 0}
+  .grid2 figure{margin:0}
+  .grid2 video{width:100%;display:block;border-radius:3px;background:#fff}
+  .grid2 .cap{color:var(--mut);font-size:13.5px;margin-top:5px;text-align:center}
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr} }
+  .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
+  nav.toc{display:flex;flex-wrap:wrap;gap:0 18px;justify-content:center;padding:14px 0 2px;
+          border-bottom:1px solid var(--line);font-size:14.5px}
+  nav.toc a{color:var(--mut);text-decoration:none}
+  nav.toc a:hover{color:var(--acc)}
+  p{margin:0 0 16px;text-align:left}
+  .lead{font-size:17.5px}
+  figure{margin:26px 0}
+  figure video{width:100%;display:block;border-radius:3px;background:#fff}
+  figure img{width:100%;display:block;border-radius:3px;background:#fff}
+  figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
+  .tw{overflow-x:auto;margin:20px 0}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-weight:600;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+  .win{font-weight:700}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:14px 18px;
+        border-radius:0 3px 3px 0;font-size:16px;margin:22px 0;color:#3c3c3c}
+  .note strong{color:var(--ink)}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:14px;
+      overflow-x:auto;font-size:13.5px;line-height:1.5;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+  footer{margin:60px 0 48px;padding-top:22px;border-top:1px solid var(--line);
+         color:var(--mut);font-size:14.5px}
+  ul{margin:0 0 16px;padding-left:24px} li{margin-bottom:7px}
+  @media (max-width:640px){ body{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>The object as an O&#8209;Voxel grid, end to end</h1>
+  <p class="sub">Every pixel from the dual grid and the occupancy &mdash; no Gaussian is rendered anywhere on this page</p>
+  <p class="authors">Anonymous</p>
+  <div class="links">
+    <a href="index.html">Paper</a>
+    <a href="supplement.html">Supplement</a>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#blend">What changed, and what it was worth</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
+</nav>
+
+<h2 id="what">What this is, and what it is not</h2>
+
+<p class="lead">The paper's pipeline stores appearance on a two-level cube lattice and draws it
+through the 3D&nbsp;Gaussian rasteriser: the cells are splatted. This page is a separate build in
+which nothing is splatted. The object <em>is</em> an O&#8209;Voxel dual grid and a per-cell
+interior field, the cut face is the closed-form polygon of a plane against the occupancy, and both
+go into one nvdiffrast pass. It answers a question the paper cannot: what does this object look
+like when the representation is carried all the way through, rather than converted at the surface
+and splatted underneath?</p>
+
+<div class="note">
+<strong>These are not the paper's reported numbers.</strong> Every result on this page comes from
+the O&#8209;Voxel-native build in <code>code/ovoxel_native/</code>, trained separately. The paper's
+tables are unaffected by anything here, and where the two disagree the paper's numbers are the ones
+that were produced by the pipeline it describes.
+</div>
+
+<h2 id="rep">The representation</h2>
+
+<p>Three tensors are the model, and nothing else is. Two more are fixed and come from the
+occupancy.</p>
+
+<div class="tw"><table>
+<thead><tr><th>tensor</th><th>shape</th><th>what it is</th><th>trained</th></tr></thead>
+<tbody>
+<tr><td><code>dual_v</code></td><td>\((N_s, 3)\)</td><td>where the surface sits inside each active fine voxel</td><td class="mut">pinned here</td></tr>
+<tr><td><code>split_w</code></td><td>\((N_s, 1)\)</td><td>how each dual quad is split into two triangles</td><td class="mut">pinned here</td></tr>
+<tr><td><code>surf_rgb</code></td><td>\((N_s, 3)\)</td><td>the exterior's colour, one per dual vertex</td><td class="mut">pinned here</td></tr>
+<tr><td><code>interior</code></td><td>\((N_c, 3)\)</td><td>the volumetric appearance, one colour per solid coarse cell</td><td><strong>yes</strong></td></tr>
+<tr><td><code>coords</code>, <code>inter</code></td><td>\((N_s, 3)\)</td><td>which fine voxels are active and which of their edges the surface crosses</td><td class="mut">fixed</td></tr>
+<tr><td><code>solid</code>, <code>idx3</code></td><td>\((N_c, 3)\)</td><td>the occupancy after closing and filling, and its index</td><td class="mut">fixed</td></tr>
+</tbody></table></div>
+
+<p><code>interior</code> is the part TRELLIS.2's own container does not carry, because
+<code>mesh_to_flexible_dual_grid</code> only ever returns boundary voxels &mdash; a dual grid is a
+surface, and a cuttable object needs a volume. It is not stored as colours: each cell holds an
+8&#8209;dimensional latent and a shared two-stage decoder produces the colour, which is the paper's
+anchor decoder applied to this container. The exterior gets a second decoder of its own, so the two
+populations cannot leak into each other.</p>
+
+<p>Everything on this page is trained with the exterior pinned, which is the pipeline's own
+setting: the shape and the skin come from the released model and only the interior beneath them
+learns. What that leaves free is between 3.2 and 6.2 million floats depending on the object.</p>
+
+<h2 id="e2e">End to end</h2>
+
+<div class="flow">
+<svg viewBox="0 0 840 300" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="From a lattice to a rendered cut and back: occupancy and dual grid, the interior field, the closed-form cut polygon, one rasteriser pass, and the loss returning to the interior field">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a8a8a"/>
+    </marker>
+    <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a8412a"/>
+    </marker>
+    <style>
+      .bx { fill:#fbfbfb; stroke:#d8d8d8; stroke-width:1.2; rx:4 }
+      .bo { fill:#fbe6de; stroke:#e6c3b6; stroke-width:1.2; rx:4 }
+      .h  { font:600 12.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#111 }
+      .s  { font:11.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#5c5c5c }
+      .a  { font:11.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#a8412a }
+      .ln { stroke:#8a8a8a; stroke-width:1.3; fill:none; marker-end:url(#ar) }
+      .lr { stroke:#a8412a; stroke-width:1.4; fill:none; marker-end:url(#ara);
+            stroke-dasharray:5 3 }
+    </style>
+  </defs>
+
+  <rect class="bx" x="8" y="34" width="150" height="76"/>
+  <text class="h" x="20" y="56">lattice</text>
+  <text class="s" x="20" y="74">occupancy at \(h_c\),</text>
+  <text class="s" x="20" y="90">skin at \(h_f = h_c/2\)</text>
+
+  <path class="ln" d="M162,72 H196"/>
+
+  <rect class="bx" x="200" y="8" width="176" height="60"/>
+  <text class="h" x="212" y="28">boundary &#8594; dual grid</text>
+  <text class="s" x="212" y="46">every exposed cell face,</text>
+  <text class="s" x="212" y="60">one node per surface voxel</text>
+
+  <rect class="bo" x="200" y="78" width="176" height="60"/>
+  <text class="h" x="212" y="98">interior field</text>
+  <text class="s" x="212" y="116">one 8-d latent per solid cell,</text>
+  <text class="s" x="212" y="130">shared decoder &#8594; RGB</text>
+
+  <path class="ln" d="M186,66 L196,40"/>
+  <path class="ln" d="M186,80 L196,104"/>
+
+  <path class="ln" d="M380,38 H420 V96 H444"/>
+  <path class="ln" d="M380,108 H444"/>
+
+  <rect class="bx" x="448" y="66" width="168" height="72"/>
+  <text class="h" x="460" y="86">the cut, in closed form</text>
+  <text class="s" x="460" y="104">plane &#8745; cube = polygon;</text>
+  <text class="s" x="460" y="118">vertices coloured by the</text>
+  <text class="s" x="460" y="132">interior at their own position</text>
+
+  <path class="ln" d="M620,102 H656"/>
+
+  <rect class="bx" x="660" y="66" width="164" height="72"/>
+  <text class="h" x="672" y="86">one rasteriser pass</text>
+  <text class="s" x="672" y="104">exterior behind the plane</text>
+  <text class="s" x="672" y="118">plus the exposed face;</text>
+  <text class="s" x="672" y="132">the depth test composes them</text>
+
+  <path class="ln" d="M742,142 V182"/>
+
+  <rect class="bx" x="596" y="186" width="228" height="66"/>
+  <text class="h" x="608" y="206">loss against the photograph</text>
+  <text class="s" x="608" y="224">0.7(1&#8722;SSIM) + 0.3 MSE on six</text>
+  <text class="s" x="608" y="238">128&#8239;px crops, plus the band term</text>
+
+  <path class="lr" d="M596,219 H300 V142"/>
+  <text class="a" x="330" y="212">the gradient reaches the interior latents only</text>
+
+  <text class="s" x="8" y="284">Which photograph a plane is compared against is the depth assignment:</text>
+  <text class="s" x="8" y="298">continuous in depth for both families, which is the change measured below.</text>
+</svg>
+</div>
+
+<p>The three steps that are not obvious are worth stating plainly.</p>
+
+<p><strong>The occupancy is built once and never moves.</strong> The coarse cells that hold a
+primitive are closed and filled, so the volume is a solid rather than a shell, and the dual grid is
+extracted from the boundary of that solid at the fine spacing. Connectivity therefore comes from
+the occupancy and not from where any vertex sits, which is what lets the cut stay closed form.</p>
+
+<p><strong>The cut is a formula, not a mesh operation.</strong> A plane meets a cube in a convex
+polygon whose vertices are the crossings of its twelve edges, so the exposed face of a cut is the
+union of one polygon per crossed cell, computed directly. Each vertex takes its colour by trilinear
+interpolation of the interior field at its own position &mdash; not at the cell centre, which for a
+face passing near a material boundary would fall on the wrong side of it.</p>
+
+<p><strong>Both surfaces go into one pass.</strong> The exterior mesh is filtered to the half the
+plane keeps, the cut polygons are appended, and the two are rasterised together, so the depth test
+composes them and nothing has to be blended between two renderers. That is the whole reason the
+exterior was converted rather than left as Gaussians: a splatted shell covers only 7 to 20% of the
+frame at \(\alpha\) above one half, so at the silhouette a cut face shows through from the side it
+should be hidden on.</p>
+
+<h2 id="cut">The cut, on seven objects</h2>
+
+<p>Each video is one object, cut twice. On the left a plane perpendicular to the polar axis walks
+down it; on the right a plane containing the axis walks across. Nothing is composited: what changes
+between frames is one number, the plane's offset.</p>
+
+<div class="grid2">
+  <figure>
+    <video src="assets/ovcut_orange_sp.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">orange &mdash; 770,182 interior cells, 900,556 dual vertices</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_watermelon_sp.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">watermelon &mdash; 709,368 and 810,071</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_apple1_sp.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">apple &mdash; 756,905 and 924,929</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_pomegranate2_sp.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">pomegranate &mdash; 491,350 and 718,534</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_bread_sp.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">loaf &mdash; 396,075 and 448,876</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_cake2_sp.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">cake &mdash; 395,613 and 616,332</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_doughnut.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">doughnut &mdash; 544,568 and 316,285</div>
+  </figure>
+</div>
+
+<h2 id="seven">Seven objects, both families</h2>
+
+<figure>
+  <img src="assets/ovox_seven.png" alt="One held-out transverse and one held-out longitudinal cut of each of seven objects, rendered from the O-Voxel representation">
+  <figcaption>One held-out cut of each family per object. Held out means the plane was never
+  supervised: the training walks 16 transverse depths and 10 longitudinal azimuths, and these are
+  drawn separately under <code>HELDOUT_BAND=0.30,0.70</code>. The doughnut's longitudinal plane
+  passes through the hole and meets the ring twice, which is why it shows two crumb faces with a
+  grey band between them. The grey is not a cut face and not a filled hole &mdash; the occupancy
+  has no solid cell anywhere near the middle, and rendering the same plane with the exterior
+  switched off removes every grey pixel of it. It is the ring's <em>far inner wall</em>, drawn by
+  the dual grid and composited behind the plane exactly as it should be, and it is grey because
+  the inside of a torus faces none of the six exterior directions that painted the skin, so it
+  kept the flat value <code>make_shape</code> wrote. The pipeline shows nothing there at all,
+  which is the same fact from the other side: a Gaussian shell does not cover that
+  surface.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>solid cells</th><th>dual vertices</th><th>trainable floats</th><th>200 outer iterations</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>770,182</td><td>900,556</td><td>6,182,467</td><td>718&#8239;s</td></tr>
+<tr><td>watermelon</td><td>709,368</td><td>810,071</td><td>5,695,955</td><td>609&#8239;s</td></tr>
+<tr><td>apple</td><td>756,905</td><td>924,929</td><td>6,076,251</td><td>710&#8239;s</td></tr>
+<tr><td>loaf</td><td>396,075</td><td>448,876</td><td>3,189,611</td><td>510&#8239;s</td></tr>
+<tr><td>cake</td><td>395,613</td><td>616,332</td><td>3,185,915</td><td>614&#8239;s</td></tr>
+<tr><td>pomegranate</td><td>491,350</td><td>718,534</td><td>3,951,811</td><td>801&#8239;s</td></tr>
+<tr><td>doughnut</td><td>544,568</td><td>316,285</td><td>4,377,555</td><td>480&#8239;s</td></tr>
+</tbody></table></div>
+
+<p>5,200 gradient steps in every case, on one L40S. The doughnut has more solid cells than dual
+vertices, which no other object does: a torus is mostly interior and has comparatively little
+surface, and the two counts measure exactly that.</p>
+
+<h2 id="families">Transverse and longitudinal are not the same question</h2>
+
+<p>The two families differ in more than orientation. The transverse planes are a <em>stack</em>:
+they are parallel, ordered along the polar axis, and the photographs that supervise them are
+ordered the same way, so which photograph belongs at which depth is a question with an answer. The
+longitudinal planes are a <em>fan</em>: they all contain the axis and differ by azimuth, so they
+all cut the same material and any of them could be compared against any photograph.</p>
+
+<p>That difference has a consequence which is visible rather than theoretical. A transverse cut
+crosses no depth boundary &mdash; it <em>is</em> one depth &mdash; while a longitudinal cut crosses
+every one of them, so anything that varies discontinuously with depth appears as a band across the
+longitudinal face and not at all on the transverse one. Which is what was found, and fixed.</p>
+
+<h2 id="blend">What changed, and what it was worth</h2>
+
+<p>The continuous depth assignment had only ever been applied to the longitudinal family. The
+transverse family used integer division: with \(L\) photographs and \(n\) planes, plane \(j\) took
+photograph \(\lfloor jL/n \rfloor\), so the photograph changed abruptly at \(L-1\) depths and every
+plane between two changes was supervised by whichever photograph its side of the switch fell on.
+Since the transverse planes stack along the axis, each switch drew a line across it.</p>
+
+<p>Both families now take the two photographs either side of the depth and mix them at the
+fractional part, on a common disc so that two photographs of two different objects are the same
+size in the same place before they are mixed. Every object was trained twice &mdash; identical in
+every respect except this &mdash; so the difference is attributable.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>photographs</th><th colspan="2">jump at the switch depths</th><th colspan="2">held-out probe</th></tr>
+<tr><th></th><th></th><th>block rule</th><th>blended</th><th>block rule</th><th>blended</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>3</td><td>4.97</td><td class="win">4.20</td><td>0.03273</td><td class="win">0.02953</td></tr>
+<tr><td>watermelon</td><td>10</td><td>4.20</td><td class="win">3.43</td><td>0.01654</td><td class="win">0.01584</td></tr>
+<tr><td>apple</td><td>2</td><td>7.63</td><td class="win">7.35</td><td>0.03168</td><td class="win">0.03000</td></tr>
+<tr><td>loaf</td><td>3</td><td class="win">2.55</td><td>3.04</td><td>0.05890</td><td class="win">0.05201</td></tr>
+<tr><td>cake</td><td>2</td><td>8.47</td><td class="win">7.16</td><td>0.10716</td><td class="win">0.10070</td></tr>
+<tr><td>pomegranate</td><td>2</td><td>10.57</td><td class="win">3.75</td><td>0.18457</td><td class="win">0.16372</td></tr>
+<tr><td>doughnut</td><td>1</td><td class="mut">&mdash;</td><td class="mut">&mdash;</td><td>0.02432</td><td>0.02432</td></tr>
+</tbody></table></div>
+
+<p>The jump is the size of the discontinuity in the axial luminance profile at the depths where the
+block rule changed photograph, in units of that profile's own median jump, so an object of low
+contrast is comparable with one of high contrast: 1.0 would mean those depths look like any other
+depth. The probe is the held-out score the training reports, lower being better.</p>
+
+<p>The probe improves on every object where the blend does anything. The banding falls on five of
+the six that have switches, most on the pomegranate, and rises only on the loaf &mdash; which had
+the least banding to begin with and whose axial profile carries a real cinnamon spiral the statistic
+cannot tell from an artefact. The doughnut is bit-identical in both arms because it has one
+photograph and the blend correctly falls back to the block rule, which is the check that it is a
+no-op where there is nothing to blend.</p>
+
+<div class="note">
+<strong>The control was worth having.</strong> Blending changes two things at once: it interpolates,
+and it re-frames each photograph onto a common disc. A third arm with the re-framing and no
+interpolation measures 5.20 against the block rule's 5.14 &mdash; the re-framing does nothing for the
+banding, and without that arm half the credit would have gone to the wrong half of the change. It
+is not useless: it accounts for part of the probe improvement, 0.03081 to 0.03023 of the 0.02958.
+</div>
+
+<h2 id="rejected">What was tried on the same objects and rejected</h2>
+
+<p>The section loss compares a render with a photograph pixel by pixel, and the photograph is of
+<em>an</em> orange rather than of the one being reconstructed, so part of what it asks for is
+impossible. An obvious repair is to stop comparing positions: take the patches of each as two point
+sets and compare the sets. Three distances were implemented and measured, and none of them
+helps.</p>
+
+<p>Two are settled by the references alone, before any training. Comparing each family's
+photographs against the floor &mdash; two disjoint halves of one photograph's own patches &mdash;
+gives the ratio of between-photograph to within-photograph distance:</p>
+
+<div class="tw"><table>
+<thead><tr><th>distance</th><th>within one photograph</th><th>between photographs</th><th>ratio</th></tr></thead>
+<tbody>
+<tr><td>sliced Wasserstein</td><td>0.000250</td><td>0.008865</td><td>35.4</td></tr>
+<tr><td>Jensen&#8211;Shannon</td><td>0.001433</td><td>0.086100</td><td>60.1</td></tr>
+<tr><td>MSE, for scale</td><td>0.001364</td><td>0.014618</td><td>10.7</td></tr>
+<tr><td>Chamfer</td><td>0.159661</td><td>0.389924</td><td class="win">2.44</td></tr>
+</tbody></table></div>
+
+<p>Sliced Wasserstein and Jensen&#8211;Shannon hold the photographs <em>further</em> apart than the
+pixel loss they would replace, so a target built from them is less consistent across the family, not
+more. The reason is not that they are bad distances: they are sensitive to the proportions of each
+kind of patch, and the proportions are a property of whichever object was photographed rather than
+of the class. Chamfer is the one whose premise survives, at 2.44, because it asks whether the
+vocabulary of patches matches and not in what amounts.</p>
+
+<p>Chamfer was therefore trained, at two weights, against an otherwise identical arm. It is worse
+in every column and monotonically in the weight: the held-out probe goes 0.02958 to 0.03014 to
+0.03090, the banding 3.78 to 4.12 to 4.38, and the detail 0.1772 to 0.1617 to 0.1574. Blind to
+proportions turns out to mean blind to the amount of structure &mdash; a face that covers the
+vocabulary thinly satisfies it &mdash; and the detail column is that happening. The code is kept,
+off by default, because the reasoning is more valuable than the result.</p>
+
+<h2 id="limits">What it does not do</h2>
+
+<ul>
+  <li><strong>The lattice still shows on longitudinal cuts.</strong> A longitudinal plane is
+      axis-aligned with the cubic lattice and the interior is a per-cell field, so the cut passes
+      along whole cell faces and the fine vertical striping in these renders is that. It is
+      identical in every arm on this page; no assignment rule reaches it, and the depth blend does
+      not claim to.</li>
+  <li><strong>The exterior's staircase is the input's, not the dual grid's.</strong> The boundary
+      handed to the encoder is axis-aligned quads with six normals, so the quadric it minimises has
+      at most three independent directions per cell. Measured as the share of face area whose
+      normal lies within ten degrees of an axis &mdash; 4.6% for a smooth surface &mdash; the
+      converted exteriors give 68.9% to 92.5%. The zero level of the occupancy's own distance
+      transform brings that to 6.9% to 8.5% on 2.2 to 2.4 times fewer voxels, but it is measured
+      and not the reported path.</li>
+  <li><strong>The reference sets are small and uneven.</strong> Between one and ten photographs per
+      family per object. Where there are two, the blend interpolates across the whole object from a
+      single pair, and the jump statistic's switch depth is the middle of the object &mdash; which
+      is where an apple or a cake changes structure anyway. The paired control is what separates
+      those; a single arm's number would not.</li>
+  <li><strong>The exterior is pinned throughout.</strong> Nothing here measures what the dual
+      grid's geometry or its surface colour would do if they were trained, and the counts in the
+      table above are the interior's alone.</li>
+</ul>
+
+<footer>
+  Rendered from <code>code/ovoxel_native/</code>. The videos are produced by
+  <code>ovcut.py</code>, the sheets by <code>ovsheet7.py</code>, the paired table by
+  <code>ovpair.py</code>, and the reference measurement by <code>refspread.py</code>.
+</footer>
+
+</div>
+</body>
+</html>
