@@ -43,8 +43,9 @@ CFG = os.environ.get("CFG", "config/orange_physics.json")
 DEMO = os.environ.get("DEMO", "config/sphere_demo")
 EXT = os.environ.get("EXT_DIRS", "cube_or6_prep")
 OUT = os.environ.get("OUT", "/workspace/ovoxel_native/cams_mv.npz")
-N_AZ = int(os.environ.get("N_VPLANES", "10"))
-SPACING = 180.0 / N_AZ          # the trainer's own: (180 / N_VPLANES) * i
+# N_AZ and SPACING are derived from the object further down, not set here; N_VPLANES still
+# overrides for anything that needs the old fixed fan.
+N_AZ = int(os.environ.get("N_VPLANES", "0"))
 
 
 class P:
@@ -105,17 +106,87 @@ def mvp_of(cam):
 
 rec = {}
 
-# ---- transverse: one camera, 24 depths -------------------------------------------------
+# ---- how many planes each family gets --------------------------------------------------
+# The two families sweep different parameters, so the number each needs is a property of the
+# object. A transverse plane moves along the axis and a longitudinal one turns about it, so
+# resolving both at the same spacing takes planes in the ratio (extent along the axis) to
+# (pi times the radius) -- an axis length against half a circumference, half because a plane and
+# its opposite normal are the same cut.
+#
+# Sixteen and ten was fixed for every object, a ratio of 1.6. For a sphere the right ratio is
+# 2R : piR, about 0.64, so the longitudinal family should have MORE planes than the transverse
+# one on anything round; 1.6 is right only for something much longer than it is wide. Measured on
+# the seven objects here the fixed split over-supervises the transverse family by 1.22x on the
+# cake and 7.55x on the doughnut, whose axis is 43 cells against a half-circumference of 203.
+#
+# The total is held at what it has always been, so every object costs exactly what it did and
+# nothing is bought with extra compute. The only constant is that total; the split comes from the
+# object.
+TOTAL = int(os.environ.get("N_PLANES_TOTAL", "26"))
 cam, raw = cam_at(0.0, 90.0)
-_, _, centers, avg = interpolate_along_camera_direction(raw, tpos, 24)
+_, _, _c0, _ = interpolate_along_camera_direction(raw, tpos, 24)
+_n0, _ = to_pos_frame(generate_plane_center(raw, _c0[len(_c0) // 2]))
+_n0 = np.asarray(_n0, float) / np.linalg.norm(_n0)
+# The volume, not the surface. gs_fill.ply carries the coarse cells and the level-1 skin
+# together, and the skin is half the spacing and all of it at the rim: on the orange 480,287 of
+# 1,162,387 rows, which pulls the mean radius up 13% and moves the split by a plane. What the
+# sampling has to cover is the interior, so the skin rows come out. cell_level.pt sits beside the
+# ply and is row-aligned with it.
+_t = tpos.detach().cpu().numpy() if hasattr(tpos, "detach") else np.asarray(tpos)
+_lvlf = os.path.join(os.path.dirname(LAT), "cell_level.pt")
+if os.path.isfile(_lvlf):
+    _lvl = torch.load(_lvlf).reshape(-1).cpu().numpy()[:len(_t)]
+    if (_lvl == 0).sum() > 1000:
+        _t = _t[_lvl == 0]
+        print(f"shape measured on {len(_t):,} coarse cells, skin excluded")
+_p = _t @ _n0
+_perp = _t - np.outer(_p, _n0)
+_perp = _perp - _perp.mean(0)
+_axis_len = float(_p.max() - _p.min())
+_r_all = np.linalg.norm(_perp, axis=1)
+# The rim, not the average. The rule balances the arc between neighbouring longitudinal planes
+# against the transverse spacing, and the structure that has to be resolved -- segment walls,
+# seeds, crumb -- is at the rim. The rim is 1.5 to 1.9 times the mean here, so with the mean the
+# arc where it matters was 11.8 to 15.0 cells while the rule believed it was arranging 6.8 to 9.2.
+# The 90th percentile rather than the maximum, so a single stray cell cannot set the scale.
+RIM_PCT = float(os.environ.get("N_PLANES_RIM_PCT", "90"))
+_rad = float(np.percentile(_r_all, RIM_PCT)) if RIM_PCT > 0 else float(_r_all.mean())
+# The 1.5 the sampler actually lays down. The transverse depths are not N_H samples across the
+# axis: `interpolate_along_camera_direction` is asked for M = ceil(1.5 * N_H) of them and the
+# middle N_H are supervised, so the spacing in force is L/M, not L/N_H. Balancing L/N_H against
+# pi*r/N_V therefore solved for a spacing the code never produces, and every object came out 1.29
+# to 1.59 times finer on the transverse side than the balance it had just solved -- the rule
+# over-supervised the very family it was written to stop over-supervising. Putting the constant
+# into the equation is the whole fix: L/(OVER*N_H) = pi*r/N_V.
+OVER = float(os.environ.get("N_PLANES_OVER", "1.5"))
+if N_AZ > 0:
+    N_H = max(TOTAL - N_AZ, 2)
+else:
+    N_H = int(np.clip(round(TOTAL * _axis_len / max(_axis_len + OVER * np.pi * _rad, 1e-9)),
+                      2, TOTAL - 2))
+    N_AZ = TOTAL - N_H
+SPACING = 180.0 / N_AZ
+_M_pred = int(np.ceil(OVER * N_H))
+print(f"shape: axis {_axis_len:.4f}, rim radius (p{RIM_PCT:g}) {_rad:.4f} "
+      f"[mean {float(_r_all.mean()):.4f}], half-circumference {np.pi * _rad:.4f}, "
+      f"oversampling {OVER:g} -> {N_H} transverse and {N_AZ} longitudinal of {TOTAL}")
+print(f"  the two spacings this balances: transverse {_axis_len / max(_M_pred, 1):.3f} cells "
+      f"against longitudinal {np.pi * _rad / max(N_AZ, 1):.3f} at the rim")
+
+# ---- transverse: one camera, the supervised band centred in a wider sweep ---------------
+# The supervised depths have always been the middle two thirds of the range, which leaves the caps
+# out; that is kept, so the only thing changing is how many there are.
+_M = int(np.ceil(N_H * 1.5))
+_, _, centers, avg = interpolate_along_camera_direction(raw, tpos, _M)
 hp = []
 for i in range(len(centers)):
     n, d = to_pos_frame(generate_plane_center(raw, centers[i]))
     hp.append(np.concatenate([n, [d]]))
 hp = np.stack(hp)
+_lo = (len(hp) - N_H) // 2
 rec["h_mvp"] = mvp_of(cam)
 rec["h_planes"] = hp
-rec["h_lo"], rec["h_hi"] = np.array([4]), np.array([20])   # centers[4:20], what training sees
+rec["h_lo"], rec["h_hi"] = np.array([_lo]), np.array([_lo + N_H])
 print(f"transverse: 1 camera, {len(hp)} depths, d from {hp[:,3].min():+.4f} to {hp[:,3].max():+.4f}, "
       f"normal {np.round(hp[0,:3],4)}, normals identical: {np.allclose(hp[:,:3], hp[0,:3])}")
 
