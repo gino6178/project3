@@ -251,7 +251,19 @@ def cut_polygons(st, n, d, device="cuda"):
     corners = _CORN.to(device)
     cellc = st["solid"].float()                                   # (Nc,3)
     s = ((cellc[:, None, :] + corners[None]) * hc + org) @ n + d   # (Nc, 8)
-    cross = (s.min(1).values < 0) & (s.max(1).values > 0)
+    # `>= 0` on one side and not the other, because a plane can land exactly on a lattice plane and
+    # a strict test on both sides then finds nothing at all: the cell behind has max == 0 and the
+    # cell in front has min == 0, so neither straddles and the whole cut face disappears. It is not
+    # a hypothetical -- the orange's transverse normal is (0, -1, 0) and its supervised plane 10
+    # sits at exactly -65 coarse cells, where this returned 0 polygons instead of 60,072 triangles,
+    # and `render_section` did not notice because the exterior triangles keep the rasteriser call
+    # valid. The frame is then the rind seen from behind, darker and far more saturated than pulp.
+    # Five supervised planes across three objects were on such a depth: orange 10, loaf 8,
+    # pomegranate 3, 11 and 15. Taking the cell behind (max == 0) rather than the one in front
+    # keeps the exposed face on the material that remains, which is the same side every
+    # non-degenerate depth already picks. Away from exact coincidence the two tests agree, because
+    # `max == 0` to the bit is otherwise measure zero -- verified depth by depth below.
+    cross = (s.min(1).values < 0) & (s.max(1).values >= 0)
     S = cellc[cross]                                              # (K,3)
     K = len(S)
     P8 = (S[:, None, :] + corners[None]) * hc + org               # (K,8,3)
