@@ -84,7 +84,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#reach">Only one family reaches the object</a><a href="#audit">The reference sets</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
+  <a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#experiments">The experiments</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#reach">Only one family reaches the object</a><a href="#audit">The reference sets</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
 </nav>
 
 <h2 id="what">What this is, and what it is not</h2>
@@ -378,6 +378,104 @@ banding, and without that arm half the credit would have gone to the wrong half 
 is not useless: it accounts for part of the probe improvement, 0.03081 to 0.03023 of the 0.02958.
 </div>
 
+<h2 id="experiments">The experiments, in the order they were run</h2>
+
+<p>Each one leads with what it produced &mdash; the orange cut twice, transverse on the left and
+longitudinal on the right &mdash; then its numbers, then what it settled. They are all the same
+object at the same 5,200 gradient steps, so the videos are comparable with each other and the
+numbers are DreamSim against the object's own references, lower being better. The floor, two
+disjoint halves of a reference family scored against each other, is 0.0593 transverse and 0.0777
+longitudinal.</p>
+
+<div class="note">
+Every change here trades the same way and none escapes it: <strong>anything that gives the
+longitudinal family more of the object makes longitudinal cuts better and transverse cuts
+worse.</strong> That is the single finding of the sequence, and the sections below differ in how
+steep the trade is rather than in whether there is one.
+</div>
+
+<h3>1 &mdash; the baseline the rest are measured against</h3>
+<figure>
+  <video src="assets/exp_ov2.mp4" autoplay loop muted playsinline preload="metadata"></video>
+  <figcaption>Sixteen transverse planes and ten longitudinal, the split every object was given
+  regardless of shape. Transverse 0.0859, longitudinal 0.2257. The vertical striping on the
+  longitudinal half is what everything after this is trying to remove.</figcaption>
+</figure>
+
+<h3>2 &mdash; the plane count follows the object's shape</h3>
+<figure>
+  <video src="assets/exp_ov3.mp4" autoplay loop muted playsinline preload="metadata"></video>
+  <figcaption>A transverse plane samples along the axis and a longitudinal one turns about it, so
+  the counts should stand in the ratio of the axis extent to half the circumference. The orange
+  becomes 14/12, the loaf 11/15, the doughnut 4/22; the total stays 26, so this costs exactly what
+  the baseline cost. Orange: transverse 0.0804, longitudinal 0.2061 &mdash; both better.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th colspan="2">transverse</th><th colspan="2">longitudinal</th></tr>
+<tr><th></th><th>fixed 16/10</th><th>shaped</th><th>fixed 16/10</th><th>shaped</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>0.0859</td><td class="win">0.0804</td><td>0.2257</td><td class="win">0.2061</td></tr>
+<tr><td>watermelon</td><td class="win">0.1599</td><td>0.1623</td><td>0.2044</td><td class="win">0.1992</td></tr>
+<tr><td>apple</td><td class="win">0.2472</td><td>0.2534</td><td>0.3557</td><td class="win">0.3437</td></tr>
+<tr><td>loaf</td><td class="win">0.3774</td><td>0.3818</td><td>0.4849</td><td class="win">0.4214</td></tr>
+<tr><td>cake</td><td class="win">0.4641</td><td>0.4651</td><td>0.5017</td><td class="win">0.4890</td></tr>
+<tr><td>pomegranate</td><td class="win">0.2372</td><td>0.2461</td><td>0.4836</td><td class="win">0.4718</td></tr>
+<tr><td>doughnut</td><td class="win">0.0980</td><td>0.1540</td><td class="win">0.5494</td><td>0.5550</td></tr>
+<tr><td><strong>mean</strong></td><td class="win">0.2385</td><td>0.2490</td><td>0.4008</td><td class="win">0.3837</td></tr>
+</tbody></table></div>
+
+<p>The orange improves on both columns and it is the only object that does. Across the seven the
+longitudinal column improves six times and the transverse column degrades six times, so this is the
+same trade as everything else, not an exception to it &mdash; a conclusion drawn from the orange
+alone would have been wrong. The loaf gains most, 13%, and it is one of the two whose split moves
+furthest; the doughnut's split moves furthest of all, to 4/22, and it loses on both.</p>
+
+<h3>3 &mdash; the longitudinal planes turn about the axis</h3>
+<figure>
+  <video src="assets/exp_az.mp4" autoplay loop muted playsinline preload="metadata"></video>
+  <figcaption>Ten fixed sheets through the axis reach 15.9% of the cells; letting each turn by half
+  the azimuth spacing takes the family to 97.7% and costs nothing. Transverse 0.1220, longitudinal
+  0.2015. The striping is visibly gone, and the transverse column has paid 42% for it.</figcaption>
+</figure>
+
+<p>Swept over four magnitudes, the cost is monotone and the benefit is not: longitudinal 0.2257,
+0.2077, 0.2071, 0.2015 at 0, 0.25, 0.35 and 0.5, against transverse 0.0859, 0.1045, 0.1137, 0.1220.
+Most of the gain is bought by 0.25 and the rest of the range buys a third as much for the same
+again. Coverage saturates at 0.5 and the training effect saturates at 0.25, so the geometry does
+not predict the optimisation &mdash; which is worth saying because it was used to predict it, and
+was wrong.</p>
+
+<h3>4 &mdash; four times as many planes, at the same number of steps</h3>
+<figure>
+  <video src="assets/exp_t104.mp4" autoplay loop muted playsinline preload="metadata"></video>
+  <figcaption>104 planes instead of 26, split by the same rule, with the iteration count cut so the
+  budget is unchanged: each plane is visited a quarter as often. Transverse 0.1083, longitudinal
+  0.1826 &mdash; the best longitudinal number here, at 35% off the transverse.</figcaption>
+</figure>
+
+<p>More planes is an expensive way to buy coverage. Pinned sheets cover in proportion to their
+number, so the shared fraction goes 15.8%, 31.8%, 55.7%, 84.4% at one, two, four and eight times
+the planes, while turning reaches 86.4% at the original count. The photographs do not multiply
+either: the orange has three longitudinal references, and forty-eight planes divide the same three
+between them.</p>
+
+<h3>5 &mdash; Chamfer between the two faces' patch distributions</h3>
+<figure>
+  <video src="assets/exp_t104cd.mp4" autoplay loop muted playsinline preload="metadata"></video>
+  <figcaption>On top of the four-times arm: transverse 0.1110, longitudinal 0.1783, against 0.1083
+  and 0.1826 without it. A little of one column for a little of the other.</figcaption>
+</figure>
+
+<p>Measured three times, in three regimes, and it does nothing in any of them. With the families
+sharing 14% of the cells it was worse in every column and monotonically in its weight; with them
+sharing 90%, after turning, it moved both columns by under 1% and four times the weight made almost
+no difference, which is the signature of a term that is not acting rather than one that is tuned;
+with them sharing 56%, here, it trades 2.5% of one column for 2.4% of the other. The weight was
+taken from the gradient magnitudes the last two times &mdash; Chamfer's is 2.48e&minus;4 against the
+pixel loss's 2.10e&minus;5 &mdash; so the earlier failure at 0.2 and 1.0 was not simply the wrong
+scale.</p>
+
 <h2 id="joint">Two changes that survived, on every object</h2>
 
 <p><strong>One gradient step now sees both families.</strong> The loop used to shuffle all 26
@@ -602,11 +700,31 @@ on the cells both cross is <strong>&minus;0.4285</strong> under the pixel loss a
 the conflict was. Those arms were trained before the longitudinal planes turned, when the families
 shared 14% of the cells &mdash; Chamfer eased a seventh of the object and blinded the other six
 sevenths. With turning they share 90%, and the region it can damage is a tenth of what it was.
-Both the benefit and the harm moved in its favour, so this is being measured again, at a weight
+Both the benefit and the harm moved in its favour, so it was measured again, twice, at a weight
 taken from the gradients rather than guessed: Chamfer's mean gradient is 2.48e&minus;4 against the
-pixel loss's 2.10e&minus;5, and the weights tried before, 0.2 and 1.0, were both far above the
-range where the term is a correction rather than the objective.
+pixel loss's 2.10e&minus;5, so the weights tried before, 0.2 and 1.0, were both far above the range
+where the term is a correction rather than the objective.
 </div>
+
+<div class="tw"><table>
+<thead><tr><th>cells both families cross</th><th>Chamfer weight</th><th>transverse</th><th>longitudinal</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">90% &mdash; the planes turn, 0.5</td><td>0</td><td>0.1220</td><td>0.2015</td></tr>
+<tr><td>0.02</td><td class="win">0.1213</td><td>0.2011</td></tr>
+<tr><td>0.08</td><td>0.1218</td><td class="win">0.2004</td></tr>
+<tr><td rowspan="2">56% &mdash; 104 planes</td><td>0</td><td class="win">0.1083</td><td>0.1826</td></tr>
+<tr><td>0.08</td><td>0.1110</td><td class="win">0.1783</td></tr>
+</tbody></table></div>
+
+<p>The qualification was worth making and it did not survive. At 90% shared the term moves both
+columns by under 1%, and quadrupling its weight moves them by almost nothing further &mdash; which
+is the signature of a term that is not acting, not of one that needs tuning. At 56% it is a trade
+like every other change here, 2.5% of the transverse column for 2.4% of the longitudinal. The first
+arms, at 14%, were scored on the earlier probe rather than these two columns and are the ones quoted
+above; they are the only case where it is clearly harmful, and also the only case where the weight
+was guessed. So Chamfer has now been trained with a seventh, a half and nine tenths of the object
+shared between the families, twice at a weight taken from the gradients, and it is harmful once and
+neutral twice. The gradient conflict it demonstrably relaxes is not what was limiting this.</p>
 
 <p>The code is kept, off by default, because the reasoning is more valuable than the result was.</p>
 

@@ -91,7 +91,9 @@ def main(obj, outdir, tag="ov"):
     os.makedirs(outdir, exist_ok=True)
     ON.FDG = ON._load_ovoxel()
     st = load(obj, tag)
-    C = np.load(f"{W}/cams_{obj}.npz")
+    # an arm trained at a different plane count carries its own cameras, and drawing it
+    # through the default set would show a cut the model was never given
+    C = np.load(os.environ.get("CAMS", f"{W}/cams_{obj}.npz"))
     glctx = dr.RasterizeCudaContext(device=dev)
     print(f"  {obj}: {len(st['interior']):,} interior cells, {len(st['dual_v']):,} dual vertices")
 
