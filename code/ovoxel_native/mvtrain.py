@@ -36,6 +36,7 @@ import refsel
 import anchor
 import fieldreg
 import patchdist
+import refalign
 import secloss
 
 W = "/workspace/ovoxel_native"
@@ -238,6 +239,31 @@ def dump(folder):
 
 refs_h = [refsel.as_array(refsel.solved_photo(REF_H, j, NH), RES) for j in range(NH)]
 refs_v = [refsel.as_array(refsel.photo(REF_V, i, NV), RES) for i in range(NV)]
+
+_FLIP_H = os.environ.get("REF_H_FLIP", "")
+_FLIP_V = os.environ.get("REF_V_FLIP", "")
+if refalign.ENABLED or _FLIP_H or _FLIP_V:
+    # Registered against the shell, which is pinned and therefore already the object's own shape:
+    # the silhouette of each cut and the rind inside it come from the released model, so nothing
+    # the interior is supposed to learn is used to decide which way up its own supervision goes.
+    with torch.no_grad():
+        _shh = []
+        for j in range(NH):
+            _s, _, _, _ = ON.render_section(st, glctx, hmvp, hn, float(hd[H_LO + j]), RES)
+            _shh.append(_s.permute(1, 2, 0).clamp(0, 1).cpu().numpy())
+        _shv = []
+        for i in range(NV):
+            _n3 = torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32, device=dev)
+            _s, _, _, _ = ON.render_section(
+                st, glctx, torch.as_tensor(C["v_mvp"][i], dtype=torch.float32, device=dev),
+                _n3, float(C["v_planes"][i, 3]), RES)
+            _shv.append(_s.permute(1, 2, 0).clamp(0, 1).cpu().numpy())
+        refs_h, _nh = refalign.orient_family(refs_h, _shh, "transverse", _FLIP_H)
+        refs_v, _nv = refalign.orient_family(refs_v, _shv, "longitudinal", _FLIP_V)
+    print("  reference orientation against the pinned shell:", flush=True)
+    for _n in (_nh, _nv):
+        if _n:
+            print(_n, flush=True)
 refs_e = {nm: cv2.imread(os.path.join(EXT, f"{nm}_ref.png"))[:, :, ::-1].astype(np.float32) / 255.
           for nm in enames}
 print(f"  references: {len(refs_h)} transverse, {len(refs_v)} longitudinal, "

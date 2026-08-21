@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which way is up</title>
+<style>
+  :root{ --ink:#111; --mut:#5c5c5c; --line:#e6e6e6; --acc:#a8412a; --panel:#f7f7f7; }
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);
+       font:17px/1.7 "Charter","Georgia","Times New Roman",serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 22px 60px}
+  header{padding:44px 0 22px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(24px,4vw,34px);margin:0 0 8px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--mut);font-size:16px;margin:0;font-style:italic}
+  .links{display:flex;gap:20px;justify-content:center;font-size:15px;margin-top:14px}
+  .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.35)}
+  p{margin:0 0 14px}
+  h2{font-size:20px;margin:34px 0 8px;font-weight:600}
+  .row{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  button{font:inherit;font-size:14.5px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",
+         Helvetica,Arial,sans-serif;padding:6px 13px;border:1px solid var(--line);background:#fff;
+         border-radius:3px;cursor:pointer;color:var(--ink)}
+  button:hover{border-color:var(--acc)}
+  button[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+  .stage{position:relative;width:100%;max-width:520px;margin:0 auto;aspect-ratio:1/1;
+         border:1px solid var(--line);border-radius:4px;overflow:hidden;cursor:grab;
+         background:#fff;touch-action:none}
+  .stage.drag{cursor:grabbing}
+  .stage div{position:absolute;inset:0;background-repeat:no-repeat;image-rendering:auto}
+  .hud{display:flex;justify-content:space-between;max-width:520px;margin:8px auto 0;
+       color:var(--mut);font-size:13.5px;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .key{display:flex;gap:16px;justify-content:center;margin:10px 0 0;font-size:13.5px;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .key b{font-weight:600}
+  .kx{color:#d92626}.ky{color:#26a626}.kz{color:#265ce6}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:13px;
+      overflow-x:auto;font-size:13px;line-height:1.55;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:12px 16px;
+        border-radius:0 3px 3px 0;font-size:15.5px;margin:20px 0;color:#3c3c3c}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Which way is up</h1>
+  <p class="sub">Every object on a turntable, with the lattice's own axes drawn through it</p>
+  <div class="links"><a href="ovoxel.html">O&#8209;Voxel column</a><a href="index.html">Paper</a></div>
+</header>
+
+<p>Drag to turn the object; drag up and down to change elevation. The three arrows are the
+lattice's axes through the object's centre &mdash; not a camera's, and not the physics config's, so
+what they point at is where the data actually is. Say which one is the object's top and which is
+its front, and the answer goes into <code>objects/&lt;obj&gt;.conf</code> beside the references it
+applies to.</p>
+
+<div class="note">
+This exists because the automatic version could not be defended. Registering a reference to the
+shell by trying its four flips only decides the question where the reference and the shell already
+agree in shape, which is not where it is needed: it answered for the orange and the doughnut and
+returned margins under 3% for everything else, and a flip is the wrong transform for a stem in the
+wrong place anyway.
+</div>
+
+<div class="row" id="objs"></div>
+<div class="stage" id="stage"><div id="frame"></div></div>
+<div class="hud"><span id="ang">azimuth 0&deg;, elevation 0&deg;</span><span id="name"></span></div>
+<div class="key">
+  <span class="kx"><b>&rarr;</b> +x</span>
+  <span class="ky"><b>&rarr;</b> +y</span>
+  <span class="kz"><b>&rarr;</b> +z</span>
+</div>
+
+<h2>Record it</h2>
+<p>With the object turned so you can see it, press the axis that points at its top, then the one
+that points at its front.</p>
+<div class="row" id="upbtns"></div>
+<div class="row" id="frontbtns"></div>
+<pre id="out">nothing recorded yet</pre>
+
+<script>
+const OBJS = ["orange_sp","watermelon_sp","apple1_sp","bread_sp","cake2_sp",
+              "pomegranate2_sp","doughnut"];
+const LABEL = {orange_sp:"orange", watermelon_sp:"watermelon", apple1_sp:"apple",
+               bread_sp:"loaf", cake2_sp:"cake", pomegranate2_sp:"pomegranate",
+               doughnut:"doughnut"};
+const NAZ = 24, ELS = [-25, 0, 25], RES = 256;
+const AX = ["+x","-x","+y","-y","+z","-z"];
+let obj = OBJS[0], ai = 0, ei = 1, answers = {};
+
+const frame = document.getElementById("frame"), stage = document.getElementById("stage");
+function draw(){
+  const w = stage.clientWidth, s = w / RES;
+  frame.style.backgroundImage = `url(assets/axis_${obj}.jpg)`;
+  frame.style.backgroundSize = `${NAZ*RES*s}px ${ELS.length*RES*s}px`;
+  frame.style.backgroundPosition = `${-ai*RES*s}px ${-ei*RES*s}px`;
+  document.getElementById("ang").textContent =
+    `azimuth ${Math.round(360*ai/NAZ)}°, elevation ${ELS[ei]}°`;
+  document.getElementById("name").textContent = LABEL[obj];
+}
+function mk(parent, items, get, set){
+  parent.innerHTML = "";
+  items.forEach(([val, text]) => {
+    const b = document.createElement("button");
+    b.textContent = text;
+    b.setAttribute("aria-pressed", String(get() === val));
+    b.onclick = () => { set(val); [...parent.children].forEach(c =>
+      c.setAttribute("aria-pressed", String(c.textContent === text))); };
+    parent.appendChild(b);
+  });
+}
+mk(document.getElementById("objs"), OBJS.map(o => [o, LABEL[o]]), () => obj,
+   v => { obj = v; draw(); refresh(); });
+
+function refresh(){
+  const a = answers[obj] || {};
+  mk(document.getElementById("upbtns"), AX.map(x => [x, "top is " + x]),
+     () => a.up, v => { (answers[obj] = answers[obj] || {}).up = v; report(); });
+  mk(document.getElementById("frontbtns"), AX.map(x => [x, "front is " + x]),
+     () => a.front, v => { (answers[obj] = answers[obj] || {}).front = v; report(); });
+  report();
+}
+function report(){
+  const ks = Object.keys(answers).filter(k => answers[k].up || answers[k].front);
+  document.getElementById("out").textContent = ks.length
+    ? ks.map(k => `${LABEL[k]} (${k}): top ${answers[k].up || "?"}, front ${answers[k].front || "?"}`)
+        .join("\n")
+    : "nothing recorded yet";
+}
+
+let down = null;
+stage.addEventListener("pointerdown", e => {
+  down = {x: e.clientX, y: e.clientY, ai, ei};
+  stage.classList.add("drag"); stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener("pointermove", e => {
+  if (!down) return;
+  const w = stage.clientWidth;
+  ai = ((down.ai + Math.round((e.clientX - down.x) / (w / NAZ))) % NAZ + NAZ) % NAZ;
+  ei = Math.max(0, Math.min(ELS.length - 1,
+       down.ei + Math.round((e.clientY - down.y) / (w / 6))));
+  draw();
+});
+["pointerup","pointercancel"].forEach(t => stage.addEventListener(t, () => {
+  down = null; stage.classList.remove("drag");
+}));
+addEventListener("resize", draw);
+draw(); refresh();
+</script>
+</div>
+</body>
+</html>

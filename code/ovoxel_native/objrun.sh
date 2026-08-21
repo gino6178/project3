@@ -17,7 +17,8 @@ OBJ=$1; GPU=$2; shift 2
 R=/workspace/rebuild; W=/workspace/ovoxel_native
 CONF=$R/project3/code/objects/$OBJ.conf
 [ -f "$CONF" ] || { echo "no conf for $OBJ"; exit 1; }
-eval "$(grep -E '^(CFG|REF_H|REF_V)=' "$CONF")"
+eval "$(grep -E '^(CFG|REF_H|REF_V|REF_H_FLIP|REF_V_FLIP)=' "$CONF")"
+export REF_H_FLIP="${REF_H_FLIP:-}" REF_V_FLIP="${REF_V_FLIP:-}"
 LATD=build_$OBJ/lattice
 [ -f "$R/worktree/$LATD/lattice.pt" ] || { echo "no lattice at $LATD"; exit 1; }
 
