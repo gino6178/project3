@@ -9,76 +9,98 @@
   *{box-sizing:border-box}
   body{margin:0;background:#fff;color:var(--ink);
        font:17px/1.7 "Charter","Georgia","Times New Roman",serif;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:760px;margin:0 auto;padding:0 22px 60px}
-  header{padding:44px 0 22px;text-align:center;border-bottom:1px solid var(--line)}
+  .wrap{max-width:900px;margin:0 auto;padding:0 22px 60px}
+  header{padding:40px 0 20px;text-align:center;border-bottom:1px solid var(--line)}
   h1{font-size:clamp(24px,4vw,34px);margin:0 0 8px;font-weight:600;letter-spacing:-.01em}
   .sub{color:var(--mut);font-size:16px;margin:0;font-style:italic}
-  .links{display:flex;gap:20px;justify-content:center;font-size:15px;margin-top:14px}
+  .links{display:flex;gap:20px;justify-content:center;font-size:15px;margin-top:12px}
   .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.35)}
-  p{margin:0 0 14px}
-  ol{margin:0 0 18px;padding-left:22px} ol li{margin-bottom:6px}
-  h2{font-size:20px;margin:32px 0 8px;font-weight:600}
-  .row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;justify-content:center}
-  .sans{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
-  button{font:inherit;font-size:14.5px;padding:7px 14px;border:1px solid var(--line);
-         background:#fff;border-radius:3px;cursor:pointer;color:var(--ink);
+  p{margin:0 0 12px} h2{font-size:20px;margin:30px 0 6px;font-weight:600}
+  .row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;justify-content:center}
+  button{font-size:14.5px;padding:7px 14px;border:1px solid var(--line);background:#fff;
+         border-radius:3px;cursor:pointer;color:var(--ink);
          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
   button:hover{border-color:var(--acc)}
   button[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
-  button.big{font-size:16px;padding:11px 22px;border-color:#c9c9c9}
+  button.big{font-size:15.5px;padding:10px 18px;border-color:#c9c9c9}
   button.done{border-color:#2e7d32;color:#2e7d32}
-  .stage{position:relative;width:100%;max-width:460px;margin:0 auto;aspect-ratio:1/1;
-         border:1px solid var(--line);border-radius:4px;overflow:hidden;cursor:grab;
-         background:#fff;touch-action:none;user-select:none}
+  .panes{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+  @media (max-width:720px){ .panes{grid-template-columns:1fr} }
+  .pane h3{font-size:15px;margin:0 0 6px;font-weight:600;text-align:center;
+           font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .stage{position:relative;width:100%;aspect-ratio:1/1;border:1px solid var(--line);
+         border-radius:4px;overflow:hidden;cursor:grab;background:#fff;touch-action:none;
+         user-select:none}
   .stage.drag{cursor:grabbing}
   .stage div{position:absolute;inset:0;background-repeat:no-repeat}
-  .hud{text-align:center;color:var(--mut);font-size:13.5px;margin-top:7px;
+  .tag{position:absolute;top:6px;left:8px;font-size:12px;color:#fff;background:rgba(0,0,0,.55);
+       padding:2px 7px;border-radius:3px;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .refs{display:flex;gap:10px;justify-content:center;margin-top:8px}
+  .refs figure{margin:0;width:46%}
+  .refs img{width:100%;display:block;border:1px solid var(--line);border-radius:3px}
+  .refs figcaption{font-size:12px;color:var(--mut);text-align:center;margin-top:3px;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .hud{text-align:center;color:var(--mut);font-size:13px;margin-top:6px;
        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
   pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:13px;
       overflow-x:auto;font-size:13px;line-height:1.6;
       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
-  .note{background:var(--panel);border-left:3px solid var(--acc);padding:12px 16px;
-        border-radius:0 3px 3px 0;font-size:15.5px;margin:20px 0;color:#3c3c3c}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:11px 15px;
+        border-radius:0 3px 3px 0;font-size:15px;margin:16px 0;color:#3c3c3c}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
   <h1>Which way is up</h1>
-  <p class="sub">Turn each object until its top faces you, and press the button</p>
+  <p class="sub">Two panels: turn the object to name its faces, turn the plane to pair a cut with its photograph</p>
   <div class="links"><a href="ovoxel.html">O&#8209;Voxel column</a><a href="index.html">Paper</a></div>
 </header>
 
-<ol>
-  <li>Pick an object.</li>
-  <li>Drag to turn it. Left and right spins it; up and down tips it over, all the way to looking
-      straight down on it.</li>
-  <li>When the object's <strong>top</strong> is facing you, press <em>this face is the top</em>.</li>
-  <li>Turn it over and press <em>this face is the bottom</em>.</li>
-</ol>
-
-<p>Nothing has to be named. The direction is worked out from where you were looking when you
-pressed, and the answer appears at the bottom to send back. The two are asked for separately
-rather than one being assumed opposite the other, because a check that agrees is worth having.</p>
+<div class="note">
+The buttons record <strong>the face pointing at the camera</strong>, which is the face you are
+looking at, not the one at the top of the screen. That was ambiguous last time and the answers came
+back turned; the label on the left panel now says which face that is at every moment.
+</div>
 
 <div class="row" id="objs"></div>
-<div class="stage" id="stage"><div id="frame"></div></div>
-<div class="hud" id="hud"></div>
 
-<div class="row">
-  <button class="big" id="btop">this face is the top</button>
-  <button class="big" id="bbot">this face is the bottom</button>
+<div class="panes">
+  <div class="pane">
+    <h3>the object</h3>
+    <div class="stage" id="stageA"><div id="frameA"></div><span class="tag" id="tagA"></span></div>
+    <div class="hud" id="hudA"></div>
+    <div class="row">
+      <button class="big" id="btop">this face is the top</button>
+      <button class="big" id="bbot">this face is the bottom</button>
+    </div>
+    <div class="row">
+      <button id="bfront">front</button>
+      <button id="bleft">left</button>
+      <button id="clear">clear</button>
+    </div>
+  </div>
+
+  <div class="pane">
+    <h3>the cut, and the photographs to pair it with</h3>
+    <div class="stage" id="stageB"><div id="frameB"></div><span class="tag" id="tagB"></span></div>
+    <div class="hud" id="hudB"></div>
+    <div class="refs">
+      <figure><img id="refh" alt="transverse reference"><figcaption>supervises "transverse"</figcaption></figure>
+      <figure><img id="refv" alt="longitudinal reference"><figcaption>supervises "longitudinal"</figcaption></figure>
+    </div>
+    <div class="row">
+      <button class="big" id="bmh">this cut matches the left photograph</button>
+    </div>
+    <div class="row">
+      <button class="big" id="bmv">this cut matches the right photograph</button>
+    </div>
+  </div>
 </div>
-<div class="row"><button id="clear">clear this object</button></div>
 
 <h2>Send this back</h2>
 <pre id="out">nothing recorded yet</pre>
-
-<div class="note">
-Left and right are not asked for: these objects are bodies of revolution about one axis, so once
-the top is known there is nothing left to pin down. The arrows on the object are the lattice's own
-axes &mdash; red +x, green +y, blue +z &mdash; and they are there to read, not to choose from.
-</div>
 
 <script>
 const OBJS = ["orange_sp","watermelon_sp","apple1_sp","bread_sp","cake2_sp",
@@ -86,88 +108,101 @@ const OBJS = ["orange_sp","watermelon_sp","apple1_sp","bread_sp","cake2_sp",
 const LABEL = {orange_sp:"orange", watermelon_sp:"watermelon", apple1_sp:"apple",
                bread_sp:"loaf", cake2_sp:"cake", pomegranate2_sp:"pomegranate",
                doughnut:"doughnut"};
-const NAZ = 24, ELS = [-90,-60,-30,0,30,60,90], RES = 256;
-let obj = OBJS[0], ai = 0, ei = 3, rec = {};
+const A_NAZ = 24, A_ELS = [-90,-60,-30,0,30,60,90], A_RES = 256;
+const B_NAZ = 16, B_ELS = [0,22.5,45,67.5,90], B_RES = 224;
+let obj = OBJS[0], aa = 0, ae = 3, ba = 0, be = 0, rec = {};
 
-const frame = document.getElementById("frame"), stage = document.getElementById("stage");
-
-// the camera sits along this direction and looks back at the centre, so the face turned towards
-// the viewer is the one pointing this way
-function dirOf(a, e){
-  const A = a * Math.PI / 180, E = e * Math.PI / 180;
+function dir(a, e){
+  const A = a*Math.PI/180, E = e*Math.PI/180;
   return [Math.cos(E)*Math.cos(A), Math.cos(E)*Math.sin(A), Math.sin(E)];
 }
-function nearestAxis(d){
-  const names = ["+x","-x","+y","-y","+z","-z"];
-  const vs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
-  let best = 0, bv = -2;
-  vs.forEach((v,i) => { const s = v[0]*d[0]+v[1]*d[1]+v[2]*d[2]; if (s > bv){ bv = s; best = i; } });
-  return {axis: names[best], cos: bv};
+function axisOf(d){
+  const nm = ["+x","-x","+y","-y","+z","-z"];
+  const v = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  let bi = 0, bv = -2;
+  v.forEach((u,i)=>{const s=u[0]*d[0]+u[1]*d[1]+u[2]*d[2]; if(s>bv){bv=s;bi=i;}});
+  return {axis: nm[bi], off: Math.round(Math.acos(Math.min(1,bv))*180/Math.PI)};
+}
+function tile(el, tag, sheet, naz, els, res, ai, ei, txt){
+  const w = el.parentElement.clientWidth, s = w/res;
+  el.style.backgroundImage = `url(assets/${sheet})`;
+  el.style.backgroundSize = `${naz*res*s}px ${els.length*res*s}px`;
+  el.style.backgroundPosition = `${-ai*res*s}px ${-ei*res*s}px`;
+  tag.textContent = txt;
 }
 function draw(){
-  const w = stage.clientWidth, s = w / RES;
-  frame.style.backgroundImage = `url(assets/axis_${obj}.jpg)`;
-  frame.style.backgroundSize = `${NAZ*RES*s}px ${ELS.length*RES*s}px`;
-  frame.style.backgroundPosition = `${-ai*RES*s}px ${-ei*RES*s}px`;
-  document.getElementById("hud").textContent =
-    `${LABEL[obj]} — turned ${Math.round(360*ai/NAZ)}°, tipped ${ELS[ei]}°`;
+  tile(document.getElementById("frameA"), document.getElementById("tagA"),
+       `axis_${obj}.jpg`, A_NAZ, A_ELS, A_RES, aa, ae,
+       "facing you: " + axisOf(dir(360*aa/A_NAZ, A_ELS[ae])).axis);
+  document.getElementById("hudA").textContent =
+    `turned ${Math.round(360*aa/A_NAZ)}°, tipped ${A_ELS[ae]}°`;
+  tile(document.getElementById("frameB"), document.getElementById("tagB"),
+       `cut_${obj}.jpg`, B_NAZ, B_ELS, B_RES, ba, be,
+       "plane normal: " + axisOf(dir(360*ba/B_NAZ, B_ELS[be])).axis);
+  document.getElementById("hudB").textContent =
+    `normal at ${Math.round(360*ba/B_NAZ)}°, ${B_ELS[be]}° up`;
+  document.getElementById("refh").src = `assets/ref_${obj}_h.jpg`;
+  document.getElementById("refv").src = `assets/ref_${obj}_v.jpg`;
 }
 function objRow(){
-  const p = document.getElementById("objs");
-  p.innerHTML = "";
-  OBJS.forEach(o => {
-    const b = document.createElement("button");
-    const r = rec[o] || {};
-    b.textContent = LABEL[o] + (r.top && r.bottom ? " ✓" : r.top || r.bottom ? " ·" : "");
-    b.setAttribute("aria-pressed", String(o === obj));
-    if (r.top && r.bottom) b.classList.add("done");
-    b.onclick = () => { obj = o; draw(); objRow(); };
+  const p = document.getElementById("objs"); p.innerHTML = "";
+  OBJS.forEach(o=>{
+    const b=document.createElement("button"), r=rec[o]||{};
+    const n=Object.keys(r).length;
+    b.textContent = LABEL[o] + (n>=3 ? " ✓" : n ? ` ·${n}` : "");
+    b.setAttribute("aria-pressed", String(o===obj));
+    if(n>=3) b.classList.add("done");
+    b.onclick=()=>{obj=o; draw(); objRow();};
     p.appendChild(b);
   });
 }
 function report(){
-  const ks = OBJS.filter(k => rec[k] && (rec[k].top || rec[k].bottom));
-  if (!ks.length){ document.getElementById("out").textContent = "nothing recorded yet"; return; }
-  document.getElementById("out").textContent = ks.map(k => {
-    const r = rec[k], bits = [];
-    ["top","bottom"].forEach(w => {
-      if (!r[w]) { bits.push(`${w} not set`); return; }
-      const n = nearestAxis(r[w]);
-      const off = Math.round(Math.acos(Math.min(1, n.cos)) * 180 / Math.PI);
-      bits.push(`${w} ${n.axis}${off > 20 ? ` (but ${off}° off it)` : ""}`);
+  const ks = OBJS.filter(k=>rec[k] && Object.keys(rec[k]).length);
+  if(!ks.length){document.getElementById("out").textContent="nothing recorded yet"; return;}
+  document.getElementById("out").textContent = ks.map(k=>{
+    const r=rec[k], bits=[];
+    ["top","bottom","front","left"].forEach(w=>{
+      if(!r[w]) return;
+      const a=axisOf(r[w]);
+      bits.push(`${w} ${a.axis}${a.off>20?` (${a.off}° off)`:""}`);
     });
-    let flag = "";
-    if (r.top && r.bottom){
-      const d = r.top[0]*r.bottom[0] + r.top[1]*r.bottom[1] + r.top[2]*r.bottom[2];
-      if (d > -0.7) flag = "   <-- the two are not opposite, one of them is wrong";
+    ["matches_h","matches_v"].forEach(w=>{
+      if(!r[w]) return;
+      const a=axisOf(r[w]);
+      bits.push(`${w==="matches_h"?"transverse photo":"longitudinal photo"} is the cut with normal ${a.axis}${a.off>20?` (${a.off}° off)`:""}`);
+    });
+    let flag="";
+    if(r.top&&r.bottom){
+      const d=r.top[0]*r.bottom[0]+r.top[1]*r.bottom[1]+r.top[2]*r.bottom[2];
+      if(d>-0.7) flag="   <-- top and bottom are not opposite";
     }
     return `${LABEL[k]} (${k}): ${bits.join(", ")}${flag}`;
   }).join("\n");
 }
-function set(which){
-  (rec[obj] = rec[obj] || {})[which] = dirOf(360*ai/NAZ, ELS[ei]);
-  objRow(); report();
-}
-document.getElementById("btop").onclick = () => set("top");
-document.getElementById("bbot").onclick = () => set("bottom");
-document.getElementById("clear").onclick = () => { delete rec[obj]; objRow(); report(); };
+function set(w, d){ (rec[obj]=rec[obj]||{})[w]=d; objRow(); report(); }
+document.getElementById("btop").onclick  =()=>set("top",    dir(360*aa/A_NAZ, A_ELS[ae]));
+document.getElementById("bbot").onclick  =()=>set("bottom", dir(360*aa/A_NAZ, A_ELS[ae]));
+document.getElementById("bfront").onclick=()=>set("front",  dir(360*aa/A_NAZ, A_ELS[ae]));
+document.getElementById("bleft").onclick =()=>set("left",   dir(360*aa/A_NAZ, A_ELS[ae]));
+document.getElementById("bmh").onclick   =()=>set("matches_h", dir(360*ba/B_NAZ, B_ELS[be]));
+document.getElementById("bmv").onclick   =()=>set("matches_v", dir(360*ba/B_NAZ, B_ELS[be]));
+document.getElementById("clear").onclick =()=>{delete rec[obj]; objRow(); report();};
 
-let down = null;
-stage.addEventListener("pointerdown", e => {
-  down = {x: e.clientX, y: e.clientY, ai, ei};
-  stage.classList.add("drag"); stage.setPointerCapture(e.pointerId);
-});
-stage.addEventListener("pointermove", e => {
-  if (!down) return;
-  const w = stage.clientWidth;
-  ai = ((down.ai + Math.round((e.clientX - down.x) / (w / NAZ))) % NAZ + NAZ) % NAZ;
-  ei = Math.max(0, Math.min(ELS.length - 1,
-       down.ei + Math.round((e.clientY - down.y) / (w / (ELS.length + 1)))));
-  draw();
-});
-["pointerup","pointercancel"].forEach(t => stage.addEventListener(t, () => {
-  down = null; stage.classList.remove("drag");
-}));
+function drag(id, naz, nel, get, set2){
+  const st=document.getElementById(id); let d=null;
+  st.addEventListener("pointerdown",e=>{d={x:e.clientX,y:e.clientY,...get()};
+    st.classList.add("drag"); st.setPointerCapture(e.pointerId);});
+  st.addEventListener("pointermove",e=>{
+    if(!d) return;
+    const w=st.clientWidth;
+    set2(((d.a+Math.round((e.clientX-d.x)/(w/naz)))%naz+naz)%naz,
+         Math.max(0,Math.min(nel-1, d.e+Math.round((e.clientY-d.y)/(w/(nel+1))))));
+    draw();});
+  ["pointerup","pointercancel"].forEach(t=>st.addEventListener(t,()=>{d=null;
+    st.classList.remove("drag");}));
+}
+drag("stageA", A_NAZ, A_ELS.length, ()=>({a:aa,e:ae}), (a,e)=>{aa=a; ae=e;});
+drag("stageB", B_NAZ, B_ELS.length, ()=>({a:ba,e:be}), (a,e)=>{ba=a; be=e;});
 addEventListener("resize", draw);
 objRow(); draw(); report();
 </script>
