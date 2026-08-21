@@ -34,13 +34,18 @@ import nvdiffrast.torch as dr
 import section_match as sm
 import refsel
 import anchor
+import fieldreg
+import patchdist
 import secloss
 
 W = "/workspace/ovoxel_native"
 FN = os.environ.get("FN_ROOT", "/workspace/rebuild/worktree")
-REF_H = os.path.join(FN, "secref_orraw_hsep")
-REF_V = os.path.join(FN, "secref_orraw_vsep")
-EXT = os.path.join(FN, "cube_or6_prep")
+# The two reference families, relative to FN_ROOT. The orange's were the only ones this build
+# ever used, which was fine while it was a single-object experiment and is not once the same
+# program has to run on the rest -- every object carries its own pair in objects/<obj>.conf.
+REF_H = os.path.join(FN, os.environ.get("REF_H", "secref_orraw_hsep"))
+REF_V = os.path.join(FN, os.environ.get("REF_V", "secref_orraw_vsep"))
+EXT = os.path.join(FN, os.environ.get("EXT_DIRS", "cube_or6_prep"))
 
 ROUTE = os.environ.get("ROUTE", "1")
 STATE = os.environ.get("STATE", f"{W}/state_r{ROUTE}.pt")
@@ -66,6 +71,7 @@ VOXEL_SMOOTH = os.environ.get("VOXEL_SMOOTH", "1") == "1"
 # transverse family is the one that should win.
 SEC_XCONS = float(os.environ.get("SEC_XCONS", "0"))
 SEC_XCONS_AT = int(os.environ.get("SEC_XCONS_AT", "0"))
+SEC_JOINT = os.environ.get("SEC_JOINT", "1") == "1"
 SEC_XCONS_HOLD = os.environ.get("SEC_XCONS_HOLD", "0") == "1"
 SEC_XCONS_MODE = os.environ.get("SEC_XCONS_MODE", "copy")
 ABL_INTERVAL = int(os.environ.get("ABL_INTERVAL", "30"))
@@ -95,8 +101,14 @@ print(f"route {ROUTE}: {STATE}")
 print(f"  {len(st['interior']):,} solid coarse cells, {len(st['dual_v']):,} dual vertices")
 print(f"{NH} transverse depths (d {hd[H_LO]:+.4f} .. {hd[H_HI-1]:+.4f}, step {h_step:+.4f}), "
       f"{NV} longitudinal azimuths, {len(enames)} exterior views {enames}")
+_dist = os.environ.get("SEC_DIST", "0")
+_distdesc = ("" if _dist not in ("sw", "chamfer", "js") else
+             f", then {_dist} between the two patch distributions at "
+             f"{os.environ.get('SEC_DIST_W', '1.0')} from "
+             f"{os.environ.get('SEC_DIST_START', '0.5')} of the run, keeping "
+             f"{os.environ.get('SEC_DIST_MIX', '0.3')} of the pixel term")
 _lossdesc = (f"0.7(1-SSIM)+0.3MSE on {secloss.SEC_PATCH_N} crops of {secloss.SEC_PATCH}px, "
-             f"band term at {secloss.SEC_PATCH_STAT}") if secloss.SEC_PATCH > 0 \
+             f"band term at {secloss.SEC_PATCH_STAT}{_distdesc}") if secloss.SEC_PATCH > 0 \
     else "whole-frame L1 (SEC_PATCH=0)"
 print(f"  section loss: {_lossdesc}")
 print(f"ANCHOR={int(ANCHOR)}  SHELL_PIN={int(SHELL_PIN)}  SEC_SKIP_OUTER={SEC_SKIP_OUTER}  "
@@ -287,68 +299,132 @@ if SEC_XCONS > 0:
     import xcons
 
 touch = {k: torch.zeros(len(rows(k)), dtype=torch.bool, device=dev) for k in TK}
+_tvpairs = fieldreg.face_pairs(st, dev) if fieldreg.WEIGHT > 0 else None
 upd_i = torch.zeros(len(seed_i), dtype=torch.bool, device=dev)
 hist, l1hist, probes = [], [], [(0, probe())]
 print(f"  probe at 0: {probes[0][1]:.5f}", flush=True)
 t0 = time.time()
 steps = 0
+def groups_for_iteration():
+    """The planes of one outer iteration, grouped into what each gradient step sees.
+
+    SEC_JOINT=1 (default) puts one transverse and one longitudinal plane in every step, so the two
+    families are optimised together and a cell they share meets both constraints at once rather
+    than alternately. Under the old rule the step order was a shuffle of all the planes and a step
+    saw exactly one of them, so a cell in both families was pulled to one photograph and then to
+    the other, and what it settled on depended on which came last.
+
+    The families are different sizes, so the shorter one is cycled through fresh permutations and
+    each family's loss is scaled by (its plane count / the number of groups). That keeps each
+    family's total weight over an outer iteration exactly what it was; without it, cycling the
+    shorter family would silently give it more say.
+
+    SEC_JOINT=0 restores one plane per step, which is what every arm before this was trained
+    under.
+    """
+    hs = [("h", i) for i in range(NH)]
+    vs = [("v", i) for i in range(NV)]
+    es = [("e", i) for i in range(len(enames))]
+    for L in (hs, vs, es):
+        random.shuffle(L)
+    if not SEC_JOINT:
+        allp = hs + vs + es
+        random.shuffle(allp)
+        return [[(k, i, 1.0)] for k, i in allp]
+    G = max(len(hs), len(vs), len(es), 1)
+    out = []
+    for g in range(G):
+        grp = []
+        for L in (hs, vs, es):
+            if not L:
+                continue
+            if g and g % len(L) == 0:
+                random.shuffle(L)
+            grp.append((*L[g % len(L)], len(L) / G))
+        out.append(grp)
+    return out
+
+
+_g0 = groups_for_iteration()
+print(f"  a gradient step sees {'+'.join(sorted({k for g in _g0 for k, _, _ in g}))} "
+      f"({len(_g0)} steps per outer iteration, {len(_g0[0])} planes each)"
+      if SEC_JOINT else
+      f"  a gradient step sees one plane ({len(_g0)} steps per outer iteration)", flush=True)
+_nstep = len(_g0)
 for j in range(ITERS):
-    order = [("h", i) for i in range(NH)] + [("v", i) for i in range(NV)] \
-            + [("e", i) for i in range(len(enames))]
-    random.shuffle(order)
-    for kind, i in order:
+    for grp in groups_for_iteration():
         decode()
-        if kind == "h":
-            d = float(hd[H_LO + i]) + h_step * ((random.random() - 0.5) * 2.0 * JITTER)
-            img, al, _, _ = ON.render_section(st, glctx, hmvp, hn, d, RES)
-            ref = refs_h[i]
-        elif kind == "v":
-            n = torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32, device=dev)
-            img, al, _, _ = ON.render_section(
-                st, glctx, torch.as_tensor(C["v_mvp"][i], dtype=torch.float32, device=dev),
-                n, float(C["v_planes"][i, 3]), RES)
-            ref = refs_v[i]
-        else:
-            img, al, _, _ = ON.render_exterior(
-                st, glctx, torch.as_tensor(C["e_mvp"][i], dtype=torch.float32, device=dev), RES)
-            ref = refs_e[enames[i]]
-        with torch.no_grad():
-            if kind == "v" and SEC_XCONS_HOLD and j > SEC_XCONS_AT and i in _vheld:
-                tgt = _vheld[i]
+        loss, _l1s, _kinds = None, [], []
+        for kind, i, wfam in grp:
+            if kind == "h":
+                d = float(hd[H_LO + i]) + h_step * ((random.random() - 0.5) * 2.0 * JITTER)
+                img, al, _, _ = ON.render_section(st, glctx, hmvp, hn, d, RES)
+                ref = refs_h[i]
+            elif kind == "v":
+                n = torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32, device=dev)
+                img, al, _, _ = ON.render_section(
+                    st, glctx, torch.as_tensor(C["v_mvp"][i], dtype=torch.float32, device=dev),
+                    n, float(C["v_planes"][i, 3]), RES)
+                ref = refs_v[i]
             else:
-                tgt = sm.section_target(img, ref, alpha=al)
-            if SEC_XCONS > 0 and j >= SEC_XCONS_AT:
-                if kind == "v":
-                    _vcache[i] = (tgt, torch.as_tensor(C["v_mvp"][i], dtype=torch.float32,
-                                                       device=dev),
-                                  torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32,
-                                                  device=dev),
-                                  float(C["v_planes"][i, 3]))
-                elif kind == "h" and _vcache:
-                    # The transverse target wins along every line it shares with a cached
-                    # longitudinal one; under "copy" reconcile writes into the longitudinal.
-                    _tot, _dis = 0, 0.0
-                    for _vi, (_vt, _vm, _vn, _vd) in _vcache.items():
-                        _k, _e = xcons.reconcile(tgt, hmvp, hn, d, _vt, _vm, _vn, _vd,
-                                                 centres, RES, band=float(h_step),
-                                                 weight=SEC_XCONS, mode=SEC_XCONS_MODE)
-                        _tot += _k; _dis += _e * _k
-                        if SEC_XCONS_HOLD and _k:
-                            _vheld[_vi] = _vt
-                    if _tot and j % 10 == 0:
-                        print(f"  cross-section consistency at {j}: {_tot:,} px reconciled, "
-                              f"disagreement {_dis / max(_tot, 1):.4f}", flush=True)
-        loss = (secloss.patch_loss(img, tgt) if secloss.SEC_PATCH > 0
-                else (img - tgt).abs().mean())
-        with torch.no_grad():
-            l1_now = float((img - tgt).abs().mean())
+                img, al, _, _ = ON.render_exterior(
+                    st, glctx, torch.as_tensor(C["e_mvp"][i], dtype=torch.float32, device=dev), RES)
+                ref = refs_e[enames[i]]
+            with torch.no_grad():
+                if kind == "v" and SEC_XCONS_HOLD and j > SEC_XCONS_AT and i in _vheld:
+                    tgt = _vheld[i]
+                else:
+                    tgt = sm.section_target(img, ref, alpha=al)
+                if SEC_XCONS > 0 and j >= SEC_XCONS_AT:
+                    if kind == "v":
+                        _vcache[i] = (tgt, torch.as_tensor(C["v_mvp"][i], dtype=torch.float32,
+                                                           device=dev),
+                                      torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32,
+                                                      device=dev),
+                                      float(C["v_planes"][i, 3]))
+                    elif kind == "h" and _vcache:
+                        # The transverse target wins along every line it shares with a cached
+                        # longitudinal one; under "copy" reconcile writes into the longitudinal.
+                        _tot, _dis = 0, 0.0
+                        for _vi, (_vt, _vm, _vn, _vd) in _vcache.items():
+                            _k, _e = xcons.reconcile(tgt, hmvp, hn, d, _vt, _vm, _vn, _vd,
+                                                     centres, RES, band=float(h_step),
+                                                     weight=SEC_XCONS, mode=SEC_XCONS_MODE)
+                            _tot += _k; _dis += _e * _k
+                            if SEC_XCONS_HOLD and _k:
+                                _vheld[_vi] = _vt
+                        if _tot and j % 10 == 0:
+                            print(f"  cross-section consistency at {j}: {_tot:,} px reconciled, "
+                                  f"disagreement {_dis / max(_tot, 1):.4f}", flush=True)
+            _pl = (secloss.patch_loss(img, tgt) if secloss.SEC_PATCH > 0
+                   else (img - tgt).abs().mean())
+            # The distributional term, in its second stage. `schedule` returns (0, 1) until
+            # SEC_DIST_START of the run has passed and while SEC_DIST is off, so this is the
+            # existing objective exactly unless it is asked for.
+            _wd, _wp = patchdist.schedule(j, ITERS)
+            if _wd > 0:
+                _pl = _wp * _pl + _wd * patchdist.distance(img, tgt)
+            loss = _pl * wfam if loss is None else loss + _pl * wfam
+            with torch.no_grad():
+                _l1s.append(float((img - tgt).abs().mean()))
+            _kinds.append(kind)
+
+        # The spatial prior, on the whole field rather than on what these planes happened to
+        # cross: a cell is coupled to its neighbours whether or not either was supervised this
+        # step, which is the point -- the cells the schedule reaches rarely are the ones with
+        # nothing else holding them. Once per step, not once per plane, because it does not
+        # depend on which plane was drawn.
+        if fieldreg.WEIGHT > 0:
+            loss = loss + fieldreg.WEIGHT * fieldreg.penalty(st["interior"], _tvpairs)
+        l1_now = float(np.mean(_l1s))
         opt.zero_grad(set_to_none=True)
         loss.backward()
         for k in TK:
             g = rows(k).grad
             if g is not None:
                 touch[k] |= (g.abs().sum(-1) > 0)
-        apply_masks(kind != "e")
+        # the masks are the sections' unless every plane in this step was an exterior view
+        apply_masks(any(k != "e" for k in _kinds))
         if ANCHOR and dec_i.feat.grad is not None:
             # gaussians.trained: what the sections actually supervised, accumulated
             upd_i.__ior__(dec_i.feat.grad.abs().sum(-1) > 0)
@@ -368,17 +444,17 @@ for j in range(ITERS):
               f"{nfill:,} untrained cells' features filled from trained neighbours", flush=True)
     if (j + 1) % PROBE_EVERY == 0 or j == 0:
         probes.append((j + 1, probe()))
-        print(f"  outer {j+1:4d}/{ITERS}  steps {steps:,}  loss {np.mean(hist[-len(order):]):.5f}  "
-              f"L1 {np.mean(l1hist[-len(order):]):.5f}  "
+        print(f"  outer {j+1:4d}/{ITERS}  steps {steps:,}  loss {np.mean(hist[-_nstep:]):.5f}  "
+              f"L1 {np.mean(l1hist[-_nstep:]):.5f}  "
               f"probe {probes[-1][1]:.5f}  {time.time()-t0:.0f}s", flush=True)
 
 el = time.time() - t0
 print(f"\ntrained {ITERS} outer iterations = {steps:,} gradient steps in {el:.1f}s "
       f"({1000*el/max(steps,1):.0f} ms/step)")
-print(f"  loss first {len(order)} mean {np.mean(hist[:len(order)]):.5f} -> "
-      f"last {len(order)} mean {np.mean(hist[-len(order):]):.5f}\n"
-      f"  L1   first {len(order)} mean {np.mean(l1hist[:len(order)]):.5f} -> "
-      f"last {len(order)} mean {np.mean(l1hist[-len(order):]):.5f}")
+print(f"  loss first {_nstep} mean {np.mean(hist[:_nstep]):.5f} -> "
+      f"last {_nstep} mean {np.mean(hist[-_nstep:]):.5f}\n"
+      f"  L1   first {_nstep} mean {np.mean(l1hist[:_nstep]):.5f} -> "
+      f"last {_nstep} mean {np.mean(l1hist[-_nstep:]):.5f}")
 print("coverage over the schedule actually run (with jitter):")
 for k in TK:
     print(f"  {k:<10} {int(touch[k].sum()):>9,} / {len(touch[k]):>9,}  "

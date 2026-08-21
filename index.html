@@ -98,6 +98,7 @@
   <div class="links">
     <a href="supplement.html">Supplementary material</a>
     <a href="supplement.html#limits">Limitations</a>
+    <a href="ovoxel.html">O&#8209;Voxel, end to end</a>
   </div>
 </header>
 
@@ -571,7 +572,27 @@ through from the side it should be hidden on.</p>
 
 <p>Converting only the cut face and leaving the photographed outside as Gaussians is what makes
 two renderers, a depth convention and a compositing step necessary. Converting the exterior as
-well removes the seam instead of managing it. The occupancy already holds the volume, so the exterior <em>is</em> its boundary, every face of an occupied cell whose neighbour is empty, and the same dual-grid encoder that handles the cut face takes the staircase off it.</p>
+well removes the seam instead of managing it. The occupancy already holds the volume, so the
+exterior <em>is</em> its boundary: every face of an occupied cell whose neighbour is empty, handed
+to the same dual-grid encoder that handles the cut face.</p>
+
+<p><strong>That boundary is a staircase, and the dual grid does not take it off.</strong> Dual
+contouring places each node at the minimum of the quadric its cell's surface planes define, so what
+it can recover is limited by what those planes are, and the occupancy's own boundary supplies six
+axis-aligned normals. Inside one cell the quadric then has at most three independent directions and
+its minimiser on a curved surface is a corner. Measuring the share of face area whose normal lies
+within ten degrees of a coordinate axis &mdash; 4.6% for a smooth surface, 100% for a set of cubes
+&mdash; the converted exteriors give 68.9% (orange), 79.8% (watermelon), 92.5% (apple), 82.8%
+(cake) and 59.2% (bread). The staircase is the input's, not the method's.</p>
+
+<p>The same occupancy carries a smooth boundary with nothing added from outside it: the zero level
+of its own signed distance transform, whose gradient is a real normal. Substituting it leaves every
+other step alone and gives 8.1%, 6.9%, 8.5%, 21.8% and 33.1% on the same five objects, on 2.2 to
+2.4 times fewer active voxels, with the dual nodes no further from the trained model's primitives
+than before (0.88 &rarr; 1.01 fine cells on the orange, 0.75 &rarr; 0.59 on the watermelon). The two
+that stay high are the loaf and the cake, which have genuinely flat axis-aligned faces the statistic
+cannot distinguish from a staircase. This is measured and not yet the reported path; the exteriors
+in this paper are the boundary quads.</p>
 
 
 
