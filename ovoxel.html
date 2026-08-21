@@ -84,7 +84,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#split">How the plane count is derived</a><a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#experiments">The experiments</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#reach">Only one family reaches the object</a><a href="#audit">The reference sets</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
+  <a href="#split">How the plane count is derived</a><a href="#loss">What is optimised</a><a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#experiments">The experiments</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#reach">Only one family reaches the object</a><a href="#audit">The reference sets</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
 </nav>
 
 <h2 id="split">How the plane count is derived, step by step</h2>
@@ -215,6 +215,148 @@ photographs (c). Fixing (a) is one character &mdash; derive \(N_h\) against \(L/
 \(L/N_h\), which shifts every object about two planes towards the longitudinal family. Fixing (b)
 is a choice of radius and can be measured the same way. Fixing (c) needs photographs.
 </div>
+
+<h2 id="loss">What is actually optimised, term by term</h2>
+
+<p class="lead">The plane count decides <em>where</em> the object is looked at. This is what happens
+once a plane is chosen &mdash; every step from the plane to the number that gets differentiated,
+with the default weight of each piece. Three tensors take the gradient and nothing else does.</p>
+
+<h3>Step 1 &mdash; what a gradient step sees</h3>
+
+<p>An outer iteration walks every plane once. Under <code>SEC_JOINT=1</code>, the default, a single
+step takes <strong>one transverse plane, one longitudinal plane and one exterior view together</strong>,
+so a cell that both families cross meets both constraints in the same backward pass. It matters
+because before this the step order was a shuffle and a step saw exactly one plane: a shared cell was
+pulled to one photograph, then to the other, and what it settled on depended on which came last.</p>
+
+<p>The families are different sizes &mdash; 14, 12 and 6 on the orange &mdash; so the number of
+groups is the longest of them and the shorter ones are cycled through fresh permutations. Each
+family's loss is then scaled by \(|\text{family}| / G\), which keeps its total weight over an
+outer iteration exactly what it was; without it, cycling the shorter family would silently give it
+more say.</p>
+
+<pre>G = max(N_h, N_v, N_e)                       # 14 on the orange
+step g:  [("h", h_g, 14/14), ("v", v_g, 12/14), ("e", e_g, 6/14)]</pre>
+
+<h3>Step 2 &mdash; the plane is moved before it is drawn</h3>
+
+<p>Neither family is drawn where its camera says. A transverse plane is offset along its normal by
+\(f \cdot \Delta\) with \(f\) uniform on \([-0.5, 0.5]\) (<code>JITTER=0.5</code>) and
+\(\Delta\) the depth step, so over a run it sweeps the cells between the supervised depths rather
+than re-cutting the same ones. A longitudinal plane is pinned by default; <code>JITTER_AZ</code>
+turns it about the axis by up to that fraction of the azimuth spacing, which is the same degree of
+freedom expressed on the parameter that plays the same role.</p>
+
+<div class="note">
+The jitter is also why the lattice-plane bug never touched a trained model. \(f\) is a continuous
+draw, so the depth lands on an exact multiple of the cell size with probability zero. Every number
+on this page was measured at un-jittered depths on held-out planes, and none of those was affected
+either &mdash; checked on all seven objects.
+</div>
+
+<h3>Step 3 &mdash; render</h3>
+
+<p><code>render_section</code> puts two things into <em>one</em> nvdiffrast pass, so the depth test
+composes them and nothing is pasted on afterwards: the exterior triangles lying wholly behind the
+plane, and the cut polygon of the plane against the occupancy, coloured by a trilinear sample of the
+per-cell interior field at each polygon vertex. Out come the image and the accumulated opacity.</p>
+
+<h3>Step 4 &mdash; the target is built from the render, not from the photograph</h3>
+
+<p>This is the step that is easiest to state wrongly, so: <strong>the loss is not the render against
+the photograph.</strong> <code>section_target</code> takes the two and returns a third image, and it
+is that third image the render is compared with.</p>
+
+<ol>
+<li><strong>Where the section is.</strong> Taken from the rasteriser's accumulated opacity, not from
+"differs from white". The orange's core <em>is</em> white: read as background it split the disc into
+two half-moons, each of which then got the whole reference squeezed into it sideways, and the target
+came out flat orange with no radial structure at all.</li>
+<li><strong>The target starts as a copy of the render.</strong> Not as white. A component too small
+to establish a correspondence is skipped, and against a white canvas "skipped" reads as "should be
+background" &mdash; the loss then works to delete it. On the loaf that was 5,689 pixels, a fifth of
+the section's own area, being told to disappear. Copying leaves those pixels with no gradient rather
+than a wrong one.</li>
+<li><strong>Each connected component is matched by topology.</strong> The reference is read twice,
+once with its enclosed regions filled and once open, and the reading whose hole count matches the
+component's is the one used &mdash; filling is right for a pale core and wrong for a hole, and only
+the render knows which it is looking at. If the counts match, a bijection exists and the two are
+mapped by their own coordinates; if not, it falls back to the normalised distance transform, the one
+coordinate both shapes have.</li>
+</ol>
+
+<p>So the photograph supplies <em>appearance as a function of position within the section</em>, and
+the render supplies the silhouette. That is deliberate &mdash; the photograph is of <em>an</em>
+orange, not of this one, so its outline carries no information about this object &mdash; but it also
+means the loss can never correct a silhouette, which is why the loaf and the cake, photographed as a
+slice held at an angle, show a shape mismatch that no amount of training removes.</p>
+
+<h3>Step 5 &mdash; the loss</h3>
+
+<pre>L = sum over the planes in this step of  w_family * | render - target |
+    + SEC_TV * mean over sampled face-sharing cell pairs of (c_a - c_b)^2</pre>
+
+<p>Mean absolute error, per plane, weighted by the family scale from step 1. Everything else is off
+by default and each was measured before being left off:</p>
+
+<div class="tw"><table>
+<thead><tr><th>term</th><th>switch</th><th>default</th><th>what happens when it is on</th></tr></thead>
+<tbody>
+<tr><td>pixel L1</td><td>&mdash;</td><td><strong>always on</strong></td><td>the objective</td></tr>
+<tr><td>field prior</td><td><code>SEC_TV</code></td><td>0</td><td>couples each cell to its face-sharing neighbours over 200,000 sampled pairs per step &mdash; on the whole field, not on what these planes happened to cross, which is the point: the cells the schedule reaches rarely are the ones with nothing else holding them</td></tr>
+<tr><td>patch distribution</td><td><code>SEC_DIST</code></td><td>0</td><td>Chamfer, sliced Wasserstein or JS between the two images' patch sets, phased in after half the run and keeping 30% of the pixel term &mdash; measured three times, harmful once and neutral twice</td></tr>
+<tr><td>cross-section consistency</td><td><code>SEC_XCONS</code></td><td>0</td><td>reconciles a transverse target with cached longitudinal ones along the line they share; two planes meet in a line, so this reaches ~1% of either family's cells and that is its ceiling</td></tr>
+<tr><td>patch pixel loss</td><td><code>SEC_PATCH</code></td><td>0</td><td>replaces the per-pixel L1 with a patch-wise one</td></tr>
+</tbody></table></div>
+
+<h3>Step 6 &mdash; what receives the gradient</h3>
+
+<div class="tw"><table>
+<thead><tr><th>tensor</th><th>what it is</th><th>learning rate</th><th>constraint</th></tr></thead>
+<tbody>
+<tr><td><code>interior</code></td><td>one RGB per solid cell, or the anchor decoder's output</td><td>0.02 (feat 0.005, MLP 0.002)</td><td>clamped to [0,1]</td></tr>
+<tr><td><code>surf_rgb</code></td><td>one RGB per dual vertex &mdash; the skin</td><td>0.02</td><td><strong>frozen</strong> under <code>SHELL_PIN=1</code>, the default</td></tr>
+<tr><td><code>dual_v</code>, <code>split_w</code></td><td>the dual grid's vertex offsets and split weights</td><td>1e&#8209;3</td><td>split weights clamped to (0,1)</td></tr>
+</tbody></table></div>
+
+<p>Adam, no schedule, 5,200 gradient steps. <code>SHELL_PIN=1</code> means the exterior is fixed
+before training and the sections cannot move it, so the exterior views constrain the geometry and
+not the colour; and <code>SEC_SKIP_OUTER=0.10</code> keeps the section loss off the outermost 10% of
+the render, so a cut face is never allowed to repaint the rind it is seen through. Which is the same
+ownership split from both sides: <strong>the sections own the interior, the six exterior views own
+the skin.</strong></p>
+
+<h3>Where this leaves the plane count</h3>
+
+<p>Steps 1 and 5 together are why the plane split is a trade and not a free choice, and the
+arithmetic is worth doing rather than describing. Each family contributes one plane per step at
+weight \(|\text{family}|/G\), over \(G\) steps, so its <strong>total weight over an outer
+iteration is exactly its plane count</strong> &mdash; that is what the scaling was written to
+preserve, and it means the split is not a sampling choice but a direct reallocation of gradient
+weight, one unit for one unit.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>fixed &rarr; derived</th><th>transverse weight</th>
+<th>longitudinal weight</th><th>transverse DS</th><th>longitudinal DS</th></tr></thead>
+<tbody>
+<tr><td>cake</td><td>16/10 &rarr; 15/11</td><td>&minus;6%</td><td>+10%</td><td>0.4641 &rarr; 0.4651</td><td>0.5017 &rarr; 0.4890</td></tr>
+<tr><td>orange</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.0859 &rarr; 0.0804</td><td>0.2257 &rarr; 0.2061</td></tr>
+<tr><td>apple</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.2472 &rarr; 0.2534</td><td>0.3557 &rarr; 0.3437</td></tr>
+<tr><td>pomegranate</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.2372 &rarr; 0.2461</td><td>0.4836 &rarr; 0.4718</td></tr>
+<tr><td>watermelon</td><td>16/10 &rarr; 13/13</td><td>&minus;19%</td><td>+30%</td><td>0.1599 &rarr; 0.1623</td><td>0.2044 &rarr; 0.1992</td></tr>
+<tr><td>loaf</td><td>16/10 &rarr; 11/15</td><td>&minus;31%</td><td>+50%</td><td>0.3774 &rarr; 0.3818</td><td>0.4849 &rarr; 0.4214</td></tr>
+<tr><td>doughnut</td><td>16/10 &rarr; 4/22</td><td>&minus;75%</td><td>+120%</td><td>0.0980 &rarr; 0.1540</td><td>0.5494 &rarr; 0.5550</td></tr>
+</tbody></table></div>
+
+<p>Sorted by how far the split moves, and both columns follow it. The cake moves least and barely
+changes on either. The loaf takes the largest survivable reallocation, +50% longitudinal, and posts
+the largest longitudinal gain of the seven, 13%. The doughnut has three quarters of its transverse
+weight removed and its transverse score degrades by 57%, the worst number in the whole set &mdash;
+and its longitudinal column does <em>not</em> improve, because the +120% is spread over 22 planes
+that share one photograph. So the trade is not a mystery and not a property of any object: it is
+the objective doing exactly what it is written to do, and the plane count is the only thing
+deciding how the fixed budget is divided.</p>
 
 <h2 id="what">What this is, and what it is not</h2>
 
