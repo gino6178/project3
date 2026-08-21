@@ -51,6 +51,8 @@ HYBRID = os.environ.get("TRIPLANE", "0") == "2"
 RES = int(os.environ.get("TRIPLANE_RES", "192"))
 C_FEAT = int(os.environ.get("TRIPLANE_DIM", "16"))
 INIT = float(os.environ.get("TRIPLANE_INIT", "0.01"))
+# decoupled L2 on the per-cell residual only; 0 leaves the hybrid as it was
+RESID_WD = float(os.environ.get("RESID_WD", "0"))
 
 
 def _uv(centres):
@@ -128,10 +130,22 @@ class TriplaneDecoder(nn.Module):
         self.pin = (mask, target)
 
     def param_groups(self, lr_feat=0.005, lr_mlp=0.002):
-        feat = ["planes"] + (["resid"] if self.resid is not None else [])
-        mlp = [p for n, p in self.named_parameters() if n not in feat]
-        ps = [self.planes] + ([self.resid] if self.resid is not None else [])
-        return [dict(params=ps, lr=lr_feat), dict(params=mlp, lr=lr_mlp)]
+        """The base and the residual are separate groups, so the decay can fall on one of them.
+
+        The point of splitting the field into an interpolating base and a per-cell residual is that
+        the two have different jobs: the base carries what a smooth field can explain and the
+        residual carries what only that cell can. Penalising the residual alone -- RESID_WD, a
+        decoupled L2 applied through AdamW -- makes the run prefer the base and reach for a cell's
+        own freedom only where the base cannot account for what the photograph shows. Penalising
+        both would just shrink the whole field towards the decoder's mean colour.
+        """
+        names = ["planes"] + (["resid"] if self.resid is not None else [])
+        mlp = [p for n, p in self.named_parameters() if n not in names]
+        g = [dict(params=[self.planes], lr=lr_feat, weight_decay=0.0)]
+        if self.resid is not None:
+            g.append(dict(params=[self.resid], lr=lr_feat, weight_decay=RESID_WD))
+        g.append(dict(params=mlp, lr=lr_mlp, weight_decay=0.0))
+        return g
 
 
 def selftest():

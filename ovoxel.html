@@ -84,7 +84,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#what">What this is</a><a href="#frontier">The trade-off curve</a><a href="#findings">What was measured</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#split">The plane count</a><a href="#loss">What is optimised</a><a href="#blend">The depth blend</a><a href="#experiments">The experiments</a><a href="#joint">Two changes that survived</a><a href="#reach">Only one family reaches the object</a><a href="#notfixed">What they do not fix</a><a href="#audit">The reference sets</a><a href="#rejected">What was rejected</a><a href="#limits">What it does not do</a>
+  <a href="#what">What this is</a><a href="#frontier">The trade-off curve</a><a href="#overfit">Fitting its own supervision</a><a href="#findings">What was measured</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#split">The plane count</a><a href="#loss">What is optimised</a><a href="#blend">The depth blend</a><a href="#experiments">The experiments</a><a href="#joint">Two changes that survived</a><a href="#reach">Only one family reaches the object</a><a href="#notfixed">What they do not fix</a><a href="#audit">The reference sets</a><a href="#rejected">What was rejected</a><a href="#limits">What it does not do</a>
 </nav>
 
 <h2 id="what">What this is, and what it is not</h2>
@@ -169,6 +169,132 @@ not large.</p>
 <tr><td>the interior field as three interpolating planes</td><td>0.0948</td><td>0.2242</td><td>not measurable</td><td>worse in both columns, and it did not reduce the overfitting it was meant to</td></tr>
 <tr><td>the supervised band chosen by measured cut area</td><td>0.0715</td><td>0.2123</td><td><strong>130,548</strong></td><td>the best transverse number measured anywhere, with 17% of the object never receiving a gradient &mdash; see below</td></tr>
 </tbody></table></div>
+
+<h2 id="overfit">The run fits its own supervision, and four metrics failed to say so</h2>
+
+<p class="lead">Everything above compares arms on twelve held-out planes. That comparison was
+resting on two things which turned out not to hold: that the planes it scores are planes nothing
+looked at during training, and that the score reflects the state of the object. Neither was true.
+This section is what happened when both were fixed, and it is the part of the page a reader should
+trust most, because it is where the page argues against its own numbers.</p>
+
+<h3>The probe and the score were the same planes</h3>
+
+<p>The held-out set is six planes per family. The probe &mdash; computed every twenty outer
+iterations and used throughout to say when a run stopped improving &mdash; read all six, and so did
+the reported DreamSim. Every observation of the form "this arm degrades after outer 20" was made on
+the set the arm is then scored against. The planes are now split three and three: the first three
+are validation and the probe reads only those, the last three are test and are rendered but not
+looked at until the run is over. <strong>Every number in this section is on the test half.</strong>
+They are not comparable with the numbers above, which are on all six.</p>
+
+<h3>What the standard remedies did</h3>
+
+<div class="tw"><table>
+<thead><tr><th>arm</th><th>what it adds</th><th>transverse</th><th>longitudinal</th></tr></thead>
+<tbody>
+<tr><td>floor</td><td>two halves of a reference family</td><td>0.0593</td><td>0.0777</td></tr>
+<tr><td>baseline</td><td>nothing</td><td>0.0796</td><td>0.2049</td></tr>
+<tr><td>field prior 0.03</td><td rowspan="4">the anisotropic prior, swept</td><td>0.0785</td><td>0.1937</td></tr>
+<tr><td><strong>field prior 0.1</strong></td><td class="win">0.0781</td><td>0.1923</td></tr>
+<tr><td>field prior 0.3</td><td>0.0788</td><td class="win">0.1918</td></tr>
+<tr><td>field prior 1.0</td><td>0.0813</td><td>0.1944</td></tr>
+<tr><td>prior, annealed down</td><td>strong early, coarse to fine</td><td>0.0785</td><td>0.1915</td></tr>
+<tr><td>prior, annealed up</td><td>strong late, against overfitting</td><td>0.0782</td><td>0.1917</td></tr>
+<tr><td>cosine decay</td><td>a learning-rate schedule, which this training had none of</td><td>0.0813</td><td>0.2074</td></tr>
+<tr><td>cosine decay, finished at 60%</td><td>the same, more aggressive</td><td>0.0846</td><td>0.2111</td></tr>
+<tr><td>weight decay on the latent</td><td>AdamW on the 8-d per-cell feature</td><td>0.0805</td><td>0.2061</td></tr>
+<tr><td>decay on a per-cell residual only</td><td>an interpolating base carries the rest</td><td class="win">0.0772</td><td>0.2024</td></tr>
+</tbody></table></div>
+
+<p>Only the prior improves both columns, and its weight has an optimum: 0.1 and 0.3 are
+indistinguishable, 0.03 is not enough and 1.0 is too much. Annealing it in either direction changes
+nothing &mdash; the three prior arms agree to the fourth decimal place, so an earlier reading of the
+annealed arm as evidence for coarse-to-fine was an attribution error, and the control removed it.
+<strong>A learning-rate schedule made it worse, and more aggressively worse the more aggressive the
+schedule</strong>, which is the opposite of what the sparse-view literature would predict and is
+consistent with the constraint here being coverage rather than step count.</p>
+
+<h3>Four times the metric preferred a worse object</h3>
+
+<div class="tw"><table>
+<thead><tr><th>what the metric said</th><th>what was true</th></tr></thead>
+<tbody>
+<tr><td>an arm won the transverse column outright, 0.0715, 11% ahead</td><td>it left 130,548 cells &mdash; 17% of the object &mdash; with no gradient at all</td></tr>
+<tr><td>the cosine-decay arm degraded least from its own best, 0.5% against 2.3%</td><td>it scored worst of the four on the test half</td></tr>
+<tr><td>the probe fell monotonically as the prior's weight rose, lowest at 1.0</td><td>DreamSim on the test half turned around after 0.3</td></tr>
+<tr><td>the residual-decay arm won the transverse column</td><td>its field carries 36% less structure &mdash; mean difference between neighbouring cells 0.061 against 0.095</td></tr>
+</tbody></table></div>
+
+<p>The last one is the sharpest and it was caught by eye before it was caught by measurement. The
+per-cell residual is the only part of that field which can express anything at the scale of a single
+cell, so penalising it removes detail by construction. On the field the effect is large; on the
+rendered picture it is 1%, and DreamSim ranks the arm first.</p>
+
+<div class="tw"><table>
+<thead><tr><th>arm</th><th>field, mean |c<sub>a</sub>&minus;c<sub>b</sub>| between neighbours</th>
+<th>render gradient, transverse</th><th>render gradient, longitudinal</th></tr></thead>
+<tbody>
+<tr><td>the photographs</td><td>&mdash;</td><td>0.01744</td><td>0.01840</td></tr>
+<tr><td>baseline</td><td>0.09515</td><td>0.01585 (91%)</td><td>0.01349 (73%)</td></tr>
+<tr><td>field prior 0.1</td><td>0.09206</td><td>0.01580 (91%)</td><td>0.01336 (73%)</td></tr>
+<tr><td>residual decay</td><td class="win">0.06095</td><td>0.01565 (90%)</td><td>0.01325 (72%)</td></tr>
+<tr><td>field prior 1.0</td><td>0.08085</td><td>0.01481 (85%)</td><td>0.01251 (68%)</td></tr>
+</tbody></table></div>
+
+<p>DreamSim only objects once the smoothing reaches the picture, which it does at a prior weight of
+1.0 and does not at a residual decay of 0.05. So a score alone cannot choose between these arms, and
+the page reports the field statistic and the coverage beside it.</p>
+
+<p>One row of that table is about every arm rather than any of them. <strong>The longitudinal cuts
+carry 72&ndash;73% of the gradient the photographs carry, and the transverse cuts 91%, in every arm
+measured.</strong> A quarter of the structure a real longitudinal section has is missing from all of
+them, which is the same fact as the longitudinal family reaching 16&ndash;19% of the cells, seen from
+the picture instead of from the geometry.</p>
+
+<h3>The three arms of this section, side by side</h3>
+
+<div class="grid2">
+  <figure>
+    <video src="assets/exp_s_tv.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap"><strong>the field prior at 0.1</strong> &mdash; 0.0781 / 0.1923, field 0.09206</div>
+  </figure>
+  <figure>
+    <video src="assets/exp_s_rwd.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap"><strong>residual decay</strong> &mdash; 0.0772 / 0.2024, field 0.06095</div>
+  </figure>
+</div>
+
+<figure>
+  <img src="assets/ovox_planes2.jpg" alt="Baseline, field prior and residual decay as rows; supervised and held-out cuts of each family as columns">
+  <figcaption>Rows: the baseline, the field prior at 0.1, residual decay. Columns: a supervised
+  transverse cut, a held-out transverse cut, a supervised longitudinal cut, a held-out longitudinal
+  cut. The third row is the arm that wins the transverse column on DreamSim and carries 36% less
+  structure in the field.</figcaption>
+</figure>
+
+<h3>What the best arm still does not see</h3>
+
+<p>The prior takes the cells that never receive a gradient to one. It does not take the cells that
+no photograph ever sees to one, and those are two different things: a gradient from a neighbour says
+"be like the cells around you", never "be this colour".</p>
+
+<div class="tw"><table>
+<thead><tr><th>position along the polar axis</th><th>cells</th><th>never crossed by a supervised plane</th></tr></thead>
+<tbody>
+<tr><td>0.0 &ndash; 0.1</td><td>26,407</td><td class="win">19,450 (73.7%)</td></tr>
+<tr><td>0.1 &ndash; 0.2</td><td>72,030</td><td class="win">26,802 (37.2%)</td></tr>
+<tr><td>0.2 &ndash; 0.8</td><td>632,176</td><td>0</td></tr>
+<tr><td>0.8 &ndash; 0.9</td><td>34,235</td><td>1,559 (4.6%)</td></tr>
+<tr><td>0.9 &ndash; 1.0</td><td>5,333</td><td>2,679 (50.2%)</td></tr>
+</tbody></table></div>
+
+<p>50,490 cells, 6.56% of the object, and 92% of them are at one end. The supervised band is the
+middle two thirds of the sweep and it is not centred on the object, so one cap is much worse off
+than the other. Whatever is there was decided by smoothing outwards from the supervised region, not
+by any photograph. That is the defect the best arm has, and the fix that does not cost planes is to
+spread the same fourteen depths across the part of the axis that has something to cut rather than
+across a fixed fraction of the sweep.</p>
 
 <h2 id="findings">What was measured that does not depend on which end you pick</h2>
 

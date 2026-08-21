@@ -288,7 +288,10 @@ if not SHELL_PIN:
 # a rarely-touched cell -- which is most of them here -- decays at a different rate from a busy one.
 # Decoupled decay treats every parameter alike, which is what a prior on the field should do.
 WD = float(os.environ.get("WEIGHT_DECAY", "0"))
-opt = (torch.optim.AdamW(groups, weight_decay=WD) if WD > 0 else torch.optim.Adam(groups))
+# per-group weight_decay wins where a group sets it (the hybrid's residual does), and WD is the
+# default for the groups that do not
+_anywd = WD > 0 or any(g.get("weight_decay", 0) for g in groups)
+opt = (torch.optim.AdamW(groups, weight_decay=WD) if _anywd else torch.optim.Adam(groups))
 # Cosine decay to LR_FLOOR of the initial rate. There was no schedule at all: a constant rate for
 # 4,550 steps on a loss that stops falling after a few hundred leaves the field wandering near the
 # minimum rather than settling into it, and the held-out probe reaches its best at outer 20 in most
@@ -299,11 +302,19 @@ LR_FLOOR = float(os.environ.get("LR_FLOOR", "0.02"))
 _lr0 = [g["lr"] for g in opt.param_groups]
 
 
+# Where the cosine finishes. At 1.0 the rate only reaches the floor on the last step, which is a
+# schedule for a run that is still learning at the end; the probe says this one stops learning after
+# about a twentieth of the budget. LR_DECAY_END=0.6 completes the cosine at 60% and holds the floor
+# for the rest, so the last 40% of the run can only make small corrections.
+LR_DECAY_END = float(os.environ.get("LR_DECAY_END", "1.0"))
+
+
 def set_lr(frac):
     if not LR_DECAY:
         return
     import math
-    m = LR_FLOOR + (1.0 - LR_FLOOR) * 0.5 * (1.0 + math.cos(math.pi * min(max(frac, 0.0), 1.0)))
+    f = min(max(frac / max(LR_DECAY_END, 1e-6), 0.0), 1.0)
+    m = LR_FLOOR + (1.0 - LR_FLOOR) * 0.5 * (1.0 + math.cos(math.pi * f))
     for g, l0 in zip(opt.param_groups, _lr0):
         g["lr"] = l0 * m
 print(f"  trainable: {n_train:,} floats "
