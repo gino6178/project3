@@ -72,6 +72,24 @@ VOXEL_SMOOTH = os.environ.get("VOXEL_SMOOTH", "1") == "1"
 SEC_XCONS = float(os.environ.get("SEC_XCONS", "0"))
 SEC_XCONS_AT = int(os.environ.get("SEC_XCONS_AT", "0"))
 SEC_JOINT = os.environ.get("SEC_JOINT", "1") == "1"
+# How far a longitudinal plane may be moved along its own normal, as a fraction of the object's
+# radius. 0, and it should stay 0: the asymmetry it was written to remove is in the data, not in
+# this file.
+#
+# The transverse family is one camera and 24 depths, of which 16 are supervised and each is
+# jittered by half a step, because there are photographs at many depths. The longitudinal family is
+# one camera per azimuth and `centers[len//2]` -- the middle depth, one plane per azimuth, never
+# moved -- because every longitudinal photograph is a CENTRAL section. Moving the plane off the
+# axis therefore asks the model to reproduce a central cut at an off-centre depth: dumping the
+# target at 0%, 5% and 12% of the radius gives the same full central section all three times,
+# because that is the only photograph there is.
+#
+# Measured on the orange, against the same arm with this off (0.0859 rh, 0.2300 rv): 0.05 gives
+# 0.1186 / 0.2224, 0.12 gives 0.1235 / 0.2326, 0.25 gives 0.1122 / 0.2527. The longitudinal gain
+# is small, the transverse cost is 36%, and it grows with the jitter. What the held-out
+# longitudinal planes are asking for -- they sit 4.6% to 12.3% off the axis while every supervised
+# one sits at 3.1% to 3.4% -- is a photograph that does not exist.
+JITTER_V = float(os.environ.get("JITTER_V", "0"))
 SEC_XCONS_HOLD = os.environ.get("SEC_XCONS_HOLD", "0") == "1"
 SEC_XCONS_MODE = os.environ.get("SEC_XCONS_MODE", "copy")
 ABL_INTERVAL = int(os.environ.get("ABL_INTERVAL", "30"))
@@ -350,6 +368,8 @@ print(f"  a gradient step sees {'+'.join(sorted({k for g in _g0 for k, _, _ in g
       f"({len(_g0)} steps per outer iteration, {len(_g0[0])} planes each)"
       if SEC_JOINT else
       f"  a gradient step sees one plane ({len(_g0)} steps per outer iteration)", flush=True)
+_vrad = float((st["solid"].max(0).values - st["solid"].min(0).values).max()) \
+    * float(st["hc"]) / 2.0
 _nstep = len(_g0)
 for j in range(ITERS):
     for grp in groups_for_iteration():
@@ -362,9 +382,25 @@ for j in range(ITERS):
                 ref = refs_h[i]
             elif kind == "v":
                 n = torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32, device=dev)
+                # The same jitter the transverse family has always had, on the parameter that
+                # plays the same role. A transverse plane is moved along its normal by up to half
+                # a depth step, so over a run it sweeps the cells between the supervised depths;
+                # a longitudinal plane was pinned, so the cells between the supervised azimuths
+                # were reached by the transverse family alone.
+                #
+                # That is what the held-out longitudinal renders were showing. On the orange the
+                # supervised planes come out as sections of an orange and a held-out plane five
+                # degrees away comes out as vertical columns, from the same model and the same
+                # renderer -- five degrees at sixty cells of radius is five cells, which is a
+                # different set of cells. The supervised planes sit 3.1 to 3.4% of the radius off
+                # the axis and the held-out ones 4.6 to 12.3%, so the band this sweeps is the band
+                # they are drawn from.
+                dv = float(C["v_planes"][i, 3])
+                if JITTER_V > 0:
+                    dv += _vrad * JITTER_V * (random.random() - 0.5) * 2.0
                 img, al, _, _ = ON.render_section(
                     st, glctx, torch.as_tensor(C["v_mvp"][i], dtype=torch.float32, device=dev),
-                    n, float(C["v_planes"][i, 3]), RES)
+                    n, dv, RES)
                 ref = refs_v[i]
             else:
                 img, al, _, _ = ON.render_exterior(
