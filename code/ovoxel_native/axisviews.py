@@ -30,7 +30,9 @@ W = "/workspace/ovoxel_native"
 TAG = os.environ.get("TAG", "ov2")
 RES = int(os.environ.get("AX_RES", "256"))
 NAZ = int(os.environ.get("AX_NAZ", "24"))
-ELS = [float(x) for x in os.environ.get("AX_ELS", "-25,0,25").split(",")]
+# All the way to the poles, because the question the viewer asks is "turn the top towards you",
+# and with a band around the equator there is no view in which the top faces the camera at all.
+ELS = [float(x) for x in os.environ.get("AX_ELS", "-90,-60,-30,0,30,60,90").split(",")]
 OBJS = ["orange_sp", "watermelon_sp", "apple1_sp", "bread_sp", "cake2_sp",
         "pomegranate2_sp", "doughnut"]
 AXES = [("x", (0.85, 0.15, 0.15)), ("y", (0.15, 0.65, 0.15)), ("z", (0.15, 0.35, 0.9))]
@@ -79,7 +81,12 @@ def main(outdir):
                 az = 360.0 * ai / NAZ
                 e, a = np.radians(el), np.radians(az)
                 d = np.array([np.cos(e) * np.cos(a), np.cos(e) * np.sin(a), np.sin(e)])
-                mvp = look_at(cen + d * rad * 3.2, cen, np.array([0.0, 0.0, 1.0]), 38.0)
+                # at the poles the world up is the view direction and the cross product dies;
+                # any perpendicular will do there, and +x turns with the azimuth so the object
+                # still spins rather than freezing
+                up = (np.array([0.0, 0.0, 1.0]) if abs(el) < 89.0
+                      else np.array([np.cos(a), np.sin(a), 0.0]))
+                mvp = look_at(cen + d * rad * 3.2, cen, up, 38.0)
                 with torch.no_grad():
                     img, _ = ON.render_exterior(
                         st, glctx, torch.as_tensor(mvp, dtype=torch.float32, device="cuda"),
