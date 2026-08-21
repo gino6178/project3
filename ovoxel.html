@@ -244,6 +244,50 @@ whole field rather than on whatever the planes crossed, so a cell no plane ever 
 by its neighbours. That is not supervision &mdash; it cannot say what colour a cell should be
 &mdash; but it stops the cell drifting to whatever value happens to suit the supervised planes.</p>
 
+<h3>The renderer was drawing a different field from the one being fitted</h3>
+
+<p><code>sample_interior</code> is a trilinear sample of the per-cell field, defined at any point in
+space. The renderer never called it at a point: it called it at the cut polygon's <em>corners</em>
+and let the rasteriser interpolate colour between them. A polygon is planar and lies inside one
+cell, and a trilinear field restricted to a plane is not linear, so a barycentric blend of corner
+values is an approximation &mdash; and a different approximation for each polygon, since the same
+cell cut transversely and cut longitudinally produces two different polygons.</p>
+
+<div class="tw"><table>
+<thead><tr><th>plane</th><th>pixels</th><th>mean |drawn &minus; field|</th><th>99th percentile</th><th>max</th></tr></thead>
+<tbody>
+<tr><td>transverse, three depths</td><td>~57,000</td><td>0.0053 &ndash; 0.0060</td><td>0.034 &ndash; 0.039</td><td>0.24</td></tr>
+<tr><td>longitudinal, three azimuths</td><td>~71,000</td><td>0.0034 &ndash; 0.0066</td><td>0.024 &ndash; 0.045</td><td>0.15</td></tr>
+</tbody></table></div>
+
+<p>The mean is small against the 0.020 the training residual sits at, but the 99th percentile is
+twice it and the maximum is ten times, and the error is not spread evenly &mdash; it concentrates at
+cell boundaries, which is where the segment walls are. Interpolating <em>position</em> instead is
+exact, because position is linear over a planar polygon, so sampling the field at the interpolated
+position gives every plane through a point the same colour there by construction.</p>
+
+<div class="tw"><table>
+<thead><tr><th>the orange, transverse</th><th>DS transverse</th><th>DS longitudinal</th><th>final training loss</th></tr></thead>
+<tbody>
+<tr><td>trained and drawn per vertex</td><td>0.0804</td><td>0.2061</td><td>0.2707</td></tr>
+<tr><td><strong>the same checkpoint, drawn per fragment</strong></td><td class="win">0.0771</td><td>0.2062</td><td>&mdash;</td></tr>
+<tr><td>trained <em>and</em> drawn per fragment</td><td>0.0821</td><td>0.2116</td><td class="win">0.2681</td></tr>
+</tbody></table></div>
+
+<p><strong>Drawing any model this way improves the transverse column by 4.1% and leaves the
+longitudinal one alone. Training through it makes the model worse.</strong> Both rows below the
+first are drawn the same way, so that comparison is clean: 0.0771 for the model trained the old way
+against 0.0821 for the model trained the new way. The training loss goes the other way, 0.2681
+against 0.2707 &mdash; a better fit to the supervised planes and a worse one everywhere else, which
+is the definition of the problem this section is about. The corner interpolation was acting as a
+smoother during training, and removing it let the run chase detail at cell boundaries that does not
+generalise.</p>
+
+<p>So the correction belongs in the renderer and not in the optimiser: it is the more faithful
+picture of whatever field is there, and every figure and score on this page was produced through the
+less faithful one. It has not been applied retroactively, because doing so would move every number
+and the arms must be compared through one renderer or the other, not a mixture.</p>
+
 <h3>A plane lying exactly on a lattice plane cut nothing</h3>
 
 <p>Not a trade-off, a defect, and fixed. <code>cut_polygons</code> kept a cell when its corners

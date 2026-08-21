@@ -321,6 +321,9 @@ def surface_mesh(st, colour=True):
     return mv, mf, mc
 
 
+DEFERRED = os.environ.get("CUT_DEFERRED", "0") == "1"
+
+
 def render_section(st, glctx, mvp, n, d, res, bg=1.0, exterior=True, aa=True,
                    thickness=0.0, n_sub=7):
     """One cross-section: the exposed cut face, plus whatever exterior is behind the plane.
@@ -373,7 +376,39 @@ def render_section(st, glctx, mvp, n, d, res, bg=1.0, exterior=True, aa=True,
 
     ph = (torch.cat([Vt, torch.ones_like(Vt[:, :1])], 1) @ mvp)[None]
     rast, _ = dr.rasterize(glctx, ph, Ft, resolution=[res, res])
-    img, _ = dr.interpolate(Ct[None], rast, Ft)
+    if DEFERRED:
+        # Sample the field at the fragment, not at the polygon's corners.
+        #
+        # `sample_interior` is a trilinear sample defined at any point, but it was only ever called
+        # at the cut polygon's vertices and the rasteriser interpolated colour between them. A
+        # polygon is planar and lies inside one cell, and the trilinear field restricted to a plane
+        # is not linear, so a barycentric blend of its corner values is an approximation -- and a
+        # different one for each polygon. The same cell cut transversely and longitudinally has two
+        # different polygons, hence two different answers at the same point in space.
+        #
+        # Measured on the orange at 400 points along six intersection lines: the two families differ
+        # from each other by 0.082, from the field itself by 0.060 and 0.070. The pixel loss the
+        # training minimises is 0.020, so the renderer's own approximation was three times the
+        # residual it was being fitted to.
+        #
+        # Interpolating position instead is exact -- position IS linear over a planar polygon -- so
+        # sampling the field at the interpolated position gives every plane through a point the same
+        # colour there, by construction rather than by penalty. The exterior keeps vertex colours:
+        # its triangles carry `surf_rgb`, which is a per-vertex quantity and not a field.
+        flag = torch.zeros(len(Vt), 1, device=dev, dtype=Vt.dtype)
+        flag[off:] = 1.0
+        attr = torch.cat([Vt, Ct, flag], 1)
+        it, _ = dr.interpolate(attr[None], rast, Ft)
+        pos, vcol, isc = it[..., :3], it[..., 3:6], it[..., 6:7]
+        cut = (isc > 0.5) & (rast[..., 3:4] > 0)
+        img = vcol
+        if bool(cut.any()):
+            idx = cut[..., 0].nonzero(as_tuple=True)
+            fc = sample_interior(st, pos[idx]).clamp(0, 1)
+            img = img.clone()
+            img[idx] = fc
+    else:
+        img, _ = dr.interpolate(Ct[None], rast, Ft)
     if aa:
         img = dr.antialias(img, rast, ph, Ft)
     alpha = (rast[..., 3:4] > 0).float()

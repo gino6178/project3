@@ -83,7 +83,7 @@ SEC_JOINT = os.environ.get("SEC_JOINT", "1") == "1"
 # because they are per-cell operations with no counterpart: the coverage probe on feat_i, which
 # would otherwise report a non-leaf's absent gradient as zero coverage, and VOXEL_SMOOTH, whose
 # whole job -- filling untrained cells from trained neighbours -- is what the interpolation does.
-TRIPLANE = os.environ.get("TRIPLANE", "0") == "1"
+TRIPLANE = os.environ.get("TRIPLANE", "0") in ("1", "2")
 # How much each family's loss counts, as a multiplier on the plane-count weighting it already has.
 #
 # The plane count decides two separate things and they had no way of being set apart: how much of
@@ -283,7 +283,29 @@ else:
 if not SHELL_PIN:
     groups += [dict(params=[st["dual_v"], st["split_w"]], lr=LR_GEO)]
     n_train += st["dual_v"].numel() + st["split_w"].numel()
-opt = torch.optim.Adam(groups)
+# Weight decay, and it is AdamW rather than Adam's own `weight_decay` because the two are not the
+# same thing: Adam scales the decay by the same running second moment it scales the gradient by, so
+# a rarely-touched cell -- which is most of them here -- decays at a different rate from a busy one.
+# Decoupled decay treats every parameter alike, which is what a prior on the field should do.
+WD = float(os.environ.get("WEIGHT_DECAY", "0"))
+opt = (torch.optim.AdamW(groups, weight_decay=WD) if WD > 0 else torch.optim.Adam(groups))
+# Cosine decay to LR_FLOOR of the initial rate. There was no schedule at all: a constant rate for
+# 4,550 steps on a loss that stops falling after a few hundred leaves the field wandering near the
+# minimum rather than settling into it, and the held-out probe reaches its best at outer 20 in most
+# arms and then rises for the remaining 305. Every comparable per-scene fit -- NeRF, Plenoxels,
+# Instant-NGP -- decays the rate; this one did not.
+LR_DECAY = os.environ.get("LR_DECAY", "0") == "1"
+LR_FLOOR = float(os.environ.get("LR_FLOOR", "0.02"))
+_lr0 = [g["lr"] for g in opt.param_groups]
+
+
+def set_lr(frac):
+    if not LR_DECAY:
+        return
+    import math
+    m = LR_FLOOR + (1.0 - LR_FLOOR) * 0.5 * (1.0 + math.cos(math.pi * min(max(frac, 0.0), 1.0)))
+    for g, l0 in zip(opt.param_groups, _lr0):
+        g["lr"] = l0 * m
 print(f"  trainable: {n_train:,} floats "
       f"({'interior only, the exterior is pinned' if SHELL_PIN else 'interior and exterior'})")
 
@@ -303,6 +325,17 @@ ehm = torch.as_tensor(C["eh_mvp"], dtype=torch.float32, device=dev)
 ehp = C["eh_planes"]
 evm = torch.as_tensor(C["ev_mvp"], dtype=torch.float32, device=dev)
 evp = C["ev_planes"]
+# The probe and the reported score were the same six planes per family, so every decision taken by
+# looking at the probe -- when to stop, which arm to keep -- was taken on the set the arm is then
+# scored against. VAL_N of each family becomes validation, watched during training; the rest is
+# test and is rendered but never looked at until the run is over.
+VAL_N = int(os.environ.get("VAL_N", "3"))
+VAL_H = list(range(min(VAL_N, len(ehp))))
+VAL_V = list(range(min(VAL_N, len(evp))))
+TEST_H = [i for i in range(len(ehp)) if i not in VAL_H]
+TEST_V = [i for i in range(len(evp)) if i not in VAL_V]
+print(f"  held-out split: validation {len(VAL_H)}h+{len(VAL_V)}v (the probe), "
+      f"test {len(TEST_H)}h+{len(TEST_V)}v (scored, never watched)", flush=True)
 
 
 def dump(folder):
@@ -312,12 +345,16 @@ def dump(folder):
             n = torch.as_tensor(ehp[i, :3], dtype=torch.float32, device=dev)
             img, _, _, _ = ON.render_section(st, glctx, ehm[i], n, float(ehp[i, 3]), RES)
             a = img.permute(1, 2, 0).clamp(0, 1).cpu().numpy()
+            tag = "val" if i in VAL_H else "test"
             cv2.imwrite(f"{folder}/rh{i}_init_0.png", (a[:, :, ::-1] * 255).astype(np.uint8))
+            cv2.imwrite(f"{folder}/{tag}_rh{i}.png", (a[:, :, ::-1] * 255).astype(np.uint8))
         for i in range(len(evp)):
             n = torch.as_tensor(evp[i, :3], dtype=torch.float32, device=dev)
             img, _, _, _ = ON.render_section(st, glctx, evm[i], n, float(evp[i, 3]), RES)
             a = img.permute(1, 2, 0).clamp(0, 1).cpu().numpy()
+            tag = "val" if i in VAL_V else "test"
             cv2.imwrite(f"{folder}/rv{i}_init_0.png", (a[:, :, ::-1] * 255).astype(np.uint8))
+            cv2.imwrite(f"{folder}/{tag}_rv{i}.png", (a[:, :, ::-1] * 255).astype(np.uint8))
     print(f"  -> {folder}", flush=True)
 
 
@@ -361,11 +398,11 @@ def probe():
     with torch.no_grad():
         decode()
         tot, n = 0.0, 0
-        for i in range(len(ehp)):
+        for i in VAL_H:
             nn_ = torch.as_tensor(ehp[i, :3], dtype=torch.float32, device=dev)
             im, al, _, _ = ON.render_section(st, glctx, ehm[i], nn_, float(ehp[i, 3]), RES)
             tot += float((im - sm.section_target(im, refs_h[i % NH], alpha=al)).abs().mean()); n += 1
-        for i in range(len(evp)):
+        for i in VAL_V:
             nn_ = torch.as_tensor(evp[i, :3], dtype=torch.float32, device=dev)
             im, al, _, _ = ON.render_section(st, glctx, evm[i], nn_, float(evp[i, 3]), RES)
             tot += float((im - sm.section_target(im, refs_v[i % NV], alpha=al)).abs().mean()); n += 1
@@ -414,6 +451,15 @@ TK = ["feat_i", "feat_s", "dual_v", "split_w"] if ANCHOR else \
 
 
 def rows(k):
+    # the hybrid keeps a per-cell residual, which is a leaf and does carry a gradient, so the
+    # coverage probe works there and reports exactly what it should: which cells the planes moved
+    # away from the interpolated field. The pure triplane has no such tensor and no coverage.
+    if k == "feat_i" and TRIPLANE:
+        r = getattr(dec_i, "resid", None)
+        # the pure triplane has no residual; fall back to the computed feature so the touch buffers
+        # still have a length. It is not a leaf, so its grad stays None and coverage stays
+        # unmeasurable there, which is the honest answer rather than a zero
+        return r if r is not None else dec_i.feat
     return {"feat_i": dec_i.feat if ANCHOR else None,
             "feat_s": dec_s.feat if ANCHOR else None,
             "interior": st.get("interior"), "surf_rgb": st.get("surf_rgb"),
@@ -515,6 +561,8 @@ if JITTER_AZ > 0:
     print(f"  longitudinal planes turned by up to {JITTER_AZ:.2f} of the "
           f"{np.degrees(_az_spacing):.1f}-degree spacing, about {np.round(_axis, 3)}", flush=True)
 _nstep = len(_g0)
+TV_ANNEAL = float(os.environ.get("SEC_TV_ANNEAL", "1"))
+TOTAL_STEPS = _nstep * ITERS
 _urng = np.random.default_rng(0)
 for j in range(ITERS):
     for grp in groups_for_iteration():
@@ -655,8 +703,16 @@ for j in range(ITERS):
         # nothing else holding them. Once per step, not once per plane, because it does not
         # depend on which plane was drawn.
         if fieldreg.WEIGHT > 0:
-            loss = loss + fieldreg.WEIGHT * fieldreg.penalty(st["interior"], _tvpairs,
-                                                              polar=_tvpolar)
+            # Coarse to fine, expressed on the prior rather than on the lattice. The lattice cannot
+            # be refined -- it is the object's own occupancy -- so the frequency the field is
+            # allowed to carry is controlled by how hard the neighbours are tied together: strong
+            # early, so the run settles the low frequencies first, and released later so detail can
+            # appear. TV_ANNEAL is the multiplier on the weight at the start, reaching 1 at the end.
+            _tvw = fieldreg.WEIGHT
+            if TV_ANNEAL > 1.0:
+                _f = steps / max(TOTAL_STEPS, 1)
+                _tvw = fieldreg.WEIGHT * (TV_ANNEAL ** (1.0 - min(_f, 1.0)))
+            loss = loss + _tvw * fieldreg.penalty(st["interior"], _tvpairs, polar=_tvpolar)
         l1_now = float(np.mean(_l1s))
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -669,6 +725,7 @@ for j in range(ITERS):
         if ANCHOR and not TRIPLANE and dec_i.feat.grad is not None:
             # gaussians.trained: what the sections actually supervised, accumulated
             upd_i.__ior__(dec_i.feat.grad.abs().sum(-1) > 0)
+        set_lr(steps / max(TOTAL_STEPS, 1))
         opt.step()
         if not ANCHOR:
             with torch.no_grad():

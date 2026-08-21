@@ -34,6 +34,20 @@ import os
 import torch
 import torch.nn as nn
 
+# TRIPLANE=2 keeps the per-cell table and adds the planes underneath it, rather than replacing it.
+#
+# Replacing it lost in both columns, and the reason is in the same sentence as the motivation: an
+# interpolating field cannot represent two adjacent cells as unrelated, so it fills the cells no
+# plane reaches AND removes the ability to state anything at the scale of one cell. The per-cell
+# table has the opposite pair of properties. Summing them gives each its own job:
+#
+#     feat = triplane(x, y, z) + residual[cell]
+#
+# The residual starts at zero, so a cell no plane ever crosses keeps whatever the planes interpolate
+# there and contributes nothing of its own -- which is the fill -- while a cell that is supervised
+# can move away from the interpolated value as far as it needs, which is the detail. Neither is
+# possible in the other arm.
+HYBRID = os.environ.get("TRIPLANE", "0") == "2"
 RES = int(os.environ.get("TRIPLANE_RES", "192"))
 C_FEAT = int(os.environ.get("TRIPLANE_DIM", "16"))
 INIT = float(os.environ.get("TRIPLANE_INIT", "0.01"))
@@ -61,6 +75,10 @@ class TriplaneDecoder(nn.Module):
     def __init__(self, centres, init_rgb=None, c_feat=C_FEAT, res=RES, c_dim=16):
         super().__init__()
         self.planes = nn.Parameter(torch.randn(3, c_feat, res, res) * INIT)
+        # exactly zero, not small noise: the residual must start by saying nothing, so that an
+        # unsupervised cell is the interpolated value and not the interpolated value plus a
+        # arbitrary offset that nothing will ever correct
+        self.resid = nn.Parameter(torch.zeros(len(centres), c_feat)) if HYBRID else None
         self.register_buffer("uv", _uv(centres), persistent=False)
         self.register_buffer("nograd", torch.zeros(len(centres), dtype=torch.bool),
                              persistent=False)
@@ -87,6 +105,8 @@ class TriplaneDecoder(nn.Module):
         s = nn.functional.grid_sample(self.planes, g, mode="bilinear",
                                       padding_mode="border", align_corners=True)
         f = s[:, :, 0].permute(0, 2, 1).sum(0)                  # (3, C, 1, N) -> (N, C)
+        if self.resid is not None:
+            f = f + self.resid
         if bool(self.nograd.any()):
             # the trainer's `feat.grad[is_outer] = 0`, which has nowhere to land when the feature
             # is not a leaf: detaching the masked rows stops the gradient at the same place while
@@ -108,8 +128,10 @@ class TriplaneDecoder(nn.Module):
         self.pin = (mask, target)
 
     def param_groups(self, lr_feat=0.005, lr_mlp=0.002):
-        mlp = [p for n, p in self.named_parameters() if n != "planes"]
-        return [dict(params=[self.planes], lr=lr_feat), dict(params=mlp, lr=lr_mlp)]
+        feat = ["planes"] + (["resid"] if self.resid is not None else [])
+        mlp = [p for n, p in self.named_parameters() if n not in feat]
+        ps = [self.planes] + ([self.resid] if self.resid is not None else [])
+        return [dict(params=ps, lr=lr_feat), dict(params=mlp, lr=lr_mlp)]
 
 
 def selftest():
