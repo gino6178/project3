@@ -84,405 +84,8 @@
 </header>
 
 <nav class="toc">
-  <a href="#split">How the plane count is derived</a><a href="#candidates">The two arms</a><a href="#loss">What is optimised</a><a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#experiments">The experiments</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#reach">Only one family reaches the object</a><a href="#audit">The reference sets</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
+  <a href="#what">What this is</a><a href="#frontier">The trade-off curve</a><a href="#findings">What was measured</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#split">The plane count</a><a href="#loss">What is optimised</a><a href="#blend">The depth blend</a><a href="#experiments">The experiments</a><a href="#joint">Two changes that survived</a><a href="#reach">Only one family reaches the object</a><a href="#notfixed">What they do not fix</a><a href="#audit">The reference sets</a><a href="#rejected">What was rejected</a><a href="#limits">What it does not do</a>
 </nav>
-
-<h2 id="split">How the plane count is derived, step by step</h2>
-
-<p class="lead">One line of code decides how many planes each family gets, and it is the change with
-the most at stake on this page. Every step of it is here with the measured number at each stage, for
-all seven objects, including the two constants that are in the equation because leaving them out was
-wrong and the three things it still does not fix.</p>
-
-<figure>
-  <video src="assets/exp_ovbal.mp4" autoplay loop muted playsinline preload="metadata"></video>
-  <figcaption>The orange under <strong>this</strong> rule &mdash; 9 transverse and 17 longitudinal
-  &mdash; cut transverse on the left and longitudinal on the right. Nothing in the trainer, the loss,
-  the jitter or the budget differs between splits: the only thing the rule changes is how the 26
-  planes are divided. The same orange under the superseded 14/12 is
-  <a href="#experiments">in the experiments section</a>, and the visible difference between them is
-  small &mdash; the change is worth 9.7% of the longitudinal score and costs 10.8% of the transverse
-  one, and neither is something the eye settles.</figcaption>
-</figure>
-
-<h3>Step 1 &mdash; measure the object, not the file</h3>
-
-<p>Every solid cell centre is projected onto the polar axis \(\hat n\), which is the transverse
-family's own normal. Two numbers come out, both in coarse cells so they are comparable with the
-lattice itself:</p>
-
-<ul>
-<li><strong>Axis extent</strong> \(L = \max(p) - \min(p)\), the object's length along the axis.</li>
-<li><strong>Rim radius</strong> \(R\), the 90th percentile of the perpendicular distance from the
-axis, taken after the perpendicular component is centred.</li>
-</ul>
-
-<p>Two corrections to this measurement, both of which moved objects by whole planes.</p>
-
-<p><strong>The skin rows come out.</strong> <code>gs_fill.ply</code> carries the coarse cells and the
-level&#8209;1 skin in the same rows, and the skin is half the spacing and all of it at the rim:
-480,287 of the orange's 1,162,387 rows. Averaging over all of them pulls the radius up 13%. What the
-sampling has to cover is the interior, so <code>cell_level.pt</code> is read alongside and the
-level&#8209;1 rows are dropped.</p>
-
-<p><strong>The rim, not the mean.</strong> The rule balances the arc between neighbouring
-longitudinal planes against the transverse spacing, and the structure that has to be resolved
-&mdash; segment walls, seeds, crumb &mdash; sits at the rim, not at the average distance from the
-axis. Measured here the rim is 1.5 to 1.9 times the mean, so with the mean the arc where it matters
-was 11.8 to 15.0 cells while the rule believed it was arranging 6.8 to 9.2. The 90th percentile
-rather than the maximum, so that one stray cell cannot set the scale
-(<code>N_PLANES_RIM_PCT=90</code>).</p>
-
-<h3>Step 2 &mdash; the balance, with the constant the sampler actually uses</h3>
-
-<p>A transverse plane moves <em>along</em> the axis; a longitudinal plane turns <em>about</em> it. To
-resolve both at the same spacing the two arcs must be divided the same way. Half a circumference and
-not a whole one, because a plane and its opposite normal are the same cut.</p>
-
-<p>The step that was wrong for a long time is which transverse spacing goes into that equation. The
-depths are <em>not</em> \(N_h\) samples across the axis: <code>mvcams</code> asks
-<code>interpolate_along_camera_direction</code> for \(M = \lceil 1.5\,N_h \rceil\) of them and
-supervises the middle \(N_h\), so the spacing in force is \(L/M\). Balancing \(L/N_h\) against
-\(\pi R/N_v\) therefore solved for a spacing the code never produces, and every object came out
-1.29 to 1.59 times finer on the transverse side than the balance it had just solved &mdash; the rule
-over-supervised precisely the family it was written to stop over-supervising. Putting the constant
-into the equation is the whole of the fix:</p>
-
-<pre>solve   L / (OVER * N_h)  =  pi * R / N_v      with  N_h + N_v = TOTAL
-
-N_H = clip(round(TOTAL * L / (L + OVER * pi * R)), 2, TOTAL - 2)     # mvcams.py
-N_V = TOTAL - N_H
-
-TOTAL = 26            N_PLANES_TOTAL     the budget, unchanged for every object
-OVER  = 1.5           N_PLANES_OVER      the ceil(1.5 * N_h) the sampler lays down
-R     = p90 radius    N_PLANES_RIM_PCT   the rim, not the mean</pre>
-
-<h3>Step 3 &mdash; what it gives each object, and whether it balances</h3>
-
-<div class="tw"><table>
-<thead><tr><th>object</th><th>\(L\)</th><th>mean \(r\)</th><th>rim \(R\)</th><th>split</th>
-<th>\(M\)</th><th>transverse \(L/M\)</th><th>rim arc \(\pi R/N_v\)</th></tr></thead>
-<tbody>
-<tr><td>orange</td><td>126</td><td>33.1</td><td>49.9</td><td>9/17</td><td>14</td><td>9.00</td><td>9.23</td></tr>
-<tr><td>watermelon</td><td>103</td><td>33.8</td><td>50.6</td><td>8/18</td><td>12</td><td>8.56</td><td>8.82</td></tr>
-<tr><td>apple</td><td>121</td><td>33.2</td><td>50.3</td><td>9/17</td><td>14</td><td>8.64</td><td>9.29</td></tr>
-<tr><td>loaf</td><td>80</td><td>32.4</td><td>53.4</td><td>6/20</td><td>9</td><td>8.89</td><td>8.39</td></tr>
-<tr><td>cake</td><td>110</td><td>26.6</td><td>42.3</td><td>9/17</td><td>14</td><td>7.86</td><td>7.82</td></tr>
-<tr><td>pomegranate</td><td>115</td><td>29.1</td><td>44.2</td><td>9/17</td><td>14</td><td>8.21</td><td>8.17</td></tr>
-<tr><td>doughnut</td><td>43</td><td>64.6</td><td>78.1</td><td>3/23</td><td>5</td><td>8.60</td><td>10.67</td></tr>
-</tbody></table></div>
-
-<p>The last two columns are the test: they are the two spacings the rule exists to equalise, and they
-now agree within 10% on six of the seven. The orange was <strong>6.00 against 14.46</strong> before
-these constants went in and is 9.00 against 9.23 after. The doughnut is the exception at 8.60 against
-10.67 &mdash; it is the roundest object here and 3/23 is where the clip at \(N_h \ge 2\) stops it,
-so 26 planes are not enough to balance something that flat.</p>
-
-<h3>Step 4 &mdash; what the split then changes downstream</h3>
-
-<p>Two consequences, neither of them obvious from the equation, and both needed to read the results
-honestly.</p>
-
-<p><strong>The split is a reallocation of gradient weight, one unit for one unit.</strong> Each family
-contributes one plane per step at weight \(|\text{family}|/G\) with \(G = \max(N_h, N_v)\), over
-\(G\) steps, so its total weight over an outer iteration is exactly its plane count. Moving the
-orange from 16/10 to 9/17 removes 44% of the transverse family's weight and adds 70% to the
-longitudinal one. Nothing else in the objective changes.</p>
-
-<p><strong>The split also changes the number of gradient steps.</strong> An outer iteration is \(G\)
-steps, so at the same 325 outer iterations the orange gets 5,525 steps at 9/17 and 4,550 at 14/12
-&mdash; 21% more. That coupling is in the design rather than in this change, but it means no two
-splits are compared at equal steps by default, and a control has to be run rather than argued.</p>
-
-<div class="tw"><table>
-<thead><tr><th>object</th><th>split</th><th>gradient steps at 325 outer</th>
-<th>axis inside the supervised band</th><th>transverse photos</th><th>longitudinal photos</th>
-<th>longitudinal planes per photo</th></tr></thead>
-<tbody>
-<tr><td>orange</td><td>9/17</td><td>5,525</td><td>0.62</td><td>3</td><td>3</td><td>5.7</td></tr>
-<tr><td>watermelon</td><td>8/18</td><td>5,850</td><td>0.64</td><td>10</td><td>12</td><td>1.5</td></tr>
-<tr><td>apple</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
-<tr><td>loaf</td><td>6/20</td><td>6,500</td><td>0.62</td><td>3</td><td>3</td><td>6.7</td></tr>
-<tr><td>cake</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
-<tr><td>pomegranate</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
-<tr><td>doughnut</td><td>3/23</td><td>7,475</td><td>0.50</td><td>1</td><td>1</td><td>23.0</td></tr>
-</tbody></table></div>
-
-<h3>Step 5 &mdash; what it measures, so far</h3>
-
-<p>DreamSim against each object's own reference families, on held-out planes. The held-out planes are
-byte-identical between the two camera sets, so this is one object under two splits and not two
-evaluations. The floor &mdash; two disjoint halves of a reference family scored against each other
-&mdash; is 0.0593 and 0.0777 on the orange.</p>
-
-<div class="tw"><table>
-<thead>
-<tr><th rowspan="2">object</th><th colspan="3">the split</th><th colspan="2">transverse</th><th colspan="2">longitudinal</th></tr>
-<tr><th>before</th><th>after</th><th>weight moved</th><th>before</th><th>after</th><th>before</th><th>after</th></tr>
-</thead>
-<tbody>
-<tr><td>orange</td><td>14/12</td><td>9/17</td><td>&minus;36% / +42%</td><td class="win">0.0804</td><td>0.0891</td><td>0.2061</td><td class="win">0.1861</td></tr>
-<tr><td>loaf</td><td>11/15</td><td>6/20</td><td>&minus;45% / +33%</td><td class="win">0.3818</td><td>0.3928</td><td>0.4214</td><td class="win">0.3860</td></tr>
-<tr><td>doughnut</td><td>4/22</td><td>3/23</td><td>&minus;25% / +5%</td><td class="win">0.1540</td><td>0.1613</td><td class="win">0.5550</td><td>0.5777</td></tr>
-<tr><td colspan="8">watermelon, apple, cake and pomegranate are training; a matched-step control is running beside them</td></tr>
-</tbody></table></div>
-
-<p>Three of seven; the remaining four and a matched-step control are running, and this table will be
-completed rather than summarised. What it shows so far is the same trade as every other change on
-this page &mdash; longitudinal better, transverse worse &mdash; moved further along the same curve,
-except on the doughnut, which is worse on both for the second time.</p>
-
-<p>The comparison that is clean is against turning the longitudinal planes, because both are 26-plane
-arms on the same object: turning gives 0.1220 transverse and 0.2015 longitudinal, the corrected split
-gives <strong>0.0891 and 0.1861</strong>. It is better on both columns, so the corrected split
-supersedes turning as a way of giving the longitudinal family more of the object. The best
-longitudinal number measured anywhere is still 0.1783, from 104 planes and a Chamfer term &mdash;
-four times the budget for 4% more.</p>
-
-<h3>What this does not fix</h3>
-
-<ol>
-<li><strong>The caps still get no transverse plane.</strong> Folding 1.5 into the balance corrects the
-<em>spacing</em>, not the <em>coverage</em>: <code>mvcams</code> still builds \(M\) depths and
-supervises the middle \(N_h\), so 0.62 of the axis is inside the band and the two caps are outside
-it &mdash; 0.65 before the change, 0.62 after. That is a separate edit to which depths are taken, not
-to the equation.</li>
-<li><strong>The photographs still do not multiply with the planes.</strong> The apple, the cake and
-the pomegranate have two longitudinal photographs for 17 planes; the doughnut has one for 23. Extra
-longitudinal planes are handed targets they already had, which is the most likely reason the doughnut
-&mdash; the object the rule moves for the strongest reason &mdash; is the object it helps least. Only
-photographs fix this.</li>
-<li><strong>The clip binds on the flattest object.</strong> 3/23 is one plane from the bound, and the
-doughnut is the one object whose two spacings still do not meet. A budget of 26 cannot balance an
-object whose half-circumference is five times its axis.</li>
-</ol>
-
-<div class="note">
-<strong>One honest caveat about the radius.</strong> With \(R\) at the 90th percentile the rule is
-self-consistent at the 90th percentile. Choosing the 95th, or the maximum, would make it
-self-consistent there instead and would give a different split &mdash; the orange's maximum radius is
-60.4 cells against 49.9 at p90, which pushes further towards the longitudinal family. So what these
-two constants did was replace a hidden wrong constant with an explicit stated one. It is the same
-number for every object, so it is still one program and not a per-object knob, but the rule does not
-determine it and this page should not pretend otherwise.
-</div>
-
-<h2 id="candidates">The two arms worth looking at, side by side</h2>
-
-<p class="lead">Everything below this section is the sequence that produced these two. They are the
-same object, the same 14/12 split, the same 4,550 gradient steps, the same loss and the same
-held-out planes &mdash; and every cell in both received a gradient, which is not true of several
-arms that scored better on one column. Left is the transverse cut, right the longitudinal.</p>
-
-<div class="grid2">
-  <figure>
-    <video src="assets/exp_tvperp.mp4" autoplay loop muted playsinline preload="metadata"></video>
-    <div class="cap"><strong>tvperp</strong> &mdash; the field prior, weighted across the polar axis
-    <br>0.0805 transverse &middot; 0.2034 longitudinal</div>
-  </figure>
-  <figure>
-    <video src="assets/exp_tvaz.mp4" autoplay loop muted playsinline preload="metadata"></video>
-    <div class="cap"><strong>tvaz</strong> &mdash; the same prior, plus the longitudinal planes turning
-    <br>0.1154 transverse &middot; <strong>0.1723 longitudinal</strong></div>
-  </figure>
-</div>
-
-<figure>
-  <img src="assets/ovox_planes.jpg" alt="Three arms as rows, four cuts as columns: a supervised and a held-out plane of each family">
-  <figcaption>The same four planes under each arm, drawn still because the videos loop too fast to
-  judge. Rows are <strong>baseline</strong>, <strong>tvperp</strong>, <strong>tvaz</strong>.
-  Columns are a <em>supervised</em> transverse cut, a <em>held-out</em> transverse cut, a
-  <em>supervised</em> longitudinal cut, and a <em>held-out</em> longitudinal cut &mdash; held out
-  meaning the plane was never opened during training. The supervised columns should look alike in
-  all three rows and largely do; the fourth column is where the striping this whole page is about
-  lives, and it is the one to compare.</figcaption>
-</figure>
-
-<div class="tw"><table>
-<thead><tr><th>arm</th><th>what it adds to the baseline</th><th>transverse</th><th>longitudinal</th>
-<th>cells that never got a gradient</th><th>held-out probe, best &rarr; last</th></tr></thead>
-<tbody>
-<tr><td>baseline</td><td>&mdash;</td><td class="win">0.0804</td><td>0.2061</td><td>1</td><td>+2.3%</td></tr>
-<tr><td><strong>tvperp</strong></td><td>anisotropic field prior</td><td>0.0805</td><td>0.2034</td><td>1</td><td>+2.4%</td></tr>
-<tr><td><strong>tvaz</strong></td><td>the prior and turning</td><td>0.1154</td><td class="win">0.1723</td><td>0</td><td class="win">+0.8%</td></tr>
-<tr><td colspan="6">the floor &mdash; two disjoint halves of a reference family &mdash; is 0.0593 and 0.0777</td></tr>
-</tbody></table></div>
-
-<p><strong>tvperp is the cautious one.</strong> Its transverse column is 0.0805 against the
-baseline's 0.0804, which is noise, and its longitudinal is 1.3% better. It costs nothing: no change
-to the plane count, no change to the architecture, one prior switched on and weighted along the two
-axes a measurement said were the loose ones. The honest caveat is that a 1.3% difference on one
-object has no error bar &mdash; nothing on this page has been run twice with a different seed, so
-whether 1.3% means anything is not established.</p>
-
-<p><strong>tvaz is the one that moves something.</strong> Turning the longitudinal planes about the
-axis takes that family from reaching 15.9% of the cells to 97.7%, and the longitudinal column
-improves 16% &mdash; the largest movement measured anywhere at this budget. It costs 44% of the
-transverse column. That trade is worth taking or not depending on which cut matters, and the case
-for taking it is that the transverse column is already near its floor, 0.0804 against 0.0593, while
-the longitudinal one is nowhere near it, 0.2061 against 0.0777.</p>
-
-<div class="note">
-<strong>The prior does something it was not added for.</strong> It was meant to break the vertical
-columns, and it does improve the longitudinal column on every arm it is added to. But it also closes
-the coverage holes the other changes opened: turning alone leaves 1,475 cells with no gradient and
-the corrected plane split leaves 33,518, while with the prior both go to zero. The reason is that it
-acts on face-sharing cell pairs over the whole field rather than on whatever the planes crossed, so
-a cell no plane ever touched is still held by its neighbours. It is not supervision &mdash; it
-cannot say what colour the cell should be &mdash; but it stops the cell drifting to whatever value
-happens to help the supervised planes.
-</div>
-
-<div class="note">
-<strong>Why the scores alone were not enough to pick these.</strong> One arm in this sequence scored
-0.0715 on the transverse column, the best measured anywhere and 11% ahead of the baseline, while
-leaving <strong>130,548 cells &mdash; 17% of the object &mdash; with no gradient at all</strong>.
-DreamSim is computed on twelve held-out planes; an arm can ruin a sixth of the object and still win
-on those twelve. That arm is not on this page. Coverage is reported beside every score above for
-the same reason.
-</div>
-
-<h2 id="loss">What is actually optimised, term by term</h2>
-
-<p class="lead">The plane count decides <em>where</em> the object is looked at. This is what happens
-once a plane is chosen &mdash; every step from the plane to the number that gets differentiated,
-with the default weight of each piece. Three tensors take the gradient and nothing else does.</p>
-
-<h3>Step 1 &mdash; what a gradient step sees</h3>
-
-<p>An outer iteration walks every plane once. Under <code>SEC_JOINT=1</code>, the default, a single
-step takes <strong>one transverse plane, one longitudinal plane and one exterior view together</strong>,
-so a cell that both families cross meets both constraints in the same backward pass. It matters
-because before this the step order was a shuffle and a step saw exactly one plane: a shared cell was
-pulled to one photograph, then to the other, and what it settled on depended on which came last.</p>
-
-<p>The families are different sizes &mdash; 14, 12 and 6 on the orange &mdash; so the number of
-groups is the longest of them and the shorter ones are cycled through fresh permutations. Each
-family's loss is then scaled by \(|\text{family}| / G\), which keeps its total weight over an
-outer iteration exactly what it was; without it, cycling the shorter family would silently give it
-more say.</p>
-
-<pre>G = max(N_h, N_v, N_e)                       # 14 on the orange
-step g:  [("h", h_g, 14/14), ("v", v_g, 12/14), ("e", e_g, 6/14)]</pre>
-
-<h3>Step 2 &mdash; the plane is moved before it is drawn</h3>
-
-<p>Neither family is drawn where its camera says. A transverse plane is offset along its normal by
-\(f \cdot \Delta\) with \(f\) uniform on \([-0.5, 0.5]\) (<code>JITTER=0.5</code>) and
-\(\Delta\) the depth step, so over a run it sweeps the cells between the supervised depths rather
-than re-cutting the same ones. A longitudinal plane is pinned by default; <code>JITTER_AZ</code>
-turns it about the axis by up to that fraction of the azimuth spacing, which is the same degree of
-freedom expressed on the parameter that plays the same role.</p>
-
-<div class="note">
-The jitter is also why the lattice-plane bug never touched a trained model. \(f\) is a continuous
-draw, so the depth lands on an exact multiple of the cell size with probability zero. Every number
-on this page was measured at un-jittered depths on held-out planes, and none of those was affected
-either &mdash; checked on all seven objects.
-</div>
-
-<h3>Step 3 &mdash; render</h3>
-
-<p><code>render_section</code> puts two things into <em>one</em> nvdiffrast pass, so the depth test
-composes them and nothing is pasted on afterwards: the exterior triangles lying wholly behind the
-plane, and the cut polygon of the plane against the occupancy, coloured by a trilinear sample of the
-per-cell interior field at each polygon vertex. Out come the image and the accumulated opacity.</p>
-
-<h3>Step 4 &mdash; the target is built from the render, not from the photograph</h3>
-
-<p>This is the step that is easiest to state wrongly, so: <strong>the loss is not the render against
-the photograph.</strong> <code>section_target</code> takes the two and returns a third image, and it
-is that third image the render is compared with.</p>
-
-<ol>
-<li><strong>Where the section is.</strong> Taken from the rasteriser's accumulated opacity, not from
-"differs from white". The orange's core <em>is</em> white: read as background it split the disc into
-two half-moons, each of which then got the whole reference squeezed into it sideways, and the target
-came out flat orange with no radial structure at all.</li>
-<li><strong>The target starts as a copy of the render.</strong> Not as white. A component too small
-to establish a correspondence is skipped, and against a white canvas "skipped" reads as "should be
-background" &mdash; the loss then works to delete it. On the loaf that was 5,689 pixels, a fifth of
-the section's own area, being told to disappear. Copying leaves those pixels with no gradient rather
-than a wrong one.</li>
-<li><strong>Each connected component is matched by topology.</strong> The reference is read twice,
-once with its enclosed regions filled and once open, and the reading whose hole count matches the
-component's is the one used &mdash; filling is right for a pale core and wrong for a hole, and only
-the render knows which it is looking at. If the counts match, a bijection exists and the two are
-mapped by their own coordinates; if not, it falls back to the normalised distance transform, the one
-coordinate both shapes have.</li>
-</ol>
-
-<p>So the photograph supplies <em>appearance as a function of position within the section</em>, and
-the render supplies the silhouette. That is deliberate &mdash; the photograph is of <em>an</em>
-orange, not of this one, so its outline carries no information about this object &mdash; but it also
-means the loss can never correct a silhouette, which is why the loaf and the cake, photographed as a
-slice held at an angle, show a shape mismatch that no amount of training removes.</p>
-
-<h3>Step 5 &mdash; the loss</h3>
-
-<pre>L = sum over the planes in this step of  w_family * | render - target |
-    + SEC_TV * mean over sampled face-sharing cell pairs of (c_a - c_b)^2</pre>
-
-<p>Mean absolute error, per plane, weighted by the family scale from step 1. Everything else is off
-by default and each was measured before being left off:</p>
-
-<div class="tw"><table>
-<thead><tr><th>term</th><th>switch</th><th>default</th><th>what happens when it is on</th></tr></thead>
-<tbody>
-<tr><td>pixel L1</td><td>&mdash;</td><td><strong>always on</strong></td><td>the objective</td></tr>
-<tr><td>field prior</td><td><code>SEC_TV</code></td><td>0</td><td>couples each cell to its face-sharing neighbours over 200,000 sampled pairs per step &mdash; on the whole field, not on what these planes happened to cross, which is the point: the cells the schedule reaches rarely are the ones with nothing else holding them</td></tr>
-<tr><td>patch distribution</td><td><code>SEC_DIST</code></td><td>0</td><td>Chamfer, sliced Wasserstein or JS between the two images' patch sets, phased in after half the run and keeping 30% of the pixel term &mdash; measured three times, harmful once and neutral twice</td></tr>
-<tr><td>cross-section consistency</td><td><code>SEC_XCONS</code></td><td>0</td><td>reconciles a transverse target with cached longitudinal ones along the line they share; two planes meet in a line, so this reaches ~1% of either family's cells and that is its ceiling</td></tr>
-<tr><td>patch pixel loss</td><td><code>SEC_PATCH</code></td><td>0</td><td>replaces the per-pixel L1 with a patch-wise one</td></tr>
-</tbody></table></div>
-
-<h3>Step 6 &mdash; what receives the gradient</h3>
-
-<div class="tw"><table>
-<thead><tr><th>tensor</th><th>what it is</th><th>learning rate</th><th>constraint</th></tr></thead>
-<tbody>
-<tr><td><code>interior</code></td><td>one RGB per solid cell, or the anchor decoder's output</td><td>0.02 (feat 0.005, MLP 0.002)</td><td>clamped to [0,1]</td></tr>
-<tr><td><code>surf_rgb</code></td><td>one RGB per dual vertex &mdash; the skin</td><td>0.02</td><td><strong>frozen</strong> under <code>SHELL_PIN=1</code>, the default</td></tr>
-<tr><td><code>dual_v</code>, <code>split_w</code></td><td>the dual grid's vertex offsets and split weights</td><td>1e&#8209;3</td><td>split weights clamped to (0,1)</td></tr>
-</tbody></table></div>
-
-<p>Adam, no schedule, 5,200 gradient steps. <code>SHELL_PIN=1</code> means the exterior is fixed
-before training and the sections cannot move it, so the exterior views constrain the geometry and
-not the colour; and <code>SEC_SKIP_OUTER=0.10</code> keeps the section loss off the outermost 10% of
-the render, so a cut face is never allowed to repaint the rind it is seen through. Which is the same
-ownership split from both sides: <strong>the sections own the interior, the six exterior views own
-the skin.</strong></p>
-
-<h3>Where this leaves the plane count</h3>
-
-<p>Steps 1 and 5 together are why the plane split is a trade and not a free choice, and the
-arithmetic is worth doing rather than describing. Each family contributes one plane per step at
-weight \(|\text{family}|/G\), over \(G\) steps, so its <strong>total weight over an outer
-iteration is exactly its plane count</strong> &mdash; that is what the scaling was written to
-preserve, and it means the split is not a sampling choice but a direct reallocation of gradient
-weight, one unit for one unit.</p>
-
-<div class="tw"><table>
-<thead><tr><th>object</th><th>fixed &rarr; derived</th><th>transverse weight</th>
-<th>longitudinal weight</th><th>transverse DS</th><th>longitudinal DS</th></tr></thead>
-<tbody>
-<tr><td>cake</td><td>16/10 &rarr; 15/11</td><td>&minus;6%</td><td>+10%</td><td>0.4641 &rarr; 0.4651</td><td>0.5017 &rarr; 0.4890</td></tr>
-<tr><td>orange</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.0859 &rarr; 0.0804</td><td>0.2257 &rarr; 0.2061</td></tr>
-<tr><td>apple</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.2472 &rarr; 0.2534</td><td>0.3557 &rarr; 0.3437</td></tr>
-<tr><td>pomegranate</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.2372 &rarr; 0.2461</td><td>0.4836 &rarr; 0.4718</td></tr>
-<tr><td>watermelon</td><td>16/10 &rarr; 13/13</td><td>&minus;19%</td><td>+30%</td><td>0.1599 &rarr; 0.1623</td><td>0.2044 &rarr; 0.1992</td></tr>
-<tr><td>loaf</td><td>16/10 &rarr; 11/15</td><td>&minus;31%</td><td>+50%</td><td>0.3774 &rarr; 0.3818</td><td>0.4849 &rarr; 0.4214</td></tr>
-<tr><td>doughnut</td><td>16/10 &rarr; 4/22</td><td>&minus;75%</td><td>+120%</td><td>0.0980 &rarr; 0.1540</td><td>0.5494 &rarr; 0.5550</td></tr>
-</tbody></table></div>
-
-<p>Sorted by how far the split moves, and both columns follow it. The cake moves least and barely
-changes on either. The loaf takes the largest survivable reallocation, +50% longitudinal, and posts
-the largest longitudinal gain of the seven, 13%. The doughnut has three quarters of its transverse
-weight removed and its transverse score degrades by 57%, the worst number in the whole set &mdash;
-and its longitudinal column does <em>not</em> improve, because the +120% is spread over 22 planes
-that share one photograph. So the trade is not a mystery and not a property of any object: it is
-the objective doing exactly what it is written to do, and the plane count is the only thing
-deciding how the fixed budget is divided.</p>
 
 <h2 id="what">What this is, and what it is not</h2>
 
@@ -500,6 +103,158 @@ the O&#8209;Voxel-native build in <code>code/ovoxel_native/</code>, trained sepa
 tables are unaffected by anything here, and where the two disagree the paper's numbers are the ones
 that were produced by the pipeline it describes.
 </div>
+
+<h2 id="frontier">The trade-off curve</h2>
+
+<p class="lead">Every change measured here moves the same pair of numbers in opposite directions.
+Nothing on this page is an improvement to both; what the sequence produced is a curve, a knob that
+moves along it, and a set of points on it. The knob is <strong>how much of the object the
+longitudinal family reaches</strong>, and the two numbers are DreamSim against each family's own
+photographs on twelve held-out planes, lower being better.</p>
+
+<div class="grid2">
+  <figure>
+    <video src="assets/exp_tvperp.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">one end of the curve &mdash; 0.0805 transverse, 0.2034 longitudinal</div>
+  </figure>
+  <figure>
+    <video src="assets/exp_tvaz.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">the other &mdash; 0.1154 transverse, 0.1723 longitudinal</div>
+  </figure>
+</div>
+
+<figure>
+  <img src="assets/ovox_planes.jpg" alt="Three arms as rows, four cuts as columns: a supervised and a held-out plane of each family">
+  <figcaption>The same four planes under three arms, drawn still because a loop is not readable.
+  Rows are the 14/12 baseline, then the field prior added, then the prior and turning together.
+  Columns are a <em>supervised</em> transverse cut, a <em>held-out</em> transverse cut, a
+  <em>supervised</em> longitudinal cut, and a <em>held-out</em> longitudinal cut. The supervised
+  columns should look alike across the rows and do; the fourth is where the striping lives.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>point on the curve</th><th>what it is</th><th>transverse</th><th>longitudinal</th>
+<th>cells that never got a gradient</th></tr></thead>
+<tbody>
+<tr><td>the floor</td><td>two disjoint halves of a reference family</td><td>0.0593</td><td>0.0777</td><td>&mdash;</td></tr>
+<tr><td>16/10</td><td>the fixed split every object used</td><td>0.0859</td><td>0.2257</td><td>1</td></tr>
+<tr><td>14/12</td><td>the split derived from the object's shape</td><td class="win">0.0804</td><td>0.2061</td><td>1</td></tr>
+<tr><td>14/12 + prior</td><td>the field prior, weighted across the polar axis</td><td>0.0805</td><td>0.2034</td><td>1</td></tr>
+<tr><td>9/17</td><td>the balance corrected for the sampler and the rim</td><td>0.0891</td><td>0.1861</td><td>33,518</td></tr>
+<tr><td>9/17 + prior</td><td>the same, with the prior</td><td>0.0921</td><td>0.1832</td><td>1</td></tr>
+<tr><td>14/12 + turning</td><td>the longitudinal planes turn about the axis</td><td>0.1168</td><td>0.1771</td><td>1,475</td></tr>
+<tr><td>+ prior + turning</td><td>both</td><td>0.1154</td><td class="win">0.1723</td><td>0</td></tr>
+</tbody></table></div>
+
+<p>Read down the table and the two columns move against each other at every step. The transverse
+column runs from 0.0804 to 0.1168, the longitudinal from 0.2257 to 0.1723, and no ordering of the
+rows makes both improve. The one apparent exception, the prior, is worth 1.3% of the longitudinal
+column at no measurable transverse cost &mdash; and 1.3% on one object has no error bar, because
+nothing here has been run twice with a different seed.</p>
+
+<p>Which end is the right one is not a question this page can answer, and it is not answered here.
+The case for the transverse end is that it is the better number outright. The case for the
+longitudinal end is that the transverse column is already close to its floor, 0.0804 against 0.0593,
+while the longitudinal one is nowhere near, 0.2061 against 0.0777 &mdash; so the same effort buys
+more where there is more to buy. Looked at rather than scored, the difference between the ends is
+not large.</p>
+
+<h3>Points that fell off the curve</h3>
+
+<div class="tw"><table>
+<thead><tr><th>tried</th><th>transverse</th><th>longitudinal</th><th>untouched</th><th>what happened</th></tr></thead>
+<tbody>
+<tr><td>gradient weight set apart from plane count</td><td>0.0817</td><td>0.2081</td><td>36,977</td><td>no effect: 9:17 of gradient on 14/12 planes reproduces 14/12, not 9/17, so the mechanism is the planes and not their weight</td></tr>
+<tr><td>a prior on planes with no photograph</td><td>0.0820</td><td>0.2082</td><td>231</td><td>mildly harmful, and it cancelled the field prior's gain when both were on</td></tr>
+<tr><td>the interior field as three interpolating planes</td><td>0.0948</td><td>0.2242</td><td>not measurable</td><td>worse in both columns, and it did not reduce the overfitting it was meant to</td></tr>
+<tr><td>the supervised band chosen by measured cut area</td><td>0.0715</td><td>0.2123</td><td><strong>130,548</strong></td><td>the best transverse number measured anywhere, with 17% of the object never receiving a gradient &mdash; see below</td></tr>
+</tbody></table></div>
+
+<h2 id="findings">What was measured that does not depend on which end you pick</h2>
+
+<p>The trade-off is the shape of the result. These are the things that came out of chasing it and
+that stand on their own.</p>
+
+<h3>The score can be won by ruining the object</h3>
+
+<p>The last row above is the one to take seriously. Choosing the supervised depths by where the
+plane actually cuts something produced <strong>0.0715 on the transverse column, the best figure
+anywhere on this page and 11% ahead of the baseline &mdash; while leaving 130,548 cells, 17% of the
+object, with no gradient at any point in training</strong>. DreamSim is computed on twelve held-out
+planes. An arm can wreck a sixth of the object and still win on those twelve, and this one did.</p>
+
+<p>It was caught by eye and not by the metric: the coloured speckle was visible on an arm with 4.35%
+of its cells untouched, at a point when the metric was ranking the 17% arm first. Every score on
+this page is now reported beside the coverage that produced it.</p>
+
+<h3>The held-out probe peaks at outer 20 and then rises</h3>
+
+<div class="tw"><table>
+<thead><tr><th>arm</th><th>best probe</th><th>at outer</th><th>final</th><th>degradation</th><th>training loss</th></tr></thead>
+<tbody>
+<tr><td>16/10</td><td>0.02836</td><td>20</td><td>0.02926</td><td>+3.1%</td><td>0.3164 &rarr; 0.2325</td></tr>
+<tr><td>14/12</td><td>0.02843</td><td>20</td><td>0.02908</td><td>+2.3%</td><td>0.3686 &rarr; 0.2707</td></tr>
+<tr><td>+ turning</td><td>0.02792</td><td>280</td><td>0.02822</td><td>+1.1%</td><td>0.4059 &rarr; 0.3197</td></tr>
+<tr><td>+ prior + turning</td><td>0.02802</td><td>300</td><td>0.02823</td><td class="win">+0.8%</td><td>0.4049 &rarr; 0.3190</td></tr>
+<tr><td>9/17 + prior</td><td>0.02689</td><td>280</td><td>0.02693</td><td class="win">+0.2%</td><td>0.2819 &rarr; 0.2090</td></tr>
+</tbody></table></div>
+
+<p>The probe is the same L1 as the training loss, on twelve planes training never opens. In most
+arms it reaches its best after twenty outer iterations and spends the remaining three hundred
+getting worse, while the training loss falls 27%. With 6,182,467 free floats against 26 supervised
+planes and no coupling between cells, the objective can go on sharpening the planes it is shown by
+moving cells that nothing else refers to.</p>
+
+<p>The arms that degrade least are the ones whose planes reach the most of the object: 0.2% and
+0.8% for the two with the widest reach, against 3.1% for the narrowest. That is the same statement
+as the trade-off curve from a different direction &mdash; giving the longitudinal family more of the
+object is not only a score, it is what stops the run from fitting its own supervision.</p>
+
+<p>It also has a consequence for every number here: they are all taken at outer 325, which is nobody's
+best. The arms are not equally penalised by that, since they degrade by different amounts.</p>
+
+<h3>The columns run along the axis the data pins down, not across it</h3>
+
+<p>The vertical streaks were assumed to come from cells being unconstrained along the polar axis. The
+field says the opposite. Mean colour difference between face-sharing neighbours, by lattice axis, on
+the orange, whose polar axis is axis 1:</p>
+
+<div class="tw"><table>
+<thead><tr><th>arm</th><th>axis 0</th><th>axis 1 (polar)</th><th>axis 2</th><th>ratio</th></tr></thead>
+<tbody>
+<tr><td>16/10</td><td>0.0989</td><td class="win">0.0562</td><td>0.0971</td><td>1.76</td></tr>
+<tr><td>14/12</td><td>0.1074</td><td class="win">0.0640</td><td>0.1054</td><td>1.68</td></tr>
+<tr><td>9/17</td><td>0.1163</td><td class="win">0.0733</td><td>0.1140</td><td>1.59</td></tr>
+</tbody></table></div>
+
+<p>Neighbours agree best along the polar axis, by a factor of 1.6 to 1.8, in every arm. The cause is
+plain once measured: the transverse planes are perpendicular to that axis and stack along it, each
+supervised by a photograph and each jittered, so it is the direction the data pins down. The columns
+run <em>along</em> it and are made of disagreement <em>across</em> it, which is why the field prior
+is weighted on the two perpendicular directions and not on the polar one. Weighting the polar axis,
+as the obvious reading of the artefact suggests, would have added a constraint where the data
+already provides one.</p>
+
+<h3>The field prior closes holes it was not added for</h3>
+
+<p>It was added to break the columns, and it does improve the longitudinal column on every arm it is
+added to, by 1.3% to 2.7%. It also takes the cells that never receive a gradient to zero: 33,518
+&rarr; 1 on the corrected split, 1,475 &rarr; 0 with turning. It acts on face-sharing pairs over the
+whole field rather than on whatever the planes crossed, so a cell no plane ever touched is still held
+by its neighbours. That is not supervision &mdash; it cannot say what colour a cell should be
+&mdash; but it stops the cell drifting to whatever value happens to suit the supervised planes.</p>
+
+<h3>A plane lying exactly on a lattice plane cut nothing</h3>
+
+<p>Not a trade-off, a defect, and fixed. <code>cut_polygons</code> kept a cell when its corners
+straddled the plane strictly on both sides. When the plane lands exactly on a lattice plane every
+corner tests equal, neither side straddles, and the function returns no polygons at all;
+<code>render_section</code> does not notice, because the exterior triangles keep the rasteriser call
+valid, so the frame is the rind seen from behind. Five supervised planes across three objects sat on
+such a depth. Testing <code>&gt;= 0</code> on one side fixes it: of 562 depths across seven objects,
+553 are identical, five gained a face and three gained a single cell. No measured number moved
+&mdash; training jitters the depth continuously so it never lands there, and no held-out plane on
+any object was affected.</p>
 
 <h2 id="rep">The representation</h2>
 
@@ -729,6 +484,328 @@ crosses no depth boundary &mdash; it <em>is</em> one depth &mdash; while a longi
 every one of them, so anything that varies discontinuously with depth appears as a band across the
 longitudinal face and not at all on the transverse one. Which is what was found, and fixed.</p>
 
+<h2 id="split">How the plane count is derived, step by step</h2>
+
+<p class="lead">One line of code decides how many planes each family gets, and it is the change with
+the most at stake on this page. Every step of it is here with the measured number at each stage, for
+all seven objects, including the two constants that are in the equation because leaving them out was
+wrong and the three things it still does not fix.</p>
+
+<figure>
+  <video src="assets/exp_ovbal.mp4" autoplay loop muted playsinline preload="metadata"></video>
+  <figcaption>The orange under <strong>this</strong> rule &mdash; 9 transverse and 17 longitudinal
+  &mdash; cut transverse on the left and longitudinal on the right. Nothing in the trainer, the loss,
+  the jitter or the budget differs between splits: the only thing the rule changes is how the 26
+  planes are divided. The same orange under the superseded 14/12 is
+  <a href="#experiments">in the experiments section</a>, and the visible difference between them is
+  small &mdash; the change is worth 9.7% of the longitudinal score and costs 10.8% of the transverse
+  one, and neither is something the eye settles.</figcaption>
+</figure>
+
+<h3>Step 1 &mdash; measure the object, not the file</h3>
+
+<p>Every solid cell centre is projected onto the polar axis \(\hat n\), which is the transverse
+family's own normal. Two numbers come out, both in coarse cells so they are comparable with the
+lattice itself:</p>
+
+<ul>
+<li><strong>Axis extent</strong> \(L = \max(p) - \min(p)\), the object's length along the axis.</li>
+<li><strong>Rim radius</strong> \(R\), the 90th percentile of the perpendicular distance from the
+axis, taken after the perpendicular component is centred.</li>
+</ul>
+
+<p>Two corrections to this measurement, both of which moved objects by whole planes.</p>
+
+<p><strong>The skin rows come out.</strong> <code>gs_fill.ply</code> carries the coarse cells and the
+level&#8209;1 skin in the same rows, and the skin is half the spacing and all of it at the rim:
+480,287 of the orange's 1,162,387 rows. Averaging over all of them pulls the radius up 13%. What the
+sampling has to cover is the interior, so <code>cell_level.pt</code> is read alongside and the
+level&#8209;1 rows are dropped.</p>
+
+<p><strong>The rim, not the mean.</strong> The rule balances the arc between neighbouring
+longitudinal planes against the transverse spacing, and the structure that has to be resolved
+&mdash; segment walls, seeds, crumb &mdash; sits at the rim, not at the average distance from the
+axis. Measured here the rim is 1.5 to 1.9 times the mean, so with the mean the arc where it matters
+was 11.8 to 15.0 cells while the rule believed it was arranging 6.8 to 9.2. The 90th percentile
+rather than the maximum, so that one stray cell cannot set the scale
+(<code>N_PLANES_RIM_PCT=90</code>).</p>
+
+<h3>Step 2 &mdash; the balance, with the constant the sampler actually uses</h3>
+
+<p>A transverse plane moves <em>along</em> the axis; a longitudinal plane turns <em>about</em> it. To
+resolve both at the same spacing the two arcs must be divided the same way. Half a circumference and
+not a whole one, because a plane and its opposite normal are the same cut.</p>
+
+<p>The step that was wrong for a long time is which transverse spacing goes into that equation. The
+depths are <em>not</em> \(N_h\) samples across the axis: <code>mvcams</code> asks
+<code>interpolate_along_camera_direction</code> for \(M = \lceil 1.5\,N_h \rceil\) of them and
+supervises the middle \(N_h\), so the spacing in force is \(L/M\). Balancing \(L/N_h\) against
+\(\pi R/N_v\) therefore solved for a spacing the code never produces, and every object came out
+1.29 to 1.59 times finer on the transverse side than the balance it had just solved &mdash; the rule
+over-supervised precisely the family it was written to stop over-supervising. Putting the constant
+into the equation is the whole of the fix:</p>
+
+<pre>solve   L / (OVER * N_h)  =  pi * R / N_v      with  N_h + N_v = TOTAL
+
+N_H = clip(round(TOTAL * L / (L + OVER * pi * R)), 2, TOTAL - 2)     # mvcams.py
+N_V = TOTAL - N_H
+
+TOTAL = 26            N_PLANES_TOTAL     the budget, unchanged for every object
+OVER  = 1.5           N_PLANES_OVER      the ceil(1.5 * N_h) the sampler lays down
+R     = p90 radius    N_PLANES_RIM_PCT   the rim, not the mean</pre>
+
+<h3>Step 3 &mdash; what it gives each object, and whether it balances</h3>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>\(L\)</th><th>mean \(r\)</th><th>rim \(R\)</th><th>split</th>
+<th>\(M\)</th><th>transverse \(L/M\)</th><th>rim arc \(\pi R/N_v\)</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>126</td><td>33.1</td><td>49.9</td><td>9/17</td><td>14</td><td>9.00</td><td>9.23</td></tr>
+<tr><td>watermelon</td><td>103</td><td>33.8</td><td>50.6</td><td>8/18</td><td>12</td><td>8.56</td><td>8.82</td></tr>
+<tr><td>apple</td><td>121</td><td>33.2</td><td>50.3</td><td>9/17</td><td>14</td><td>8.64</td><td>9.29</td></tr>
+<tr><td>loaf</td><td>80</td><td>32.4</td><td>53.4</td><td>6/20</td><td>9</td><td>8.89</td><td>8.39</td></tr>
+<tr><td>cake</td><td>110</td><td>26.6</td><td>42.3</td><td>9/17</td><td>14</td><td>7.86</td><td>7.82</td></tr>
+<tr><td>pomegranate</td><td>115</td><td>29.1</td><td>44.2</td><td>9/17</td><td>14</td><td>8.21</td><td>8.17</td></tr>
+<tr><td>doughnut</td><td>43</td><td>64.6</td><td>78.1</td><td>3/23</td><td>5</td><td>8.60</td><td>10.67</td></tr>
+</tbody></table></div>
+
+<p>The last two columns are the test: they are the two spacings the rule exists to equalise, and they
+now agree within 10% on six of the seven. The orange was <strong>6.00 against 14.46</strong> before
+these constants went in and is 9.00 against 9.23 after. The doughnut is the exception at 8.60 against
+10.67 &mdash; it is the roundest object here and 3/23 is where the clip at \(N_h \ge 2\) stops it,
+so 26 planes are not enough to balance something that flat.</p>
+
+<h3>Step 4 &mdash; what the split then changes downstream</h3>
+
+<p>Two consequences, neither of them obvious from the equation, and both needed to read the results
+honestly.</p>
+
+<p><strong>The split is a reallocation of gradient weight, one unit for one unit.</strong> Each family
+contributes one plane per step at weight \(|\text{family}|/G\) with \(G = \max(N_h, N_v)\), over
+\(G\) steps, so its total weight over an outer iteration is exactly its plane count. Moving the
+orange from 16/10 to 9/17 removes 44% of the transverse family's weight and adds 70% to the
+longitudinal one. Nothing else in the objective changes.</p>
+
+<p><strong>The split also changes the number of gradient steps.</strong> An outer iteration is \(G\)
+steps, so at the same 325 outer iterations the orange gets 5,525 steps at 9/17 and 4,550 at 14/12
+&mdash; 21% more. That coupling is in the design rather than in this change, but it means no two
+splits are compared at equal steps by default, and a control has to be run rather than argued.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>split</th><th>gradient steps at 325 outer</th>
+<th>axis inside the supervised band</th><th>transverse photos</th><th>longitudinal photos</th>
+<th>longitudinal planes per photo</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>9/17</td><td>5,525</td><td>0.62</td><td>3</td><td>3</td><td>5.7</td></tr>
+<tr><td>watermelon</td><td>8/18</td><td>5,850</td><td>0.64</td><td>10</td><td>12</td><td>1.5</td></tr>
+<tr><td>apple</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>loaf</td><td>6/20</td><td>6,500</td><td>0.62</td><td>3</td><td>3</td><td>6.7</td></tr>
+<tr><td>cake</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>pomegranate</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>doughnut</td><td>3/23</td><td>7,475</td><td>0.50</td><td>1</td><td>1</td><td>23.0</td></tr>
+</tbody></table></div>
+
+<h3>Step 5 &mdash; what it measures, so far</h3>
+
+<p>DreamSim against each object's own reference families, on held-out planes. The held-out planes are
+byte-identical between the two camera sets, so this is one object under two splits and not two
+evaluations. The floor &mdash; two disjoint halves of a reference family scored against each other
+&mdash; is 0.0593 and 0.0777 on the orange.</p>
+
+<div class="tw"><table>
+<thead>
+<tr><th rowspan="2">object</th><th colspan="3">the split</th><th colspan="2">transverse</th><th colspan="2">longitudinal</th></tr>
+<tr><th>before</th><th>after</th><th>weight moved</th><th>before</th><th>after</th><th>before</th><th>after</th></tr>
+</thead>
+<tbody>
+<tr><td>orange</td><td>14/12</td><td>9/17</td><td>&minus;36% / +42%</td><td class="win">0.0804</td><td>0.0891</td><td>0.2061</td><td class="win">0.1861</td></tr>
+<tr><td>loaf</td><td>11/15</td><td>6/20</td><td>&minus;45% / +33%</td><td class="win">0.3818</td><td>0.3928</td><td>0.4214</td><td class="win">0.3860</td></tr>
+<tr><td>doughnut</td><td>4/22</td><td>3/23</td><td>&minus;25% / +5%</td><td class="win">0.1540</td><td>0.1613</td><td class="win">0.5550</td><td>0.5777</td></tr>
+<tr><td colspan="8">watermelon, apple, cake and pomegranate are training; a matched-step control is running beside them</td></tr>
+</tbody></table></div>
+
+<p>Three of seven; the remaining four and a matched-step control are running, and this table will be
+completed rather than summarised. What it shows so far is the same trade as every other change on
+this page &mdash; longitudinal better, transverse worse &mdash; moved further along the same curve,
+except on the doughnut, which is worse on both for the second time.</p>
+
+<p>The comparison that is clean is against turning the longitudinal planes, because both are 26-plane
+arms on the same object: turning gives 0.1220 transverse and 0.2015 longitudinal, the corrected split
+gives <strong>0.0891 and 0.1861</strong>. It is better on both columns, so the corrected split
+supersedes turning as a way of giving the longitudinal family more of the object. The best
+longitudinal number measured anywhere is still 0.1783, from 104 planes and a Chamfer term &mdash;
+four times the budget for 4% more.</p>
+
+<h3>What this does not fix</h3>
+
+<ol>
+<li><strong>The caps still get no transverse plane.</strong> Folding 1.5 into the balance corrects the
+<em>spacing</em>, not the <em>coverage</em>: <code>mvcams</code> still builds \(M\) depths and
+supervises the middle \(N_h\), so 0.62 of the axis is inside the band and the two caps are outside
+it &mdash; 0.65 before the change, 0.62 after. That is a separate edit to which depths are taken, not
+to the equation.</li>
+<li><strong>The photographs still do not multiply with the planes.</strong> The apple, the cake and
+the pomegranate have two longitudinal photographs for 17 planes; the doughnut has one for 23. Extra
+longitudinal planes are handed targets they already had, which is the most likely reason the doughnut
+&mdash; the object the rule moves for the strongest reason &mdash; is the object it helps least. Only
+photographs fix this.</li>
+<li><strong>The clip binds on the flattest object.</strong> 3/23 is one plane from the bound, and the
+doughnut is the one object whose two spacings still do not meet. A budget of 26 cannot balance an
+object whose half-circumference is five times its axis.</li>
+</ol>
+
+<div class="note">
+<strong>One honest caveat about the radius.</strong> With \(R\) at the 90th percentile the rule is
+self-consistent at the 90th percentile. Choosing the 95th, or the maximum, would make it
+self-consistent there instead and would give a different split &mdash; the orange's maximum radius is
+60.4 cells against 49.9 at p90, which pushes further towards the longitudinal family. So what these
+two constants did was replace a hidden wrong constant with an explicit stated one. It is the same
+number for every object, so it is still one program and not a per-object knob, but the rule does not
+determine it and this page should not pretend otherwise.
+</div>
+
+<h2 id="loss">What is actually optimised, term by term</h2>
+
+<p class="lead">The plane count decides <em>where</em> the object is looked at. This is what happens
+once a plane is chosen &mdash; every step from the plane to the number that gets differentiated,
+with the default weight of each piece. Three tensors take the gradient and nothing else does.</p>
+
+<h3>Step 1 &mdash; what a gradient step sees</h3>
+
+<p>An outer iteration walks every plane once. Under <code>SEC_JOINT=1</code>, the default, a single
+step takes <strong>one transverse plane, one longitudinal plane and one exterior view together</strong>,
+so a cell that both families cross meets both constraints in the same backward pass. It matters
+because before this the step order was a shuffle and a step saw exactly one plane: a shared cell was
+pulled to one photograph, then to the other, and what it settled on depended on which came last.</p>
+
+<p>The families are different sizes &mdash; 14, 12 and 6 on the orange &mdash; so the number of
+groups is the longest of them and the shorter ones are cycled through fresh permutations. Each
+family's loss is then scaled by \(|\text{family}| / G\), which keeps its total weight over an
+outer iteration exactly what it was; without it, cycling the shorter family would silently give it
+more say.</p>
+
+<pre>G = max(N_h, N_v, N_e)                       # 14 on the orange
+step g:  [("h", h_g, 14/14), ("v", v_g, 12/14), ("e", e_g, 6/14)]</pre>
+
+<h3>Step 2 &mdash; the plane is moved before it is drawn</h3>
+
+<p>Neither family is drawn where its camera says. A transverse plane is offset along its normal by
+\(f \cdot \Delta\) with \(f\) uniform on \([-0.5, 0.5]\) (<code>JITTER=0.5</code>) and
+\(\Delta\) the depth step, so over a run it sweeps the cells between the supervised depths rather
+than re-cutting the same ones. A longitudinal plane is pinned by default; <code>JITTER_AZ</code>
+turns it about the axis by up to that fraction of the azimuth spacing, which is the same degree of
+freedom expressed on the parameter that plays the same role.</p>
+
+<div class="note">
+The jitter is also why the lattice-plane bug never touched a trained model. \(f\) is a continuous
+draw, so the depth lands on an exact multiple of the cell size with probability zero. Every number
+on this page was measured at un-jittered depths on held-out planes, and none of those was affected
+either &mdash; checked on all seven objects.
+</div>
+
+<h3>Step 3 &mdash; render</h3>
+
+<p><code>render_section</code> puts two things into <em>one</em> nvdiffrast pass, so the depth test
+composes them and nothing is pasted on afterwards: the exterior triangles lying wholly behind the
+plane, and the cut polygon of the plane against the occupancy, coloured by a trilinear sample of the
+per-cell interior field at each polygon vertex. Out come the image and the accumulated opacity.</p>
+
+<h3>Step 4 &mdash; the target is built from the render, not from the photograph</h3>
+
+<p>This is the step that is easiest to state wrongly, so: <strong>the loss is not the render against
+the photograph.</strong> <code>section_target</code> takes the two and returns a third image, and it
+is that third image the render is compared with.</p>
+
+<ol>
+<li><strong>Where the section is.</strong> Taken from the rasteriser's accumulated opacity, not from
+"differs from white". The orange's core <em>is</em> white: read as background it split the disc into
+two half-moons, each of which then got the whole reference squeezed into it sideways, and the target
+came out flat orange with no radial structure at all.</li>
+<li><strong>The target starts as a copy of the render.</strong> Not as white. A component too small
+to establish a correspondence is skipped, and against a white canvas "skipped" reads as "should be
+background" &mdash; the loss then works to delete it. On the loaf that was 5,689 pixels, a fifth of
+the section's own area, being told to disappear. Copying leaves those pixels with no gradient rather
+than a wrong one.</li>
+<li><strong>Each connected component is matched by topology.</strong> The reference is read twice,
+once with its enclosed regions filled and once open, and the reading whose hole count matches the
+component's is the one used &mdash; filling is right for a pale core and wrong for a hole, and only
+the render knows which it is looking at. If the counts match, a bijection exists and the two are
+mapped by their own coordinates; if not, it falls back to the normalised distance transform, the one
+coordinate both shapes have.</li>
+</ol>
+
+<p>So the photograph supplies <em>appearance as a function of position within the section</em>, and
+the render supplies the silhouette. That is deliberate &mdash; the photograph is of <em>an</em>
+orange, not of this one, so its outline carries no information about this object &mdash; but it also
+means the loss can never correct a silhouette, which is why the loaf and the cake, photographed as a
+slice held at an angle, show a shape mismatch that no amount of training removes.</p>
+
+<h3>Step 5 &mdash; the loss</h3>
+
+<pre>L = sum over the planes in this step of  w_family * | render - target |
+    + SEC_TV * mean over sampled face-sharing cell pairs of (c_a - c_b)^2</pre>
+
+<p>Mean absolute error, per plane, weighted by the family scale from step 1. Everything else is off
+by default and each was measured before being left off:</p>
+
+<div class="tw"><table>
+<thead><tr><th>term</th><th>switch</th><th>default</th><th>what happens when it is on</th></tr></thead>
+<tbody>
+<tr><td>pixel L1</td><td>&mdash;</td><td><strong>always on</strong></td><td>the objective</td></tr>
+<tr><td>field prior</td><td><code>SEC_TV</code></td><td>0</td><td>couples each cell to its face-sharing neighbours over 200,000 sampled pairs per step &mdash; on the whole field, not on what these planes happened to cross, which is the point: the cells the schedule reaches rarely are the ones with nothing else holding them</td></tr>
+<tr><td>patch distribution</td><td><code>SEC_DIST</code></td><td>0</td><td>Chamfer, sliced Wasserstein or JS between the two images' patch sets, phased in after half the run and keeping 30% of the pixel term &mdash; measured three times, harmful once and neutral twice</td></tr>
+<tr><td>cross-section consistency</td><td><code>SEC_XCONS</code></td><td>0</td><td>reconciles a transverse target with cached longitudinal ones along the line they share; two planes meet in a line, so this reaches ~1% of either family's cells and that is its ceiling</td></tr>
+<tr><td>patch pixel loss</td><td><code>SEC_PATCH</code></td><td>0</td><td>replaces the per-pixel L1 with a patch-wise one</td></tr>
+</tbody></table></div>
+
+<h3>Step 6 &mdash; what receives the gradient</h3>
+
+<div class="tw"><table>
+<thead><tr><th>tensor</th><th>what it is</th><th>learning rate</th><th>constraint</th></tr></thead>
+<tbody>
+<tr><td><code>interior</code></td><td>one RGB per solid cell, or the anchor decoder's output</td><td>0.02 (feat 0.005, MLP 0.002)</td><td>clamped to [0,1]</td></tr>
+<tr><td><code>surf_rgb</code></td><td>one RGB per dual vertex &mdash; the skin</td><td>0.02</td><td><strong>frozen</strong> under <code>SHELL_PIN=1</code>, the default</td></tr>
+<tr><td><code>dual_v</code>, <code>split_w</code></td><td>the dual grid's vertex offsets and split weights</td><td>1e&#8209;3</td><td>split weights clamped to (0,1)</td></tr>
+</tbody></table></div>
+
+<p>Adam, no schedule, 5,200 gradient steps. <code>SHELL_PIN=1</code> means the exterior is fixed
+before training and the sections cannot move it, so the exterior views constrain the geometry and
+not the colour; and <code>SEC_SKIP_OUTER=0.10</code> keeps the section loss off the outermost 10% of
+the render, so a cut face is never allowed to repaint the rind it is seen through. Which is the same
+ownership split from both sides: <strong>the sections own the interior, the six exterior views own
+the skin.</strong></p>
+
+<h3>Where this leaves the plane count</h3>
+
+<p>Steps 1 and 5 together are why the plane split is a trade and not a free choice, and the
+arithmetic is worth doing rather than describing. Each family contributes one plane per step at
+weight \(|\text{family}|/G\), over \(G\) steps, so its <strong>total weight over an outer
+iteration is exactly its plane count</strong> &mdash; that is what the scaling was written to
+preserve, and it means the split is not a sampling choice but a direct reallocation of gradient
+weight, one unit for one unit.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>fixed &rarr; derived</th><th>transverse weight</th>
+<th>longitudinal weight</th><th>transverse DS</th><th>longitudinal DS</th></tr></thead>
+<tbody>
+<tr><td>cake</td><td>16/10 &rarr; 15/11</td><td>&minus;6%</td><td>+10%</td><td>0.4641 &rarr; 0.4651</td><td>0.5017 &rarr; 0.4890</td></tr>
+<tr><td>orange</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.0859 &rarr; 0.0804</td><td>0.2257 &rarr; 0.2061</td></tr>
+<tr><td>apple</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.2472 &rarr; 0.2534</td><td>0.3557 &rarr; 0.3437</td></tr>
+<tr><td>pomegranate</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.2372 &rarr; 0.2461</td><td>0.4836 &rarr; 0.4718</td></tr>
+<tr><td>watermelon</td><td>16/10 &rarr; 13/13</td><td>&minus;19%</td><td>+30%</td><td>0.1599 &rarr; 0.1623</td><td>0.2044 &rarr; 0.1992</td></tr>
+<tr><td>loaf</td><td>16/10 &rarr; 11/15</td><td>&minus;31%</td><td>+50%</td><td>0.3774 &rarr; 0.3818</td><td>0.4849 &rarr; 0.4214</td></tr>
+<tr><td>doughnut</td><td>16/10 &rarr; 4/22</td><td>&minus;75%</td><td>+120%</td><td>0.0980 &rarr; 0.1540</td><td>0.5494 &rarr; 0.5550</td></tr>
+</tbody></table></div>
+
+<p>Sorted by how far the split moves, and both columns follow it. The cake moves least and barely
+changes on either. The loaf takes the largest survivable reallocation, +50% longitudinal, and posts
+the largest longitudinal gain of the seven, 13%. The doughnut has three quarters of its transverse
+weight removed and its transverse score degrades by 57%, the worst number in the whole set &mdash;
+and its longitudinal column does <em>not</em> improve, because the +120% is spread over 22 planes
+that share one photograph. So the trade is not a mystery and not a property of any object: it is
+the objective doing exactly what it is written to do, and the plane count is the only thing
+deciding how the fixed budget is divided.</p>
+
 <h2 id="blend">What changed, and what it was worth</h2>
 
 <p>The continuous depth assignment had only ever been applied to the longitudinal family. The
@@ -919,36 +996,6 @@ is how far apart two real sections of one object are. Transverse improves on fiv
 is level on the watermelon; longitudinal improves on six. The cake is the only object that goes
 the other way, and it goes the other way on both.</p>
 
-<h2 id="notfixed">What they do not fix, and why</h2>
-
-<p>The longitudinal cuts still do not look like longitudinal cuts, and the reason is not the
-renderer, the reconstruction filter or the coupling between cells. It is visible in one figure:
-the same model, the same renderer, and only the plane changed.</p>
-
-<figure>
-  <img src="assets/ovox_supvsheld.png" alt="One model rendered on three supervised longitudinal azimuths and three held-out ones: the supervised ones look like orange sections, the held-out ones like vertical columns">
-  <figcaption>Top, three azimuths the training supervised; bottom, three it did not. The
-  supervised planes come out as sections of an orange, with the pith column and the flesh around
-  it. A held-out plane five degrees away comes out as vertical columns.</figcaption>
-</figure>
-
-<p>Five degrees at sixty cells of radius is five cells, so a held-out plane crosses a different set
-of cells &mdash; and those cells were never asked to be anything in particular. The asymmetry is in
-the data rather than in the code. The transverse family is one camera and 24 depths, of which 16
-are supervised and each is jittered by half a step, because there are photographs at many depths.
-The longitudinal family is one camera per azimuth at the middle depth only, never moved, because
-<em>every longitudinal photograph is a central section</em>. The supervised planes sit 3.1 to 3.4%
-of the radius off the axis; the held-out ones sit at 4.6 to 12.3%.</p>
-
-<p>Sweeping the longitudinal plane the way the transverse one is swept was implemented and
-measured, and it is the wrong repair: dumping the target at 0%, 5% and 12% of the radius gives the
-same full central section all three times, because that is the only photograph there is, so the
-model is asked to reproduce a central cut at an off-centre depth. Against the same arm without it,
-a jitter of 0.05 of the radius gives 0.1186 transverse and 0.2224 longitudinal where the arm
-without gives 0.0859 and 0.2300 &mdash; a small longitudinal gain for a 36% transverse cost, which
-grows with the jitter. What the held-out longitudinal planes are asking for is a photograph that
-does not exist.</p>
-
 <h2 id="reach">Only one family reaches the object</h2>
 
 <p>The two families are not two views of the same thing, and the difference is not a matter of
@@ -1024,6 +1071,36 @@ on what the object is for.</p>
 sounds as though it should matter and does not: 0.0867 and 0.2255 against 0.0859 and 0.2257 is
 inside the noise, and it costs half again as much per step. It is kept, off, with the numbers in
 the source.</p>
+
+<h2 id="notfixed">What they do not fix, and why</h2>
+
+<p>The longitudinal cuts still do not look like longitudinal cuts, and the reason is not the
+renderer, the reconstruction filter or the coupling between cells. It is visible in one figure:
+the same model, the same renderer, and only the plane changed.</p>
+
+<figure>
+  <img src="assets/ovox_supvsheld.png" alt="One model rendered on three supervised longitudinal azimuths and three held-out ones: the supervised ones look like orange sections, the held-out ones like vertical columns">
+  <figcaption>Top, three azimuths the training supervised; bottom, three it did not. The
+  supervised planes come out as sections of an orange, with the pith column and the flesh around
+  it. A held-out plane five degrees away comes out as vertical columns.</figcaption>
+</figure>
+
+<p>Five degrees at sixty cells of radius is five cells, so a held-out plane crosses a different set
+of cells &mdash; and those cells were never asked to be anything in particular. The asymmetry is in
+the data rather than in the code. The transverse family is one camera and 24 depths, of which 16
+are supervised and each is jittered by half a step, because there are photographs at many depths.
+The longitudinal family is one camera per azimuth at the middle depth only, never moved, because
+<em>every longitudinal photograph is a central section</em>. The supervised planes sit 3.1 to 3.4%
+of the radius off the axis; the held-out ones sit at 4.6 to 12.3%.</p>
+
+<p>Sweeping the longitudinal plane the way the transverse one is swept was implemented and
+measured, and it is the wrong repair: dumping the target at 0%, 5% and 12% of the radius gives the
+same full central section all three times, because that is the only photograph there is, so the
+model is asked to reproduce a central cut at an off-centre depth. Against the same arm without it,
+a jitter of 0.05 of the radius gives 0.1186 transverse and 0.2224 longitudinal where the arm
+without gives 0.0859 and 0.2300 &mdash; a small longitudinal gain for a 36% transverse cost, which
+grows with the jitter. What the held-out longitudinal planes are asking for is a photograph that
+does not exist.</p>
 
 <h2 id="audit">What the reference sets actually contain</h2>
 
