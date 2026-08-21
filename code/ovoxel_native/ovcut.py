@@ -41,8 +41,19 @@ def load(obj, tag="ov"):
     st["split_w"] = p["split_w"].to(dev)
     if "dec_i" in p:
         for key, sd in (("interior", p["dec_i"]), ("surf_rgb", p["dec_s"])):
-            d = anchor.ColourDecoder(len(st[key]), init_rgb=st[key]).to(dev)
-            d.load_state_dict(sd)
+            # a triplane arm saves `planes` where the per-cell decoder saves `feat`, and the two
+            # cannot load each other's weights -- pick by what is in the dict rather than by an
+            # environment variable, so a checkpoint always renders as the thing it was trained as
+            if "planes" in sd:
+                import triplane
+                ctr = (st["solid"].float() + 0.5) * float(st["hc"]) \
+                    + torch.as_tensor(st["org"], dtype=torch.float32, device=st["solid"].device)
+                d = triplane.TriplaneDecoder(ctr.cpu(), init_rgb=st[key].cpu(),
+                                             c_feat=sd["planes"].shape[1],
+                                             res=sd["planes"].shape[-1]).to(dev)
+            else:
+                d = anchor.ColourDecoder(len(st[key]), init_rgb=st[key]).to(dev)
+            d.load_state_dict(sd, strict=False)
             with torch.no_grad():
                 st[key] = d()
     else:

@@ -176,7 +176,20 @@ print(f"  the two spacings this balances: transverse {_axis_len / max(_M_pred, 1
 # ---- transverse: one camera, the supervised band centred in a wider sweep ---------------
 # The supervised depths have always been the middle two thirds of the range, which leaves the caps
 # out; that is kept, so the only thing changing is how many there are.
-_M = int(np.ceil(N_H * 1.5))
+# How wide a sweep the N_H supervised depths are drawn from.
+#
+# The supervised depths have always been the middle N_H of ceil(1.5*N_H), which leaves the caps out:
+# 0.62 to 0.65 of the axis is inside the band at every plane count, and the two ends have no
+# transverse plane at any setting. That was tolerable while the transverse family had 14 planes and
+# reached 91% of the cells anyway; at 9 it reaches 71.8% and 19.6% of the orange never receives a
+# gradient, which is visible as coloured speckle in the caps.
+#
+# SPAN=1.0 takes all M depths, so the band is the whole axis and M = N_H. The old behaviour is
+# SPAN=1.5. It is a separate knob from N_PLANES_OVER because they answer different questions --
+# OVER is how finely the depths are spaced, SPAN is how much of the object they are spread over --
+# and the balance equation needs whichever of the two is in force, so OVER should be set to SPAN.
+SPAN = float(os.environ.get("N_PLANES_SPAN", "1.5"))
+_M = max(int(np.ceil(N_H * max(SPAN, 1.0))), N_H)
 _, _, centers, avg = interpolate_along_camera_direction(raw, tpos, _M)
 hp = []
 for i in range(len(centers)):
@@ -184,6 +197,49 @@ for i in range(len(centers)):
     hp.append(np.concatenate([n, [d]]))
 hp = np.stack(hp)
 _lo = (len(hp) - N_H) // 2
+
+# SPAN=0 replaces the fixed middle window with a measured one.
+#
+# The middle N_H of ceil(1.5*N_H) is not arbitrary and taking all of them instead does not work:
+# the outermost depths put the plane past the object, where nothing is cut and nothing is behind it,
+# and `render_section` is then an empty rasteriser call -- "tri must have shape [>0, 3]", which is
+# how this was found. But the fixed fraction is too conservative: it supervises 0.62 of the axis
+# whatever the object, and when the transverse family is small that leaves cells no plane reaches at
+# all, 19.6% of the orange at 9 planes.
+#
+# What the band should be is the part of the axis where a plane has something to cut, which is
+# measurable. Sample the depth densely, count the cells within half a coarse cell of the plane, and
+# keep the range where that count is at least MINCUT of its own maximum; then spread N_H depths
+# evenly across it. The planes stay uniformly spaced and contiguous, which is what mvtrain's
+# h_step and h_lo/h_hi require.
+if SPAN <= 0:
+    MINCUT = float(os.environ.get("N_PLANES_MINCUT", "0.05"))
+    _nd = max(8 * N_H, 64)
+    _, _, _cd, _ = interpolate_along_camera_direction(raw, tpos, _nd)
+    _dd = np.array([to_pos_frame(generate_plane_center(raw, c))[1] for c in _cd], float)
+    _nrm = np.asarray(hp[0, :3], float)
+    _proj = _t @ _nrm
+    # the tolerance is the scan's own resolution, so it needs no cell size and no unit conversion
+    _half = float(np.abs(np.diff(_dd)).mean()) / 2.0
+    _area = np.array([int(np.sum(np.abs(_proj + d) <= _half)) for d in _dd])
+    _ok = np.where(_area >= MINCUT * max(_area.max(), 1))[0]
+    if len(_ok) >= 2:
+        _d0, _d1 = float(_dd[_ok[0]]), float(_dd[_ok[-1]])
+        # The planes TILE the band rather than span it. mvtrain jitters each depth by +-h_step/2,
+        # so planes at linspace(d0, d1, N_H) sweep out to d1 + step/2, past the last depth that
+        # cuts anything -- and an empty cut with no exterior behind it is an empty rasteriser call,
+        # which is how the first version of this died at outer 1. Putting N_H slab centres across
+        # the band instead makes each plane's jitter sweep exactly its own slab: the slabs abut,
+        # nothing is swept twice and nothing overshoots.
+        _s = (_d1 - _d0) / N_H
+        hp = np.stack([np.concatenate([_nrm, [_d0 + _s * (i + 0.5)]]) for i in range(N_H)])
+        _lo = 0
+        print(f"measured band: depths with a cut area at least {MINCUT:g} of the peak run "
+              f"{_d0:+.4f} to {_d1:+.4f} ({len(_ok)} of {_nd} sampled), {N_H} planes tiling it "
+              f"at step {_s:.4f}, jitter sweeps {_d0 + _s*0.0:+.4f} to {_d1:+.4f}")
+    else:
+        print(f"measured band: only {len(_ok)} of {_nd} depths cut anything -- keeping the "
+              f"fixed window")
 rec["h_mvp"] = mvp_of(cam)
 rec["h_planes"] = hp
 rec["h_lo"], rec["h_hi"] = np.array([_lo]), np.array([_lo + N_H])

@@ -84,7 +84,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#split">How the plane count is derived</a><a href="#loss">What is optimised</a><a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#experiments">The experiments</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#reach">Only one family reaches the object</a><a href="#audit">The reference sets</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
+  <a href="#split">How the plane count is derived</a><a href="#candidates">The two arms</a><a href="#loss">What is optimised</a><a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#experiments">The experiments</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#reach">Only one family reaches the object</a><a href="#audit">The reference sets</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
 </nav>
 
 <h2 id="split">How the plane count is derived, step by step</h2>
@@ -265,6 +265,70 @@ self-consistent there instead and would give a different split &mdash; the orang
 two constants did was replace a hidden wrong constant with an explicit stated one. It is the same
 number for every object, so it is still one program and not a per-object knob, but the rule does not
 determine it and this page should not pretend otherwise.
+</div>
+
+<h2 id="candidates">The two arms worth looking at, side by side</h2>
+
+<p class="lead">Everything below this section is the sequence that produced these two. They are the
+same object, the same 14/12 split, the same 4,550 gradient steps, the same loss and the same
+held-out planes &mdash; and every cell in both received a gradient, which is not true of several
+arms that scored better on one column. Left is the transverse cut, right the longitudinal.</p>
+
+<div class="grid2">
+  <figure>
+    <video src="assets/exp_tvperp.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap"><strong>tvperp</strong> &mdash; the field prior, weighted across the polar axis
+    <br>0.0805 transverse &middot; 0.2034 longitudinal</div>
+  </figure>
+  <figure>
+    <video src="assets/exp_tvaz.mp4" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap"><strong>tvaz</strong> &mdash; the same prior, plus the longitudinal planes turning
+    <br>0.1154 transverse &middot; <strong>0.1723 longitudinal</strong></div>
+  </figure>
+</div>
+
+<div class="tw"><table>
+<thead><tr><th>arm</th><th>what it adds to the baseline</th><th>transverse</th><th>longitudinal</th>
+<th>cells that never got a gradient</th><th>held-out probe, best &rarr; last</th></tr></thead>
+<tbody>
+<tr><td>baseline</td><td>&mdash;</td><td class="win">0.0804</td><td>0.2061</td><td>1</td><td>+2.3%</td></tr>
+<tr><td><strong>tvperp</strong></td><td>anisotropic field prior</td><td>0.0805</td><td>0.2034</td><td>1</td><td>+2.4%</td></tr>
+<tr><td><strong>tvaz</strong></td><td>the prior and turning</td><td>0.1154</td><td class="win">0.1723</td><td>0</td><td class="win">+0.8%</td></tr>
+<tr><td colspan="6">the floor &mdash; two disjoint halves of a reference family &mdash; is 0.0593 and 0.0777</td></tr>
+</tbody></table></div>
+
+<p><strong>tvperp is the cautious one.</strong> Its transverse column is 0.0805 against the
+baseline's 0.0804, which is noise, and its longitudinal is 1.3% better. It costs nothing: no change
+to the plane count, no change to the architecture, one prior switched on and weighted along the two
+axes a measurement said were the loose ones. The honest caveat is that a 1.3% difference on one
+object has no error bar &mdash; nothing on this page has been run twice with a different seed, so
+whether 1.3% means anything is not established.</p>
+
+<p><strong>tvaz is the one that moves something.</strong> Turning the longitudinal planes about the
+axis takes that family from reaching 15.9% of the cells to 97.7%, and the longitudinal column
+improves 16% &mdash; the largest movement measured anywhere at this budget. It costs 44% of the
+transverse column. That trade is worth taking or not depending on which cut matters, and the case
+for taking it is that the transverse column is already near its floor, 0.0804 against 0.0593, while
+the longitudinal one is nowhere near it, 0.2061 against 0.0777.</p>
+
+<div class="note">
+<strong>The prior does something it was not added for.</strong> It was meant to break the vertical
+columns, and it does improve the longitudinal column on every arm it is added to. But it also closes
+the coverage holes the other changes opened: turning alone leaves 1,475 cells with no gradient and
+the corrected plane split leaves 33,518, while with the prior both go to zero. The reason is that it
+acts on face-sharing cell pairs over the whole field rather than on whatever the planes crossed, so
+a cell no plane ever touched is still held by its neighbours. It is not supervision &mdash; it
+cannot say what colour the cell should be &mdash; but it stops the cell drifting to whatever value
+happens to help the supervised planes.
+</div>
+
+<div class="note">
+<strong>Why the scores alone were not enough to pick these.</strong> One arm in this sequence scored
+0.0715 on the transverse column, the best measured anywhere and 11% ahead of the baseline, while
+leaving <strong>130,548 cells &mdash; 17% of the object &mdash; with no gradient at all</strong>.
+DreamSim is computed on twelve held-out planes; an arm can ruin a sixth of the object and still win
+on those twelve. That arm is not on this page. Coverage is reported beside every score above for
+the same reason.
 </div>
 
 <h2 id="loss">What is actually optimised, term by term</h2>

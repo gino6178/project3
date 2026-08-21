@@ -40,6 +40,8 @@ import overlap
 import patchdist
 import refalign
 import secloss
+import triplane
+import unsup
 
 W = "/workspace/ovoxel_native"
 FN = os.environ.get("FN_ROOT", "/workspace/rebuild/worktree")
@@ -75,6 +77,32 @@ VOXEL_SMOOTH = os.environ.get("VOXEL_SMOOTH", "1") == "1"
 SEC_XCONS = float(os.environ.get("SEC_XCONS", "0"))
 SEC_XCONS_AT = int(os.environ.get("SEC_XCONS_AT", "0"))
 SEC_JOINT = os.environ.get("SEC_JOINT", "1") == "1"
+# The interior field as three interpolating planes rather than one latent per cell. See
+# triplane.py: it is an architectural answer to the same gap `SEC_TV` answers as a penalty, so the
+# two are meant to be compared with everything else held identical. Two things it turns off, both
+# because they are per-cell operations with no counterpart: the coverage probe on feat_i, which
+# would otherwise report a non-leaf's absent gradient as zero coverage, and VOXEL_SMOOTH, whose
+# whole job -- filling untrained cells from trained neighbours -- is what the interpolation does.
+TRIPLANE = os.environ.get("TRIPLANE", "0") == "1"
+# How much each family's loss counts, as a multiplier on the plane-count weighting it already has.
+#
+# The plane count decides two separate things and they had no way of being set apart: how much of
+# the object a family reaches, and how much of the gradient it gets. A family contributes one plane
+# per step at weight |family|/G over G steps, so its total weight per outer iteration is exactly its
+# plane count -- which is why changing the split changes both at once. Measured on the orange, the
+# two halves of that pull in opposite directions: moving 14/12 to 9/17 improved the longitudinal
+# column by 9.7% and left 19.6% of the cells with no gradient at all, because the transverse family
+# is the one that sweeps and cutting it from 14 to 9 took its reach from 91.1% to 71.8%.
+#
+# SEC_FAM_W sets the weights directly, so the split can keep the reach of one arm and the balance of
+# another: `SEC_FAM_W=9,17` on 14/12 planes asks for 9:17 of gradient over 93% of the object.
+# Normalised so the total is what it would have been, and the default of 1,1,1 is the old
+# behaviour exactly.
+_famw = [float(x) for x in os.environ.get("SEC_FAM_W", "1,1,1").split(",")]
+while len(_famw) < 3:
+    _famw.append(1.0)
+FAM_W = _famw[:3]
+FAM_W_EFF = [0.0, 0.0, 0.0]
 # How far a longitudinal plane may be moved along its own normal, as a fraction of the object's
 # radius. 0, and it should stay 0: the asymmetry it was written to remove is in the data, not in
 # this file.
@@ -215,7 +243,20 @@ st["split_w"] = st["split_w"].detach().clone().requires_grad_(not SHELL_PIN)
 
 groups = []
 if ANCHOR:
-    dec_i = anchor.ColourDecoder(len(seed_i), init_rgb=seed_i).to(dev)
+    if TRIPLANE:
+        # the interior only. The exterior is a dual-vertex tensor, not a cell field, and under
+        # SHELL_PIN it takes no gradient at all -- there is nothing for an interpolating field to
+        # do there and swapping it too would confound the two.
+        _ctr = (st["solid"].float() + 0.5) * float(st["hc"]) \
+            + torch.as_tensor(st["org"], dtype=torch.float32, device=st["solid"].device)
+        dec_i = triplane.TriplaneDecoder(_ctr.cpu(), init_rgb=seed_i.cpu()).to(dev)
+        dec_i.set_nograd(is_outer)
+        print(f"  interior field: triplane {triplane.RES}x{triplane.RES}x{triplane.C_FEAT} "
+              f"x3 = {3*triplane.C_FEAT*triplane.RES**2:,} floats, against "
+              f"{len(seed_i)*anchor.F_DIM:,} per-cell; "
+              f"{int(is_outer.sum()):,} outer cells detached from the gradient", flush=True)
+    else:
+        dec_i = anchor.ColourDecoder(len(seed_i), init_rgb=seed_i).to(dev)
     dec_s = anchor.ColourDecoder(len(seed_s), init_rgb=seed_s).to(dev)
     if PREFIT:
         t0 = time.time()
@@ -246,7 +287,8 @@ opt = torch.optim.Adam(groups)
 print(f"  trainable: {n_train:,} floats "
       f"({'interior only, the exterior is pinned' if SHELL_PIN else 'interior and exterior'})")
 
-feat_params = ([dec_i.feat] + ([dec_s.feat] if not SHELL_PIN else [])) if ANCHOR else []
+feat_params = ([] if TRIPLANE else
+               ([dec_i.feat] + ([dec_s.feat] if not SHELL_PIN else [])) if ANCHOR else [])
 
 
 def decode():
@@ -343,7 +385,9 @@ def apply_masks(section):
     """
     if section:
         if ANCHOR:
-            if dec_i.feat.grad is not None:
+            # the triplane has no per-cell leaf to zero, so the same mask is applied inside its
+            # feature read instead -- set once, below, rather than every step
+            if not TRIPLANE and dec_i.feat.grad is not None:
                 dec_i.feat.grad[is_outer] = 0
             for p in dec_s.parameters():
                 if p.grad is not None:
@@ -385,12 +429,31 @@ if SEC_XCONS > 0:
     import xcons
 
 touch = {k: torch.zeros(len(rows(k)), dtype=torch.bool, device=dev) for k in TK}
-_tvpairs = fieldreg.face_pairs(st, dev) if fieldreg.WEIGHT > 0 else None
+_tvpolar = np.asarray(C["h_planes"][0, :3], float)
+_tvpairs = fieldreg.face_pairs(st, dev, _tvpolar) if fieldreg.WEIGHT > 0 else None
 upd_i = torch.zeros(len(seed_i), dtype=torch.bool, device=dev)
 hist, l1hist, probes = [], [], [(0, probe())]
 print(f"  probe at 0: {probes[0][1]:.5f}", flush=True)
 t0 = time.time()
 steps = 0
+def family_shares(nh, nv, ne):
+    """Each family's total loss weight per outer iteration.
+
+    Without SEC_FAM_W a family's share is its plane count, which is what the code has always done
+    and what couples reach to weight. With it, the requested ratio is scaled so the three shares
+    still sum to what they summed to -- otherwise asking for 9:17 on 14/12 planes multiplies the
+    whole loss by 12.7 and changes the effective learning rate rather than the balance.
+    """
+    counts = [nh, nv, ne]
+    if FAM_W == [1.0, 1.0, 1.0]:
+        return counts
+    want = [FAM_W[i] if counts[i] else 0.0 for i in range(3)]
+    tot_w, tot_c = sum(want), sum(counts)
+    if tot_w <= 0:
+        return counts
+    return [w * tot_c / tot_w for w in want]
+
+
 def groups_for_iteration():
     """The planes of one outer iteration, grouped into what each gradient step sees.
 
@@ -418,15 +481,17 @@ def groups_for_iteration():
         random.shuffle(allp)
         return [[(k, i, 1.0)] for k, i in allp]
     G = max(len(hs), len(vs), len(es), 1)
+    SH = family_shares(len(hs), len(vs), len(es))
+    FAM_W_EFF[:] = SH
     out = []
     for g in range(G):
         grp = []
-        for L in (hs, vs, es):
+        for L, share in ((hs, SH[0]), (vs, SH[1]), (es, SH[2])):
             if not L:
                 continue
             if g and g % len(L) == 0:
                 random.shuffle(L)
-            grp.append((*L[g % len(L)], len(L) / G))
+            grp.append((*L[g % len(L)], share / G))
         out.append(grp)
     return out
 
@@ -450,6 +515,7 @@ if JITTER_AZ > 0:
     print(f"  longitudinal planes turned by up to {JITTER_AZ:.2f} of the "
           f"{np.degrees(_az_spacing):.1f}-degree spacing, about {np.round(_axis, 3)}", flush=True)
 _nstep = len(_g0)
+_urng = np.random.default_rng(0)
 for j in range(ITERS):
     for grp in groups_for_iteration():
         decode()
@@ -566,13 +632,31 @@ for j in range(ITERS):
                 _l1s.append(float((img - tgt).abs().mean()))
             _kinds.append(kind)
 
+        # The prior on a plane nobody photographed. One extra render per step, at a position
+        # drawn fresh each time, scored against the family's pooled patches and against no target
+        # image at all -- see unsup.py. It is here rather than inside the plane loop because it is
+        # not one of the supervised planes and must not be weighted as if it were.
+        if unsup.WEIGHT > 0 and (steps % unsup.EVERY) == 0:
+            _uk = "h" if (steps // max(unsup.EVERY, 1)) % 2 == 0 else "v"
+            _un, _ud, _um = unsup.sample_plane(_uk, C, H_LO, NH, NV, _urng,
+                                               axis=_axis, centre=_cen, az_spacing=_az_spacing)
+            _ut = torch.as_tensor(_un, dtype=torch.float32, device=dev)
+            _umt = torch.as_tensor(_um, dtype=torch.float32, device=dev)
+            try:
+                _ui, _, _, _ = ON.render_section(st, glctx, _umt, _ut, float(_ud), RES)
+                loss = loss + unsup.WEIGHT * unsup.penalty(
+                    _ui, refs_h if _uk == "h" else refs_v, _uk)
+            except RuntimeError:
+                pass
+
         # The spatial prior, on the whole field rather than on what these planes happened to
         # cross: a cell is coupled to its neighbours whether or not either was supervised this
         # step, which is the point -- the cells the schedule reaches rarely are the ones with
         # nothing else holding them. Once per step, not once per plane, because it does not
         # depend on which plane was drawn.
         if fieldreg.WEIGHT > 0:
-            loss = loss + fieldreg.WEIGHT * fieldreg.penalty(st["interior"], _tvpairs)
+            loss = loss + fieldreg.WEIGHT * fieldreg.penalty(st["interior"], _tvpairs,
+                                                              polar=_tvpolar)
         l1_now = float(np.mean(_l1s))
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -582,7 +666,7 @@ for j in range(ITERS):
                 touch[k] |= (g.abs().sum(-1) > 0)
         # the masks are the sections' unless every plane in this step was an exterior view
         apply_masks(any(k != "e" for k in _kinds))
-        if ANCHOR and dec_i.feat.grad is not None:
+        if ANCHOR and not TRIPLANE and dec_i.feat.grad is not None:
             # gaussians.trained: what the sections actually supervised, accumulated
             upd_i.__ior__(dec_i.feat.grad.abs().sum(-1) > 0)
         opt.step()
@@ -595,7 +679,7 @@ for j in range(ITERS):
             with torch.no_grad():
                 st["split_w"].clamp_(1e-3, 1 - 1e-3)
         hist.append(float(loss)); l1hist.append(l1_now); steps += 1
-    if ANCHOR and VOXEL_SMOOTH and j > 0 and j % ABL_INTERVAL == 0:
+    if ANCHOR and VOXEL_SMOOTH and not TRIPLANE and j > 0 and j % ABL_INTERVAL == 0:
         nfill = anchor.voxel_smooth_anchors(dec_i, centres, upd_i | is_outer, ABL_GRID)
         print(f"  voxel smoothing at outer {j}: {int(upd_i.sum()):,}/{len(centres):,} trained, "
               f"{nfill:,} untrained cells' features filled from trained neighbours", flush=True)
