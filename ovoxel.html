@@ -267,6 +267,25 @@ between frames is one number, the plane's offset.</p>
 
 <h2 id="seven">Seven objects, both families</h2>
 
+<p>Two figures, and the difference between them is the whole story of this build. The first is the
+supervised case: a plane the training was shown, beside the photograph it was shown for it. The
+second is the held-out case, where no photograph exists.</p>
+
+<figure>
+  <img src="assets/ovox_refcmp.png" alt="For each of seven objects, a supervised transverse cut and a supervised longitudinal cut, each beside the photograph that supervised it">
+  <figcaption>A supervised plane of each family per object, beside its reference. The reference
+  drawn is the one the loss received &mdash; the two photographs either side of the depth mixed at
+  the fractional part, on a common disc &mdash; and not a file on disk; it is not
+  <code>section_target</code> either, which maps the reference onto the render's own silhouette and
+  would therefore be compared against something already shaped like the answer. The watermelon's
+  seeds, the apple's core, the loaf's swirl, the cake's layers and the pomegranate's arils are all
+  in the right places. Two mismatches are the photographs' rather than the model's: the loaf and
+  the cake are photographed as a slice held at an angle while the plane cuts the object where it
+  actually is, so the silhouettes differ before anything is reconstructed. The doughnut's
+  longitudinal photograph is two discs and the render joins them, which is the far inner wall
+  discussed under the held-out figure below.</figcaption>
+</figure>
+
 <figure>
   <img src="assets/ovox_seven.png" alt="One held-out transverse and one held-out longitudinal cut of each of seven objects, rendered from the O-Voxel representation">
   <figcaption>One held-out cut of each family per object. Held out means the plane was never

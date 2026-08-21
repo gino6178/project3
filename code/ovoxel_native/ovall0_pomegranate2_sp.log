@@ -1,0 +1,51 @@
+== pomegranate2_sp  cfg=config/orange_physics.json  refs=spl_pomegranate2_h,spl_pomegranate2_v  lattice=build_pomegranate2_sp/lattice  gpu=1
+route 1: /workspace/ovoxel_native/state_pomegranate2_sp.pt
+  491,350 solid coarse cells, 718,534 dual vertices
+16 transverse depths (d -0.3056 .. +1.3820, step +0.1125), 10 longitudinal azimuths, 0 exterior views []
+  section loss: 0.7(1-SSIM)+0.3MSE on 6 crops of 128px, band term at 0.3
+ANCHOR=1  SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512  FLAT_INIT=off
+  sections skip the exterior, 2 cells deep by the occupancy: 90,607 of 491,350 coarse cells (18.4%)
+  prefit interior converged at step 0, mse 0.000000
+  prefit interior done: mse 0.000000, mean |decode - seed| 0.01570
+  prefit surf_rgb     0  mse 0.027495  distinct colours 1
+  prefit surf_rgb   200  mse 0.002266  distinct colours 852
+  prefit surf_rgb   400  mse 0.000338  distinct colours 150,687
+  prefit surf_rgb converged at step 557, mse 0.000043
+  prefit surf_rgb done: mse 0.000043, mean |decode - seed| 0.00352
+  prefit took 13s
+  decoder: feat 8-d per cell, stage1 8->128->128->16, stage2 16->64->3, two heads (ANCHOR_SPLIT)
+  trainable: 3,951,811 floats (interior only, the exterior is pinned)
+  references: 16 transverse, 10 longitudinal, 0 exterior
+  -> /workspace/ovoxel_native/ov0_pomegranate2_sp/eval_init
+  probe at 0: 0.20501
+  outer    1/200  steps 26  loss 0.52229  L1 0.16371  probe 0.16405  5s
+  outer   20/200  steps 520  loss 0.37301  L1 0.11229  probe 0.17665  75s
+  voxel smoothing at outer 30: 392,338/491,350 trained, 8,405 untrained cells' features filled from trained neighbours
+  outer   40/200  steps 1,040  loss 0.35038  L1 0.10282  probe 0.18050  152s
+  outer   60/200  steps 1,560  loss 0.32949  L1 0.09756  probe 0.17842  233s
+  voxel smoothing at outer 60: 392,491/491,350 trained, 8,252 untrained cells' features filled from trained neighbours
+  outer   80/200  steps 2,080  loss 0.32940  L1 0.09671  probe 0.18098  313s
+  voxel smoothing at outer 90: 392,505/491,350 trained, 8,238 untrained cells' features filled from trained neighbours
+  outer  100/200  steps 2,600  loss 0.31729  L1 0.09581  probe 0.18087  393s
+  outer  120/200  steps 3,120  loss 0.31229  L1 0.09423  probe 0.18120  473s
+  voxel smoothing at outer 120: 392,505/491,350 trained, 8,238 untrained cells' features filled from trained neighbours
+  outer  140/200  steps 3,640  loss 0.32131  L1 0.09430  probe 0.18592  554s
+  voxel smoothing at outer 150: 392,505/491,350 trained, 8,238 untrained cells' features filled from trained neighbours
+  outer  160/200  steps 4,160  loss 0.30964  L1 0.09488  probe 0.18040  635s
+  outer  180/200  steps 4,680  loss 0.31082  L1 0.09374  probe 0.18151  715s
+  voxel smoothing at outer 180: 392,505/491,350 trained, 8,238 untrained cells' features filled from trained neighbours
+  outer  200/200  steps 5,200  loss 0.31710  L1 0.09245  probe 0.18457  796s
+
+trained 200 outer iterations = 5,200 gradient steps in 795.9s (153 ms/step)
+  loss first 26 mean 0.52229 -> last 26 mean 0.31710
+  L1   first 26 mean 0.16371 -> last 26 mean 0.09245
+coverage over the schedule actually run (with jitter):
+  feat_i       474,173 /   491,350  ( 96.5%)
+  feat_s             0 /   718,534  (  0.0%)
+  dual_v             0 /   718,534  (  0.0%)
+  split_w            0 /   718,534  (  0.0%)
+  interior   moved mean 0.5199 max 0.8660; decoded spread [0.2594 0.2351 0.2198]
+  surf_rgb   moved mean 0.0000 max 0.0000; decoded spread [0.1245 0.192  0.1736]
+  -> /workspace/ovoxel_native/ov0_pomegranate2_sp/eval_final
+probe curve: 0:0.20501  1:0.16405  20:0.17665  40:0.18050  60:0.17842  80:0.18098  100:0.18087  120:0.18120  140:0.18592  160:0.18040  180:0.18151  200:0.18457
+TRAIN_OK

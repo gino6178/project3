@@ -1,0 +1,212 @@
+route 2: /workspace/ovoxel_native/state_r2.pt
+  569,004 solid coarse cells, 308,251 dual vertices
+16 transverse depths (d -0.4098 .. +0.4098, step +0.0546), 10 longitudinal azimuths, 0 exterior views []
+  section loss: 0.7(1-SSIM)+0.3MSE on 6 crops of 128px, band term at 0.3
+ANCHOR=1  SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512  FLAT_INIT=off
+  sections skip the exterior, 2 cells deep by the occupancy: 94,720 of 569,004 coarse cells (16.6%)
+  prefit interior     0  mse 0.008415  distinct colours 1
+  prefit interior   200  mse 0.000099  distinct colours 7,246
+  prefit interior converged at step 340, mse 0.000048
+  prefit interior done: mse 0.000048, mean |decode - seed| 0.00099
+  prefit surf_rgb     0  mse 0.010322  distinct colours 1
+  prefit surf_rgb   200  mse 0.000280  distinct colours 18,536
+  prefit surf_rgb   400  mse 0.000123  distinct colours 24,609
+  prefit surf_rgb converged at step 536, mse 0.000047
+  prefit surf_rgb done: mse 0.000047, mean |decode - seed| 0.00444
+  prefit took 25s
+  decoder: feat 8-d per cell, stage1 8->128->128->16, stage2 16->64->3, two heads (ANCHOR_SPLIT)
+  trainable: 4,573,043 floats (interior only, the exterior is pinned)
+  references: 16 transverse, 10 longitudinal, 0 exterior
+  -> /workspace/ovoxel_native/r2_xc_copy/eval_init
+  probe at 0: 0.07767
+  outer    1/200  steps 26  loss 0.35736  L1 0.06288  probe 0.05986  10s
+  outer   20/200  steps 520  loss 0.17568  L1 0.01945  probe 0.02750  87s
+  voxel smoothing at outer 30: 456,681/569,004 trained, 17,603 untrained cells' features filled from trained neighbours
+  outer   40/200  steps 1,040  loss 0.16176  L1 0.01797  probe 0.02720  171s
+  outer   60/200  steps 1,560  loss 0.15599  L1 0.01736  probe 0.02701  255s
+  voxel smoothing at outer 60: 456,980/569,004 trained, 17,304 untrained cells' features filled from trained neighbours
+  outer   80/200  steps 2,080  loss 0.15388  L1 0.01736  probe 0.02652  340s
+  voxel smoothing at outer 90: 458,727/569,004 trained, 15,557 untrained cells' features filled from trained neighbours
+  outer  100/200  steps 2,600  loss 0.14993  L1 0.01708  probe 0.02649  423s
+  cross-section consistency at 100: 7,424 px reconciled, disagreement 0.1199
+  cross-section consistency at 100: 7,424 px reconciled, disagreement 0.1210
+  cross-section consistency at 100: 7,424 px reconciled, disagreement 0.0947
+  cross-section consistency at 100: 29,696 px reconciled, disagreement 0.1102
+  cross-section consistency at 100: 29,695 px reconciled, disagreement 0.1108
+  cross-section consistency at 100: 29,696 px reconciled, disagreement 0.1045
+  cross-section consistency at 100: 29,696 px reconciled, disagreement 0.0757
+  cross-section consistency at 100: 29,696 px reconciled, disagreement 0.1119
+  cross-section consistency at 100: 44,516 px reconciled, disagreement 0.1038
+  cross-section consistency at 100: 44,544 px reconciled, disagreement 0.0758
+  cross-section consistency at 100: 44,544 px reconciled, disagreement 0.0777
+  cross-section consistency at 100: 51,968 px reconciled, disagreement 0.0986
+  cross-section consistency at 100: 66,803 px reconciled, disagreement 0.1059
+  cross-section consistency at 100: 66,782 px reconciled, disagreement 0.1015
+  cross-section consistency at 100: 74,215 px reconciled, disagreement 0.0916
+  cross-section consistency at 100: 74,234 px reconciled, disagreement 0.0902
+  cross-section consistency at 110: 74,197 px reconciled, disagreement 0.0856
+  cross-section consistency at 110: 74,220 px reconciled, disagreement 0.0410
+  cross-section consistency at 110: 74,240 px reconciled, disagreement 0.0407
+  cross-section consistency at 110: 74,222 px reconciled, disagreement 0.0299
+  cross-section consistency at 110: 74,216 px reconciled, disagreement 0.0338
+  cross-section consistency at 110: 74,203 px reconciled, disagreement 0.0538
+  cross-section consistency at 110: 74,177 px reconciled, disagreement 0.0511
+  cross-section consistency at 110: 74,234 px reconciled, disagreement 0.0410
+  cross-section consistency at 110: 74,180 px reconciled, disagreement 0.0708
+  cross-section consistency at 110: 74,240 px reconciled, disagreement 0.0376
+  cross-section consistency at 110: 74,232 px reconciled, disagreement 0.0189
+  cross-section consistency at 110: 74,170 px reconciled, disagreement 0.0473
+  cross-section consistency at 110: 74,226 px reconciled, disagreement 0.0641
+  cross-section consistency at 110: 74,204 px reconciled, disagreement 0.1027
+  cross-section consistency at 110: 74,240 px reconciled, disagreement 0.0393
+  cross-section consistency at 110: 74,193 px reconciled, disagreement 0.0479
+  outer  120/200  steps 3,120  loss 0.18217  L1 0.01748  probe 0.02676  510s
+  cross-section consistency at 120: 74,232 px reconciled, disagreement 0.0294
+  cross-section consistency at 120: 74,240 px reconciled, disagreement 0.0297
+  cross-section consistency at 120: 74,156 px reconciled, disagreement 0.0308
+  cross-section consistency at 120: 74,201 px reconciled, disagreement 0.0571
+  cross-section consistency at 120: 74,240 px reconciled, disagreement 0.0381
+  cross-section consistency at 120: 74,240 px reconciled, disagreement 0.0439
+  cross-section consistency at 120: 74,224 px reconciled, disagreement 0.0374
+  cross-section consistency at 120: 74,158 px reconciled, disagreement 0.0886
+  cross-section consistency at 120: 74,162 px reconciled, disagreement 0.0283
+  cross-section consistency at 120: 74,160 px reconciled, disagreement 0.1030
+  cross-section consistency at 120: 74,239 px reconciled, disagreement 0.0242
+  cross-section consistency at 120: 74,167 px reconciled, disagreement 0.0595
+  cross-section consistency at 120: 74,240 px reconciled, disagreement 0.0431
+  cross-section consistency at 120: 74,198 px reconciled, disagreement 0.0538
+  cross-section consistency at 120: 74,199 px reconciled, disagreement 0.0634
+  cross-section consistency at 120: 74,183 px reconciled, disagreement 0.0508
+  voxel smoothing at outer 120: 458,727/569,004 trained, 15,557 untrained cells' features filled from trained neighbours
+  cross-section consistency at 130: 74,169 px reconciled, disagreement 0.0822
+  cross-section consistency at 130: 74,188 px reconciled, disagreement 0.0459
+  cross-section consistency at 130: 74,240 px reconciled, disagreement 0.0419
+  cross-section consistency at 130: 74,240 px reconciled, disagreement 0.0300
+  cross-section consistency at 130: 74,234 px reconciled, disagreement 0.0371
+  cross-section consistency at 130: 74,191 px reconciled, disagreement 0.0424
+  cross-section consistency at 130: 74,240 px reconciled, disagreement 0.0458
+  cross-section consistency at 130: 74,217 px reconciled, disagreement 0.0373
+  cross-section consistency at 130: 74,202 px reconciled, disagreement 0.0613
+  cross-section consistency at 130: 74,240 px reconciled, disagreement 0.0342
+  cross-section consistency at 130: 74,164 px reconciled, disagreement 0.0665
+  cross-section consistency at 130: 74,230 px reconciled, disagreement 0.0570
+  cross-section consistency at 130: 74,171 px reconciled, disagreement 0.0640
+  cross-section consistency at 130: 74,167 px reconciled, disagreement 0.0304
+  cross-section consistency at 130: 74,188 px reconciled, disagreement 0.0524
+  cross-section consistency at 130: 74,240 px reconciled, disagreement 0.0486
+  outer  140/200  steps 3,640  loss 0.18408  L1 0.01684  probe 0.02673  601s
+  cross-section consistency at 140: 74,240 px reconciled, disagreement 0.0453
+  cross-section consistency at 140: 74,240 px reconciled, disagreement 0.0392
+  cross-section consistency at 140: 74,234 px reconciled, disagreement 0.0354
+  cross-section consistency at 140: 74,144 px reconciled, disagreement 0.0664
+  cross-section consistency at 140: 74,240 px reconciled, disagreement 0.0194
+  cross-section consistency at 140: 74,188 px reconciled, disagreement 0.0882
+  cross-section consistency at 140: 74,217 px reconciled, disagreement 0.0503
+  cross-section consistency at 140: 74,224 px reconciled, disagreement 0.0522
+  cross-section consistency at 140: 74,159 px reconciled, disagreement 0.0581
+  cross-section consistency at 140: 74,240 px reconciled, disagreement 0.0453
+  cross-section consistency at 140: 74,178 px reconciled, disagreement 0.0450
+  cross-section consistency at 140: 74,232 px reconciled, disagreement 0.0376
+  cross-section consistency at 140: 74,192 px reconciled, disagreement 0.0352
+  cross-section consistency at 140: 74,143 px reconciled, disagreement 0.0453
+  cross-section consistency at 140: 74,196 px reconciled, disagreement 0.0626
+  cross-section consistency at 140: 74,168 px reconciled, disagreement 0.0475
+  cross-section consistency at 150: 74,224 px reconciled, disagreement 0.0384
+  cross-section consistency at 150: 74,177 px reconciled, disagreement 0.0987
+  cross-section consistency at 150: 74,240 px reconciled, disagreement 0.0291
+  cross-section consistency at 150: 74,149 px reconciled, disagreement 0.0456
+  cross-section consistency at 150: 74,205 px reconciled, disagreement 0.0447
+  cross-section consistency at 150: 74,240 px reconciled, disagreement 0.0258
+  cross-section consistency at 150: 74,132 px reconciled, disagreement 0.1216
+  cross-section consistency at 150: 74,181 px reconciled, disagreement 0.0541
+  cross-section consistency at 150: 74,169 px reconciled, disagreement 0.0774
+  cross-section consistency at 150: 74,203 px reconciled, disagreement 0.0367
+  cross-section consistency at 150: 74,240 px reconciled, disagreement 0.0457
+  cross-section consistency at 150: 74,148 px reconciled, disagreement 0.0385
+  cross-section consistency at 150: 74,232 px reconciled, disagreement 0.0678
+  cross-section consistency at 150: 74,240 px reconciled, disagreement 0.0320
+  cross-section consistency at 150: 74,232 px reconciled, disagreement 0.0403
+  cross-section consistency at 150: 74,240 px reconciled, disagreement 0.0405
+  voxel smoothing at outer 150: 458,727/569,004 trained, 15,557 untrained cells' features filled from trained neighbours
+  outer  160/200  steps 4,160  loss 0.17573  L1 0.01620  probe 0.02684  690s
+  cross-section consistency at 160: 74,240 px reconciled, disagreement 0.0330
+  cross-section consistency at 160: 74,239 px reconciled, disagreement 0.0287
+  cross-section consistency at 160: 74,186 px reconciled, disagreement 0.0412
+  cross-section consistency at 160: 74,240 px reconciled, disagreement 0.0321
+  cross-section consistency at 160: 74,128 px reconciled, disagreement 0.0696
+  cross-section consistency at 160: 74,227 px reconciled, disagreement 0.0512
+  cross-section consistency at 160: 74,240 px reconciled, disagreement 0.0428
+  cross-section consistency at 160: 74,202 px reconciled, disagreement 0.0516
+  cross-section consistency at 160: 74,240 px reconciled, disagreement 0.0290
+  cross-section consistency at 160: 74,157 px reconciled, disagreement 0.0192
+  cross-section consistency at 160: 74,156 px reconciled, disagreement 0.0863
+  cross-section consistency at 160: 74,202 px reconciled, disagreement 0.0496
+  cross-section consistency at 160: 74,143 px reconciled, disagreement 0.0591
+  cross-section consistency at 160: 74,167 px reconciled, disagreement 0.0284
+  cross-section consistency at 160: 74,240 px reconciled, disagreement 0.0514
+  cross-section consistency at 160: 74,205 px reconciled, disagreement 0.0303
+  cross-section consistency at 170: 74,165 px reconciled, disagreement 0.0638
+  cross-section consistency at 170: 74,240 px reconciled, disagreement 0.0397
+  cross-section consistency at 170: 74,240 px reconciled, disagreement 0.0440
+  cross-section consistency at 170: 74,235 px reconciled, disagreement 0.0671
+  cross-section consistency at 170: 74,139 px reconciled, disagreement 0.0536
+  cross-section consistency at 170: 74,131 px reconciled, disagreement 0.0603
+  cross-section consistency at 170: 74,170 px reconciled, disagreement 0.0508
+  cross-section consistency at 170: 74,202 px reconciled, disagreement 0.0574
+  cross-section consistency at 170: 74,159 px reconciled, disagreement 0.0458
+  cross-section consistency at 170: 74,240 px reconciled, disagreement 0.0471
+  cross-section consistency at 170: 74,240 px reconciled, disagreement 0.0499
+  cross-section consistency at 170: 74,198 px reconciled, disagreement 0.0542
+  cross-section consistency at 170: 74,240 px reconciled, disagreement 0.0287
+  cross-section consistency at 170: 74,157 px reconciled, disagreement 0.0388
+  cross-section consistency at 170: 74,209 px reconciled, disagreement 0.0501
+  cross-section consistency at 170: 74,240 px reconciled, disagreement 0.0301
+  outer  180/200  steps 4,680  loss 0.16946  L1 0.01605  probe 0.02734  778s
+  cross-section consistency at 180: 74,143 px reconciled, disagreement 0.0486
+  cross-section consistency at 180: 74,179 px reconciled, disagreement 0.0515
+  cross-section consistency at 180: 74,216 px reconciled, disagreement 0.0503
+  cross-section consistency at 180: 74,240 px reconciled, disagreement 0.0320
+  cross-section consistency at 180: 74,222 px reconciled, disagreement 0.0309
+  cross-section consistency at 180: 74,240 px reconciled, disagreement 0.0379
+  cross-section consistency at 180: 74,240 px reconciled, disagreement 0.0351
+  cross-section consistency at 180: 74,117 px reconciled, disagreement 0.0624
+  cross-section consistency at 180: 74,132 px reconciled, disagreement 0.0823
+  cross-section consistency at 180: 74,240 px reconciled, disagreement 0.0486
+  cross-section consistency at 180: 74,217 px reconciled, disagreement 0.0367
+  cross-section consistency at 180: 74,240 px reconciled, disagreement 0.0299
+  cross-section consistency at 180: 74,240 px reconciled, disagreement 0.0431
+  cross-section consistency at 180: 74,189 px reconciled, disagreement 0.1003
+  cross-section consistency at 180: 74,209 px reconciled, disagreement 0.0474
+  cross-section consistency at 180: 74,135 px reconciled, disagreement 0.0852
+  voxel smoothing at outer 180: 458,727/569,004 trained, 15,557 untrained cells' features filled from trained neighbours
+  cross-section consistency at 190: 74,203 px reconciled, disagreement 0.0198
+  cross-section consistency at 190: 74,240 px reconciled, disagreement 0.0481
+  cross-section consistency at 190: 74,239 px reconciled, disagreement 0.0355
+  cross-section consistency at 190: 74,179 px reconciled, disagreement 0.0471
+  cross-section consistency at 190: 74,142 px reconciled, disagreement 0.0708
+  cross-section consistency at 190: 74,195 px reconciled, disagreement 0.0336
+  cross-section consistency at 190: 74,231 px reconciled, disagreement 0.0401
+  cross-section consistency at 190: 74,240 px reconciled, disagreement 0.0350
+  cross-section consistency at 190: 74,116 px reconciled, disagreement 0.0712
+  cross-section consistency at 190: 74,234 px reconciled, disagreement 0.0293
+  cross-section consistency at 190: 74,181 px reconciled, disagreement 0.0559
+  cross-section consistency at 190: 74,240 px reconciled, disagreement 0.0455
+  cross-section consistency at 190: 74,164 px reconciled, disagreement 0.0465
+  cross-section consistency at 190: 74,138 px reconciled, disagreement 0.0892
+  cross-section consistency at 190: 74,181 px reconciled, disagreement 0.0570
+  cross-section consistency at 190: 74,217 px reconciled, disagreement 0.0634
+  outer  200/200  steps 5,200  loss 0.17135  L1 0.01587  probe 0.02704  868s
+
+trained 200 outer iterations = 5,200 gradient steps in 868.4s (167 ms/step)
+  loss first 26 mean 0.35736 -> last 26 mean 0.17135
+  L1   first 26 mean 0.06288 -> last 26 mean 0.01587
+coverage over the schedule actually run (with jitter):
+  feat_i       539,732 /   569,004  ( 94.9%)
+  feat_s             0 /   308,251  (  0.0%)
+  dual_v             0 /   308,251  (  0.0%)
+  split_w            0 /   308,251  (  0.0%)
+  interior   moved mean 0.5915 max 1.1432; decoded spread [0.0332 0.099  0.2237]
+  surf_rgb   moved mean 0.0000 max 0.0000; decoded spread [0.0841 0.112  0.1065]
+  -> /workspace/ovoxel_native/r2_xc_copy/eval_final
+probe curve: 0:0.07767  1:0.05986  20:0.02750  40:0.02720  60:0.02701  80:0.02652  100:0.02649  120:0.02676  140:0.02673  160:0.02684  180:0.02734  200:0.02704
+TRAIN_OK

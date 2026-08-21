@@ -1,0 +1,48 @@
+== doughnut  cfg=config/torus_physics.json  refs=secref_dn2_h,secref_dn2_v  lattice=build_doughnut/lattice  gpu=3
+route 1: /workspace/ovoxel_native/state_doughnut.pt
+  544,568 solid coarse cells, 316,285 dual vertices
+16 transverse depths (d -0.1180 .. +0.1180, step +0.0157), 10 longitudinal azimuths, 0 exterior views []
+  section loss: 0.7(1-SSIM)+0.3MSE on 6 crops of 128px, band term at 0.3
+ANCHOR=1  SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512  FLAT_INIT=off
+  sections skip the exterior, 2 cells deep by the occupancy: 144,760 of 544,568 coarse cells (26.6%)
+  prefit interior converged at step 0, mse 0.000000
+  prefit interior done: mse 0.000000, mean |decode - seed| 0.00893
+  prefit surf_rgb converged at step 0, mse 0.000000
+  prefit surf_rgb done: mse 0.000000, mean |decode - seed| 0.00967
+  prefit took 1s
+  decoder: feat 8-d per cell, stage1 8->128->128->16, stage2 16->64->3, two heads (ANCHOR_SPLIT)
+  trainable: 4,377,555 floats (interior only, the exterior is pinned)
+  references: 16 transverse, 10 longitudinal, 0 exterior
+  -> /workspace/ovoxel_native/ov0_doughnut/eval_init
+  probe at 0: 0.02843
+  outer    1/200  steps 26  loss 0.34418  L1 0.02604  probe 0.02102  3s
+  outer   20/200  steps 520  loss 0.17063  L1 0.01697  probe 0.02403  49s
+  voxel smoothing at outer 30: 379,276/544,568 trained, 20,532 untrained cells' features filled from trained neighbours
+  outer   40/200  steps 1,040  loss 0.16620  L1 0.01644  probe 0.02405  97s
+  outer   60/200  steps 1,560  loss 0.16565  L1 0.01625  probe 0.02375  144s
+  voxel smoothing at outer 60: 379,276/544,568 trained, 20,532 untrained cells' features filled from trained neighbours
+  outer   80/200  steps 2,080  loss 0.16052  L1 0.01649  probe 0.02447  192s
+  voxel smoothing at outer 90: 379,276/544,568 trained, 20,532 untrained cells' features filled from trained neighbours
+  outer  100/200  steps 2,600  loss 0.17343  L1 0.01628  probe 0.02388  240s
+  outer  120/200  steps 3,120  loss 0.16312  L1 0.01628  probe 0.02416  288s
+  voxel smoothing at outer 120: 379,276/544,568 trained, 20,532 untrained cells' features filled from trained neighbours
+  outer  140/200  steps 3,640  loss 0.16542  L1 0.01632  probe 0.02399  336s
+  voxel smoothing at outer 150: 379,276/544,568 trained, 20,532 untrained cells' features filled from trained neighbours
+  outer  160/200  steps 4,160  loss 0.15744  L1 0.01625  probe 0.02428  384s
+  outer  180/200  steps 4,680  loss 0.16770  L1 0.01620  probe 0.02400  432s
+  voxel smoothing at outer 180: 379,276/544,568 trained, 20,532 untrained cells' features filled from trained neighbours
+  outer  200/200  steps 5,200  loss 0.15868  L1 0.01616  probe 0.02432  479s
+
+trained 200 outer iterations = 5,200 gradient steps in 479.5s (92 ms/step)
+  loss first 26 mean 0.34418 -> last 26 mean 0.15868
+  L1   first 26 mean 0.02604 -> last 26 mean 0.01616
+coverage over the schedule actually run (with jitter):
+  feat_i       478,078 /   544,568  ( 87.8%)
+  feat_s             0 /   316,285  (  0.0%)
+  dual_v             0 /   316,285  (  0.0%)
+  split_w            0 /   316,285  (  0.0%)
+  interior   moved mean 0.3040 max 0.8655; decoded spread [0.1351 0.1575 0.1762]
+  surf_rgb   moved mean 0.0000 max 0.0000; decoded spread [0. 0. 0.]
+  -> /workspace/ovoxel_native/ov0_doughnut/eval_final
+probe curve: 0:0.02843  1:0.02102  20:0.02403  40:0.02405  60:0.02375  80:0.02447  100:0.02388  120:0.02416  140:0.02399  160:0.02428  180:0.02400  200:0.02432
+TRAIN_OK

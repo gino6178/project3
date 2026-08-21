@@ -1,0 +1,53 @@
+== orange_sp  cfg=config/orange_physics.json  refs=spl_orange_h,spl_orange_v  lattice=build_orange_sp/lattice  gpu=0
+route 1: /workspace/ovoxel_native/state_orange_sp.pt
+  770,182 solid coarse cells, 900,556 dual vertices
+16 transverse depths (d +0.2127 .. +1.2092, step +0.0664), 10 longitudinal azimuths, 0 exterior views []
+  section loss: 0.7(1-SSIM)+0.3MSE on 6 crops of 128px, band term at 0.3
+ANCHOR=1  SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512  FLAT_INIT=off
+  sections skip the exterior, 2 cells deep by the occupancy: 129,528 of 770,182 coarse cells (16.8%)
+  prefit interior     0  mse 0.037849  distinct colours 1
+  prefit interior   200  mse 0.000434  distinct colours 1,517
+  prefit interior converged at step 288, mse 0.000048
+  prefit interior done: mse 0.000048, mean |decode - seed| 0.00388
+  prefit surf_rgb     0  mse 0.024575  distinct colours 1
+  prefit surf_rgb   200  mse 0.000882  distinct colours 12,900
+  prefit surf_rgb   400  mse 0.000227  distinct colours 32,521
+  prefit surf_rgb converged at step 585, mse 0.000046
+  prefit surf_rgb done: mse 0.000046, mean |decode - seed| 0.00363
+  prefit took 24s
+  decoder: feat 8-d per cell, stage1 8->128->128->16, stage2 16->64->3, two heads (ANCHOR_SPLIT)
+  trainable: 6,182,467 floats (interior only, the exterior is pinned)
+  references: 16 transverse, 10 longitudinal, 0 exterior
+  -> /workspace/ovoxel_native/ov_orange_sp/eval_init
+  probe at 0: 0.03416
+  outer    1/200  steps 26  loss 0.26485  L1 0.02763  probe 0.03043  7s
+  outer   20/200  steps 520  loss 0.16739  L1 0.02162  probe 0.02889  75s
+  voxel smoothing at outer 30: 621,761/770,182 trained, 18,893 untrained cells' features filled from trained neighbours
+  outer   40/200  steps 1,040  loss 0.15636  L1 0.02088  probe 0.02944  147s
+  outer   60/200  steps 1,560  loss 0.15206  L1 0.02023  probe 0.02962  218s
+  voxel smoothing at outer 60: 621,829/770,182 trained, 18,825 untrained cells' features filled from trained neighbours
+  outer   80/200  steps 2,080  loss 0.15466  L1 0.02026  probe 0.02920  290s
+  voxel smoothing at outer 90: 621,829/770,182 trained, 18,825 untrained cells' features filled from trained neighbours
+  outer  100/200  steps 2,600  loss 0.14481  L1 0.01977  probe 0.02954  361s
+  outer  120/200  steps 3,120  loss 0.14946  L1 0.02012  probe 0.02953  432s
+  voxel smoothing at outer 120: 621,829/770,182 trained, 18,825 untrained cells' features filled from trained neighbours
+  outer  140/200  steps 3,640  loss 0.14678  L1 0.01975  probe 0.02944  504s
+  voxel smoothing at outer 150: 621,829/770,182 trained, 18,825 untrained cells' features filled from trained neighbours
+  outer  160/200  steps 4,160  loss 0.14781  L1 0.01981  probe 0.02989  575s
+  outer  180/200  steps 4,680  loss 0.14613  L1 0.01959  probe 0.02922  646s
+  voxel smoothing at outer 180: 621,829/770,182 trained, 18,825 untrained cells' features filled from trained neighbours
+  outer  200/200  steps 5,200  loss 0.14307  L1 0.01944  probe 0.02953  718s
+
+trained 200 outer iterations = 5,200 gradient steps in 717.6s (138 ms/step)
+  loss first 26 mean 0.26485 -> last 26 mean 0.14307
+  L1   first 26 mean 0.02763 -> last 26 mean 0.01944
+coverage over the schedule actually run (with jitter):
+  feat_i       736,367 /   770,182  ( 95.6%)
+  feat_s             0 /   900,556  (  0.0%)
+  dual_v             0 /   900,556  (  0.0%)
+  split_w            0 /   900,556  (  0.0%)
+  interior   moved mean 0.2151 max 1.5346; decoded spread [0.0336 0.0895 0.1807]
+  surf_rgb   moved mean 0.0000 max 0.0000; decoded spread [0.1081 0.1956 0.1542]
+  -> /workspace/ovoxel_native/ov_orange_sp/eval_final
+probe curve: 0:0.03416  1:0.03043  20:0.02889  40:0.02944  60:0.02962  80:0.02920  100:0.02954  120:0.02953  140:0.02944  160:0.02989  180:0.02922  200:0.02953
+TRAIN_OK

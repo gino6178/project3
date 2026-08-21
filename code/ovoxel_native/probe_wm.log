@@ -1,0 +1,38 @@
+== watermelon_sp  cfg=config/watermelon_raw_physics.json  refs=spl_watermelon_h,spl_watermelon_v  lattice=build_watermelon_sp/lattice  gpu=0
+route 1: /workspace/ovoxel_native/state_watermelon_sp.pt
+  709,368 solid coarse cells, 810,071 dual vertices
+16 transverse depths (d -1.3398 .. -0.1619, step +0.0785), 10 longitudinal azimuths, 0 exterior views []
+  section loss: 0.7(1-SSIM)+0.3MSE on 6 crops of 128px, band term at 0.3
+ANCHOR=1  SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=3 outer  RES=512  FLAT_INIT=off
+  sections skip the exterior, 2 cells deep by the occupancy: 111,744 of 709,368 coarse cells (15.8%)
+  prefit interior     0  mse 0.046666  distinct colours 1
+  prefit interior   200  mse 0.003027  distinct colours 25,276
+  prefit interior   400  mse 0.002111  distinct colours 88,453
+  prefit interior converged at step 584, mse 0.000049
+  prefit interior done: mse 0.000049, mean |decode - seed| 0.00239
+  prefit surf_rgb     0  mse 0.060597  distinct colours 1
+  prefit surf_rgb   200  mse 0.000870  distinct colours 57,685
+  prefit surf_rgb   400  mse 0.000121  distinct colours 342,423
+  prefit surf_rgb converged at step 554, mse 0.000050
+  prefit surf_rgb done: mse 0.000050, mean |decode - seed| 0.00282
+  prefit took 28s
+  decoder: feat 8-d per cell, stage1 8->128->128->16, stage2 16->64->3, two heads (ANCHOR_SPLIT)
+  trainable: 5,695,955 floats (interior only, the exterior is pinned)
+  references: 16 transverse, 10 longitudinal, 0 exterior
+  -> /workspace/ovoxel_native/ov_watermelon_sp/eval_init
+  probe at 0: 0.02258
+  outer    1/3  steps 26  loss 0.32391  L1 0.01718  probe 0.01719  7s
+
+trained 3 outer iterations = 78 gradient steps in 12.6s (162 ms/step)
+  loss first 26 mean 0.32391 -> last 26 mean 0.27287
+  L1   first 26 mean 0.01718 -> last 26 mean 0.01470
+coverage over the schedule actually run (with jitter):
+  feat_i       584,430 /   709,368  ( 82.4%)
+  feat_s             0 /   810,071  (  0.0%)
+  dual_v             0 /   810,071  (  0.0%)
+  split_w            0 /   810,071  (  0.0%)
+  interior   moved mean 0.2256 max 1.0644; decoded spread [0.0196 0.2012 0.1647]
+  surf_rgb   moved mean 0.0000 max 0.0000; decoded spread [0.2563 0.244  0.2379]
+  -> /workspace/ovoxel_native/ov_watermelon_sp/eval_final
+probe curve: 0:0.02258  1:0.01719
+TRAIN_OK

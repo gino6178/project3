@@ -1,0 +1,56 @@
+== bread_sp  cfg=config/orange_physics.json  refs=spl_bread_h,spl_bread_v  lattice=build_bread_sp/lattice  gpu=1
+route 1: /workspace/ovoxel_native/state_bread_sp.pt
+  396,075 solid coarse cells, 448,876 dual vertices
+16 transverse depths (d -0.0829 .. +0.6134, step +0.0464), 10 longitudinal azimuths, 0 exterior views []
+  section loss: 0.7(1-SSIM)+0.3MSE on 6 crops of 128px, band term at 0.3
+ANCHOR=1  SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512  FLAT_INIT=off
+  sections skip the exterior, 2 cells deep by the occupancy: 74,538 of 396,075 coarse cells (18.8%)
+  prefit interior     0  mse 0.032982  distinct colours 1
+  prefit interior   200  mse 0.000506  distinct colours 23,967
+  prefit interior   400  mse 0.000118  distinct colours 38,980
+  prefit interior   600  mse 0.000118  distinct colours 41,402
+  prefit interior converged at step 796, mse 0.000047
+  prefit interior done: mse 0.000047, mean |decode - seed| 0.00408
+  prefit surf_rgb     0  mse 0.036954  distinct colours 1
+  prefit surf_rgb   200  mse 0.001923  distinct colours 5,363
+  prefit surf_rgb   400  mse 0.000257  distinct colours 64,258
+  prefit surf_rgb   600  mse 0.000062  distinct colours 144,667
+  prefit surf_rgb converged at step 614, mse 0.000049
+  prefit surf_rgb done: mse 0.000049, mean |decode - seed| 0.00266
+  prefit took 18s
+  decoder: feat 8-d per cell, stage1 8->128->128->16, stage2 16->64->3, two heads (ANCHOR_SPLIT)
+  trainable: 3,189,611 floats (interior only, the exterior is pinned)
+  references: 16 transverse, 10 longitudinal, 0 exterior
+  -> /workspace/ovoxel_native/ov_bread_sp/eval_init
+  probe at 0: 0.07474
+  outer    1/200  steps 26  loss 0.48335  L1 0.04482  probe 0.04395  6s
+  outer   20/200  steps 520  loss 0.28426  L1 0.02746  probe 0.05147  54s
+  voxel smoothing at outer 30: 294,760/396,075 trained, 26,657 untrained cells' features filled from trained neighbours
+  outer   40/200  steps 1,040  loss 0.26267  L1 0.02646  probe 0.05173  104s
+  outer   60/200  steps 1,560  loss 0.26392  L1 0.02592  probe 0.05203  155s
+  voxel smoothing at outer 60: 294,760/396,075 trained, 26,657 untrained cells' features filled from trained neighbours
+  outer   80/200  steps 2,080  loss 0.24515  L1 0.02616  probe 0.05216  206s
+  voxel smoothing at outer 90: 294,760/396,075 trained, 26,657 untrained cells' features filled from trained neighbours
+  outer  100/200  steps 2,600  loss 0.25826  L1 0.02570  probe 0.05164  257s
+  outer  120/200  steps 3,120  loss 0.25188  L1 0.02591  probe 0.05218  307s
+  voxel smoothing at outer 120: 294,760/396,075 trained, 26,657 untrained cells' features filled from trained neighbours
+  outer  140/200  steps 3,640  loss 0.24190  L1 0.02607  probe 0.05131  358s
+  voxel smoothing at outer 150: 294,760/396,075 trained, 26,657 untrained cells' features filled from trained neighbours
+  outer  160/200  steps 4,160  loss 0.24564  L1 0.02560  probe 0.05240  409s
+  outer  180/200  steps 4,680  loss 0.24797  L1 0.02557  probe 0.05333  459s
+  voxel smoothing at outer 180: 294,760/396,075 trained, 26,657 untrained cells' features filled from trained neighbours
+  outer  200/200  steps 5,200  loss 0.25205  L1 0.02554  probe 0.05201  510s
+
+trained 200 outer iterations = 5,200 gradient steps in 510.1s (98 ms/step)
+  loss first 26 mean 0.48335 -> last 26 mean 0.25205
+  L1   first 26 mean 0.04482 -> last 26 mean 0.02554
+coverage over the schedule actually run (with jitter):
+  feat_i       349,584 /   396,075  ( 88.3%)
+  feat_s             0 /   448,876  (  0.0%)
+  dual_v             0 /   448,876  (  0.0%)
+  split_w            0 /   448,876  (  0.0%)
+  interior   moved mean 0.5172 max 1.7163; decoded spread [0.1963 0.2163 0.213 ]
+  surf_rgb   moved mean 0.0000 max 0.0000; decoded spread [0.2176 0.2054 0.146 ]
+  -> /workspace/ovoxel_native/ov_bread_sp/eval_final
+probe curve: 0:0.07474  1:0.04395  20:0.05147  40:0.05173  60:0.05203  80:0.05216  100:0.05164  120:0.05218  140:0.05131  160:0.05240  180:0.05333  200:0.05201
+TRAIN_OK

@@ -1,0 +1,54 @@
+== watermelon_sp  cfg=config/watermelon_raw_physics.json  refs=spl_watermelon_h,spl_watermelon_v  lattice=build_watermelon_sp/lattice  gpu=3
+route 1: /workspace/ovoxel_native/state_watermelon_sp.pt
+  709,368 solid coarse cells, 810,071 dual vertices
+16 transverse depths (d -1.3398 .. -0.1619, step +0.0785), 10 longitudinal azimuths, 0 exterior views []
+  section loss: 0.7(1-SSIM)+0.3MSE on 6 crops of 128px, band term at 0.3
+ANCHOR=1  SHELL_PIN=1  SEC_SKIP_OUTER=0.1  JITTER=0.5  ITERS=200 outer  RES=512  FLAT_INIT=off
+  sections skip the exterior, 2 cells deep by the occupancy: 111,744 of 709,368 coarse cells (15.8%)
+  prefit interior     0  mse 0.046666  distinct colours 1
+  prefit interior   200  mse 0.003027  distinct colours 25,276
+  prefit interior   400  mse 0.002111  distinct colours 88,453
+  prefit interior converged at step 584, mse 0.000049
+  prefit interior done: mse 0.000049, mean |decode - seed| 0.00239
+  prefit surf_rgb     0  mse 0.060597  distinct colours 1
+  prefit surf_rgb   200  mse 0.000870  distinct colours 57,685
+  prefit surf_rgb   400  mse 0.000121  distinct colours 342,423
+  prefit surf_rgb converged at step 554, mse 0.000050
+  prefit surf_rgb done: mse 0.000050, mean |decode - seed| 0.00282
+  prefit took 28s
+  decoder: feat 8-d per cell, stage1 8->128->128->16, stage2 16->64->3, two heads (ANCHOR_SPLIT)
+  trainable: 5,695,955 floats (interior only, the exterior is pinned)
+  references: 16 transverse, 10 longitudinal, 0 exterior
+  -> /workspace/ovoxel_native/ov0_watermelon_sp/eval_init
+  probe at 0: 0.02169
+  outer    1/200  steps 26  loss 0.33315  L1 0.01704  probe 0.01776  6s
+  outer   20/200  steps 520  loss 0.19514  L1 0.01174  probe 0.01590  64s
+  voxel smoothing at outer 30: 571,488/709,368 trained, 26,136 untrained cells' features filled from trained neighbours
+  outer   40/200  steps 1,040  loss 0.18667  L1 0.01130  probe 0.01630  126s
+  outer   60/200  steps 1,560  loss 0.18659  L1 0.01098  probe 0.01636  186s
+  voxel smoothing at outer 60: 571,496/709,368 trained, 26,128 untrained cells' features filled from trained neighbours
+  outer   80/200  steps 2,080  loss 0.18193  L1 0.01126  probe 0.01696  247s
+  voxel smoothing at outer 90: 571,797/709,368 trained, 25,827 untrained cells' features filled from trained neighbours
+  outer  100/200  steps 2,600  loss 0.18092  L1 0.01083  probe 0.01660  309s
+  outer  120/200  steps 3,120  loss 0.18013  L1 0.01083  probe 0.01664  369s
+  voxel smoothing at outer 120: 571,805/709,368 trained, 25,819 untrained cells' features filled from trained neighbours
+  outer  140/200  steps 3,640  loss 0.17926  L1 0.01073  probe 0.01622  430s
+  voxel smoothing at outer 150: 571,806/709,368 trained, 25,818 untrained cells' features filled from trained neighbours
+  outer  160/200  steps 4,160  loss 0.17600  L1 0.01058  probe 0.01649  491s
+  outer  180/200  steps 4,680  loss 0.17991  L1 0.01067  probe 0.01653  552s
+  voxel smoothing at outer 180: 571,806/709,368 trained, 25,818 untrained cells' features filled from trained neighbours
+  outer  200/200  steps 5,200  loss 0.17696  L1 0.01053  probe 0.01654  614s
+
+trained 200 outer iterations = 5,200 gradient steps in 613.8s (118 ms/step)
+  loss first 26 mean 0.33315 -> last 26 mean 0.17696
+  L1   first 26 mean 0.01704 -> last 26 mean 0.01053
+coverage over the schedule actually run (with jitter):
+  feat_i       663,950 /   709,368  ( 93.6%)
+  feat_s             0 /   810,071  (  0.0%)
+  dual_v             0 /   810,071  (  0.0%)
+  split_w            0 /   810,071  (  0.0%)
+  interior   moved mean 0.2954 max 1.7003; decoded spread [0.0943 0.2503 0.1948]
+  surf_rgb   moved mean 0.0000 max 0.0000; decoded spread [0.2563 0.244  0.2379]
+  -> /workspace/ovoxel_native/ov0_watermelon_sp/eval_final
+probe curve: 0:0.02169  1:0.01776  20:0.01590  40:0.01630  60:0.01636  80:0.01696  100:0.01660  120:0.01664  140:0.01622  160:0.01649  180:0.01653  200:0.01654
+TRAIN_OK
