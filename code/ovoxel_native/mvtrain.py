@@ -34,7 +34,9 @@ import nvdiffrast.torch as dr
 import section_match as sm
 import refsel
 import anchor
+import azjitter
 import fieldreg
+import overlap
 import patchdist
 import refalign
 import secloss
@@ -91,6 +93,46 @@ SEC_JOINT = os.environ.get("SEC_JOINT", "1") == "1"
 # longitudinal planes are asking for -- they sit 4.6% to 12.3% off the axis while every supervised
 # one sits at 3.1% to 3.4% -- is a photograph that does not exist.
 JITTER_V = float(os.environ.get("JITTER_V", "0"))
+# half-width in pixels of the band around the other family's crossings, inside which the
+# distributional term is taken; 0 applies it to the whole face, which is what was measured and
+# found harmful
+SEC_DIST_BAND = int(os.environ.get("SEC_DIST_BAND", "0"))
+# How far a longitudinal plane may be turned about the axis, as a fraction of the spacing between
+# the supervised azimuths. This is the family's own degree of freedom, unlike JITTER_V.
+#
+# Why it exists, measured by geometry alone on the orange's 770,182 solid cells: the transverse
+# family reaches 92.4% of them, because it has 16 depths and each is jittered half a step, so it
+# sweeps. The longitudinal family reaches 15.9%, because it is ten fixed sheets through the axis
+# that never move, and two sheets do not cover what is between them. Cells both families reach:
+# 14.1%. So 84% of the object has no longitudinal supervision at all and a held-out longitudinal
+# cut passes almost entirely through cells only the other family constrained -- which is a more
+# basic cause of the vertical striping than the references all being central sections.
+#
+# Turning at 0.5 of the 18-degree spacing takes the longitudinal family to 97.7% and both families
+# to 90.4%, and it keeps the plane through the axis, so it is still a central section and the
+# photographs are still the right kind.
+JITTER_AZ = float(os.environ.get("JITTER_AZ", "0"))
+# Whether each plane's reference is chosen at the position the plane was jittered to rather than at
+# its unjittered index, for both families by the same rule.
+#
+# It sounds as though it should matter -- with JITTER_AZ a longitudinal plane turns most of the way
+# towards its neighbour and is otherwise still supervised by its own photograph -- and measured, it
+# does not. On the orange at 5,200 steps against the same arm without it: 0.0867 transverse and
+# 0.2255 longitudinal against 0.0859 and 0.2257, which is inside the noise, and on top of the
+# turning 0.1193/0.2026 against 0.1220/0.2015, better on one column and worse on the other. It also
+# costs half again as much per step, since the blend it asks for misses refsel's cache.
+#
+# Kept because the negative result is worth more than the code is, and off.
+REF_FOLLOW = os.environ.get("REF_FOLLOW", "0") == "1"
+# The jitter is quantised before the reference is asked for. refsel caches a blend by its mixing
+# weight rounded to three places, so a continuous jitter misses the cache every step and pays for
+# two disc detections and two resizes -- measured, 330 ms a step became 758. Sixteen positions
+# across the spacing is finer than the plane spacing itself and the cache holds.
+REF_STEPS = int(os.environ.get("REF_STEPS", "16"))
+
+
+def _q(f):
+    return round(f * REF_STEPS) / REF_STEPS if REF_FOLLOW else f
 SEC_XCONS_HOLD = os.environ.get("SEC_XCONS_HOLD", "0") == "1"
 SEC_XCONS_MODE = os.environ.get("SEC_XCONS_MODE", "copy")
 ABL_INTERVAL = int(os.environ.get("ABL_INTERVAL", "30"))
@@ -396,6 +438,17 @@ print(f"  a gradient step sees {'+'.join(sorted({k for g in _g0 for k, _, _ in g
       f"  a gradient step sees one plane ({len(_g0)} steps per outer iteration)", flush=True)
 _vrad = float((st["solid"].max(0).values - st["solid"].min(0).values).max()) \
     * float(st["hc"]) / 2.0
+# the object's axis is the transverse family's normal, and the centre is where the longitudinal
+# planes all pass; both are fixed for the run
+_axis = np.asarray(C["h_planes"][0, :3], float)
+_cen = ((st["solid"].float().mean(0) + 0.5) * float(st["hc"])).cpu().numpy() \
+    + np.asarray(st["org"])
+_az_spacing = np.radians(180.0 / max(NV, 1))
+if JITTER_AZ > 0:
+    assert azjitter.check(C["v_mvp"][0], C["v_planes"][0, :3], float(C["v_planes"][0, 3]),
+                          _axis, _cen), "the axis rotation does not return the identity"
+    print(f"  longitudinal planes turned by up to {JITTER_AZ:.2f} of the "
+          f"{np.degrees(_az_spacing):.1f}-degree spacing, about {np.round(_axis, 3)}", flush=True)
 _nstep = len(_g0)
 for j in range(ITERS):
     for grp in groups_for_iteration():
@@ -403,9 +456,16 @@ for j in range(ITERS):
         loss, _l1s, _kinds = None, [], []
         for kind, i, wfam in grp:
             if kind == "h":
-                d = float(hd[H_LO + i]) + h_step * ((random.random() - 0.5) * 2.0 * JITTER)
+                _f = (random.random() - 0.5) * 2.0 * JITTER
+                d = float(hd[H_LO + i]) + h_step * _f
                 img, al, _, _ = ON.render_section(st, glctx, hmvp, hn, d, RES)
-                ref = refs_h[i]
+                # the target follows the plane. Both families jitter, and picking the reference by
+                # the integer index leaves a plane that has moved most of the way towards its
+                # neighbour still supervised by its own photograph -- which is exactly the two
+                # families ceasing to be treated alike, and it is worse for the longitudinal one
+                # because its jitter spans the whole spacing.
+                ref = refs_h[i] if not REF_FOLLOW else refsel.as_array(
+                    refsel.solved_photo(REF_H, i + _q(_f), NH), RES)
             elif kind == "v":
                 n = torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32, device=dev)
                 # The same jitter the transverse family has always had, on the parameter that
@@ -422,12 +482,23 @@ for j in range(ITERS):
                 # the axis and the held-out ones 4.6 to 12.3%, so the band this sweeps is the band
                 # they are drawn from.
                 dv = float(C["v_planes"][i, 3])
+                _vm = torch.as_tensor(C["v_mvp"][i], dtype=torch.float32, device=dev)
                 if JITTER_V > 0:
                     dv += _vrad * JITTER_V * (random.random() - 0.5) * 2.0
-                img, al, _, _ = ON.render_section(
-                    st, glctx, torch.as_tensor(C["v_mvp"][i], dtype=torch.float32, device=dev),
-                    n, dv, RES)
-                ref = refs_v[i]
+                _fv = 0.0
+                if JITTER_AZ > 0:
+                    # about the axis, which is the transverse family's normal: the plane stays
+                    # through the axis, so it stays a central section and the photographs stay the
+                    # right kind, while it sweeps the cells between the ten fixed azimuths
+                    _fv = (random.random() - 0.5) * 2.0 * JITTER_AZ
+                    _a = _fv * _az_spacing
+                    _m2, _n2, dv = azjitter.turn(C["v_mvp"][i], C["v_planes"][i, :3], dv,
+                                                 _axis, _cen, _a)
+                    _vm = torch.as_tensor(_m2, dtype=torch.float32, device=dev)
+                    n = torch.as_tensor(_n2, dtype=torch.float32, device=dev)
+                img, al, _, _ = ON.render_section(st, glctx, _vm, n, dv, RES)
+                ref = refs_v[i] if not REF_FOLLOW else refsel.as_array(
+                    refsel.photo(REF_V, i + _q(_fv), NV), RES)
             else:
                 img, al, _, _ = ON.render_exterior(
                     st, glctx, torch.as_tensor(C["e_mvp"][i], dtype=torch.float32, device=dev), RES)
@@ -465,7 +536,31 @@ for j in range(ITERS):
             # existing objective exactly unless it is asked for.
             _wd, _wp = patchdist.schedule(j, ITERS)
             if _wd > 0:
-                _pl = _wp * _pl + _wd * patchdist.distance(img, tgt)
+                # Where the term is applied, not only whether. The two families disagree only on
+                # the cells they both cross, and two planes meet in a line: measured on the orange,
+                # 1.0% of the cells either family touches are touched by both, and the gradient
+                # cosine there is -0.4285 under the pixel loss and -0.1160 under Chamfer. Applying
+                # it everywhere relaxes a conflict that exists on a hundredth of the object and
+                # blinds the rest to how much structure it should have.
+                _dm = None
+                if SEC_DIST_BAND > 0:
+                    _others = ([(C["v_planes"][q, :3], C["v_planes"][q, 3]) for q in range(NV)]
+                               if kind == "h" else
+                               [(C["h_planes"][H_LO + q, :3], C["h_planes"][H_LO + q, 3])
+                                for q in range(NH)])
+                    _pl_now = (hn.cpu().numpy(), d) if kind == "h" else \
+                        (C["v_planes"][i, :3], float(C["v_planes"][i, 3]))
+                    _mvp_now = hmvp if kind == "h" else \
+                        torch.as_tensor(C["v_mvp"][i], dtype=torch.float32, device=dev)
+                    _b = overlap.band(_mvp_now.cpu().numpy(), _pl_now[0], _pl_now[1], _others,
+                                      RES, half_px=SEC_DIST_BAND, span=_vrad)
+                    _fg = ((tgt.min(0).values < 0.98) | (img.min(0).values < 0.98))
+                    _dm = torch.as_tensor(_b, device=dev) & _fg
+                    if int(_dm.sum()) < 400:
+                        _dm = None
+                if _dm is not None or SEC_DIST_BAND <= 0:
+                    _pl = _wp * _pl + _wd * patchdist.distance(
+                        img, tgt, mask=(None if _dm is None else _dm.float()))
             loss = _pl * wfam if loss is None else loss + _pl * wfam
             with torch.no_grad():
                 _l1s.append(float((img - tgt).abs().mean()))

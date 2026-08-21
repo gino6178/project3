@@ -84,7 +84,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
+  <a href="#what">What this is</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#seven">Seven objects</a><a href="#families">Transverse and longitudinal</a><a href="#blend">The depth blend</a><a href="#joint">Two changes that survived</a><a href="#notfixed">What they do not fix</a><a href="#reach">Only one family reaches the object</a><a href="#audit">The reference sets</a><a href="#rejected">What was tried and rejected</a><a href="#limits">What it does not do</a>
 </nav>
 
 <h2 id="what">What this is, and what it is not</h2>
@@ -448,6 +448,117 @@ without gives 0.0859 and 0.2300 &mdash; a small longitudinal gain for a 36% tran
 grows with the jitter. What the held-out longitudinal planes are asking for is a photograph that
 does not exist.</p>
 
+<h2 id="reach">Only one family reaches the object</h2>
+
+<p>The two families are not two views of the same thing, and the difference is not a matter of
+degree. Counting by geometry alone, no training involved: a plane crosses a cell when the cell's
+corners are not all on one side of it, the transverse family is its 16 supervised depths each
+widened by the half-step it is jittered through, and the longitudinal family is its 10
+azimuths.</p>
+
+<div class="tw"><table>
+<thead><tr><th>the orange's 770,182 solid cells</th><th>reached</th></tr></thead>
+<tbody>
+<tr><td>by the transverse family</td><td>92.4%</td></tr>
+<tr><td>by the longitudinal family</td><td class="win">15.9%</td></tr>
+<tr><td>by both</td><td>14.1%</td></tr>
+<tr><td>by neither</td><td>5.7%</td></tr>
+</tbody></table></div>
+
+<p>The transverse family sweeps, because it has many depths and each is jittered. The longitudinal
+family is ten fixed sheets through the axis that never move, and two sheets do not cover what lies
+between them. <strong>84% of the object has no longitudinal supervision at all</strong>, so a
+held-out longitudinal cut passes almost entirely through cells only the other family ever
+constrained &mdash; which is a more basic cause of the striping than the references being central
+sections. The watermelon answers the same way: 88.9%, 16.3%, 13.7%.</p>
+
+<h3>Turning the plane instead of sliding it</h3>
+
+<p>Sliding a longitudinal plane along its normal was tried first and is the wrong degree of
+freedom: it takes the plane off the axis, and every longitudinal photograph is a central section,
+so the target stops describing the cut the plane is taking. Turning the plane <em>about the
+axis</em> keeps it through the axis, so it is still a central section and the photographs are still
+the right kind, while it sweeps the azimuths between the ten.</p>
+
+<div class="tw"><table>
+<thead><tr><th>turn, as a fraction of the 18&deg; spacing</th><th>longitudinal reaches</th><th>both reach</th><th>neither</th></tr></thead>
+<tbody>
+<tr><td>0 &mdash; pinned</td><td>15.9%</td><td>14.1%</td><td>5.7%</td></tr>
+<tr><td>0.25</td><td>64.0%</td><td>58.7%</td><td>2.3%</td></tr>
+<tr><td>0.35</td><td>82.0%</td><td>75.5%</td><td>1.0%</td></tr>
+<tr><td>0.50</td><td class="win">97.7%</td><td class="win">90.4%</td><td>0.3%</td></tr>
+<tr><td>0.75</td><td>99.4%</td><td>91.9%</td><td>0.1%</td></tr>
+</tbody></table></div>
+
+<p>Coverage climbs almost linearly to 0.5 and flattens immediately after, and the corner is not a
+coincidence: 0.5 is where each plane's swept wedge meets its neighbour's, and beyond it the extra
+turn only re-covers ground.</p>
+
+<figure>
+  <img src="assets/ovox_turning.png" alt="Four arms on the same held-out planes: the two with turning have much less vertical striping on longitudinal cuts">
+  <figcaption>Same object, same 5,200 steps, same held-out planes; what differs is whether the
+  longitudinal planes turn, and whether each plane's reference is chosen where it was jittered to
+  rather than at its index. The striping the longitudinal cuts have carried through every earlier
+  change is largely gone in the two turning arms, and the transverse cuts are barely
+  distinguishable.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>arm</th><th>transverse</th><th>longitudinal</th></tr></thead>
+<tbody>
+<tr><td>control</td><td class="win">0.0859</td><td>0.2257</td></tr>
+<tr><td>reference follows the jitter</td><td>0.0867</td><td>0.2255</td></tr>
+<tr><td>planes turn, 0.5</td><td>0.1220</td><td class="win">0.2015</td></tr>
+<tr><td>both</td><td>0.1193</td><td>0.2026</td></tr>
+</tbody></table></div>
+
+<p><strong>It is a trade and it is stated as one.</strong> Turning is the largest single improvement
+to the longitudinal column measured here &mdash; 11%, against 6.4% for the depth blend, 4.5% for the
+joint step and 2% for the field prior &mdash; and it costs the transverse column 42%. The picture
+and the number disagree about how those compare: the striping leaving is plain, the transverse
+degradation is not visible at all. It is not on by default, and which way the trade falls depends
+on what the object is for.</p>
+
+<p>Choosing the reference at the position the plane was jittered to, rather than at its index,
+sounds as though it should matter and does not: 0.0867 and 0.2255 against 0.0859 and 0.2257 is
+inside the noise, and it costs half again as much per step. It is kept, off, with the numbers in
+the source.</p>
+
+<h2 id="audit">What the reference sets actually contain</h2>
+
+<figure>
+  <img src="assets/ovox_refaudit.png" alt="Each object's own exterior above the first file of each of its two reference families">
+  <figcaption>Each object's exterior, from the dual grid with no plane at all, above the first file
+  of each of its reference families.</figcaption>
+</figure>
+
+<p>Two objects supervise both families from <em>the same files</em>. Hashing them: the loaf's
+<code>spl_bread_h</code> and <code>spl_bread_v</code> are the same three photographs, and the cake's
+are the same two. The confs said so in prose &mdash; the loaf's records that references exist for
+one family only, and the cake's the same &mdash; and the implementation of that limitation was to
+point both families at one directory, which makes it invisible in every table. FruitNinja released
+five photographs of the loaf and all five are the same kind of section, an end-on slice showing the
+swirl; there is no photograph of a cut along its length.</p>
+
+<p>How well each family's photographs agree in shape with the object's own cut, as the product of
+silhouette overlap and radial-profile correlation &mdash; transverse then longitudinal:</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>transverse</th><th>longitudinal</th></tr></thead>
+<tbody>
+<tr><td>watermelon</td><td class="win">0.80</td><td class="win">0.78</td></tr>
+<tr><td>apple</td><td>0.55</td><td class="win">0.84</td></tr>
+<tr><td>orange</td><td>0.73</td><td>0.55</td></tr>
+<tr><td>doughnut</td><td>0.69</td><td>0.15</td></tr>
+<tr><td>cake</td><td>0.47</td><td>0.40</td></tr>
+<tr><td>pomegranate</td><td>0.33</td><td>0.13</td></tr>
+<tr><td>loaf</td><td>0.19</td><td>0.23</td></tr>
+</tbody></table></div>
+
+<p>The three that read worst are the three that look wrong. Which way up each object's photographs
+were stored is a separate question and not one this work can defend an automatic answer to; there
+is <a href="orient.html">a turntable</a> for reading it off instead.</p>
+
 <h2 id="rejected">What was tried on the same objects and rejected</h2>
 
 <p>The section loss compares a render with a photograph pixel by pixel, and the photograph is of
@@ -480,8 +591,24 @@ vocabulary of patches matches and not in what amounts.</p>
 in every column and monotonically in the weight: the held-out probe goes 0.02958 to 0.03014 to
 0.03090, the banding 3.78 to 4.12 to 4.38, and the detail 0.1772 to 0.1617 to 0.1574. Blind to
 proportions turns out to mean blind to the amount of structure &mdash; a face that covers the
-vocabulary thinly satisfies it &mdash; and the detail column is that happening. The code is kept,
-off by default, because the reasoning is more valuable than the result.</p>
+vocabulary thinly satisfies it &mdash; and the detail column is that happening.</p>
+
+<div class="note">
+<strong>That rejection is qualified, and the qualification matters.</strong> The argument for a
+distributional loss here is that the pixel loss asks the two families to agree at a pixel while
+they see different material, and it is measurable: the cosine between the two families' gradients
+on the cells both cross is <strong>&minus;0.4285</strong> under the pixel loss and
+<strong>&minus;0.1160</strong> under Chamfer, so it does relax the conflict. What sank it is where
+the conflict was. Those arms were trained before the longitudinal planes turned, when the families
+shared 14% of the cells &mdash; Chamfer eased a seventh of the object and blinded the other six
+sevenths. With turning they share 90%, and the region it can damage is a tenth of what it was.
+Both the benefit and the harm moved in its favour, so this is being measured again, at a weight
+taken from the gradients rather than guessed: Chamfer's mean gradient is 2.48e&minus;4 against the
+pixel loss's 2.10e&minus;5, and the weights tried before, 0.2 and 1.0, were both far above the
+range where the term is a correction rather than the objective.
+</div>
+
+<p>The code is kept, off by default, because the reasoning is more valuable than the result was.</p>
 
 <h2 id="limits">What it does not do</h2>
 
