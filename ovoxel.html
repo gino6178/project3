@@ -89,131 +89,178 @@
 
 <h2 id="split">How the plane count is derived, step by step</h2>
 
-<p class="lead">One line of code sets how many planes each family gets, and it is the change with
-the most at stake on this page, so here is every step of it with the measured number at each stage
-&mdash; not the conclusion, the arithmetic. Read it looking for where it goes wrong: it does, in
-three separate places, and all three are visible in the numbers below.</p>
+<p class="lead">One line of code decides how many planes each family gets, and it is the change with
+the most at stake on this page. Every step of it is here with the measured number at each stage, for
+all seven objects, including the two constants that are in the equation because leaving them out was
+wrong and the three things it still does not fix.</p>
 
 <figure>
   <video src="assets/exp_ov3.mp4" autoplay loop muted playsinline preload="metadata"></video>
-  <figcaption>The orange under the derived split, 14 transverse and 12 longitudinal, at the same
-  5,200 steps and the same total plane count as the fixed 16/10.</figcaption>
+  <figcaption>The orange cut transverse and longitudinal under a derived split. Nothing in the
+  trainer, the loss, the jitter or the budget differs between splits &mdash; the only thing this
+  rule changes is how the 26 planes are divided.</figcaption>
 </figure>
 
 <h3>Step 1 &mdash; measure the object, not the file</h3>
 
-<p>The lattice is read and every cell centre is projected onto the polar axis \(\hat n\), the
-transverse family's normal. Two numbers come out: the <strong>axis extent</strong>
-\(L = \max(p) - \min(p)\), and the <strong>mean radius</strong> \(r\), the average distance of
-a cell from the axis after the perpendicular component is centred. Both in coarse cells, so they
-are comparable with the lattice itself.</p>
+<p>Every solid cell centre is projected onto the polar axis \(\hat n\), which is the transverse
+family's own normal. Two numbers come out, both in coarse cells so they are comparable with the
+lattice itself:</p>
 
-<p>One correction was needed here and it moved an object by a whole plane. <code>gs_fill.ply</code>
-carries the coarse cells and the level&#8209;1 skin in the same rows, and the skin is all of it at
-the rim: 480,287 of the orange's 1,162,387 rows. Averaging over all of them pulls \(r\) up 13%.
-What the sampling has to cover is the interior, so <code>cell_level.pt</code> is read alongside and
-the skin rows come out.</p>
+<ul>
+<li><strong>Axis extent</strong> \(L = \max(p) - \min(p)\), the object's length along the axis.</li>
+<li><strong>Rim radius</strong> \(R\), the 90th percentile of the perpendicular distance from the
+axis, taken after the perpendicular component is centred.</li>
+</ul>
 
-<h3>Step 2 &mdash; the ratio the two families should stand in</h3>
+<p>Two corrections to this measurement, both of which moved objects by whole planes.</p>
 
-<p>A transverse plane moves <em>along</em> the axis; a longitudinal plane turns <em>about</em> it.
-To resolve both at the same spacing, the arc each family steps through must be divided the same
-way: \(L / N_h = \pi r / N_v\). Half a circumference, not a whole one, because a plane and its
-opposite normal are the same cut. With \(N_h + N_v\) held at the 26 every object has always had:</p>
+<p><strong>The skin rows come out.</strong> <code>gs_fill.ply</code> carries the coarse cells and the
+level&#8209;1 skin in the same rows, and the skin is half the spacing and all of it at the rim:
+480,287 of the orange's 1,162,387 rows. Averaging over all of them pulls the radius up 13%. What the
+sampling has to cover is the interior, so <code>cell_level.pt</code> is read alongside and the
+level&#8209;1 rows are dropped.</p>
 
-<pre>N_H = clip(round(26 * L / (L + pi*r)), 2, 24)      # mvcams.py
-N_V = 26 - N_H</pre>
+<p><strong>The rim, not the mean.</strong> The rule balances the arc between neighbouring
+longitudinal planes against the transverse spacing, and the structure that has to be resolved
+&mdash; segment walls, seeds, crumb &mdash; sits at the rim, not at the average distance from the
+axis. Measured here the rim is 1.5 to 1.9 times the mean, so with the mean the arc where it matters
+was 11.8 to 15.0 cells while the rule believed it was arranging 6.8 to 9.2. The 90th percentile
+rather than the maximum, so that one stray cell cannot set the scale
+(<code>N_PLANES_RIM_PCT=90</code>).</p>
 
-<h3>Step 3 &mdash; what that gives each object</h3>
+<h3>Step 2 &mdash; the balance, with the constant the sampler actually uses</h3>
 
-<div class="tw"><table>
-<thead><tr><th>object</th><th>axis \(L\)</th><th>mean \(r\)</th><th>\(\pi r\)</th>
-<th>\(L/\pi r\)</th><th>fixed</th><th>derived</th></tr></thead>
-<tbody>
-<tr><td>orange</td><td>126</td><td>33.1</td><td>104.0</td><td>1.21</td><td>16/10</td><td>14/12</td></tr>
-<tr><td>watermelon</td><td>103</td><td>33.8</td><td>106.3</td><td>0.97</td><td>16/10</td><td>13/13</td></tr>
-<tr><td>apple</td><td>121</td><td>33.2</td><td>104.4</td><td>1.16</td><td>16/10</td><td>14/12</td></tr>
-<tr><td>loaf</td><td>80</td><td>32.4</td><td>101.8</td><td>0.79</td><td>16/10</td><td>11/15</td></tr>
-<tr><td>cake</td><td>110</td><td>26.6</td><td>83.7</td><td>1.31</td><td>16/10</td><td>15/11</td></tr>
-<tr><td>pomegranate</td><td>115</td><td>29.1</td><td>91.5</td><td>1.26</td><td>16/10</td><td>14/12</td></tr>
-<tr><td>doughnut</td><td>43</td><td>64.6</td><td>202.9</td><td>0.21</td><td>16/10</td><td>4/22</td></tr>
-</tbody></table></div>
+<p>A transverse plane moves <em>along</em> the axis; a longitudinal plane turns <em>about</em> it. To
+resolve both at the same spacing the two arcs must be divided the same way. Half a circumference and
+not a whole one, because a plane and its opposite normal are the same cut.</p>
 
-<p>16/10 is a ratio of 1.6, and no object here has \(L/\pi r\) above 1.31. For a sphere the ratio
-is \(2R : \pi R\), about 0.64, so anything round should give the longitudinal family <em>more</em>
-planes than the transverse one. The fixed split over-supervises the transverse family by 1.22&times;
-on the cake and 7.55&times; on the doughnut, whose axis is 43 cells against a half-circumference of
-203. That much of the argument survives.</p>
+<p>The step that was wrong for a long time is which transverse spacing goes into that equation. The
+depths are <em>not</em> \(N_h\) samples across the axis: <code>mvcams</code> asks
+<code>interpolate_along_camera_direction</code> for \(M = \lceil 1.5\,N_h \rceil\) of them and
+supervises the middle \(N_h\), so the spacing in force is \(L/M\). Balancing \(L/N_h\) against
+\(\pi R/N_v\) therefore solved for a spacing the code never produces, and every object came out
+1.29 to 1.59 times finer on the transverse side than the balance it had just solved &mdash; the rule
+over-supervised precisely the family it was written to stop over-supervising. Putting the constant
+into the equation is the whole of the fix:</p>
 
-<h3>Step 4 &mdash; where it goes wrong</h3>
+<pre>solve   L / (OVER * N_h)  =  pi * R / N_v      with  N_h + N_v = TOTAL
 
-<p>Three things, and the first two compound. The rule solves \(L/N_h = \pi r/N_v\), so the
-spacings it <em>intends</em> do balance &mdash; that is the first two columns below, which agree to
-within a few per cent on every object. What is actually laid down does not.</p>
+N_H = clip(round(TOTAL * L / (L + OVER * pi * R)), 2, TOTAL - 2)     # mvcams.py
+N_V = TOTAL - N_H
 
-<div class="tw"><table>
-<thead><tr><th>object</th><th>intended \(L/N_h\)</th><th>longitudinal \(\pi r/N_v\)</th>
-<th>actual transverse</th><th>ratio</th><th>axis supervised</th>
-<th>rim arc \(\pi R/N_v\)</th></tr></thead>
-<tbody>
-<tr><td>orange</td><td>9.00</td><td>8.67</td><td>6.00</td><td>1.44</td><td>0.65</td><td>14.46</td></tr>
-<tr><td>watermelon</td><td>7.90</td><td>8.17</td><td>5.14</td><td>1.59</td><td>0.63</td><td>13.55</td></tr>
-<tr><td>apple</td><td>8.64</td><td>8.70</td><td>5.76</td><td>1.51</td><td>0.65</td><td>15.02</td></tr>
-<tr><td>loaf</td><td>7.27</td><td>6.78</td><td>4.71</td><td>1.44</td><td>0.62</td><td>12.67</td></tr>
-<tr><td>cake</td><td>7.33</td><td>7.61</td><td>4.78</td><td>1.59</td><td>0.64</td><td>14.82</td></tr>
-<tr><td>pomegranate</td><td>8.21</td><td>7.62</td><td>5.48</td><td>1.39</td><td>0.65</td><td>12.91</td></tr>
-<tr><td>doughnut</td><td>10.75</td><td>9.22</td><td>7.17</td><td>1.29</td><td>0.60</td><td>11.80</td></tr>
-</tbody></table></div>
+TOTAL = 26            N_PLANES_TOTAL     the budget, unchanged for every object
+OVER  = 1.5           N_PLANES_OVER      the ceil(1.5 * N_h) the sampler lays down
+R     = p90 radius    N_PLANES_RIM_PCT   the rim, not the mean</pre>
 
-<p><strong>(a) A factor of 1.5 the rule never sees.</strong> The transverse depths are not
-\(N_h\) samples across the axis. <code>mvcams</code> builds
-\(M = \lceil 1.5\,N_h \rceil\) of them and supervises the middle \(N_h\), so the spacing
-actually laid down is \(L/M\), not \(L/N_h\). On the orange that is 6.00 cells where the rule
-believes it is arranging 9.00. Every object is 1.29 to 1.59 times finer on the transverse side than
-the balance the rule solved for &mdash; so the rule systematically over-supervises exactly the
-family it was written to stop over-supervising. The same construction leaves only 0.60 to 0.65 of
-the axis inside the supervised band: <strong>the caps get no transverse plane at all</strong>, at
-any \(N_h\).</p>
-
-<p><strong>(b) The mean radius is the wrong radius.</strong> \(\pi r/N_v\) is the arc between
-neighbouring longitudinal planes at the <em>average</em> distance from the axis. The structure that
-has to be resolved &mdash; segment walls, seeds, crumb &mdash; is at the rim, and the rim is 1.7 to
-1.9 times the mean radius. At the rim the arc is 11.8 to 15.0 cells, not 6.8 to 9.2. Put (a) and
-(b) together and the orange's transverse planes sit 6.0 cells apart while its longitudinal planes
-sit 14.5 apart where it matters: a factor of 2.4, in a rule whose entire purpose was to make that
-factor 1.</p>
-
-<p><strong>(c) More planes is not more information.</strong> The photographs do not multiply with
-the planes.</p>
+<h3>Step 3 &mdash; what it gives each object, and whether it balances</h3>
 
 <div class="tw"><table>
-<thead><tr><th>object</th><th>transverse photos</th><th>longitudinal photos</th>
-<th>derived split</th><th>longitudinal planes per photo</th></tr></thead>
+<thead><tr><th>object</th><th>\(L\)</th><th>mean \(r\)</th><th>rim \(R\)</th><th>split</th>
+<th>\(M\)</th><th>transverse \(L/M\)</th><th>rim arc \(\pi R/N_v\)</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td>3</td><td>3</td><td>14/12</td><td>4.0</td></tr>
-<tr><td>watermelon</td><td>10</td><td>12</td><td>13/13</td><td>1.1</td></tr>
-<tr><td>apple</td><td>2</td><td>2</td><td>14/12</td><td>6.0</td></tr>
-<tr><td>loaf</td><td>3</td><td>3</td><td>11/15</td><td>5.0</td></tr>
-<tr><td>cake</td><td>2</td><td>2</td><td>15/11</td><td>5.5</td></tr>
-<tr><td>pomegranate</td><td>2</td><td>2</td><td>14/12</td><td>6.0</td></tr>
-<tr><td>doughnut</td><td>1</td><td>1</td><td>4/22</td><td>22.0</td></tr>
+<tr><td>orange</td><td>126</td><td>33.1</td><td>49.9</td><td>9/17</td><td>14</td><td>9.00</td><td>9.23</td></tr>
+<tr><td>watermelon</td><td>103</td><td>33.8</td><td>50.6</td><td>8/18</td><td>12</td><td>8.56</td><td>8.82</td></tr>
+<tr><td>apple</td><td>121</td><td>33.2</td><td>50.3</td><td>9/17</td><td>14</td><td>8.64</td><td>9.29</td></tr>
+<tr><td>loaf</td><td>80</td><td>32.4</td><td>53.4</td><td>6/20</td><td>9</td><td>8.89</td><td>8.39</td></tr>
+<tr><td>cake</td><td>110</td><td>26.6</td><td>42.3</td><td>9/17</td><td>14</td><td>7.86</td><td>7.82</td></tr>
+<tr><td>pomegranate</td><td>115</td><td>29.1</td><td>44.2</td><td>9/17</td><td>14</td><td>8.21</td><td>8.17</td></tr>
+<tr><td>doughnut</td><td>43</td><td>64.6</td><td>78.1</td><td>3/23</td><td>5</td><td>8.60</td><td>10.67</td></tr>
 </tbody></table></div>
 
-<p>The doughnut is the case that makes it plain. The rule moves it furthest of all, to 4/22,
-because it is the roundest thing here &mdash; and it has <em>one</em> longitudinal photograph, so
-all 22 planes are handed the same target. It is also the only object that got worse on both
-columns. The watermelon, which has 12 longitudinal photographs for 13 planes, is the only object
-where a longitudinal plane is nearly always given its own picture.</p>
+<p>The last two columns are the test: they are the two spacings the rule exists to equalise, and they
+now agree within 10% on six of the seven. The orange was <strong>6.00 against 14.46</strong> before
+these constants went in and is 9.00 against 9.23 after. The doughnut is the exception at 8.60 against
+10.67 &mdash; it is the roundest object here and 3/23 is where the clip at \(N_h \ge 2\) stops it,
+so 26 planes are not enough to balance something that flat.</p>
+
+<h3>Step 4 &mdash; what the split then changes downstream</h3>
+
+<p>Two consequences, neither of them obvious from the equation, and both needed to read the results
+honestly.</p>
+
+<p><strong>The split is a reallocation of gradient weight, one unit for one unit.</strong> Each family
+contributes one plane per step at weight \(|\text{family}|/G\) with \(G = \max(N_h, N_v)\), over
+\(G\) steps, so its total weight over an outer iteration is exactly its plane count. Moving the
+orange from 16/10 to 9/17 removes 44% of the transverse family's weight and adds 70% to the
+longitudinal one. Nothing else in the objective changes.</p>
+
+<p><strong>The split also changes the number of gradient steps.</strong> An outer iteration is \(G\)
+steps, so at the same 325 outer iterations the orange gets 5,525 steps at 9/17 and 4,550 at 14/12
+&mdash; 21% more. That coupling is in the design rather than in this change, but it means no two
+splits are compared at equal steps by default, and a control has to be run rather than argued.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>split</th><th>gradient steps at 325 outer</th>
+<th>axis inside the supervised band</th><th>transverse photos</th><th>longitudinal photos</th>
+<th>longitudinal planes per photo</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>9/17</td><td>5,525</td><td>0.62</td><td>3</td><td>3</td><td>5.7</td></tr>
+<tr><td>watermelon</td><td>8/18</td><td>5,850</td><td>0.64</td><td>10</td><td>12</td><td>1.5</td></tr>
+<tr><td>apple</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>loaf</td><td>6/20</td><td>6,500</td><td>0.62</td><td>3</td><td>3</td><td>6.7</td></tr>
+<tr><td>cake</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>pomegranate</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>doughnut</td><td>3/23</td><td>7,475</td><td>0.50</td><td>1</td><td>1</td><td>23.0</td></tr>
+</tbody></table></div>
+
+<h3>Step 5 &mdash; what it measures, so far</h3>
+
+<p>DreamSim against each object's own reference families, on held-out planes. The held-out planes are
+byte-identical between the two camera sets, so this is one object under two splits and not two
+evaluations. The floor &mdash; two disjoint halves of a reference family scored against each other
+&mdash; is 0.0593 and 0.0777 on the orange.</p>
+
+<div class="tw"><table>
+<thead>
+<tr><th rowspan="2">object</th><th colspan="3">the split</th><th colspan="2">transverse</th><th colspan="2">longitudinal</th></tr>
+<tr><th>before</th><th>after</th><th>weight moved</th><th>before</th><th>after</th><th>before</th><th>after</th></tr>
+</thead>
+<tbody>
+<tr><td>orange</td><td>14/12</td><td>9/17</td><td>&minus;36% / +42%</td><td class="win">0.0804</td><td>0.0891</td><td>0.2061</td><td class="win">0.1861</td></tr>
+<tr><td>loaf</td><td>11/15</td><td>6/20</td><td>&minus;45% / +33%</td><td class="win">0.3818</td><td>0.3928</td><td>0.4214</td><td class="win">0.3860</td></tr>
+<tr><td>doughnut</td><td>4/22</td><td>3/23</td><td>&minus;25% / +5%</td><td class="win">0.1540</td><td>0.1613</td><td class="win">0.5550</td><td>0.5777</td></tr>
+<tr><td colspan="8">watermelon, apple, cake and pomegranate are training; a matched-step control is running beside them</td></tr>
+</tbody></table></div>
+
+<p>Three of seven; the remaining four and a matched-step control are running, and this table will be
+completed rather than summarised. What it shows so far is the same trade as every other change on
+this page &mdash; longitudinal better, transverse worse &mdash; moved further along the same curve,
+except on the doughnut, which is worse on both for the second time.</p>
+
+<p>The comparison that is clean is against turning the longitudinal planes, because both are 26-plane
+arms on the same object: turning gives 0.1220 transverse and 0.2015 longitudinal, the corrected split
+gives <strong>0.0891 and 0.1861</strong>. It is better on both columns, so the corrected split
+supersedes turning as a way of giving the longitudinal family more of the object. The best
+longitudinal number measured anywhere is still 0.1783, from 104 planes and a Chamfer term &mdash;
+four times the budget for 4% more.</p>
+
+<h3>What this does not fix</h3>
+
+<ol>
+<li><strong>The caps still get no transverse plane.</strong> Folding 1.5 into the balance corrects the
+<em>spacing</em>, not the <em>coverage</em>: <code>mvcams</code> still builds \(M\) depths and
+supervises the middle \(N_h\), so 0.62 of the axis is inside the band and the two caps are outside
+it &mdash; 0.65 before the change, 0.62 after. That is a separate edit to which depths are taken, not
+to the equation.</li>
+<li><strong>The photographs still do not multiply with the planes.</strong> The apple, the cake and
+the pomegranate have two longitudinal photographs for 17 planes; the doughnut has one for 23. Extra
+longitudinal planes are handed targets they already had, which is the most likely reason the doughnut
+&mdash; the object the rule moves for the strongest reason &mdash; is the object it helps least. Only
+photographs fix this.</li>
+<li><strong>The clip binds on the flattest object.</strong> 3/23 is one plane from the bound, and the
+doughnut is the one object whose two spacings still do not meet. A budget of 26 cannot balance an
+object whose half-circumference is five times its axis.</li>
+</ol>
 
 <div class="note">
-<strong>What this means for the result.</strong> Across the seven objects the derived split makes
-longitudinal cuts better on six and transverse cuts worse on six &mdash; the same trade every other
-change on this page makes. The three defects above say why it is a trade rather than a win: the
-rule balances a pair of spacings that is not the pair the code lays down (a), measured at a radius
-where the structure is not (b), and pays for the longitudinal side in planes rather than in
-photographs (c). Fixing (a) is one character &mdash; derive \(N_h\) against \(L/M\) rather than
-\(L/N_h\), which shifts every object about two planes towards the longitudinal family. Fixing (b)
-is a choice of radius and can be measured the same way. Fixing (c) needs photographs.
+<strong>One honest caveat about the radius.</strong> With \(R\) at the 90th percentile the rule is
+self-consistent at the 90th percentile. Choosing the 95th, or the maximum, would make it
+self-consistent there instead and would give a different split &mdash; the orange's maximum radius is
+60.4 cells against 49.9 at p90, which pushes further towards the longitudinal family. So what these
+two constants did was replace a hidden wrong constant with an explicit stated one. It is the same
+number for every object, so it is still one program and not a per-object knob, but the rule does not
+determine it and this page should not pretend otherwise.
 </div>
 
 <h2 id="loss">What is actually optimised, term by term</h2>
@@ -674,17 +721,24 @@ steep the trade is rather than in whether there is one.
 </figure>
 
 <h3>2 &mdash; the plane count follows the object's shape</h3>
+
 <figure>
   <video src="assets/exp_ov3.mp4" autoplay loop muted playsinline preload="metadata"></video>
-  <figcaption>A transverse plane samples along the axis and a longitudinal one turns about it, so
-  the counts should stand in the ratio of the axis extent to half the circumference. The orange
-  becomes 14/12, the loaf 11/15, the doughnut 4/22; the total stays 26, so this costs exactly what
-  the baseline cost. Orange: transverse 0.0804, longitudinal 0.2061 &mdash; both better.</figcaption>
+  <figcaption>A transverse plane samples along the axis and a longitudinal one turns about it, so the
+  counts should stand in the ratio of the axis extent to half the circumference. The total stays 26,
+  so this costs exactly what the baseline cost.</figcaption>
 </figure>
+
+<p>This ran in two versions and only the second is the method &mdash;
+<a href="#split">the derivation is set out in full at the top of the page</a>. The first balanced
+\(L/N_h\) against \(\pi\bar r/N_v\): the mean radius rather than the rim, and \(N_h\) rather
+than the \(\lceil 1.5 N_h \rceil\) depths the sampler actually lays down. It gave the orange
+14/12, and the numbers below are what it measured. Both constants are now in the equation and the
+orange is 9/17.</p>
 
 <div class="tw"><table>
 <thead><tr><th>object</th><th colspan="2">transverse</th><th colspan="2">longitudinal</th></tr>
-<tr><th></th><th>fixed 16/10</th><th>shaped</th><th>fixed 16/10</th><th>shaped</th></tr></thead>
+<tr><th></th><th>fixed 16/10</th><th>14/12 etc.</th><th>fixed 16/10</th><th>14/12 etc.</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td>0.0859</td><td class="win">0.0804</td><td>0.2257</td><td class="win">0.2061</td></tr>
 <tr><td>watermelon</td><td class="win">0.1599</td><td>0.1623</td><td>0.2044</td><td class="win">0.1992</td></tr>
@@ -697,10 +751,9 @@ steep the trade is rather than in whether there is one.
 </tbody></table></div>
 
 <p>The orange improves on both columns and it is the only object that does. Across the seven the
-longitudinal column improves six times and the transverse column degrades six times, so this is the
-same trade as everything else, not an exception to it &mdash; a conclusion drawn from the orange
-alone would have been wrong. The loaf gains most, 13%, and it is one of the two whose split moves
-furthest; the doughnut's split moves furthest of all, to 4/22, and it loses on both.</p>
+longitudinal column improves six times and the transverse column degrades six times, so this was the
+same trade as everything else even before the constants were corrected &mdash; a conclusion drawn
+from the orange alone would have been wrong, and was.</p>
 
 <h3>3 &mdash; the longitudinal planes turn about the axis</h3>
 <figure>
