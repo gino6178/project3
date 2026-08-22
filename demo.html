@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The object as an O-Voxel grid, end to end</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+      integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+        integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<style>
+  :root{ --ink:#111; --mut:#5c5c5c; --line:#e6e6e6; --acc:#a8412a; --panel:#f7f7f7; }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:#fff;color:var(--ink);
+       font:17px/1.7 "Charter","Georgia","Times New Roman",serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  .eq{display:flex;align-items:center;gap:14px;margin:20px 0}
+  .eq .body{flex:1;overflow-x:auto;overflow-y:hidden;text-align:center}
+  .eq .num{color:var(--mut);font-size:14px;flex:none}
+  .katex{font-size:1.02em}
+  header{padding:56px 0 30px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(27px,4.4vw,40px);line-height:1.22;margin:0 0 10px;font-weight:600;
+     letter-spacing:-.01em}
+  .sub{color:var(--mut);font-size:clamp(15px,2.2vw,19px);margin:0 0 6px;font-style:italic}
+  .authors{font-size:17px;margin:14px 0 2px}
+  .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:16px;margin-top:16px}
+  .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.35);
+           padding-bottom:1px}
+  .links a:hover{border-bottom-color:var(--acc)}
+  h2{font-size:25px;margin:52px 0 10px;font-weight:600;letter-spacing:-.01em;text-align:left}
+  h3{font-size:19px;margin:34px 0 8px;font-weight:600}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:26px 0}
+  .grid2 figure{margin:0}
+  .grid2 video{width:100%;display:block;border-radius:3px;background:#fff}
+  .grid2 img{width:100%;display:block;border-radius:3px;background:#fff}
+  .grid2 .cap{color:var(--mut);font-size:13.5px;margin-top:5px;text-align:center}
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr} }
+  .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
+  nav.toc{display:flex;flex-wrap:wrap;gap:0 18px;justify-content:center;padding:14px 0 2px;
+          border-bottom:1px solid var(--line);font-size:14.5px}
+  nav.toc a{color:var(--mut);text-decoration:none}
+  nav.toc a:hover{color:var(--acc)}
+  p{margin:0 0 16px;text-align:left}
+  .lead{font-size:17.5px}
+  figure{margin:26px 0}
+  figure video{width:100%;display:block;border-radius:3px;background:#fff}
+  figure img{width:100%;display:block;border-radius:3px;background:#fff}
+  figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
+  .tw{overflow-x:auto;margin:20px 0}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-weight:600;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+  .win{font-weight:700}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:14px 18px;
+        border-radius:0 3px 3px 0;font-size:16px;margin:22px 0;color:#3c3c3c}
+  .note strong{color:var(--ink)}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:14px;
+      overflow-x:auto;font-size:13.5px;line-height:1.5;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+  footer{margin:60px 0 48px;padding-top:22px;border-top:1px solid var(--line);
+         color:var(--mut);font-size:14.5px}
+  ul{margin:0 0 16px;padding-left:24px} li{margin-bottom:7px}
+  @media (max-width:640px){ body{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>What the representation buys, measured</h1>
+  <p class="sub">One orange, four comparisons, and one claim that did not survive its own measurement</p>
+  <p class="authors">Anonymous</p>
+  <div class="links">
+    <a href="index.html">Paper</a>
+    <a href="supplement.html">Supplement</a>
+    <a href="orient.html">Which way is up</a>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#cutface">The cut face</a><a href="#skin">The skin</a><a href="#normals">The normals</a><a href="#nope">What did not hold</a><a href="ovoxel.html">&larr; The method</a><a href="experiments.html">Every experiment</a>
+</nav>
+
+<p class="lead">Everything here is the same orange, from the run that scores best on the held-out
+half, rendered by <code>code/ovoxel_native/demo_adv.py</code>, <code>demo_shell.py</code> and
+<code>demo_normals.py</code>. Each comparison changes exactly one thing and holds the rest &mdash;
+same field, same plane, same camera, same light &mdash; so what is left is the representation.</p>
+
+<div class="note">
+<strong>Two of these were measured before they were claimed, and one claim was dropped.</strong> A
+demonstration that oblique cuts come out smoother than a voxel slice is the obvious thing to build
+here, and it is wrong: measured at 0, 30 and 45 degrees the two outlines disagree about 0.0% of the
+cut area. The reason is in the code and it is not fixable by presentation, so it is written up at
+the bottom rather than left out.
+</div>
+
+<h2 id="cutface">The cut face: sparse cells buy resolution, and the cut has no thickness</h2>
+
+<p>This object is 770,182 solid cells inside a 117&times;127&times;121 box &mdash; <strong>42.8%
+full</strong>. A dense grid has to store the empty 57.2% as well, so at the same memory its cells
+are 1.33&times; wider in every direction. Comparing against a dense grid at the <em>same</em> cell
+size, which is what a demonstration usually does, quietly hands it 2.3&times; the memory.</p>
+
+<p>The fourth panel is a different opponent: the paper's own pipeline does not draw a plane at all.
+<code>plane_filter</code> splats every primitive within <code>surf_dis</code> of it, which on this
+object is 2.82 coarse cells, so its cut face is an integral over a slab 5.63 cells thick. The
+closed-form polygon has no thickness.</p>
+
+<figure>
+  <img src="assets/demo_cutface.jpg" alt="the same patch of flesh, four ways">
+  <div class="cap">The same patch of flesh at 4&times;.
+  <span style="font-size:12.5px">O&#8209;Voxel &middot; a dense grid at the same cell size &middot;
+  a dense grid at equal memory &middot; the pipeline's 5.63-cell slab</span></div>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>the cut face</th><th>gradient</th><th>difference from ours, per pixel</th></tr></thead>
+<tbody>
+<tr><td>O&#8209;Voxel: polygon, field sampled at the fragment</td><td class="win">0.0073</td><td>&mdash;</td></tr>
+<tr><td>dense grid, same cell size</td><td>0.0092</td><td>0.0253</td></tr>
+<tr><td>dense grid, equal memory (cells 1.33&times; wider)</td><td>0.0084</td><td class="win">0.0350</td></tr>
+<tr><td>the pipeline's slab</td><td>0.0069</td><td>0.0122</td></tr>
+</tbody></table></div>
+
+<p>The mosaic in the middle two panels is one colour per cell across a cross-section several pixels
+wide; the last panel keeps the texture but has been through a low-pass filter several cells deep.</p>
+
+<h2 id="skin">The skin: a vertex inside its cell, against a face on the cell boundary</h2>
+
+<p>The dual grid puts one vertex inside each boundary cell and training moves it, so the surface can
+sit anywhere. A cube occupancy can only put a face on a cell boundary. Same cells, same colours from
+the same field, same camera.</p>
+
+<figure>
+  <img src="assets/demo_skin.jpg" alt="the skin from the dual grid and from cubes">
+  <div class="cap">The rim at 3&times;. <span style="font-size:12.5px">Left: the dual grid's
+  surface. Right: the same solid cells with their own cube faces.</span></div>
+</figure>
+
+<p>The left is a continuous rind with its pores; the right is an axis-aligned staircase that steps
+once per cell, with a stray cube hanging off the edge.</p>
+
+<h2 id="normals">The normals: six directions, at every resolution</h2>
+
+<p>This is the one that does not go away when the grid is refined. A cube face is axis-aligned, so
+its normal is one of six vectors, and that is true whether the cells are coarse or 6.16 million of
+them. Lighting, shading and every gradient of the surface are computed from those normals.</p>
+
+<figure>
+  <img src="assets/demo_normals.jpg" alt="one light, no colour, four surfaces">
+  <div class="cap">One directional light, no colour, no texture &mdash; geometry alone.
+  <span style="font-size:12.5px">dual grid &middot; cubes at the fine cell &middot; at the coarse
+  cell &middot; at twice the coarse cell</span></div>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>surface</th><th>cells</th><th>faces</th><th>distinct normal directions</th></tr></thead>
+<tbody>
+<tr><td>dual grid, fine cell</td><td>900,556</td><td>4,339,728</td><td class="win">3,424,207</td></tr>
+<tr><td>cubes, fine cell</td><td>6,161,456</td><td>558,016</td><td>6</td></tr>
+<tr><td>cubes, coarse cell</td><td>770,182</td><td>139,504</td><td>6</td></tr>
+<tr><td>cubes, twice the coarse cell</td><td>100,600</td><td>34,740</td><td>6</td></tr>
+</tbody></table></div>
+
+<p>Eight times the cells changes the size of the steps and nothing else. In the picture the three
+cube panels are flat facets at every resolution, while the dual grid shades as a curved surface and
+still shows the peel's own relief.</p>
+
+<div class="note">
+<strong>A metric that had to be thrown away.</strong> The mean angle between neighbouring faces was
+tried first, and it made the cubes look <em>better</em>: 15.4&deg; against the dual grid's 23.9&deg;.
+It is not a measure of staircasing &mdash; a cube surface is mostly flat, so most of its edges lie
+inside a face and contribute zero, while a real surface with fine relief contributes a small angle
+everywhere. The count of distinct normal directions has no such loophole.
+</div>
+
+<h2 id="nope">What did not hold: the oblique cut</h2>
+
+<p>The expected demonstration was that an oblique cut &mdash; 30&deg; or 45&deg; to the axis &mdash;
+comes out with a smooth outline where a voxel slice staircases. Measured, it does not.</p>
+
+<div class="tw"><table>
+<thead><tr><th>tilt</th><th>outline ratio, ours</th><th>outline ratio, voxel slice</th><th>area they disagree about</th></tr></thead>
+<tbody>
+<tr><td>0&deg;</td><td>4.654</td><td>4.654</td><td>0.0%</td></tr>
+<tr><td>30&deg;</td><td>4.864</td><td>4.879</td><td>0.0%</td></tr>
+<tr><td>45&deg;</td><td>5.655</td><td>5.657</td><td>0.0%</td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/demo_oblique.jpg" alt="oblique cuts, both ways">
+  <div class="cap">0&deg;, 30&deg;, 45&deg;. <span style="font-size:12.5px">Above: the closed-form
+  polygon. Below: a nearest-cell voxel slice. They are the same picture.</span></div>
+</figure>
+
+<p><code>cut_polygons</code> intersects the plane with each solid <em>cube</em>, so the outline of
+the union is the occupancy boundary at cell resolution &mdash; exactly what a nearest-cell test
+returns. The dual grid smooths the object's surface and has nothing to do with the outline of a cut.
+What the polygon buys is inside that outline: it is rasterised and coloured from the field at each
+fragment, so one cell's cross-section carries a gradient instead of a single tone. That is the first
+comparison on this page, and it is worth 0.0350 per pixel against a dense grid at equal memory
+&mdash; but it is not an anti-aliasing argument, and calling it one would not survive a reviewer
+opening the file.</p>
+
+<footer>
+  Rendered from <code>code/ovoxel_native/</code>. The videos are produced by
+  <code>ovcut.py</code>, the sheets by <code>ovsheet7.py</code>, the paired table by
+  <code>ovpair.py</code>, and the reference measurement by <code>refspread.py</code>.
+</footer>
+
+</div>
+</body>
+</html>
