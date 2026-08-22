@@ -27,7 +27,13 @@ _PHOTOS = {}
 # is kept either way -- re-centring and re-scaling each photograph is a separate change from mixing
 # them, and it was the half of the blend that moved the held-out probe.
 import random as _random
-SAMPLE = os.environ.get("REF_SAMPLE", "0") == "1"
+# 1 draws one of the two photographs the blend would have mixed, at the mixing weight; 2 draws
+# uniformly from the whole family, which throws the depth assignment away entirely. 2 is only
+# different from 1 where a family has more than two photographs -- on the cake, the pomegranate and
+# the apple the two neighbours are the whole family, and on the doughnut there is nothing to draw.
+_SM = os.environ.get("REF_SAMPLE", "0")
+SAMPLE = _SM in ("1", "2")
+UNIFORM = _SM == "2"
 _RNG = _random.Random(int(os.environ.get("REF_SAMPLE_SEED", "0")))
 
 
@@ -188,7 +194,7 @@ def _depth_pick(spec, idx, n, one):
         # A plane sees both photographs over a run, at the right proportions, so nothing is lost --
         # it is the difference between fitting a mean and fitting a sample from a distribution
         # whose mean is the same. The variance it adds is what the field prior is there to absorb.
-        j = j1 if _RNG.random() < w else j0
+        j = _RNG.randrange(L) if UNIFORM else (j1 if _RNG.random() < w else j0)
         key = (spec, "tbs", j)
         if key not in _PHOTOS:
             _PHOTOS[key] = Image.fromarray(
@@ -298,7 +304,7 @@ def photo(spec, idx, n):
         k1 = (k0 + 1) % len(files)
         w = float(t - int(t))
         if SAMPLE:
-            k = k1 if _RNG.random() < w else k0
+            k = _RNG.randrange(len(files)) if UNIFORM else (k1 if _RNG.random() < w else k0)
             key = (spec, "blends", k)
             if key not in _PHOTOS:
                 _PHOTOS[key] = Image.fromarray(
