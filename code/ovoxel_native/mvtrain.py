@@ -369,6 +369,9 @@ def dump(folder):
     print(f"  -> {folder}", flush=True)
 
 
+if refsel.SAMPLE:
+    print("  references: drawn per step, one photograph rather than the average of two "
+          "(REF_SAMPLE=1)", flush=True)
 refs_h = [refsel.as_array(refsel.solved_photo(REF_H, j, NH), RES) for j in range(NH)]
 refs_v = [refsel.as_array(refsel.photo(REF_V, i, NV), RES) for i in range(NV)]
 
@@ -589,8 +592,11 @@ for j in range(ITERS):
                 # neighbour still supervised by its own photograph -- which is exactly the two
                 # families ceasing to be treated alike, and it is worse for the longitudinal one
                 # because its jitter spans the whole spacing.
-                ref = refs_h[i] if not REF_FOLLOW else refsel.as_array(
-                    refsel.solved_photo(REF_H, i + _q(_f), NH), RES)
+                # REF_SAMPLE re-draws every step, so the reference cannot come from the list
+                # built once at startup -- that would draw the whole run's targets in one go and
+                # fix them, which is the opposite of the point
+                ref = (refs_h[i] if not (REF_FOLLOW or refsel.SAMPLE) else refsel.as_array(
+                    refsel.solved_photo(REF_H, i + (_q(_f) if REF_FOLLOW else 0), NH), RES))
             elif kind == "v":
                 n = torch.as_tensor(C["v_planes"][i, :3], dtype=torch.float32, device=dev)
                 # The same jitter the transverse family has always had, on the parameter that
@@ -622,8 +628,8 @@ for j in range(ITERS):
                     _vm = torch.as_tensor(_m2, dtype=torch.float32, device=dev)
                     n = torch.as_tensor(_n2, dtype=torch.float32, device=dev)
                 img, al, _, _ = ON.render_section(st, glctx, _vm, n, dv, RES)
-                ref = refs_v[i] if not REF_FOLLOW else refsel.as_array(
-                    refsel.photo(REF_V, i + _q(_fv), NV), RES)
+                ref = (refs_v[i] if not (REF_FOLLOW or refsel.SAMPLE) else refsel.as_array(
+                    refsel.photo(REF_V, i + (_q(_fv) if REF_FOLLOW else 0), NV), RES))
             else:
                 img, al, _, _ = ON.render_exterior(
                     st, glctx, torch.as_tensor(C["e_mvp"][i], dtype=torch.float32, device=dev), RES)

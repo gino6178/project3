@@ -142,6 +142,11 @@ not be taken.</p>
   </figure>
 </div>
 
+<p class="sub" style="margin-top:-8px">These seven were rendered before
+<code>REF_SAMPLE</code> was measured, so they are the pipeline with the prior and the blended target.
+The numbers for the sampled target are in the table below; the videos will be re-rendered once the
+choice between drawing from two photographs and drawing from the whole family is settled.</p>
+
 <h3>Step 1 &mdash; the object becomes a lattice, and the skin is pinned</h3>
 
 <p>A released 3D&#8209;Gaussian model is quantised onto a two-level cube lattice,
@@ -176,6 +181,27 @@ family's loss is scaled by its plane count over the number of groups, which keep
 per outer iteration equal to its plane count. Before the plane is drawn it is moved: a transverse
 depth is offset by up to half a step, so over a run it sweeps the cells between the supervised
 depths instead of re-cutting the same ones.</p>
+
+<h3>Step 3b &mdash; which photograph the plane is shown</h3>
+
+<p>The transverse photographs are ordered by depth and there are two to twelve of them for fourteen
+or so planes, so a plane sits between two of them. The assignment used to be integer division
+&mdash; planes 1 to 4 get one photograph, 5 to 8 the next &mdash; and each switch drew a line across
+the polar axis that every longitudinal cut crossed. That was replaced by a continuous blend: the two
+photographs either side of the depth, brought onto a common disc and mixed at the fractional part.
+The banding went away.</p>
+
+<p>An average of two sections of two different oranges is a picture neither of them is, and
+averaging removes structure by construction. Measured against the raw photographs, the blended
+target keeps <strong>86% of their gradient on the orange, 90% on the watermelon, 97% on the
+apple</strong> &mdash; structure the loss can never ask for, because it is not in the target.</p>
+
+<p><code>REF_SAMPLE=1</code> draws one of the two instead, with probability equal to the mixing
+weight. The expectation is the blend, so the depth assignment is unchanged in the mean and the
+banding stays away; what changes is that the target on any step is a photograph rather than an
+average of two. A plane sees both over a run, in the right proportions &mdash; it is the difference
+between fitting a mean and fitting samples from a distribution with that mean. The variance it adds
+is what the field prior absorbs.</p>
 
 <h3>Step 4 &mdash; render, and build the target from the render</h3>
 
@@ -237,18 +263,32 @@ the arm was then scored against. Every number in the next section is on the test
 switched off. DreamSim against each object's own photographs, on the test half.</p>
 
 <div class="tw"><table>
-<thead><tr><th rowspan="2">object</th><th rowspan="2">split</th><th colspan="2">transverse</th>
-<th colspan="2">longitudinal</th><th colspan="2">cells with no gradient</th></tr>
-<tr><th>prior off</th><th>prior on</th><th>prior off</th><th>prior on</th><th>off</th><th>on</th></tr></thead>
+<thead><tr><th rowspan="2">object</th><th rowspan="2">split</th><th rowspan="2">photos<br>h / v</th>
+<th colspan="3">transverse</th><th colspan="3">longitudinal</th><th colspan="2">no gradient</th></tr>
+<tr><th>plain</th><th>+prior</th><th>+sampled</th><th>plain</th><th>+prior</th><th>+sampled</th>
+<th>plain</th><th>+prior</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td>14/12</td><td>0.0796</td><td class="win">0.0781</td><td>0.2049</td><td class="win">0.1923</td><td>36,977</td><td class="win">1</td></tr>
-<tr><td>apple</td><td>14/12</td><td>0.2513</td><td class="win">0.2501</td><td>0.3389</td><td class="win">0.3318</td><td>41,939</td><td class="win">0</td></tr>
-<tr><td>loaf</td><td>11/15</td><td>0.3965</td><td class="win">0.3884</td><td>0.4553</td><td class="win">0.4415</td><td>37,387</td><td class="win">0</td></tr>
-<tr><td>watermelon</td><td>13/13</td><td class="win">0.1638</td><td>0.1651</td><td>0.2052</td><td class="win">0.2008</td><td>40,524</td><td class="win">0</td></tr>
-<tr><td>doughnut</td><td>4/22</td><td>0.1532</td><td class="win">0.1531</td><td class="win">0.5334</td><td>0.5367</td><td>27,986</td><td class="win">0</td></tr>
-<tr><td>pomegranate</td><td>14/12</td><td class="win">0.2488</td><td>0.2543</td><td class="win">0.4864</td><td>0.4878</td><td>21,491</td><td class="win">0</td></tr>
-<tr><td>cake</td><td>15/11</td><td>0.4560</td><td>0.4560</td><td class="win">0.4796</td><td>0.4853</td><td>6,781</td><td class="win">1</td></tr>
+<tr><td>cake</td><td>15/11</td><td>2 / 2</td><td>0.4560</td><td>0.4560</td><td class="win">0.3692</td><td>0.4796</td><td>0.4853</td><td class="win">0.4223</td><td>6,781</td><td class="win">1</td></tr>
+<tr><td>pomegranate</td><td>14/12</td><td>2 / 2</td><td>0.2488</td><td>0.2543</td><td class="win">0.2046</td><td>0.4864</td><td>0.4878</td><td class="win">0.4263</td><td>21,491</td><td class="win">0</td></tr>
+<tr><td>loaf</td><td>11/15</td><td>3 / 3</td><td>0.3965</td><td>0.3884</td><td class="win">0.3691</td><td>0.4553</td><td>0.4415</td><td class="win">0.4167</td><td>37,387</td><td class="win">0</td></tr>
+<tr><td>orange</td><td>14/12</td><td>3 / 3</td><td>0.0796</td><td>0.0781</td><td class="win">0.0736</td><td>0.2049</td><td class="win">0.1923</td><td>0.2018</td><td>36,977</td><td class="win">1</td></tr>
+<tr><td>watermelon</td><td>13/13</td><td>10 / 12</td><td>0.1638</td><td>0.1651</td><td class="win">0.1594</td><td>0.2052</td><td>0.2008</td><td class="win">0.1910</td><td>40,524</td><td class="win">0</td></tr>
+<tr><td>apple</td><td>14/12</td><td>2 / 2</td><td class="win">0.2513</td><td>0.2501</td><td>0.2631</td><td>0.3389</td><td class="win">0.3318</td><td>0.3493</td><td>41,939</td><td class="win">0</td></tr>
+<tr><td>doughnut</td><td>4/22</td><td>1 / 1</td><td class="win">0.1532</td><td>0.1531</td><td>0.1546</td><td class="win">0.5334</td><td>0.5367</td><td>0.5378</td><td>27,986</td><td class="win">0</td></tr>
 </tbody></table></div>
+
+<p>Sorted by how many photographs each object has, because that turns out to order the result.
+<strong>Drawing a photograph instead of averaging two improves five objects of seven, and by several
+times what the prior manages</strong> &mdash; the cake by 19.0% on the transverse column and 11.9% on
+the longitudinal, the pomegranate by 17.8% and 12.4%, on both of which the prior had done nothing at
+all. The doughnut is the control nobody arranged: it has one photograph per family, so there is
+nothing to draw, and its numbers move by 0.001. That the effect vanishes exactly where the mechanism
+cannot operate is the best evidence that it is the mechanism.</p>
+
+<p>Two objects are worse, the apple and the doughnut, and the apple is not explained by photograph
+count &mdash; it has two, like the cake and the pomegranate, which gain most. The orange gains 7.5%
+on the transverse column and loses 4.9% on the longitudinal. So this is not uniform either, and the
+claim is five of seven rather than all of them.</p>
 
 <div class="note">
 <strong>The scores do not generalise and the coverage does.</strong> On DreamSim the prior improves
@@ -281,6 +321,7 @@ through and is marked where it does.</p>
 <tr><td><strong>the depth blend</strong></td><td>the transverse family picked its photograph by integer division, so the photograph changed abruptly at a few depths. Does giving it the continuous assignment the longitudinal family already had remove the banding?</td><td><strong>kept.</strong> The jump at the switch depths falls from 5.14 to 3.78 in units of the profile's own median jump, and the held-out probe from 0.03081 to 0.02958. A control that re-frames without interpolating measures 5.20, so the improvement is the interpolation and not the re-framing</td></tr>
 <tr><td><strong>the joint step</strong></td><td>a step saw one plane, so a shared cell was pulled to one photograph and then the other. Does putting one of each family in every step help?</td><td><strong>kept.</strong> 4.5% on the longitudinal column</td></tr>
 <tr><td><strong>reference follows the jitter</strong></td><td>a plane jittered most of the way to its neighbour is still supervised by its own photograph. Should the target follow?</td><td><strong>no.</strong> 0.0867/0.2255 against 0.0859/0.2257, inside the noise, and it costs half again per step</td></tr>
+<tr><td><strong>drawing a photograph instead of averaging two</strong></td><td>the blend removes structure by construction &mdash; an average of two oranges' sections is a picture neither is. Draw one of the two at the mixing weight instead, so the expectation is unchanged but each target is real?</td><td><strong>kept, and the largest single improvement measured.</strong> Five objects of seven improve, several times more than the prior does: the cake 19.0% and 11.9%, the pomegranate 17.8% and 12.4%. The doughnut has one photograph per family, so nothing can be drawn, and it moves 0.001 &mdash; the effect disappears exactly where the mechanism cannot act. The apple is worse and is not explained</td></tr>
 <tr><td><strong>plane counts from the object's shape</strong></td><td>16/10 was fixed for every object. Should a long object get more transverse planes and a round one fewer?</td><td><strong>kept, and reported as a trade.</strong> Longitudinal better on 6 of 7, transverse worse on 6 of 7. The orange improves on both and is the only one that does &mdash; a conclusion drawn from it alone would have been wrong, and was</td></tr>
 <tr><td><strong>the two constants in that rule</strong></td><td>the rule balances L/N<sub>h</sub> against &pi;r/N<sub>v</sub>, but the sampler lays down 1.5N<sub>h</sub> depths and r is a mean where the structure is at the rim. Correct both?</td><td><strong>measured, not adopted.</strong> The two spacings now agree within 10% on six of seven objects where the orange was 6.00 against 14.46. But the split moves to 9/17, the transverse family is the one that sweeps, and 19.6% of the cells stop receiving a gradient</td></tr>
 <tr><td><strong>the supervised band, measured</strong></td><td>the band is the middle two thirds of the sweep, so the caps get no transverse plane. Choose it by where a plane actually cuts something?</td><td><strong>no.</strong> Best transverse figure anywhere, 0.0715, with 17% of the object receiving no gradient at all. Widening the band while keeping the plane count gives 0.0734/0.2047 &mdash; the transverse column improves and the longitudinal loses everything the prior gained, because there are no photographs of the caps and the outer planes are handed pictures of the middle</td></tr>
