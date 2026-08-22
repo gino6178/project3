@@ -39,7 +39,9 @@ import fieldreg
 import overlap
 import patchdist
 import refalign
+import critic
 import secloss
+import styleloss
 import triplane
 import unsup
 
@@ -493,6 +495,7 @@ _tvpolar = np.asarray(C["h_planes"][0, :3], float)
 _tvpairs = fieldreg.face_pairs(st, dev, _tvpolar) if fieldreg.WEIGHT > 0 else None
 upd_i = torch.zeros(len(seed_i), dtype=torch.bool, device=dev)
 hist, l1hist, probes = [], [], [(0, probe())]
+dhist, lamhist = [], []
 print(f"  probe at 0: {probes[0][1]:.5f}", flush=True)
 t0 = time.time()
 steps = 0
@@ -574,6 +577,7 @@ if JITTER_AZ > 0:
                           _axis, _cen), "the axis rotation does not return the identity"
     print(f"  longitudinal planes turned by up to {JITTER_AZ:.2f} of the "
           f"{np.degrees(_az_spacing):.1f}-degree spacing, about {np.round(_axis, 3)}", flush=True)
+_crit = (critic.Trainer({"h": refs_h, "v": refs_v}, dev) if critic.WEIGHT > 0 else None)
 _nstep = len(_g0)
 TV_ANNEAL = float(os.environ.get("SEC_TV_ANNEAL", "1"))
 TOTAL_STEPS = _nstep * ITERS
@@ -581,7 +585,7 @@ _urng = np.random.default_rng(0)
 for j in range(ITERS):
     for grp in groups_for_iteration():
         decode()
-        loss, _l1s, _kinds = None, [], []
+        loss, _l1s, _kinds, _dls, _lams = None, [], [], [], []
         for kind, i, wfam in grp:
             if kind == "h":
                 _f = (random.random() - 0.5) * 2.0 * JITTER
@@ -662,6 +666,21 @@ for j in range(ITERS):
                                   f"disagreement {_dis / max(_tot, 1):.4f}", flush=True)
             _pl = (secloss.patch_loss(img, tgt) if secloss.SEC_PATCH > 0
                    else (img - tgt).abs().mean())
+            # Asked of the render and the family, not of the render and this plane's own target: the
+            # pixel term already says where the structure goes, and this says what it should be made
+            # of. On the exterior views there is no family of sections to compare against.
+            # The critic sees the render whether or not this plane has a photograph. On a
+            # supervised plane it sits beside the pixel term; the point is that it is the only term
+            # that can also speak on a plane nobody photographed, which is where the blocks are.
+            if critic.WEIGHT > 0 and kind != "e" and _crit is not None:
+                _adv, _dl = _crit.step(kind, img)
+                _lam = _crit.adaptive(_pl, _adv, img) if float(_adv) != 0.0 else 0.0
+                _pl = _pl + critic.WEIGHT * _lam * _adv
+                _dls.append(_dl)
+                _lams.append(_lam)
+            if styleloss.WEIGHT > 0 and kind != "e":
+                _pl = _pl + styleloss.WEIGHT * styleloss.penalty(
+                    img, refs_h if kind == "h" else refs_v, kind)
             # The distributional term, in its second stage. `schedule` returns (0, 1) until
             # SEC_DIST_START of the run has passed and while SEC_DIST is off, so this is the
             # existing objective exactly unless it is asked for.
@@ -696,6 +715,28 @@ for j in range(ITERS):
             with torch.no_grad():
                 _l1s.append(float((img - tgt).abs().mean()))
             _kinds.append(kind)
+
+        # The critic on a plane nobody photographed: one extra render, scored against the family
+        # with no target image anywhere. The critic is trained on it as a fake too -- otherwise it
+        # only ever learns to separate photographs from SUPERVISED renders, and the unsupervised
+        # ones, which are the blocky ones, stay outside anything it has an opinion about.
+        if critic.WEIGHT > 0 and critic.UNSUP > 0 and _crit is not None:
+            _uk2 = "h" if (steps % 2 == 0) else "v"
+            try:
+                _n2, _d2, _m2 = unsup.sample_plane(_uk2, C, H_LO, NH, NV, _urng,
+                                                   axis=_axis, centre=_cen,
+                                                   az_spacing=_az_spacing)
+                _i2, _, _, _ = ON.render_section(
+                    st, glctx, torch.as_tensor(_m2, dtype=torch.float32, device=dev),
+                    torch.as_tensor(_n2, dtype=torch.float32, device=dev), float(_d2), RES)
+                _a2, _dl2 = _crit.step(_uk2, _i2)
+                # the same balance the supervised planes were given this step, since there is no
+                # pixel term here to take a ratio against
+                _lam2 = float(np.mean(_lams)) if _lams else 1.0
+                loss = loss + critic.WEIGHT * critic.UNSUP * _lam2 * _a2
+                _dls.append(_dl2)
+            except RuntimeError:
+                pass
 
         # The prior on a plane nobody photographed. One extra render per step, at a position
         # drawn fresh each time, scored against the family's pooled patches and against no target
@@ -744,6 +785,8 @@ for j in range(ITERS):
             upd_i.__ior__(dec_i.feat.grad.abs().sum(-1) > 0)
         set_lr(steps / max(TOTAL_STEPS, 1))
         opt.step()
+        if _crit is not None:
+            _crit.flush()
         if not ANCHOR:
             with torch.no_grad():
                 st["interior"].clamp_(0, 1)
@@ -753,15 +796,22 @@ for j in range(ITERS):
             with torch.no_grad():
                 st["split_w"].clamp_(1e-3, 1 - 1e-3)
         hist.append(float(loss)); l1hist.append(l1_now); steps += 1
+        if _dls:
+            dhist.append(float(np.nanmean(_dls)))
+            lamhist.append(float(np.mean(_lams)) if _lams else 0.0)
     if ANCHOR and VOXEL_SMOOTH and not TRIPLANE and j > 0 and j % ABL_INTERVAL == 0:
         nfill = anchor.voxel_smooth_anchors(dec_i, centres, upd_i | is_outer, ABL_GRID)
         print(f"  voxel smoothing at outer {j}: {int(upd_i.sum()):,}/{len(centres):,} trained, "
               f"{nfill:,} untrained cells' features filled from trained neighbours", flush=True)
     if (j + 1) % PROBE_EVERY == 0 or j == 0:
         probes.append((j + 1, probe()))
+        _dtxt = ""
+        if _crit is not None and dhist:
+            _dtxt = (f"  D {np.mean(dhist[-_nstep:]):.4f}"
+                     f" lam {np.mean(lamhist[-_nstep:]):.3g}")
         print(f"  outer {j+1:4d}/{ITERS}  steps {steps:,}  loss {np.mean(hist[-_nstep:]):.5f}  "
               f"L1 {np.mean(l1hist[-_nstep:]):.5f}  "
-              f"probe {probes[-1][1]:.5f}  {time.time()-t0:.0f}s", flush=True)
+              f"probe {probes[-1][1]:.5f}{_dtxt}  {time.time()-t0:.0f}s", flush=True)
 
 el = time.time() - t0
 print(f"\ntrained {ITERS} outer iterations = {steps:,} gradient steps in {el:.1f}s "
