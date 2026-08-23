@@ -595,10 +595,12 @@ $$\min_{\pi,\;\{\delta_k\}} \;\sum_{j,\,j'} \bigl\lVert\,
 \mathbf{T}_{\pi(j)}^{\delta} - \mathbf{T}_{\pi(j')}^{\delta} \,\bigr\rVert_{\,\Pi_j \cap \Pi_{j'}}$$
 </div><div class="num">(5)</div></div>
 
-<p>The angles \(\delta_k\) are solved by coordinate descent over 72 candidates and the assignment
-\(\pi\) by enumerating the \(M!\) permutations, which is small enough to do exactly and offline:
-\(M\) is the number of photographs in the family, at most ten here and two or three on four of the
-seven objects, so the enumeration is trivial and on the doughnut there is nothing to assign.</p>
+<p>Equation&nbsp;(5) is a mixed problem: \(\pi \in S_M\) is discrete and
+\(\{\delta_k\} \in [0,2\pi)^M\) continuous, and they are coupled through the chordal
+constraints, so neither can be fixed while the other is solved. It is solved exactly rather than
+relaxed, by enumerating the discrete part and running coordinate descent over 72 candidate angles
+inside each enumeration. \(M\) is the photograph count of the family: at most ten here, two or
+three on four of the seven objects, and one on the doughnut, where \(S_1\) is trivial.</p>
 
 <p><strong>Moment-based fitting to the render.</strong> The renderer produces the section and its
 alpha silhouette \(\alpha_j\) for the training plane \(\Pi_j\). A 2D similarity transform is then
@@ -631,15 +633,21 @@ $$\mathbf{T}_j \;=\; (1 - \{t\})\,\Psi\bigl(\mathbf{I}_{\lfloor t \rfloor}\bigr)
 
 <h4>3.2.2&ensp;Jittered sampling and alternating optimisation</h4>
 
-<p>The aligned target is held by a stop-gradient, and the training plane is jittered within its
-slot, \(d_j \sim \mathcal{U}(c_i - J\Delta,\, c_i + J\Delta)\) with \(J = 0.5\), so that every
-cell the family sweeps receives gradient in expectation rather than only the cells a fixed plane
-would touch:</p>
+<p>The aligned target is held by a stop-gradient. The plane depth is a random variable rather
+than a constant, \(d_j \sim \mathcal{U}(c_i - J\Delta,\, c_i + J\Delta)\) with \(J = 0.5\)
+and \(\Delta\) the slot width, so the objective is a Monte Carlo expectation over a continuous
+distribution of planes, estimated by one draw per plane per step:</p>
 
 <div class="eq"><div class="body">
 $$\min_{\mathcal{F},\,\theta} \; \sum_j \mathcal{L}_j\Bigl(
 \mathcal{R}(\mathcal{F}, \theta; \Pi_j),\; \mathrm{sg}\bigl[\mathbf{T}_j\bigr] \Bigr)$$
 </div><div class="num">(8)</div></div>
+
+<p>The supports of \(\{\Pi_j\}\) then union to a slab of thickness \(\Delta\) about each
+nominal depth rather than to \(P\) surfaces of measure zero inside it. Measured on the orange,
+the fraction of solid cells that receive gradient rises from 32.2% at fixed depths to 95.1% under
+the draw, with 333 cells (0.0%) never reached at any draw. Blind-spot coverage is a property of the
+expectation, not an augmentation heuristic.</p>
 
 <p>The optimisation is over the per-cell features \(\mathcal{F}\) and the shared decoder
 \(\theta\), and over nothing else: there is no plane pose among the parameters and no gradient
@@ -725,6 +733,23 @@ when the two targets are averaged and 0.012 more when one family is made to win.
        alt="the crossed band, one cell's contributing edges, and the whole cut face against the exterior">
   <figcaption><span class="fnum">Figure 2</span><br>The cells a plane crosses, one cell's contributing edges and
   its polygon, and the whole exposed face.</figcaption>
+</figure>
+
+<figure style="margin:18px 0 26px">
+  <img src="assets/cutstates.jpg?v=s_v2" style="width:100%;border-radius:4px"
+       alt="the cut in four states of the real data">
+  <figcaption><span class="fnum">Figure 3</span><br><strong>The planar cut, as four states of the
+  orange's own lattice.</strong>
+  <strong>(a)</strong> \(\Pi_k\) against the lattice: 770,182 solid cells, of which
+  \(K = 17{,}855\) satisfy
+  \(|\mathbf{n}_k^\top\mathbf{c}_i + d_k| \le \tfrac{\sqrt{3}}{2}h_c\) and are drawn in red.
+  <strong>(b)</strong> one crossed \(C_i\) in isometric view: its twelve edges \(e_j\), the four
+  roots \(\mathbf{v}_j\) where \(\Pi_k\) meets an edge, and the convex polygon they bound.
+  <strong>(c)</strong> the sign of \(\mathbf{n}_k^\top\mathbf{x} + d_k\) over one slice of the
+  integer lattice, labelled into its two connected components.
+  <strong>(d)</strong> the exposed face: all 17,855 polygons, each coloured by the interior field
+  sampled at its own position. Worst plane-equation residual over every vertex of every cut,
+  four planes on each of seven objects: \(8.88\times10^{-16}\).</figcaption>
 </figure>
 
 <h3>3.3&ensp;Closed-form planar cutting operator</h3>
@@ -878,7 +903,7 @@ numbered S1 onward. The method section as it was first written, with its notatio
 <figure style="margin:16px 0 26px">
   <img src="assets/heldout7.jpg?v=s_v2" style="width:100%;border-radius:4px"
        alt="every object's held-out cuts beside the photographs they are scored against">
-  <figcaption><span class="fnum">Figure 3</span><br>Every object&#8217;s held-out cuts, beside the
+  <figcaption><span class="fnum">Figure 4</span><br>Every object&#8217;s held-out cuts, beside the
   photographs they are scored against. These are planes no photograph reached during training, drawn
   entirely from the dual grid and the occupancy, and the image beside each is the held-out
   photograph the corresponding number in Table&nbsp;2 is a distance to. Render and photograph are
@@ -1013,7 +1038,7 @@ what is timed.</p>
     <img src="assets/cuts5.gif" style="width:31%;min-width:180px;border-radius:4px"
          alt="the orange under five planes">
   </div>
-  <figcaption><span class="fnum">Figure 4</span><br>One, three and five planes through the
+  <figcaption><span class="fnum">Figure 5</span><br>One, three and five planes through the
   orange, the pieces drawn apart along their own outward directions and back. The same planes the
   table is timed on, at one scale.</figcaption>
 </figure>
@@ -1050,7 +1075,7 @@ measured on the same card, at the settings each method&#8217;s own code uses.</p
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
-  <figcaption><span class="fnum">Figure 5</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure 6</span><br>The crossed band against the object it is cut
   from, on each object's own lattice and on three coarsenings of it.</figcaption>
 </figure>
 
@@ -1075,7 +1100,7 @@ fruit has a peel.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/collision.png" style="width:100%;border-radius:4px"
        alt="a slab through the contact region at four separations">
-  <figcaption><span class="fnum">Figure 6</span><br>A slab through the contact region of the cut
+  <figcaption><span class="fnum">Figure 7</span><br>A slab through the contact region of the cut
   orange, every particle drawn as what the narrow phase calls it: grey for clear, red for
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
@@ -1146,7 +1171,7 @@ elastic response under load is a different experiment and is not in this paper.<
 <figure style="margin:16px 0 26px">
   <img src="assets/dyncut.gif" style="width:100%;max-width:720px;border-radius:4px"
        alt="the orange cut twice while it is moving, its four pieces separating">
-  <figcaption><span class="fnum">Figure 7</span><br>One run, 210 frames: a plane at
+  <figcaption><span class="fnum">Figure 8</span><br>One run, 210 frames: a plane at
   frame&nbsp;20 and another at frame&nbsp;95, one solver per discovered piece, and the
   two-material field throughout.</figcaption>
 </figure>
@@ -1336,7 +1361,7 @@ the seven side by side, and no number moved in a way that would have prompted a 
 
 <figure style="margin:16px 0 26px">
   <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the outside from both cameras">
-  <figcaption><span class="fnum">Figure 8</span><br>What supervises each cut, for all seven objects
+  <figcaption><span class="fnum">Figure 9</span><br>What supervises each cut, for all seven objects
   at once. Left to right: the transverse cut's own mask, the photograph mapped onto it, the outside
   from the transverse camera, the outside from the longitudinal camera, the longitudinal mask, its
   target, and the two photographs the row was built from. Every panel is what the pipeline itself
