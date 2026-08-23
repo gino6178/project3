@@ -548,7 +548,7 @@ objects and both families for this work, 0 of up to 1,160,889 face pixels each;
 <sup>&dagger;</sup>&nbsp;baseline figures are from the same script on the same released models.
 Perceptual distance is reported in section&nbsp;<a href="#results">4</a> rather than here: this work
 is scored with supervised and held-out planes separated, and the baselines have not been run under
-that protocol</td></tr>
+that protocol.</td></tr>
 </tbody></table></div>
 
 <p>Table&nbsp;1 sets this work against the two released baselines. Continuous-primitive baselines face a coverage&ndash;resolution dilemma: planar clipping over 3D
@@ -640,11 +640,11 @@ difference below about 0.010 is not a result.</p>
 <tr><td>thick supervision, 2-cell band</td><td>0.1473</td><td>0.1263</td><td>0.1260</td><td><strong>0.1573</strong></td><td>0.1392</td><td>narrows the gap by blurring both halves</td></tr>
 <tr><td>azimuth jitter</td><td>0.1828</td><td>0.1175</td><td>0.1790</td><td><strong>0.1360</strong></td><td>0.1538</td><td>best held-out longitudinal, transverse collapses</td></tr>
 <tr><td>monolithic field decoder</td><td>0.1213</td><td>0.1585</td><td>0.1149</td><td>0.2029</td><td>0.1494</td><td>cannot fit the planes it has photographs for</td></tr>
-<tr><td>isotropic field prior</td><td>0.1240</td><td>0.0917</td><td>0.1049</td><td>0.1901</td><td>0.1277</td><td rowspan="5" class="mut">inside the seed repeat's spread on every column</td></tr>
-<tr><td>second-order (Laplacian) prior</td><td>0.1253</td><td>0.0912</td><td>0.1047</td><td>0.1863</td><td>0.1269</td></tr>
-<tr><td>field prior &times;4</td><td>0.1265</td><td>0.0931</td><td>0.1063</td><td>0.1872</td><td>0.1283</td></tr>
-<tr><td>low-discrepancy schedule</td><td>0.1257</td><td>0.0965</td><td>0.1155</td><td>0.1771</td><td>0.1287</td></tr>
-<tr><td>one photograph per azimuth</td><td>0.1286</td><td>0.0914</td><td>0.1086</td><td>0.1806</td><td>0.1273</td></tr>
+<tr><td>isotropic field prior</td><td>0.1240</td><td>0.0917</td><td>0.1049</td><td>0.1901</td><td>0.1277</td><td class="mut">within the seed repeat</td></tr>
+<tr><td>second-order (Laplacian) prior</td><td>0.1253</td><td>0.0912</td><td>0.1047</td><td>0.1863</td><td>0.1269</td><td class="mut">within the seed repeat</td></tr>
+<tr><td>field prior &times;4</td><td>0.1265</td><td>0.0931</td><td>0.1063</td><td>0.1872</td><td>0.1283</td><td class="mut">within the seed repeat</td></tr>
+<tr><td>low-discrepancy schedule</td><td>0.1257</td><td>0.0965</td><td>0.1155</td><td>0.1771</td><td>0.1287</td><td class="mut">within the seed repeat</td></tr>
+<tr><td>one photograph per azimuth</td><td>0.1286</td><td>0.0914</td><td>0.1086</td><td>0.1806</td><td>0.1273</td><td class="mut">within the seed repeat</td></tr>
 </tbody></table></div>
 
 <p><strong>Interpolation continuity.</strong> Raising the lattice interpolation from trilinear
@@ -932,16 +932,16 @@ Dual Grid is the implementation this work converts into. The lattice this work s
 from, and its numbers are the baseline throughout.</p>
 
 <h2 id="bibtex">BibTeX</h2>
-<pre>@misc{cubeovoxel,
-  title  = {Cube Interior + O-Voxel Cut Surface: the hidden volume stops being a rendering primitive},
+<pre>@misc{cuttablelattice,
+  title  = {Photorealistic Cuttable Objects: Decoupled Lattice Interiors,
+            Pose-Free Slice Supervision, and Closed-Form Planar Cutting},
   author = {Anonymous},
   year   = {2026},
   note   = {Preprint}
 }</pre>
 
 <footer>
-Every number here was measured on seven objects, or on a synthetic shape whose answer is known in
-closed form.
+Every number attributed to this representation was measured on the seven objects reported here.
 </footer>
 
 </div>
