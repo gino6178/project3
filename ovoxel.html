@@ -373,9 +373,9 @@ stores only an 8-dimensional latent \(\mathbf{f}_i \in \mathbb{R}^8\); no render
 is placed inside the volume. A value at an arbitrary \(\mathbf{x}\) is retrieved by interpolation
 \(\mathcal{I}\) over the neighbouring lattice nodes and decoded by the shared MLP:</p>
 
-<div class="eq"><div class="eqbody">
-\[ \mathbf{c}(\mathbf{x}) \;=\; g_\theta\!\Big( \mathcal{I}\big[\{\mathbf{f}_i\}\big](\mathbf{x}) \Big),
-    \qquad \mathcal{I} \in \{\text{trilinear},\ \text{tricubic B-spline}\}. \]
+<div class="eq"><div class="body">
+$$ \mathbf{c}(\mathbf{x}) \;=\; g_\theta\!\Big( \mathcal{I}\big[\{\mathbf{f}_i\}\big](\mathbf{x}) \Big),
+    \qquad \mathcal{I} \in \{\text{trilinear},\ \text{tricubic B-spline}\}. $$
 </div><div class="num">(1)</div></div>
 
 <p>Trilinear weights are \(C^0\): the value is continuous across a cell face and its derivative is
@@ -393,19 +393,19 @@ without recovering camera poses.</p>
 radial coherence. In-plane rotation is resolved by circular cross-correlation of 1D angular
 luminance profiles \(a_k(\varphi)\),</p>
 
-<div class="eq"><div class="eqbody">
-\[ \delta_k \;=\; \frac{2\pi}{P}\arg\max_{m}\;
+<div class="eq"><div class="body">
+$$ \delta_k \;=\; \frac{2\pi}{P}\arg\max_{m}\;
     \mathrm{DFT}^{-1}\big[\hat{a}_0\,\overline{\hat{a}_k}\big](m),
-    \qquad \tilde{\mathbf{I}}_k = \mathrm{Rot}_{-\delta_k}\mathbf{I}_k. \]
+    \qquad \tilde{\mathbf{I}}_k = \mathrm{Rot}_{-\delta_k}\mathbf{I}_k. $$
 </div><div class="num">(2)</div></div>
 
 <p>Transverse and longitudinal planes intersect in 1D chords \(\Pi_j \cap \Pi_{j'}\), each
 imaged twice. Inter-family alignment and the discrete assignment \(\pi \in S_M\) are resolved
 together by minimising chordal discrepancy:</p>
 
-<div class="eq"><div class="eqbody">
-\[ \min_{\pi,\;\{\delta_k\}} \; \sum_{j,\,j'}
-    \big\lVert \mathbf{T}^{\delta}_{\pi(j)} - \mathbf{T}^{\delta}_{\pi(j')} \big\rVert_{\Pi_j \cap \Pi_{j'}}. \]
+<div class="eq"><div class="body">
+$$ \min_{\pi,\;\{\delta_k\}} \; \sum_{j,\,j'}
+    \big\lVert \mathbf{T}^{\delta}_{\pi(j)} - \mathbf{T}^{\delta}_{\pi(j')} \big\rVert_{\Pi_j \cap \Pi_{j'}}. $$
 </div><div class="num">(3)</div></div>
 
 <p>The problem is mixed: \(\pi\) is discrete, \(\{\delta_k\}\) continuous, and the chords
@@ -416,10 +416,10 @@ coordinate descent over 72 candidate angles inside each &mdash; and offline. \(M
 section with silhouette \(\alpha_j\). A scale and translation are obtained from second-order
 spatial moments, warping the exemplar to the current geometry:</p>
 
-<div class="eq"><div class="eqbody">
-\[ s_j = \frac{r(\alpha_j)}{r(\tilde{\mathbf{I}}_{k(j)})}, \qquad
+<div class="eq"><div class="body">
+$$ s_j = \frac{r(\alpha_j)}{r(\tilde{\mathbf{I}}_{k(j)})}, \qquad
     \mathbf{t}_j = c(\alpha_j) - s_j\,c(\tilde{\mathbf{I}}_{k(j)}), \qquad
-    \mathbf{T}_j(\mathbf{u}) = \tilde{\mathbf{I}}_{k(j)}\!\left(\frac{\mathbf{u}-\mathbf{t}_j}{s_j}\right). \]
+    \mathbf{T}_j(\mathbf{u}) = \tilde{\mathbf{I}}_{k(j)}\!\left(\frac{\mathbf{u}-\mathbf{t}_j}{s_j}\right). $$
 </div><div class="num">(4)</div></div>
 
 <p><strong>Remark (differentiability of the geometry fit).</strong> Equation&nbsp;(4) is a function
@@ -437,18 +437,18 @@ The supports then union to a slab of thickness \(\Delta\) about each nominal dep
 fraction of solid cells receiving gradient rises from 32.2% to 95.1%, with 333 cells (0.0%) never
 reached.</p>
 
-<div class="eq"><div class="eqbody">
-\[ \mathcal{L}_{\mathrm{total}} = \sum_{j \in \mathcal{J}_\perp \cup \mathcal{J}_\parallel}
+<div class="eq"><div class="body">
+$$ \mathcal{L}_{\mathrm{total}} = \sum_{j \in \mathcal{J}_\perp \cup \mathcal{J}_\parallel}
     w_{q(j)}\,\mathbb{E}_{d_j}\!\Big[ \mathcal{L}_{\mathrm{sec}}\big(
     \mathcal{R}(\mathcal{F},\theta;\Pi_j),\; \mathrm{sg}[\mathbf{T}_j]\big)\Big]
     \;+\; \lambda_{\mathrm{TV}}\,\mathcal{L}_{\mathrm{prior}}
-    \;+\; \lambda_{\mathcal{S}}\,\mathcal{L}_{\mathrm{skin}}. \]
+    \;+\; \lambda_{\mathcal{S}}\,\mathcal{L}_{\mathrm{skin}}. $$
 </div><div class="num">(5)</div></div>
 
-<div class="eq"><div class="eqbody">
-\[ \mathcal{L}_{\mathrm{sec}}(R,T) = \frac{1}{|\mathcal{P}|}\sum_{P\in\mathcal{P}}
+<div class="eq"><div class="body">
+$$ \mathcal{L}_{\mathrm{sec}}(R,T) = \frac{1}{|\mathcal{P}|}\sum_{P\in\mathcal{P}}
     \Big[\,0.7\big(1-\mathrm{SSIM}(R_P,T_P)\big) + 0.3\lVert R_P-T_P \rVert_2^2
-    + 0.3\,\mathcal{L}_{\mathrm{band}}(R_P,T_P)\,\Big]. \]
+    + 0.3\,\mathcal{L}_{\mathrm{band}}(R_P,T_P)\,\Big]. $$
 </div><div class="num">(6)</div></div>
 
 <p>\(\mathcal{P}\) is six crops of 128&nbsp;px inside the cut face's own silhouette, and
@@ -475,9 +475,9 @@ ghosting of section&nbsp;5.2.</p>
 <p><strong>Crossed-cell selection.</strong> Cells crossed by \(\Pi\) are identified in parallel
 by one comparison per cell, the separating-axis test for a plane against an axis-aligned box:</p>
 
-<div class="eq"><div class="eqbody">
-\[ \mathcal{B} \;=\; \Big\{\, i \;:\; \big|\mathbf{n}^\top\mathbf{c}_i + d\big|
-    \;\le\; \tfrac{1}{2}h\textstyle\sum_{a}|n_a| \,\Big\}, \qquad K = |\mathcal{B}|. \]
+<div class="eq"><div class="body">
+$$ \mathcal{B} \;=\; \Big\{\, i \;:\; \big|\mathbf{n}^\top\mathbf{c}_i + d\big|
+    \;\le\; \tfrac{1}{2}h\textstyle\sum_{a}|n_a| \,\Big\}, \qquad K = |\mathcal{B}|. $$
 </div><div class="num">(7)</div></div>
 
 <p>Uncrossed cells take the side sign \(q(i)=\operatorname{sgn}(\mathbf{n}^\top\mathbf{c}_i+d)\),
@@ -486,9 +486,9 @@ and connected components are maintained by union-find over sign-preserving face 
 <p><strong>Analytic polygon formation.</strong> Within a crossed cell, each of the twelve edges
 \(e=(\mathbf{a}_e,\mathbf{b}_e)\) straddling the plane is solved for its exact root:</p>
 
-<div class="eq"><div class="eqbody">
-\[ \mathbf{v}_e = \mathbf{a}_e + t_e(\mathbf{b}_e-\mathbf{a}_e), \qquad
-    t_e = \frac{-(\mathbf{n}^\top\mathbf{a}_e + d)}{\mathbf{n}^\top(\mathbf{b}_e-\mathbf{a}_e)} \in [0,1]. \]
+<div class="eq"><div class="body">
+$$ \mathbf{v}_e = \mathbf{a}_e + t_e(\mathbf{b}_e-\mathbf{a}_e), \qquad
+    t_e = \frac{-(\mathbf{n}^\top\mathbf{a}_e + d)}{\mathbf{n}^\top(\mathbf{b}_e-\mathbf{a}_e)} \in [0,1]. $$
 </div><div class="num">(8)</div></div>
 
 <p>Sorting \(\{\mathbf{v}_e\}\) angularly about their centroid gives a convex polygon
