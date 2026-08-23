@@ -464,8 +464,10 @@ these lattices loses 49% of the cells.</p>
 
 <p>Each cell \(\mathbf{k}\) stores an eight-dimensional latent feature \(\mathbf{f_k} \in
 \mathbb{R}^8\) and nothing else. Colour is produced by a small globally shared decoder
-\(g_\theta(\mathbf{f_k})\); occupancy and adjacency are integer lookups. A surface representation for the hull &#8212; a dual grid, which the supplement
-evaluates &#8212; is not used for anything measured here.</p>
+\(g_\theta(\mathbf{f_k})\); occupancy and adjacency are integer lookups. The hull is a dual grid,
+and unlike in <a href="index.html">the splatted pipeline</a> &mdash; where that sentence read
+&#8220;is not used for anything measured here&#8221; &mdash; it is what every render on this page
+is drawn from.</p>
 
 <p><strong>What is stored, and how it is read.</strong> The lattice is kept as a sparse list of
 occupied cells &#8212; an integer coordinate and a level tag per cell, with the origin and the two
@@ -527,7 +529,7 @@ there by the photographs of section&nbsp;3.2.</p>
 <h3>3.2&ensp;Cross-section calibration and pose-free supervision</h3>
 
 <p>The interior is supervised by sparse, unaligned 2D cross-section photographs
-\(\mathcal{I} = \{\mathbf{I}_k\}_{k=1}^{M}\) &mdash; six transverse and six longitudinal for the
+\(\mathcal{I} = \{\mathbf{I}_k\}_{k=1}^{M}\) &mdash; between one and ten per family &mdash; the orange 3 and 3, the watermelon 10 and 12, the apple 2 and 2, the loaf 3 and 3, the cake 2 and 2, the pomegranate 2 and 2, the doughnut 1 and 1 &mdash; for the
 objects reported here. Nothing about where a photograph was taken is known or recovered. To remove
 the geometric contradictions between sections, and to keep a plane nobody photographed from
 degenerating, the system calibrates the references before and during training.</p>
@@ -590,7 +592,9 @@ $$\min_{\pi,\;\{\delta_k\}} \;\sum_{j,\,j'} \bigl\lVert\,
 </div><div class="num">(5)</div></div>
 
 <p>The angles \(\delta_k\) are solved by coordinate descent over 72 candidates and the assignment
-\(\pi\) by enumerating the \(6!\) permutations, which is small enough to do exactly and offline.</p>
+\(\pi\) by enumerating the \(M!\) permutations, which is small enough to do exactly and offline:
+\(M\) is the number of photographs in the family, at most ten here and two or three on four of the
+seven objects, so the enumeration is trivial and on the doughnut there is nothing to assign.</p>
 
 <p><strong>Moment-based fitting to the render.</strong> The renderer produces the section and its
 alpha silhouette \(\alpha_j\) for the training plane \(\Pi_j\). A 2D similarity transform is then
@@ -660,10 +664,14 @@ $$\mathcal{L}_{\mathrm{total}} \;=\;
 \qquad \lambda_{\mathcal{S}} = 3$$
 </div><div class="num">(10)</div></div>
 
-<p>There is no third term. The implementation carries three more &#8212; a gradient-matching
-loss, an axial smoothness prior on neighbouring cells, and a floor on luminance &#8212; and all
-three are at weight zero in every run this paper reports, so they are named here and not written
-into the objective.</p>
+<p>The implementation carries three more terms &#8212; a gradient-matching loss, a floor on
+luminance, and a field prior on neighbouring cells. The first two are at weight zero in every run
+reported here. <strong>The field prior is not</strong>, and the sentence this replaces &mdash;
+inherited from the splatted pipeline, where all three are off &mdash; said it was. Every run in
+Table&nbsp;2 carries it at weight 0.1, weighted four times as heavily on the two lattice axes
+perpendicular to the polar axis: that is where face-sharing neighbours disagree most, because the
+transverse planes stack along the polar axis and pin that direction directly. Its measured effect
+is narrow and is stated as such in section&nbsp;<a href="#stripes">4.5</a>.</p>
 
 <p><strong>How an unregistered photograph reaches a cell.</strong> The photographs carry no pose
 and none is estimated. A photograph enters only as \(\mathbf{T}_j\), which equation&nbsp;(6)
@@ -820,7 +828,7 @@ $$u_j = 0.65\,\beta_j + 0.35\,\operatorname{rank}(L)_j, \qquad
 <p>Three claims are tested: that unposed 2D cross-sections suffice to reconstruct an interior that
 is consistent across viewing angles, that the cutting operator is exact and local, and that the
 lattice couples to a grid-based solver without an intermediate mesh. Everything is measured on the
-six objects of Table&nbsp;1; the fuller sweeps, the per-object sheets and the engineering
+seven objects of Table&nbsp;2; the fuller sweeps, the per-object sheets and the engineering
 validations sit in the supplement.</p>
 
 <p class="mut">The measurements this section condenses &mdash; the per-object comparisons against
@@ -1208,9 +1216,23 @@ cannot verify from five points.</p>
 
 <h3 id="stripes">4.5&ensp;The stripe on unsupervised longitudinal planes: thirteen arms, and what a repeat is worth</h3>
 
-<p class="lead">A longitudinal cut at an azimuth no photograph reached carries a radial stripe. It is
-plainly visible and it barely moves the perceptual score, so this section reports it on a second
-measure and states the size of a repeat before reporting any difference against it.</p>
+<p class="lead">A longitudinal cut no photograph reached carries a radial stripe. It is plainly
+visible and it barely moves the perceptual score, so this section reports it on a second measure and
+states the size of a repeat before reporting any difference against it.</p>
+
+<div class="note">
+<strong>A correction to how this section was framed.</strong> The gap in Table&nbsp;2's longitudinal
+columns was read here as a failure to interpolate <em>between meridians</em>, and eleven of the
+thirteen arms below were aimed at that reading. It does not survive checking how the two sets of
+planes are drawn. Measured as distance from the object's centre in coarse cells, the supervised
+longitudinal planes span 1.84&ndash;2.92 on the orange and 1.93&ndash;3.85 on the watermelon; the
+held-out ones span 2.22&ndash;7.73 and 2.43&ndash;8.37. <strong>Half the held-out planes sit in a
+band no supervised plane occupies</strong>, and on the orange they cover 55.6&deg; of azimuth
+against the supervised set's 169.4&deg;. The +0.0962 therefore confounds azimuth with offset, and
+part of it is a statement about which planes have photographs rather than about the field between
+meridians. An offset-matched split would separate the two and has not been run. The arms below are
+reported as they were measured; what they were aimed at is now in question.
+</div>
 
 <p><strong>The measure.</strong> Resample a transverse render in polar coordinates about the axis
 and take the power spectrum around the angle. A seam between the wedges each longitudinal plane
@@ -1242,7 +1264,7 @@ not a result.</p>
 <tr><td>azimuth jitter + thin band</td><td>both of the above</td><td>2.02</td><td>0.1718</td><td>0.1219</td><td>0.1806</td><td>0.1381</td><td>0.1531</td></tr>
 </tbody></table></div>
 
-<p><strong>Two of eleven changes leave the repeat's spread, and one of them is in the wrong
+<p><strong>Two of eleven changes leave the repeat&#8217;s spread, and one of them is in the wrong
 direction.</strong> Raising the interpolation from \(C^0\) to \(C^2\) takes the seam to 1.16
 &mdash; about five times the spread below the lower of the two baseline runs &mdash; and improves
 the supervised longitudinal score at the same time, which is not what a smoothing artefact does.
@@ -1257,7 +1279,8 @@ planes have a target that is not constant, each flipping between two photographs
 200 steps, independently of its neighbours. But giving <em>every</em> plane the same photograph
 leaves the seam at 1.32, inside the repeat's spread. Content disagreement is not the cause.</p>
 
-<p>The second was that the seventeen planes always occupy the same seventeen meridians, so the
+<p>The second &mdash; and this one is now doubly in question, because of the offset
+confound above &mdash; was that the seventeen planes always occupy the same seventeen meridians, so the
 cells near them are updated every step and the cells between them only through interpolation.
 Turning the planes to a new azimuth each step should then spread the gradient and remove the
 periodicity. It takes the seam to 2.37, the worst of any arm. It does do something the others do
@@ -1357,23 +1380,16 @@ sections&nbsp;<a href="#method">3.1</a> and&nbsp;<a href="#results">4</a>.</p>
 <p>Our core contribution centres on supervision rather than mere volumetric container design:</p>
 
 <ul>
-  <li><strong>Pose-free and generative-free supervision.</strong> High-fidelity internal structures
-      are reconstructed directly from a sparse set of unaligned 2D cross-section photographs,
-      without per-object diffusion fine-tuning or generative score distillation. Under leave-one-out
-      cross-validation across six reference photographs our method reaches a DreamSim perceptual
-      distance of 0.1006 against 0.1474 for a baseline whose generator was fine-tuned on the very
-      photograph being scored, and it is ahead on every individual fold. Withholding a reference
-      costs 0.0191 &mdash; 1.6 times the fold-to-fold variance, and 41% of the margin to the
-      baseline &mdash; so a sixth photograph is worth having and the model is not indifferent to
-      it.</li>
-  <li><strong>Implicit 3D reconciliation.</strong> Because every cutting plane addresses the same
-      shared cell features through a common decoder, spatial contradictions between independent
-      photographs resolve in 3D before rasterisation, retaining 96.5% of the structural variation
-      along shared intersection axes without low-pass flattening.</li>
+  <li><strong>Pose-free supervision, on this build's own numbers.</strong> Interiors are
+      reconstructed from unaligned cross-section photographs with no per-object diffusion
+      fine-tuning and no pose estimation. The held-out scores are Table&nbsp;2 and they are
+      reported without a baseline column, because no baseline has been run under this protocol.
+      The two bullets that stood here quoted a leave-one-out comparison and a 96.5%
+      structural-variation figure measured on <a href="index.html">the splatted pipeline</a>; they
+      are that build's results and have been removed rather than reattributed.</li>
   <li><strong>Machine-precision geometry and a compact footprint.</strong> The closed-form planar
       cutting operator evaluates analytical cell-edge intersections within crossed cells. The
-      exposed faces satisfy the plane equation to machine precision, cut-area error falls to 0.09%
-      under refinement, and 2-manifold topology holds with no T-junctions. Through one
+      exposed faces satisfy the plane equation to machine precision, and 2-manifold topology holds with no T-junctions. Through one
       appearance-neutral codec the representation is 9.7&nbsp;MiB against 25.6 and 27.3 for the
       baselines, with no unpainted pixel at 2048&nbsp;&times;&nbsp;2048 on any object or family
       measured &mdash; a compact, physically compatible foundation for downstream simulation. The
@@ -1397,11 +1413,12 @@ sections&nbsp;<a href="#method">3.1</a> and&nbsp;<a href="#results">4</a>.</p>
       \(\mathcal{O}(K)\) in the cells it crosses, but adjacency is built and the component
       structure allocated over every leaf, so the measured cost tracks the lattice rather than
       the band. Reusing the adjacency outside the band removes most of it; making the whole
-      operator proportional to \(K\) is open.</li>  <li><strong>Simulation compatibility, not dynamic validation.</strong> The framework establishes
-      representation compatibility: contact resolves at 5.2 million integer queries per second, and
-      a criterion predicts shell-stiffness resolvability across MPM transfer grids. Dynamics are not
-      benchmarked against reference finite-element solvers, and continuum damage and fracture are
-      not implemented.</li>
+      operator proportional to \(K\) is open.</li>  <li><strong>Simulation compatibility is not established here.</strong> The
+      splatted pipeline reports a contact query rate and a shell-stiffness criterion; neither was
+      re-run on this build, and the section that quoted them has been removed rather than carried
+      over. What this build can say about contact is geometric and is in
+      <a href="ovoxel_notes.html">the notes</a>: the dual grid's contact normals deviate from
+      radial by 36.0&deg; at the median against 49.0&deg; for a cube collider.</li>
   <li><strong>Category-level exemplar reconstruction.</strong> Supervision from loose, unregistered
       photographs generates an interior representative of the object category &mdash; plausible
       citrus segment membranes and seeds &mdash; rather than recovering the exact internal anatomy
@@ -1573,7 +1590,7 @@ from, and its numbers are the baseline throughout.</p>
 }</pre>
 
 <footer>
-Every number here was measured on six objects, or on a synthetic shape whose answer is known in
+Every number here was measured on seven objects, or on a synthetic shape whose answer is known in
 closed form.
 </footer>
 

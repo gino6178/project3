@@ -85,7 +85,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#what">What this is</a><a href="#best">What the arms are worth</a><a href="#sched">The schedule</a><a href="#method">The pipeline</a><a href="#seven7">Seven objects</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#families">Transverse and longitudinal</a><a href="#setup">How each object is set up</a><a href="#split">The plane count in full</a><a href="#loss">The objective in full</a><a href="#buys">What it buys</a><a href="#rays">Rays and contact</a><a href="#limits">What it does not do</a><a href="experiments.html">Every experiment &rarr;</a>
+  <a href="#what">What this is</a><a href="#best">What the arms are worth</a><a href="#sched">The schedule</a><a href="#method">The pipeline</a><a href="#seven7">Seven objects</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#families">Transverse and longitudinal</a><a href="#setup">How each object is set up</a><a href="#arms13">The stripe, thirteen arms</a><a href="#split">The plane count in full</a><a href="#loss">The objective in full</a><a href="#buys">What it buys</a><a href="#rays">Rays and contact</a><a href="#limits">What it does not do</a><a href="experiments.html">Every experiment &rarr;</a>
 </nav>
 
 <h2 id="what">What this is, and what it is not</h2>
@@ -886,6 +886,46 @@ said another, with nothing to reconcile them.</p>
 &mdash; visible in the figure's two outside columns and nowhere in any number, because the shell is
 pinned in these runs and takes no gradient. Its six-view projection already existed and agrees with
 the lattice cell for cell, so the state is now built from that instead.</p>
+
+<h2 id="arms13">The stripe: thirteen arms, and the spread of a repeat</h2>
+
+<p class="lead">Every number in the paper's section&nbsp;4.5 is here, so that it is in the record
+rather than only in the page that reports it. The measure is the angular power of a transverse
+render at the number of longitudinal planes, against the median; 1.0 is no peak. All arms are the
+orange, on the baseline cameras, 325 outer iterations,
+<code>SEC_TV=0.1 SEC_TV_PERP=4 REF_SAMPLE=1</code> unless the row says otherwise.</p>
+
+<div class="tw"><table>
+<thead><tr><th>arm</th><th>what it changes</th><th>seam</th><th>shown h</th><th>shown v</th>
+<th>unseen h</th><th>unseen v</th><th>mean</th></tr></thead>
+<tbody>
+<tr><td>s_v2</td><td>baseline</td><td>1.39</td><td>0.1238</td><td>0.0919</td><td>0.1046</td><td>0.1881</td><td>0.1271</td></tr>
+<tr><td>q_seed1</td><td><strong>SEED=1, nothing else &mdash; this is the spread</strong></td><td>1.44</td><td>0.1242</td><td>0.0933</td><td>0.1094</td><td>0.1777</td><td>0.1262</td></tr>
+<tr><td>q_cub</td><td>SEC_CUBIC=1, cubic B-spline sampling</td><td>1.16</td><td>0.1243</td><td>0.0858</td><td>0.1068</td><td>0.2003</td><td>0.1293</td></tr>
+<tr><td>q_one</td><td>REF_V_ONE=1, one photograph for every azimuth</td><td>1.32</td><td>0.1286</td><td>0.0914</td><td>0.1086</td><td>0.1806</td><td>0.1273</td></tr>
+<tr><td>q_slab</td><td>SEC_SLAB=2.0, the cut integrated over a band</td><td>1.35</td><td>0.1473</td><td>0.1263</td><td>0.1260</td><td>0.1573</td><td>0.1392</td></tr>
+<tr><td>q_tviso</td><td>SEC_TV_PERP=1</td><td>1.39</td><td>0.1240</td><td>0.0917</td><td>0.1049</td><td>0.1901</td><td>0.1277</td></tr>
+<tr><td>q_lap</td><td>SEC_LAP=0.2</td><td>1.42</td><td>0.1253</td><td>0.0912</td><td>0.1047</td><td>0.1863</td><td>0.1269</td></tr>
+<tr><td>q_tv4</td><td>SEC_TV=0.4</td><td>1.43</td><td>0.1265</td><td>0.0931</td><td>0.1063</td><td>0.1872</td><td>0.1283</td></tr>
+<tr><td>q_cyc</td><td>SEC_SCHED=cycle</td><td>1.47</td><td>0.1257</td><td>0.0965</td><td>0.1155</td><td>0.1771</td><td>0.1287</td></tr>
+<tr><td>q_nodraw</td><td>REF_SAMPLE_V=0</td><td>1.52</td><td>0.1267</td><td>0.0982</td><td>0.1108</td><td>0.1815</td><td>0.1293</td></tr>
+<tr><td>q_field</td><td>SEC_FIELD=1, the MLP inside the field</td><td>1.95</td><td>0.1213</td><td>0.1585</td><td>0.1149</td><td>0.2029</td><td>0.1494</td></tr>
+<tr><td>q_azslab</td><td>JITTER_AZ=1.0 SEC_SLAB=1.0</td><td>2.02</td><td>0.1718</td><td>0.1219</td><td>0.1806</td><td>0.1381</td><td>0.1531</td></tr>
+<tr><td>q_az</td><td>JITTER_AZ=1.0</td><td>2.37</td><td>0.1828</td><td>0.1175</td><td>0.1790</td><td>0.1360</td><td>0.1538</td></tr>
+</tbody></table></div>
+
+<p><strong>The confound.</strong> The held-out longitudinal planes are not an azimuth-matched
+sample. Distance from the object's centre, in coarse cells: supervised 1.84&ndash;2.92 on the
+orange and 1.93&ndash;3.85 on the watermelon, held out 2.22&ndash;7.73 and 2.43&ndash;8.37. Half the
+held-out planes are outside the band any supervised plane occupies, and the orange's held-out set
+covers 55.6&deg; of azimuth against 169.4&deg;. Eleven of these arms were aimed at a reading of the
+gap that this does not support.</p>
+
+<p><strong>What the data path does.</strong> Counted over 200 steps, 16 of the orange's 17
+longitudinal planes have a target that is not constant &mdash; each flips between two photographs
+26 to 112 times, independently of its neighbours &mdash; while the deterministic segment assignment
+changes photograph at only 3 of 16 boundaries. Giving every plane the same photograph
+(<code>q_one</code>) leaves the seam at 1.32, inside the repeat's spread.</p>
 
 <h2 id="split">How the plane count is derived, step by step</h2>
 
