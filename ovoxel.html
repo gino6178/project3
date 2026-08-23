@@ -114,9 +114,12 @@
 <div class="cutstrip"><video src="assets/ovcut_orange_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="orange, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_watermelon_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="watermelon, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_apple1_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="apple, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_bread_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="bread, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_cake2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="cake, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_pomegranate2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="pomegranate, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_doughnut.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="doughnut, cut transverse and longitudinal, drawn entirely from the dual grid"></video></div>
 
 <div class="tw"><p class="tnum">Table 1</p><table>
-<thead><tr><th>metric</th><th>O&#8209;Voxel</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
+<thead><tr><th>metric</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
 <tbody>
-<tr><td>interior representation</td><td><strong>two-level lattice, flexible dual grid</strong></td>
+<tr><td>surface</td><td>O&#8209;Voxel flexible dual grid&nbsp;[10]</td>
+    <td class="mut">3D Gaussians</td><td class="mut">3D Gaussians</td></tr>
+<tr><td>interior representation</td><td><strong>two-level occupancy lattice, one latent
+    \(\mathbf{f}_i \in \mathbb{R}^8\) per cell</strong></td>
     <td class="mut">3D Gaussians</td><td class="mut">3D Gaussians</td></tr>
 <tr><td>interior supervision</td><td><strong>photographs, directly</strong></td>
     <td class="mut">a diffusion model fine-tuned per object</td><td class="mut">generative priors</td></tr>
@@ -384,7 +387,7 @@ components are union-find over face adjacency that the lattice defines for free;
 has no adjacency until one is discretised, which reintroduces a grid and its resolution.</p>
 
 <p>The cost of the lattice is measured rather than assumed. Against a dense grid at the same cell
-size the O&#8209;Voxel cut face differs by 0.0253 per pixel, and against a dense grid at equal
+size the cut face differs by 0.0253 per pixel, and against a dense grid at equal
 memory &mdash; cells 1.33 times wider, since the sparse structure stores 42.8% occupancy &mdash; by
 0.0350. The dense grid is not far behind on the cut face; what it does not have is the 24%
 surcharge's worth of dual vertices, and the surface those buy is the subject of
@@ -541,7 +544,7 @@ departure.</strong> The splatted pipeline returns the feature of the cell contai
 \(\mathbf{x}\) and nothing else, and argues that the piecewise-constant lookup is load-bearing:
 a cell holds one value, so two photographs that disagree about the same material are averaged by
 the representation rather than by a penalty. That argument is sound and it is what this
-representation gives up. O&#8209;Voxel reads the cut face by trilinear interpolation of the cells
+representation gives up. The interior lattice is read by trilinear interpolation of the cells
 around the sample point, which puts part of the reconciliation back into the loss &mdash; and buys
 a field whose value does not jump at a cell boundary, which is what a cut face is made of.</p>
 
@@ -1403,8 +1406,8 @@ every object, and the third was two files disagreeing. Being more careful is not
 
 <h3>5.1&ensp;Conclusion</h3>
 
-<p>We have presented O&#8209;Voxel: a two-level occupancy lattice whose surface is a flexible dual
-grid and whose cut face is the closed-form polygon of a plane against the occupancy, drawn in one
+<p>We have presented a cuttable object carried by a two-level occupancy lattice, its surface the
+O&#8209;Voxel flexible dual grid&nbsp;[10] and whose cut face is the closed-form polygon of a plane against the occupancy, drawn in one
 rasteriser pass with no splatting stage anywhere. Nothing is converted at the surface, no primitive
 is asked to carry the interior, and a cut face at 2048&nbsp;px leaves no pixel unpainted on any
 object measured &mdash; not because the primitives were made large enough, but because there are
