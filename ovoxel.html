@@ -287,6 +287,17 @@ through, and <code>SEC_SKIP_OUTER=0.10</code> keeps the section loss off the out
 render from the other side. <strong>The sections own the interior, the six exterior views own the
 skin.</strong></p>
 
+<figure>
+  <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the object's outside from both cameras">
+  <figcaption>What supervises each cut, for all seven objects at once. Left to right: the transverse
+  cut's own mask, the photograph mapped onto it &mdash; <em>that</em> is the target the loss compares
+  the render against &mdash; the outside from the transverse camera, the outside from the
+  longitudinal camera, then the longitudinal mask, its target, and the two photographs the row was
+  built from. Nothing here is a score; every panel is what the pipeline itself sees, which is why
+  three defects that no number caught were visible in it at once.
+  <a href="#setup">What it caught, and what each column is for</a>.</figcaption>
+</figure>
+
 <h3>Step 2 &mdash; how many planes each family gets</h3>
 
 <p>A transverse plane moves along the polar axis; a longitudinal plane turns about it. Resolving
@@ -299,13 +310,16 @@ N_V = 26 - N_H</pre>
 <p>\(L\) and \(r\) are measured from the object's own coarse cells, with the level&#8209;1 skin
 rows excluded &mdash; they are half the spacing and all of them at the rim, and averaging over them
 pulls the radius up 13% and moves the split by a whole plane. This gives the counts under the videos
-above: 14/12 for the orange, 4/22 for the doughnut, and nothing is chosen by hand.
+above: 9/17 for the orange, 3/23 for the doughnut, and nothing is chosen by hand.
 <a href="#split">The derivation is set out in full below</a>, including two constants in it that are
 wrong and what happens when they are corrected.</p>
 
 <figure>
   <img src="assets/slab_orange.jpg" alt="The orange with its supervised planes drawn through it: the longitudinal fan seen down the axis, the transverse stack seen from the side">
-  <figcaption>Every plane the orange is actually supervised on, drawn through it.
+  <figcaption>Every plane the orange is supervised on, drawn through it, <strong>at the split these
+  runs used before the baseline moved</strong> &mdash; twelve longitudinal and fourteen transverse,
+  where the baseline is 17 and 9. The geometry of the two families is what this shows and that has
+  not changed; the counts have. Redrawing it needs a generator that was never committed.
   <strong>Left</strong>: the twelve longitudinal planes, seen down the polar axis, so each appears as
   two rays of one plane through the centre &mdash; twenty-four rays, twelve planes, one every 15&deg;
   of azimuth. <strong>Right</strong>: the fourteen transverse planes, from the side and tipped 3&deg;
