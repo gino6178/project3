@@ -1274,6 +1274,33 @@ measurement says, and because the reading that fits both columns &#8212; that th
 a confident single guess over a volume that varies &#8212; is a criticism of the metric that we
 cannot verify from five points.</p>
 
+<h3 id="cost">4.3&ensp;Resource matrix</h3>
+
+<p>One cut face at 512&nbsp;px, timed warm as the median of twenty calls on one L40; alignment is
+the closed-form similarity fit of one reference to one render, the mean of five; peak is torch's
+high-water mark over one forward and backward pass through the cut face.</p>
+
+<div class="tw"><p class="tnum">Table 9</p><table>
+<thead><tr><th>object</th><th>cells \(N\)</th><th>crossed \(K\)</th><th>triangles</th>
+<th>cut (ms)</th><th>alignment (ms)</th><th>peak (MiB)</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>770,182</td><td>14,455</td><td>86,730</td><td>16.1</td><td>42.6</td><td>1,060</td></tr>
+<tr><td>watermelon</td><td>709,368</td><td>14,078</td><td>84,468</td><td>13.7</td><td>27.0</td><td>773</td></tr>
+<tr><td>apple</td><td>756,905</td><td>13,558</td><td>81,348</td><td>16.5</td><td>41.9</td><td>1,098</td></tr>
+<tr><td>loaf</td><td>396,075</td><td>6,940</td><td>41,640</td><td>11.1</td><td>34.6</td><td>569</td></tr>
+<tr><td>cake</td><td>395,613</td><td>7,263</td><td>43,578</td><td>12.0</td><td>34.1</td><td>628</td></tr>
+<tr><td>pomegranate</td><td>491,350</td><td>10,483</td><td>62,898</td><td>13.7</td><td>39.4</td><td>711</td></tr>
+<tr><td>doughnut</td><td>544,568</td><td>3,894</td><td>23,364</td><td>8.6</td><td>21.8</td><td>369</td></tr>
+</tbody></table></div>
+
+<p>Triangles are \(6K\) exactly: each crossed cell contributes one convex polygon of at most six
+vertices, fanned from its centroid. Cut time is 8.6 to 16.5&nbsp;ms and correlates with \(K\)
+rather than with \(N\) &mdash; the doughnut has 1.38 times the cells of the loaf and 0.56 times
+its crossed cells, and takes 0.77 of its time &mdash; but the correlation is not the proportionality
+Proposition&nbsp;2 permits: \(N\) enters through the adjacency array and the component storage,
+which are allocated over every leaf. Alignment runs on the host and is the larger of the two costs
+at this resolution.</p>
+
 <h3 id="stripes">4.5&ensp;The stripe on unsupervised longitudinal planes: thirteen arms, and what a repeat is worth</h3>
 
 <p class="lead">A longitudinal cut no photograph reached carries a radial stripe. It is plainly
@@ -1300,7 +1327,7 @@ seam.</p>
 1.39, and the held-out longitudinal column 0.1777 against 0.1881. Every difference below that is
 not a result.</p>
 
-<div class="tw"><p class="tnum">Table 9</p><table>
+<div class="tw"><p class="tnum">Table 10</p><table>
 <thead><tr><th>arm</th><th>what it changes</th><th>seam</th><th>shown h</th><th>shown v</th>
 <th>unseen h</th><th>unseen v</th><th>mean</th></tr></thead>
 <tbody>
@@ -1373,7 +1400,7 @@ rotate it about a candidate and count how much of it lands back inside itself. T
 whose stored axis is already right are the control &mdash; a method that cannot recover those says
 nothing about the rest.</p>
 
-<div class="tw"><p class="tnum">Table 10</p><table>
+<div class="tw"><p class="tnum">Table 11</p><table>
 <thead><tr><th>object</th><th>best overlap found</th><th>overlap at the stored axis</th><th>angle between</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td>0.965</td><td>0.965</td><td>0.2&deg;</td></tr>
