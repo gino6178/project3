@@ -218,7 +218,7 @@ pass.</p>
   <li><strong>A solver interface, stated as geometry.</strong> The integer lattice supplies what a
       background-grid solver consumes &mdash; integer adjacency, signed collision boundaries,
       topologically exact component partitions, and mass conservation that follows from each cell
-      belonging to exactly one component &mdash; without intermediate tetrahedralisation. The claim
+      belonging to exactly one component (Figure&nbsp;4) &mdash; without intermediate tetrahedralisation. The claim
       is the interface, not a demonstrated simulation; no constitutive parameter is inferred and no
       dynamics are run (section&nbsp;5.2).</li>
 </ul>
@@ -686,6 +686,22 @@ supervision well-posed.</p>
 and weight, a second-order prior, the low-discrepancy schedule and a single photograph for every
 azimuth all sit inside the seed repeat on every column.</p>
 
+<figure style="margin:16px 0 26px">
+  <img src="assets/pieces_orange.gif?v=s_v2" style="width:100%;max-width:520px;border-radius:4px"
+       alt="two planes cut the orange into four components which separate, each carrying its own exposed faces">
+  <figcaption><span class="fnum">Figure 4</span><br><strong>The partition a cut delivers to a
+  solver.</strong> Two planes, one transverse and one longitudinal, are evaluated against the
+  lattice and connected components extracted by union-find over face adjacency. The orange resolves
+  into four components of 188,298&nbsp;/&nbsp;194,277&nbsp;/&nbsp;196,577&nbsp;/&nbsp;191,030
+  cells &mdash; 770,182 in total, every cell in exactly one component, so mass is conserved by
+  construction rather than numerically. Each component carries its own share of the dual-grid
+  boundary and its own exposed faces, and all four are rasterised in one pass so the depth test
+  composes them. <strong>The motion is prescribed, not solved:</strong> constant velocity along each
+  cut normal and constant acceleration. No solver, contact resolution or material parameter is
+  involved. What the figure demonstrates is that the partition, the adjacency and the exposed faces
+  are available to one.</figcaption>
+</figure>
+
 <h3 id="stripes">4.4&ensp;Structural anisotropy between the two families</h3>
 
 <p>Table&nbsp;2 shows transverse planes generalising to unobserved depths at no cost and
@@ -697,7 +713,7 @@ between two spokes receives gradient only when a jittered plane reaches across. 
 <figure style="margin:16px 0 26px">
   <img src="assets/spectrum.jpg?v=s_v2" style="width:100%;border-radius:4px"
        alt="angular power spectrum of transverse renders, with the plane count marked">
-  <figcaption><span class="fnum">Figure 4</span><br><strong>Angular power of transverse renders,
+  <figcaption><span class="fnum">Figure 5</span><br><strong>Angular power of transverse renders,
   normalised by the median, log scale.</strong> Resampled in polar coordinates about the axis and
   averaged over radius and over every supervised depth. The dashed line is \(m=P\), the
   longitudinal plane count: 17 on the orange, 18 on the watermelon. <strong>There is no peak
@@ -709,7 +725,7 @@ between two spokes receives gradient only when a jittered plane reaches across. 
 <p>The gap is not a spectral aliasing artefact. If the angular sampling behaved as a comb of
 \(P\) teeth, transverse renders would carry a peak at \(m=P\); measured against a local baseline
 the prominence there is 1.00 on the orange and 1.12 on the watermelon, and the most prominent
-frequency is \(m=33\) and \(m=11\) (Figure&nbsp;4).</p>
+frequency is \(m=33\) and \(m=11\) (Figure&nbsp;5).</p>
 
 <p>The gap is also confounded with offset. The available longitudinal references are central
 sections, so the supervised planes of that family never leave the neighbourhood of the axis
@@ -723,12 +739,12 @@ the technical appendices.</a></p>
 <h3 id="setup-audit">4.5&ensp;Per-object configuration</h3>
 
 <p>Two quantities are properties of an object's acquisition rather than free parameters, and both
-are determined from the object itself; Figure&nbsp;5 shows what each object is set up as, and
+are determined from the object itself; Figure&nbsp;6 shows what each object is set up as, and
 Table&nbsp;5 the measurement behind the first.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the outside from both cameras">
-  <figcaption><span class="fnum">Figure 5</span><br>What supervises each cut, for all seven objects
+  <figcaption><span class="fnum">Figure 6</span><br>What supervises each cut, for all seven objects
   at once. Left to right: the transverse cut's own mask, the photograph mapped onto it, the outside
   from the transverse camera, the outside from the longitudinal camera, the longitudinal mask, its
   target, and the two photographs the row was built from. Every panel is what the pipeline itself
