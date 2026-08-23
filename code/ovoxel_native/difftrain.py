@@ -54,6 +54,25 @@ LR = float(os.environ.get("DT_LR", "0.05"))
 # difference between resolving a face and jittering around it.
 LR_END = float(os.environ.get("DT_LR_END", "0")) 
 FIXED = os.environ.get("DT_FIXED", "0") == "1"    # the old schedule, for comparison
+# How the planes are chosen. "random" draws each one independently. "cycle" walks a formula
+# instead: the transverse depth advances by a radical inverse and the longitudinal azimuth by the
+# golden angle, each family on its own counter, so any prefix of the run is spread rather than
+# spread on average -- and the schedule is reproducible from the step number alone, with no random
+# state in it. Every PERIOD draws the sequence is shifted, because a formula that guarantees even
+# coverage in one pass also guarantees it repeats itself in the next: measured on coverage alone,
+# the unshifted cycle saturated at 95% while independent draws went on to 98%.
+SEQ = os.environ.get("DT_SEQ", "random")
+PERIOD = int(os.environ.get("DT_PERIOD", "64"))
+PHI = (1 + 5 ** 0.5) / 2
+
+
+def radical(k, base=2):
+    f, r = 1.0, 0.0
+    while k:
+        f /= base
+        r += f * (k % base)
+        k //= base
+    return r
 # The last denoise step, with no noise put back after it. A DDPM's final step is exactly this, and
 # without it the run ends at whatever the second-to-last noise level left, which measured was an
 # error of 0.10 against the 0.03 the same planes reach when they are allowed to settle.
@@ -97,15 +116,33 @@ ref_h = [torch.as_tensor(refsel.as_array(refsel.solved_photo(PH, i, NH), RES),
 ref_v = [torch.as_tensor(refsel.as_array(refsel.solved_photo(PV, i, NV), RES),
                          device=dev).permute(2, 0, 1) for i in range(NV)]
 print(f"{OBJ}: {len(st['interior']):,} cells, {NH} transverse and {NV} longitudinal photographs, "
-      f"{'fixed planes' if FIXED else 'planes drawn'}, T={T}, {K} planes held for {HOLD} steps")
+      f"{'fixed planes' if FIXED else 'planes ' + SEQ}, T={T}, {K} planes held for {HOLD} steps")
 
 step_h = float(hd[H_LO + 1] - hd[H_LO]) if NH > 1 else 1.0
 lo, hi = float(hd[H_LO]) - step_h / 2, float(hd[H_HI - 1]) + step_h / 2
 rng = np.random.default_rng(0)
+_kh = _kv = 0
 
 
 def draw():
     """A plane, the photograph that speaks for it, and which family it came from."""
+    global _kh, _kv
+    if SEQ == "cycle":
+        if (_kh + _kv) * NH % (NH + NV) < NH:
+            _kh += 1
+            u = (radical(_kh) + (PHI * (_kh // PERIOD)) % 1.0) % 1.0
+            d = lo + u * (hi - lo)
+            i = int(np.clip(round((d - float(hd[H_LO])) / step_h), 0, NH - 1))
+            return hmvp, hn, d, ref_h[i], "h"
+        _kv += 1
+        f = ((_kv * PHI) + (PHI * PHI * (_kv // PERIOD))) % 1.0
+        j = int(f * NV) % NV
+        a = f * NV - j
+        nv = (1 - a) * vp[j, :3] + a * vp[(j + 1) % NV, :3]
+        nv = nv / np.linalg.norm(nv)
+        d = float(np.dot(nv, vp[j, :3] * vp[j, 3]))
+        return vmvp[j], torch.as_tensor(nv, dtype=torch.float32, device=dev), d, \
+            ref_v[j if a < 0.5 else (j + 1) % NV], "v"
     if rng.random() < NH / (NH + NV):
         if FIXED:
             i = int(rng.integers(NH)); return hmvp, hn, float(hd[H_LO + i]), ref_h[i], "h"

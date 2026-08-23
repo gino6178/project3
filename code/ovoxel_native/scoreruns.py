@@ -29,10 +29,14 @@ refs_h = realism._paths(os.path.join(FN, spec("EVAL_REF=")))
 refs_v = realism._paths(os.path.join(FN, spec("EVAL_REF_V=", spec("EVAL_REF="))))
 print(f"{OBJ}: scoring against {len(refs_h)} held-out transverse and {len(refs_v)} longitudinal "
       f"photographs, which no run has opened")
-hh = len(refs_h) // 2
-print(f"  {'the photographs against themselves':<34} "
-      f"{realism._dreamsim(refs_h[:hh], refs_h[hh:], dev):>7.4f} "
-      f"{realism._dreamsim(refs_v[:len(refs_v) // 2], refs_v[len(refs_v) // 2:], dev):>7.4f}")
+# the floor needs two photographs to split, and four of the seven objects have one per family
+hh, hv = len(refs_h) // 2, len(refs_v) // 2
+if hh and hv:
+    print(f"  {'the photographs against themselves':<34} "
+          f"{realism._dreamsim(refs_h[:hh], refs_h[hh:], dev):>7.4f} "
+          f"{realism._dreamsim(refs_v[:hv], refs_v[hv:], dev):>7.4f}")
+else:
+    print(f"  (one held-out photograph per family: no floor to compare against)")
 print(f"\n  {'run':<34} {'DS transverse':>13} {'DS longitudinal':>16} {'probe':>9}")
 for r in RUNS:
     d = f"{W}/{r}/eval_final"

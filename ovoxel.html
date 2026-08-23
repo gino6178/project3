@@ -85,7 +85,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#what">What this is</a><a href="#best">The best arm</a><a href="#method">The pipeline</a><a href="#seven7">Seven objects</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#families">Transverse and longitudinal</a><a href="#split">The plane count in full</a><a href="#loss">The objective in full</a><a href="#buys">What it buys</a><a href="#rays">Rays and contact</a><a href="#limits">What it does not do</a><a href="experiments.html">Every experiment &rarr;</a>
+  <a href="#what">What this is</a><a href="#best">What the arms are worth</a><a href="#sched">The schedule</a><a href="#method">The pipeline</a><a href="#seven7">Seven objects</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#families">Transverse and longitudinal</a><a href="#split">The plane count in full</a><a href="#loss">The objective in full</a><a href="#buys">What it buys</a><a href="#rays">Rays and contact</a><a href="#limits">What it does not do</a><a href="experiments.html">Every experiment &rarr;</a>
 </nav>
 
 <h2 id="what">What this is, and what it is not</h2>
@@ -105,78 +105,96 @@ tables are unaffected by anything here, and where the two disagree the paper's n
 that were produced by the pipeline it describes.
 </div>
 
-<h2 id="best">The best arm, and what it is</h2>
+<h2 id="best">What the arms are worth, on seven objects</h2>
 
-<p class="lead">Scored on the held-out half &mdash; three transverse and three longitudinal
-photographs no run has opened &mdash; the best interior on this object comes from putting a patch
-critic on the planes that have no photograph. Every arm below is the same program with one thing
-changed, and the two families do not agree on a winner.</p>
+<p class="lead">Every arm below is the same program with one thing changed. All fourteen runs in the
+table were configured in one file and launched together, because the alternative &mdash; comparing
+two runs whose settings were recorded nowhere &mdash; produced a 17% improvement that turned out to
+be 2.1% when the control was run properly.</p>
+
+<div class="note">
+<strong>A retraction.</strong> This page reported a patch critic on the unphotographed planes as the
+best arm, at 0.0910 against 0.1099 on the orange &mdash; a 17% improvement. That comparison was
+between an earlier critic run and an earlier control whose configurations were never written down.
+Run against a control built in the same batch, the same change is worth <strong>2.1%</strong> on the
+orange, and on seven objects it is not an improvement at all. The numbers below replace it.
+</div>
 
 <div class="tw"><table>
-<thead><tr><th>arm</th><th>transverse</th><th>longitudinal</th></tr></thead>
+<thead><tr><th rowspan="2">object</th><th colspan="2">pixel loss alone</th>
+<th colspan="2">+ critic on the unphotographed planes</th><th rowspan="2">verdict</th></tr>
+<tr><th>transverse</th><th>longitudinal</th><th>transverse</th><th>longitudinal</th></tr></thead>
 <tbody>
-<tr><td><em>the held-out photographs against each other</em></td><td><em>0.0551</em></td><td><em>0.0833</em></td></tr>
-<tr><td>the pixel loss alone</td><td>0.1099</td><td>0.2031</td></tr>
-<tr><td>+ the field prior</td><td>0.1085</td><td class="win">0.1875</td></tr>
-<tr><td>+ drawing a photograph instead of averaging two</td><td>0.1009</td><td>0.1969</td></tr>
-<tr><td>+ critic on every plane, weight 0.1</td><td>0.0992</td><td>0.1964</td></tr>
-<tr><td>+ critic on every plane, weight 0.3</td><td>0.0943</td><td>0.1952</td></tr>
-<tr><td>+ critic on the unphotographed planes, weight 0.5</td><td>0.0914</td><td>0.1947</td></tr>
-<tr><td>+ critic on the unphotographed planes, weight 1.0</td><td class="win">0.0910</td><td>0.1961</td></tr>
+<tr><td>loaf</td><td>0.4721</td><td>0.4806</td><td class="win">0.4306</td><td class="win">0.4414</td><td>better, 8.8% / 8.2%</td></tr>
+<tr><td>orange</td><td>0.1113</td><td>0.2035</td><td class="win">0.1090</td><td class="win">0.2008</td><td>better, 2.1% / 1.3%</td></tr>
+<tr><td>apple</td><td>0.3133</td><td class="win">0.3404</td><td class="win">0.3071</td><td>0.3576</td><td>split</td></tr>
+<tr><td>pomegranate</td><td class="win">0.3028</td><td class="win">0.4243</td><td>0.3033</td><td>0.4275</td><td>worse, slightly</td></tr>
+<tr><td>cake</td><td class="win">0.5459</td><td class="win">0.5846</td><td>0.5532</td><td>0.5853</td><td>worse, slightly</td></tr>
+<tr><td>watermelon</td><td class="win">0.1682</td><td class="win">0.2238</td><td>0.1780</td><td>0.2427</td><td>worse, 5.8% / 8.4%</td></tr>
+<tr><td>doughnut</td><td colspan="4">one photograph per family, so it has no held-out split and cannot be scored</td><td>&mdash;</td></tr>
 </tbody></table></div>
 
-<p><strong>0.0910 against 0.1099, a 17% improvement on the transverse family</strong>, and the
-direction is consistent in three separate ways: more weight is better, the unphotographed planes are
-where it belongs, and both critic weights beat both non-critic arms. The longitudinal family is won
-by the field prior instead, at 0.1875 against the critic's 0.1947, so this is a point on a trade-off
-curve rather than a winner. Against the floor &mdash; what two held-out photographs of the same
-fruit score against each other &mdash; the transverse result is 1.65&times; and the longitudinal
-2.34&times;.</p>
+<p><strong>Two objects improve, three are worse, one is split.</strong> The transverse mean moves
+from 0.3189 to 0.3135, 1.7%, and almost all of that is the loaf: remove it and the mean goes the
+other way. The honest statement is that a critic on the planes no photograph corresponds to helps
+one object a great deal, hurts another, and does nothing measurable to the rest &mdash; not that it
+is the method.</p>
 
-<figure>
-  <img src="assets/critic_arms.jpg" alt="the arms rendered on the same held-out cuts">
-  <div class="cap">The same six held-out cuts, three transverse then three longitudinal.
-  <span style="font-size:12.5px">Top to bottom: pixel loss alone &middot; field prior &middot;
-  critic 0.3 &middot; critic on the unphotographed planes 0.5 &middot; the same at 1.0</span></div>
-</figure>
+<p>What the critic is, and why it was expected to work, is in <a href="experiments.html#critic">the
+experiments</a>. The mechanism is sound and the measurement does not support it as a default, which
+is the same shape as the other single-object results this project has had to withdraw.</p>
 
-<h3>What the critic is</h3>
+<h2 id="sched">The supervision schedule, as a formula</h2>
 
-<p>A patch discriminator trained beside the field, on this object's own photographs. Real crops are
-64&nbsp;px squares taken from the family's photographs; fake crops are the same from the rendered cut
-face. Its receptive field is 22&nbsp;px, measured by finite differences rather than counted off the
-architecture, so it judges a patch of flesh and never the section as a whole.</p>
+<p class="lead">The photographs lie on two lines through the space of planes: a transverse plane is
+a fixed normal at a varying depth, a longitudinal one is a varying azimuth about the axis at a fixed
+depth. <a href="experiments.html#touch">Measured</a>, the fixed 26 of them reach 39&ndash;59% of an
+object's cells and that is a ceiling. Drawing the planes instead accumulates &mdash; and drawing them
+by a formula accumulates faster than drawing them at random.</p>
 
-<p>The field's term is <code>-D(fake)</code>, weighted by VQGAN's adaptive rule: each step takes the
-ratio of the pixel term's and the adversarial term's gradient norms <em>with respect to the same
-render</em>, capped at 10. A constant cannot work here &mdash; at initialisation the critic's
-gradient is a tenth of the pixel term's, and a few hundred steps later it is far larger.</p>
+<p>The schedule is deterministic. At step <em>k</em>, with each family keeping its own counter,</p>
 
-<p>Three details are load-bearing, and each was found by a measurement rather than by design:</p>
+<pre>depth   = d0 + (d1 - d0) * frac( radical_inverse_2(k_h) + phi * floor(k_h / P) )
+azimuth = pi * frac( k_v * phi + phi^2 * floor(k_v / P) )</pre>
 
-<ul>
-<li><strong>Crops are centred and divided by their own deviation.</strong> Centring stops the critic
-winning on tone, which is exactly the part that says <em>which</em> orange was photographed &mdash;
-the three transverse photographs differ in section mean from 0.37 to 0.145 in blue. Dividing by the
-deviation is what makes spectral norm and a hinge loss compatible: interior texture varies by about
-a tenth, four spectrally normed layers have Lipschitz constant at most one, so a mean-centred crop
-cannot drive the critic's output past 0.1 when the hinge asks for 1. Without it the critic's loss
-sits at 1.9996 for the whole run.</li>
-<li><strong>R1 is off by default.</strong> On top of spectral norm it was the other half of the same
-dead critic.</li>
-<li><strong>The critic's own update is deferred</strong> until the field has taken its step. A step
-draws several planes, and updating the critic after the first of them changes the parameters the
-first plane's term was built on, which the backward pass then refuses.</li>
-</ul>
+<p>&mdash; a radical inverse for the depth, the golden angle for the azimuth, and a shift every
+<em>P</em> steps. Every prefix of that sequence is spread rather than spread on average, so "one
+pass covers most of the space" holds by construction; the shift is there because a formula that
+guarantees even coverage in one pass also guarantees it repeats itself in the next.</p>
 
-<p>Why it belongs on the unphotographed planes: the pixel loss needs a photograph that corresponds
-to the plane, so it can only speak where one was taken. The critic asks whether a patch of flesh
-looks like this fruit's flesh, which needs no correspondence &mdash; so it is the only term that can
-say anything at all about a cut nobody photographed, and those are the cuts where the blocks and
-stripes were. <a href="experiments.html#touch">Measured separately</a>, between two fifths and three
-fifths of an object's cells are never touched by any photograph, which is where that structure had
-to come from.</p>
+<div class="tw"><table>
+<thead><tr><th>planes</th><th>the fixed 26</th><th>drawn at random</th><th>from the formula</th><th>a spiral over all orientations</th></tr></thead>
+<tbody>
+<tr><td>26</td><td>54.6%</td><td>48.7%</td><td>36.1%</td><td>28.4%</td></tr>
+<tr><td>50</td><td>&mdash;</td><td>64.4%</td><td>59.9%</td><td>46.2%</td></tr>
+<tr><td>100</td><td>&mdash;</td><td>84.6%</td><td>82.4%</td><td>70.0%</td></tr>
+<tr><td>200</td><td>&mdash;</td><td>92.5%</td><td class="win">94.7%</td><td>91.3%</td></tr>
+<tr><td>400</td><td>&mdash;</td><td>98.0%</td><td>95.2%</td><td class="win">99.1%</td></tr>
+</tbody></table></div>
 
+<p>Coverage alone does not decide it: the formula leads at 200 planes and saturates by 400, random
+keeps finding corners, and a spiral over <em>all</em> orientations wins in the end but starts far
+behind, because an arbitrary plane usually clips a small piece of the object where a family plane
+cuts through its middle. What decides it is what the schedule does to a solve:</p>
+
+<div class="tw"><table>
+<thead><tr><th>the orange, same budget</th><th>error on photographed planes</th><th>gradient on depths nobody photographed</th></tr></thead>
+<tbody>
+<tr><td>planes drawn at random</td><td>0.0559</td><td>258% of the photographs'</td></tr>
+<tr><td>planes from the formula</td><td class="win">0.0548</td><td class="win">231%</td></tr>
+</tbody></table></div>
+
+<p>2.0% on the error, and the excess texture &mdash; the grain a solve leaves where cells are
+touched unevenly &mdash; falls by 27 points. It is the only change measured on this page that moved
+both at once; more steps, a decayed learning rate and a wavelet critic all moved neither.</p>
+
+<p>Three constructions were got wrong on the way and are recorded in
+<code>reachrand.py</code> so they are not repeated: a spherical Fibonacci sequence ordered by
+<em>k/N</em> puts its whole prefix at one pole (its first 26 planes reached 0.8% of the interior);
+an offset must be stratified within the object's own extent along that normal, or most planes miss
+it; and two interleaved families must not share one counter, because a strided subsequence of a
+low-discrepancy sequence is not itself low-discrepancy &mdash; fixing that took the 100-plane
+coverage from 47.6% to 82.4%.</p>
 
 <h2 id="method">The pipeline, end to end</h2>
 
