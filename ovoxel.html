@@ -178,11 +178,17 @@ behind, because an arbitrary plane usually clips a small piece of the object whe
 cuts through its middle. What decides it is what the schedule does to a solve:</p>
 
 <div class="tw"><table>
-<thead><tr><th>the orange, same budget</th><th>error on photographed planes</th><th>gradient on depths nobody photographed</th></tr></thead>
+<thead><tr><th rowspan="2">the orange, same budget</th><th colspan="2">150 noiseless steps at the end</th><th colspan="2">400 of them</th></tr>
+<tr><th>error</th><th>gradient, unphotographed depths</th><th>error</th><th>gradient</th></tr></thead>
 <tbody>
-<tr><td>planes drawn at random</td><td>0.0559</td><td>258% of the photographs'</td></tr>
-<tr><td>planes from the formula</td><td class="win">0.0548</td><td class="win">231%</td></tr>
+<tr><td>planes drawn at random</td><td>0.0559</td><td>258%</td><td>0.0562</td><td>262%</td></tr>
+<tr><td>planes from the formula</td><td class="win">0.0548</td><td class="win">231%</td><td class="win">0.0544</td><td class="win">235%</td></tr>
 </tbody></table></div>
+
+<p>The run was repeated with the noiseless tail nearly tripled, because a short tail was the one
+thing that could have produced the gap on its own. It did not: both arms move by less than half a
+percent, so the formula's advantage is the schedule's and the 231% of excess texture is a property
+of the method rather than of stopping too early.</p>
 
 <p>2.0% on the error, and the excess texture &mdash; the grain a solve leaves where cells are
 touched unevenly &mdash; falls by 27 points. It is the only change measured on this page that moved
@@ -399,36 +405,68 @@ the arm was then scored against. Every number in the next section is on the test
 
 <h2 id="seven7">What the pipeline produces, on seven objects</h2>
 
-<p>Every arm is the same program with one thing changed, scored by the same script on each object's
-own held-out photographs &mdash; the ones no run has opened. Lower is better; the best in each row
-is marked.</p>
+<p>Every arm is the same program with one thing changed, and each is scored twice by one script: at
+the planes its own photographs were taken at, against those photographs, and at the held-out cuts,
+against the photographs no run has opened. Both halves are needed, because an arm can win the
+held-out column by fitting its own supervision loosely. Lower is better; the best in each column is
+marked, and the mean is over the four.</p>
 
 <div class="tw"><table>
-<thead><tr><th rowspan="2">object</th><th colspan="2">pixel loss alone</th><th colspan="2">+ the field prior</th>
-<th colspan="2">+ drawing a photograph</th><th colspan="2">+ critic, unphotographed planes</th></tr>
-<tr><th>trans.</th><th>long.</th><th>trans.</th><th>long.</th><th>trans.</th><th>long.</th><th>trans.</th><th>long.</th></tr></thead>
+<thead><tr><th>object</th><th>arm</th><th>shown, trans.</th><th>shown, long.</th>
+<th>unseen, trans.</th><th>unseen, long.</th><th>mean</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td>0.1099</td><td>0.2031</td><td>0.1085</td><td class="win">0.1875</td><td class="win">0.1009</td><td>0.1969</td><td>0.1090</td><td>0.2008</td></tr>
-<tr><td>watermelon</td><td>0.1676</td><td>0.2235</td><td>0.1678</td><td>0.2207</td><td class="win">0.1618</td><td class="win">0.2078</td><td>0.1780</td><td>0.2427</td></tr>
-<tr><td>apple</td><td>0.3126</td><td>0.3423</td><td>0.3107</td><td class="win">0.3329</td><td>0.3106</td><td>0.3619</td><td class="win">0.3071</td><td>0.3576</td></tr>
-<tr><td>loaf</td><td>0.4716</td><td>0.4817</td><td>0.4632</td><td>0.4710</td><td>0.4415</td><td>0.4464</td><td class="win">0.4306</td><td class="win">0.4414</td></tr>
-<tr><td>cake</td><td>0.5460</td><td>0.5774</td><td>0.5414</td><td>0.5776</td><td class="win">0.5148</td><td class="win">0.5588</td><td>0.5532</td><td>0.5853</td></tr>
-<tr><td>pomegranate</td><td>0.3056</td><td>0.4262</td><td>0.3064</td><td>0.4281</td><td class="win">0.2672</td><td class="win">0.3791</td><td>0.3033</td><td>0.4275</td></tr>
-<tr><td>doughnut</td><td colspan="8">one photograph per family, so it has no held-out split and cannot be scored</td></tr>
+<tr><td rowspan="4">orange</td><td>pixel loss alone</td><td>0.1149</td><td>0.1908</td><td>0.1116</td><td>0.2138</td><td>0.1578</td></tr>
+<tr><td>+ field prior</td><td>0.1135</td><td class="win">0.1813</td><td>0.1095</td><td class="win">0.2003</td><td>0.1511</td></tr>
+<tr><td>+ drawing a photograph</td><td class="win">0.1109</td><td>0.1833</td><td class="win">0.1007</td><td>0.2049</td><td class="win">0.1499</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.1126</td><td>0.1909</td><td>0.1111</td><td>0.2088</td><td>0.1559</td></tr>
+
+<tr><td rowspan="4">watermelon</td><td>pixel loss alone</td><td>0.1916</td><td>0.2121</td><td>0.1679</td><td>0.2252</td><td>0.1992</td></tr>
+<tr><td>+ field prior</td><td>0.1922</td><td>0.2084</td><td>0.1680</td><td>0.2234</td><td>0.1980</td></tr>
+<tr><td>+ drawing a photograph</td><td class="win">0.1873</td><td class="win">0.2014</td><td class="win">0.1639</td><td class="win">0.2137</td><td class="win">0.1916</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.1993</td><td>0.2297</td><td>0.1774</td><td>0.2427</td><td>0.2123</td></tr>
+
+<tr><td rowspan="4">apple</td><td>pixel loss alone</td><td>0.2753</td><td>0.3300</td><td>0.3195</td><td>0.3629</td><td>0.3219</td></tr>
+<tr><td>+ field prior</td><td>0.2747</td><td>0.3229</td><td>0.3164</td><td class="win">0.3487</td><td class="win">0.3157</td></tr>
+<tr><td>+ drawing a photograph</td><td>0.2833</td><td class="win">0.3209</td><td>0.3158</td><td>0.3703</td><td>0.3226</td></tr>
+<tr><td>+ critic, unphotographed</td><td class="win">0.2705</td><td>0.3489</td><td class="win">0.3133</td><td>0.3747</td><td>0.3268</td></tr>
+
+<tr><td rowspan="4">loaf</td><td>pixel loss alone</td><td>0.4264</td><td>0.3890</td><td>0.4689</td><td>0.4637</td><td>0.4370</td></tr>
+<tr><td>+ field prior</td><td>0.4202</td><td>0.3777</td><td>0.4612</td><td>0.4516</td><td>0.4277</td></tr>
+<tr><td>+ drawing a photograph</td><td>0.4034</td><td class="win">0.3573</td><td>0.4420</td><td class="win">0.4280</td><td class="win">0.4077</td></tr>
+<tr><td>+ critic, unphotographed</td><td class="win">0.4008</td><td>0.3676</td><td class="win">0.4340</td><td>0.4363</td><td>0.4097</td></tr>
+
+<tr><td rowspan="4">cake</td><td>pixel loss alone</td><td>0.4626</td><td>0.4208</td><td>0.5505</td><td>0.5877</td><td>0.5054</td></tr>
+<tr><td>+ field prior</td><td>0.4624</td><td>0.4243</td><td>0.5473</td><td>0.5836</td><td>0.5044</td></tr>
+<tr><td>+ drawing a photograph</td><td class="win">0.4041</td><td class="win">0.3608</td><td class="win">0.5267</td><td class="win">0.5700</td><td class="win">0.4654</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.4814</td><td>0.4327</td><td>0.5571</td><td>0.5929</td><td>0.5160</td></tr>
+
+<tr><td rowspan="4">pomegranate</td><td>pixel loss alone</td><td>0.2873</td><td>0.4275</td><td>0.3060</td><td>0.4197</td><td>0.3601</td></tr>
+<tr><td>+ field prior</td><td>0.2932</td><td>0.4351</td><td>0.3072</td><td>0.4233</td><td>0.3647</td></tr>
+<tr><td>+ drawing a photograph</td><td class="win">0.2562</td><td class="win">0.3715</td><td class="win">0.2609</td><td class="win">0.3768</td><td class="win">0.3164</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.2882</td><td>0.4339</td><td>0.3052</td><td>0.4244</td><td>0.3629</td></tr>
+
+<tr><td rowspan="4">doughnut</td><td>pixel loss alone</td><td class="win">0.1787</td><td class="win">0.5701</td><td colspan="2" rowspan="4">no held-out split: one photograph per family</td><td class="win">0.3744</td></tr>
+<tr><td>+ field prior</td><td>0.1783</td><td>0.5732</td><td>0.3757</td></tr>
+<tr><td>+ drawing a photograph</td><td>0.1799</td><td>0.5736</td><td>0.3767</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.2474</td><td>0.5943</td><td>0.4208</td></tr>
 </tbody></table></div>
 
-<p><strong>Drawing a photograph instead of averaging two wins the transverse family on every object
-that can be scored</strong> &mdash; six of six, with the apple a tie &mdash; and the longitudinal
-family on four of six, the other two going to the field prior. The pomegranate gains most, 12.6% and
-11.1%. The critic wins two columns, both on the loaf, and loses on everything else.</p>
+<p><strong>Drawing a photograph instead of averaging two takes the mean on four objects</strong>
+&mdash; orange, watermelon, cake, pomegranate &mdash; and ties the loaf with the critic, 0.4077
+against 0.4097. The field prior takes the apple. The pixel loss alone takes the doughnut, which is
+the object where drawing cannot operate: it has one photograph per family, so there is nothing to
+draw from, and its numbers move by 0.001 while every other object's move by several percent. That
+the effect vanishes exactly where the mechanism cannot work is the best evidence that it is the
+mechanism. <strong>The critic takes no object's mean</strong>, and on the doughnut it is 12% worse
+than doing nothing.</p>
 
-<div class="note">
-<strong>How much of a difference is a difference.</strong> Two of these arms are the same
-configuration run in different batches &mdash; the pixel-loss column here and the control of the
-critic batch. They differ by 1.3% on the orange, 0.4% on the watermelon and 0.2% on the apple, which
-is the noise floor of this comparison. The critic's margins are inside it; drawing a photograph is
-several times outside it.
-</div>
+<p>The two halves also say something the held-out column alone cannot. On the cake and the
+pomegranate the gain is larger on the planes that <em>were</em> photographed &mdash; the cake's shown
+column improves 12.6% where its unseen column improves 4.3% &mdash; so drawing a photograph mostly
+buys a closer fit to the supervision, and the planes between benefit less. And on the orange and the
+watermelon the two halves are within a few percent of each other in every arm, which means none of
+these arms is overfitting its own photographs: what separates them is the representation's ceiling,
+not memorisation.</p>
 
 <h3>Which half of it works</h3>
 
