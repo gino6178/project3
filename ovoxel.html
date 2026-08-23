@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>O-Voxel: A Dual-Grid Occupancy Representation for Cuttable Objects</title>
+<title>Cuttable Objects on an O-Voxel Carrier, from Unaligned Cross-Section Photographs</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
       integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
@@ -95,7 +95,7 @@
 <div class="wrap">
 
 <header>
-  <h1>O&#8209;Voxel: A Dual-Grid Occupancy Representation for Cuttable Objects, Rendered Without Splatting</h1>
+  <h1>Cuttable Objects on an O&#8209;Voxel Carrier: Photograph-Supervised Interiors and Closed-Form Planar Cutting, Without Splatting</h1>
   <p class="sub">The same two-level lattice, carried all the way to the screen: a flexible dual grid for the surface, a per-cell field for the interior, and a closed-form cut &mdash; one rasteriser pass, no Gaussian anywhere</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint</p>
@@ -166,8 +166,10 @@ bleeding and unpainted void artifacts).
 </p>
 
 <p class="lead">
-We present <strong>O&#8209;Voxel</strong>: the same two-level occupancy lattice, carried to the
-screen without a splatting stage. The exterior is a flexible dual grid whose vertex sits inside its
+O&#8209;Voxel is not ours: it is the field-free sparse voxel surface of TRELLIS.2&nbsp;[10], and we
+use its official encoder without reimplementing it. What we present is what it carries &mdash; a
+cuttable object whose interior comes from photographs and whose cut is closed form, with the
+representation taken to the screen and no splatting stage anywhere. The exterior is a flexible dual grid whose vertex sits inside its
 cell rather than on the cell boundary; the interior is a per-cell field read by interpolation; the
 cut face is the closed-form polygon of a plane against the occupancy. All three go into one
 rasteriser pass, so nothing is converted at the surface and nothing is drawn as a primitive.
@@ -195,15 +197,7 @@ caught and one figure did.
 
 
 
-<figure style="margin:18px 0 26px">
-  <img src="assets/cutface_watermelon.jpg" style="width:100%;border-radius:6px"
-       alt="the same watermelon cut face from this work, FruitNinja and GaussianFluent">
-  <div class="grid3" style="margin-top:6px">
-    <div class="cap">this work</div><div class="cap">FruitNinja</div><div class="cap">GaussianFluent</div>
-  </div>
-  <figcaption><span class="fnum">Figure 1</span><br>DreamSim is a perceptual distance trained on
-  human two-alternative forced choice judgements&nbsp;[62].</figcaption>
-</figure>
+
 
 <h2 id="intro">1&ensp;Introduction</h2>
 
@@ -265,29 +259,11 @@ high-fidelity 3D interiors directly from sparse, unaligned 2D cross-section phot
       lattice operations.</li>
 </ul>
 
-<figure style="margin:22px 0 26px">
-  <img src="assets/six_objects.png" style="width:100%;border-radius:4px"
-       alt="every object, one held-out plane each, from every method">
-  <figcaption><span class="fnum">Figure 2</span><br>Every object, one held-out plane each,
-  rendered in one batch at the same depths with the same settings, the released models
-  re-rendered rather than quoted. The left column is a photograph of a real cut of that kind
-  and is not that plane, since no photograph is.</figcaption>
-</figure>
 
-<figure style="margin:22px 0 26px">
-  <img src="assets/prior_or.png" style="width:100%;border-radius:4px"
-       alt="six held-out planes of the orange from every model, with the photographs">
-  <figcaption><span class="fnum">Figure 3</span><br>Six held-out transverse planes of the
-  orange from every model, the photographs underneath. The third row from the top is this work,
-  with no fine-tuned model anywhere in its run.</figcaption>
-</figure>
 
-<figure style="margin:22px 0 30px">
-  <img src="assets/prior_wm.png" style="width:100%;border-radius:4px"
-       alt="six held-out planes of the watermelon from every model, with the photographs">
-  <figcaption><span class="fnum">Figure 4</span><br>The same for the watermelon, with
-  GaussianFluent&#8217;s released model in the fourth row.</figcaption>
-</figure>
+
+
+
 
 <h2 id="related">2&ensp;Related work</h2>
 
@@ -335,7 +311,7 @@ those share is that the structure serves the renderer. Here it serves the volume
 is given its own representation.</p>
 
 <p><strong>Surface representations for generated 3D.</strong> TRELLIS.2's O&#8209;Voxel [10], the surface stage of a structured-latent 3D generator [11], is a
-field-free sparse voxel surface: a Flexible Dual Grid in which every active voxel carries a dual
+field-free sparse voxel surface: a Flexible Dual Grid&nbsp;[63] in which every active voxel carries a dual
 vertex and grid-edge intersection flags, handling open, non-manifold and fully enclosed internal
 surfaces. We use its official encoder without reimplementing it. <strong>Everything reported here is
 rendered through it.</strong> That is the difference between this page and
@@ -347,7 +323,9 @@ single nvdiffrast pass so the depth test composes them.</p>
 <p><strong>Dual contouring.</strong> The dual vertex is a quadric's minimiser [5], and quadrics
 are additive over their planes. That is what lets an adaptive grid be built by collapsing, and the
 collapse's error be read off the same quadric that placed the vertex. Marching cubes [4] is the
-alternative that places vertices on edges instead, and cannot represent a feature inside a cell;
+alternative that places vertices on edges instead, and cannot represent a feature inside a cell
+&mdash; on an occupancy function its vertex is always the edge midpoint, which is measured as the
+source of the staircase in [64];
 quadric error metrics [8] are where the additivity comes from, and dual marching cubes [6] and
 feature-sensitive extraction [7] are the two nearest relatives of what is used here.</p>
 
@@ -441,7 +419,7 @@ around.</p>
 <figure style="margin:18px 0 30px">
   <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
        alt="a shell, filled, its surface pinned, and the cross-section photographs that write the interior">
-  <figcaption><span class="fnum">Figure 5</span><br>One object through the whole method: the two routes, the
+  <figcaption><span class="fnum">Figure 1</span><br>One object through the whole method: the two routes, the
   photographs that supervise the interior, and what a cut produces.</figcaption>
 </figure>
 
@@ -554,12 +532,7 @@ objects reported here. Nothing about where a photograph was taken is known or re
 the geometric contradictions between sections, and to keep a plane nobody photographed from
 degenerating, the system calibrates the references before and during training.</p>
 
-<figure style="margin:16px 0 26px">
-  <img src="assets/chord.png" style="width:100%;border-radius:4px"
-       alt="two planes meeting in a chord, and 45 degree cuts from the two ways of choosing the phases">
-  <figcaption><span class="fnum">Figure 6</span><br>Two planes meet in a chord. 45&deg; cuts from the phases of
-  equation&nbsp;(4) and of equation&nbsp;(5), and their difference at 4&times;.</figcaption>
-</figure>
+
 
 <h4>3.2.1&ensp;Geometric consistency calibration</h4>
 
@@ -602,13 +575,7 @@ one-dimensional profile, in closed form, once, before training. The registration
 one-dimensional not because a smaller problem was chosen but because the other three dimensions
 are not unknowns.</p>
 
-<figure style="margin:20px 0 26px">
-  <img src="assets/cutface_zoom.png" style="width:100%;border-radius:4px"
-       alt="the same held-out plane three ways, with the interior magnified">
-  <figcaption><span class="fnum">Figure 7</span><br>The same held-out plane, three ways, with
-  the box magnified beside each section. The left column is a photograph of a real cut orange
-  and is not that plane, since no photograph is.</figcaption>
-</figure>
+
 
 <p><strong>Chordal consistency between families.</strong> A transverse plane and a longitudinal
 one meet in a one-dimensional chord, and on that chord the two families describe the same physical
@@ -652,13 +619,7 @@ $$\mathbf{T}_j \;=\; (1 - \{t\})\,\Psi\bigl(\mathbf{I}_{\lfloor t \rfloor}\bigr)
 \;+\; \{t\}\,\Psi\bigl(\mathbf{I}_{\lfloor t \rfloor + 1}\bigr)$$
 </div><div class="num">(7)</div></div>
 
-<figure style="margin:20px 0 26px">
-  <img src="assets/eq7targets.png" style="width:100%;border-radius:4px"
-       alt="the target each supervised plane is given, under both rules">
-  <figcaption><span class="fnum">Figure 8</span><br>The target each of the sixteen supervised
-  planes is given, from three transverse photographs of the watermelon. Red marks where the
-  block rule changes photograph.</figcaption>
-</figure>
+
 
 <h4>3.2.2&ensp;Jittered sampling and alternating optimisation</h4>
 
@@ -733,13 +694,7 @@ times the distance a random walk of the same optimiser and step count would cove
 persistent gradient and not noise. The translation saturates at 1.27 in grid units, which is where
 the target leaves the frame, and the pull transfers to the scale.</p>
 
-<figure style="margin:18px 0 26px">
-  <img src="assets/diffalign.png" style="width:100%;border-radius:4px"
-       alt="held-out sections and the alignment drift, with and without a differentiable fit">
-  <figcaption><span class="fnum">Figure 9</span><br>The same held-out planes under the same seed,
-  differing only in whether the alignment is optimised with the volume, and how far those
-  parameters travel from the fit that initialised them.</figcaption>
-</figure>
+
 
 <p>The volume pays for it. Held-out sections score 0.5585 of DreamSim against 0.0763 for the
 method as specified, and the failure is legible rather than numerical: the optimiser shrinks each
@@ -757,7 +712,7 @@ when the two targets are averaged and 0.012 more when one family is made to win.
 <figure style="margin:16px 0 26px">
   <img src="assets/cutgeom.png" style="width:100%;border-radius:4px"
        alt="the crossed band, one cell's contributing edges, and the whole cut face against the exterior">
-  <figcaption><span class="fnum">Figure 10</span><br>The cells a plane crosses, one cell's contributing edges and
+  <figcaption><span class="fnum">Figure 2</span><br>The cells a plane crosses, one cell's contributing edges and
   its polygon, and the whole exposed face.</figcaption>
 </figure>
 
@@ -874,6 +829,20 @@ storage accounting &mdash; are in section&nbsp;S3 of the supplement, with tables
 numbered S1 onward. The method section as it was first written, with its notation table, its collapse-tolerance sweep, its sealing counts and its refinement ablations, is section&nbsp;S4.</p>
 
 <h3>4.1&ensp;Interior appearance and cross-view consistency</h3>
+<figure style="margin:16px 0 26px">
+  <img src="assets/heldout7.jpg?v=s_v2" style="width:100%;border-radius:4px"
+       alt="every object's held-out cuts beside the photographs they are scored against">
+  <figcaption><span class="fnum">Figure 3</span><br>Every object&#8217;s held-out cuts, beside the
+  photographs they are scored against. These are planes no photograph reached during training, drawn
+  entirely from the dual grid and the occupancy, and the image beside each is the held-out
+  photograph the corresponding number in Table&nbsp;2 is a distance to. Render and photograph are
+  drawn at one size; the doughnut has one photograph per family, so it has nothing held out and the
+  photograph columns are empty. <strong>The striping on the held-out longitudinal cuts is visible
+  here</strong> &mdash; clearest on the loaf and the cake &mdash; and is what
+  section&nbsp;<a href="#stripes">4.5</a> is about.</figcaption>
+</figure>
+
+
 
 <p class="lead">Every model in this section is trained and scored on the same camera set, and the
 score separates the planes a photograph existed for from the planes held out. The two halves answer
@@ -903,42 +872,16 @@ transverse family does (0.0919 against 0.1238) and then loses that lead entirely
 photograph reached. Whatever it is fitting does not extend to the azimuths between its planes.</p>
 
 
-<figure style="margin:16px 0 26px">
-  <img src="assets/zoom2048.png" style="width:100%;max-width:620px;border-radius:4px"
-       alt="the same watermelon plane at 2048 px from three representations, each magnified">
-  <figcaption><span class="fnum">Figure 11</span><br>The same held-out plane of the watermelon
-  at 2048&nbsp;px, each released model through the same cutter, with a box of its own section
-  magnified beside it. GaussianFluent leaves white between its primitives; FruitNinja&#8217;s
-  flesh carries salt-and-pepper over a saturated red; the splatted lattice draws a continuous
-  fibre with the seeds whole.</figcaption>
-</figure>
 
 
 
-<p><strong>Chordal optimisation, on planes neither family supervised.</strong> Where a transverse
-plane and a longitudinal one meet, the two families describe one line twice, and left to
-themselves they disagree there. Figure&nbsp;3 puts 45&deg; cuts from the two ways of choosing the
-phases side by side: aligning each family to itself by equation&nbsp;(4), and solving the angles
-and the assignment together on the chords by equation&nbsp;(5). The two models are not visibly
-different at that size, and the honest measurement is the difference itself &mdash; 0.0465 mean
-absolute on the same plane, against 0.1006 between two different planes of one model, so the two
-choices sit about 46% of the way apart that two different cuts do. Along the chords themselves the
-disagreement falls from 0.1178 to 0.1122.</p>
 
-<p><strong>Continuous against discrete depth assignment.</strong> Real physical structures
-&#8212; vascular bundles, pulp segments &#8212; evolve continuously across depth rather than
-changing abruptly between discrete tiers. Evaluated on the reference sequence alone, the
-piecewise block rule introduces severe inter-slice discontinuity: a step-to-step jerk of 0.1134
-across adjacent supervisory bins against 0.0102 for the continuous mixing of equation&nbsp;(7),
-and in Figure&nbsp;8 three consecutive planes handed the identical image before the fourth is
-handed a different specimen. When mapped into the volume the shared voxel lattice acts as a
-geometric regulariser and the two become indistinguishable: swept over forty-eight depths the
-axial jerk is 0.0405 for the block rule and 0.0408 for equation&nbsp;(7). While the piecewise
-rule achieves a marginally lower perceptual distance on static held-out cuts (0.0738 against
-0.0763) by retaining unregularised local contrast, we retain equation&nbsp;(7) as the default. It
-enforces continuity between adjacent cross-sections, which is what the supervision is a
-description of, and the depth axis is the one along which a staircase would otherwise be
-asserted.</p>
+<p><strong>Two supervision-level measurements are not repeated here.</strong> The chordal
+agreement between the two families, and the step-to-step jerk of the continuous against the block
+depth assignment, are properties of how the photographs are assigned to planes &mdash; which the two
+builds share &mdash; but they were measured on
+<a href="index.html">the splatted pipeline</a> and not on this one. They are reported there. This
+page prints no number it did not produce.</p>
 
 <h3>4.2&ensp;Cutting precision and local complexity</h3>
 
@@ -1027,7 +970,7 @@ what is timed.</p>
     <img src="assets/cuts5.gif" style="width:31%;min-width:180px;border-radius:4px"
          alt="the orange under five planes">
   </div>
-  <figcaption><span class="fnum">Figure 12</span><br>One, three and five planes through the
+  <figcaption><span class="fnum">Figure 4</span><br>One, three and five planes through the
   orange, the pieces drawn apart along their own outward directions and back. The same planes the
   table is timed on, at one scale.</figcaption>
 </figure>
@@ -1064,7 +1007,7 @@ measured on the same card, at the settings each method&#8217;s own code uses.</p
 <figure style="margin:16px 0 26px">
   <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
        alt="the crossed band against the object it is cut from, at four resolutions">
-  <figcaption><span class="fnum">Figure 13</span><br>The crossed band against the object it is cut
+  <figcaption><span class="fnum">Figure 5</span><br>The crossed band against the object it is cut
   from, on each object's own lattice and on three coarsenings of it.</figcaption>
 </figure>
 
@@ -1089,7 +1032,7 @@ fruit has a peel.</p>
 <figure style="margin:16px 0 26px">
   <img src="assets/collision.png" style="width:100%;border-radius:4px"
        alt="a slab through the contact region at four separations">
-  <figcaption><span class="fnum">Figure 14</span><br>A slab through the contact region of the cut
+  <figcaption><span class="fnum">Figure 6</span><br>A slab through the contact region of the cut
   orange, every particle drawn as what the narrow phase calls it: grey for clear, red for
   penetrating, at rest and pushed one, two and four cells in.</figcaption>
 </figure>
@@ -1160,7 +1103,7 @@ elastic response under load is a different experiment and is not in this paper.<
 <figure style="margin:16px 0 26px">
   <img src="assets/dyncut.gif" style="width:100%;max-width:720px;border-radius:4px"
        alt="the orange cut twice while it is moving, its four pieces separating">
-  <figcaption><span class="fnum">Figure 15</span><br>One run, 210 frames: a plane at
+  <figcaption><span class="fnum">Figure 7</span><br>One run, 210 frames: a plane at
   frame&nbsp;20 and another at frame&nbsp;95, one solver per discovered piece, and the
   two-material field throughout.</figcaption>
 </figure>
@@ -1229,14 +1172,7 @@ is drawn hollow because it is answering an easier question.</p>
     <td class="mut">4.06e&#8722;3</td><td class="mut">0.44e&#8722;3</td></tr>
 </tbody></table></div>
 
-<figure style="margin:16px 0 26px">
-  <img src="assets/slicecount.png" style="width:100%;border-radius:4px"
-       alt="DreamSim and depth variation against the number of training photographs">
-  <figcaption><span class="fnum">Figure 16</span><br>The same five models, measured on what a
-  section looks like and on how the interior changes with depth. The mean of the
-  section-to-section difference is flat across the whole sweep, 4.06 to 4.53e&#8722;3, and is not
-  drawn.</figcaption>
-</figure>
+
 
 <p><strong>The perceptual score saturates at one photograph.</strong> From 1 to 5 it moves by
 0.0026, which is a fifth of the fold-to-fold spread the same measurement shows on the orange, and
@@ -1349,7 +1285,7 @@ the seven side by side, and no number moved in a way that would have prompted a 
 
 <figure style="margin:16px 0 26px">
   <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the outside from both cameras">
-  <figcaption><span class="fnum">Figure A</span><br>What supervises each cut, for all seven objects
+  <figcaption><span class="fnum">Figure 8</span><br>What supervises each cut, for all seven objects
   at once. Left to right: the transverse cut's own mask, the photograph mapped onto it, the outside
   from the transverse camera, the outside from the longitudinal camera, the longitudinal mask, its
   target, and the two photographs the row was built from. Every panel is what the pipeline itself
@@ -1613,6 +1549,14 @@ Fields: A General Representation of Shape for Computer Graphics.</em> SIGGRAPH 2
 2013.</li>
 <li>S. Laine and T. Karras. <em>Efficient Sparse Voxel Octrees.</em> I3D 2010.</li>
   <li>S. Fu, N. Tamir, S. Sundaram, L. Chai, R. Zhang, T. Dekel and P. Isola. <em>DreamSim: Learning New Dimensions of Human Visual Similarity using Synthetic Data.</em> NeurIPS 2023.</li>
+  <li>T. Shen, J. Munkberg, J. Hasselgren, K. Yin, Z. Wang, W. Chen, Z. Gojcic, S. Fidler,
+      N. Sharp and J. Gao. <em>Flexible Isosurface Extraction for Gradient-Based Mesh
+      Optimization.</em> ACM TOG 42(4), Article 37, 2023.
+      <a href="https://arxiv.org/abs/2308.05371">arXiv:2308.05371</a>.</li>
+  <li>J. Hwang and M. Sung. <em>Occupancy-Based Dual Contouring.</em> SIGGRAPH Asia 2024.
+      <a href="https://doi.org/10.1145/3680528.3687581">doi:10.1145/3680528.3687581</a>.</li>
+  <li>S. Fridovich-Keil, A. Yu, M. Tancik, Q. Chen, B. Recht and A. Kanazawa.
+      <em>Plenoxels: Radiance Fields without Neural Networks.</em> CVPR 2022.</li>
 </ol>
 
 <p class="mut">The two references that carry the most weight here are [5] and [10]: dual contouring
