@@ -420,6 +420,23 @@ than explicit primitives. The interior is supervised entirely by sparse, unalign
 cross-section photographs, with no pose recovered for any of them, and the representation supports
 analytical planar cutting at machine precision and direct coupling to a grid-based solver.</p>
 
+<h3>3.0&ensp;Notation</h3>
+
+<div class="tw"><table>
+<thead><tr><th>symbol</th><th>domain</th><th>meaning</th></tr></thead>
+<tbody>
+<tr><td>\(C_i\)</td><td>\(i \in \{1,\dots,N\}\)</td><td>coarse cell, side \(h_c\)</td></tr>
+<tr><td>\(h_c,\; h_f\)</td><td>\(h_f = h_c/2\)</td><td>coarse and fine cell size</td></tr>
+<tr><td>\(\mathbf{f}_i\)</td><td>\(\mathbb{R}^d,\; d=8\)</td><td>per-cell latent feature</td></tr>
+<tr><td>\(g_\theta\)</td><td>\(\mathbb{R}^d \to [0,1]^3\)</td><td>shared colour decoder</td></tr>
+<tr><td>\(\Pi_k = (\mathbf{n}_k, d_k)\)</td><td>\(\mathbf{n}_k \in S^2,\; d_k \in \mathbb{R}\)</td><td>cutting plane, \(\mathbf{n}_k^\top\mathbf{x} + d_k = 0\)</td></tr>
+<tr><td>\(e_j\)</td><td>\(j \in \{1,\dots,12\}\)</td><td>edge of a crossed cell</td></tr>
+<tr><td>\(\mathbf{v}_j\)</td><td>\(\mathbb{R}^3\)</td><td>intersection of \(\Pi_k\) with \(e_j\)</td></tr>
+<tr><td>\(K\)</td><td>\(K \ll N\)</td><td>cells \(\Pi_k\) crosses</td></tr>
+<tr><td>\(\mathbf{u}_v,\; w_v\)</td><td>\([0,1]^3,\; [0,1]\)</td><td>dual vertex offset in its voxel, split weight</td></tr>
+<tr><td>\(\delta_k,\; \pi\)</td><td>\([0,2\pi),\; S_M\)</td><td>reference rotation, photograph-to-plane assignment</td></tr>
+</tbody></table></div>
+
 <h3>3.1&ensp;Decoupled representation and initialisation</h3>
 
 <h4>3.1.1&ensp;Problem formulation and the two-level lattice</h4>
@@ -464,9 +481,7 @@ spacings held once &#8212; not as a dense array, and not in a tree. A dense occu
 only inside the fill that builds it and is discarded; two levels fixed in advance make the index
 an integer division, so there is nothing for an octree or a VDB to accelerate. For the orange that
 is 682,100 coarse cells and 480,287 fine ones. Under one codec that is 7.8&nbsp;MiB for the
-lattice alone and 9.7&nbsp;MiB once the dual grid is stored with it &mdash; see
-<a href="#abstract">Table&nbsp;1</a>, and note that the absolute values there are on a different
-compressor from the splatted pipeline's table.</p>
+lattice alone and 9.7&nbsp;MiB once the dual grid is stored with it (<a href="#abstract">Table&nbsp;1</a>; lzma, not zstd).</p>
 
 <p><strong>Feature lookup is interpolated, and this is the representation&#8217;s one real
 departure.</strong> The splatted pipeline returns the feature of the cell containing
@@ -810,6 +825,41 @@ $$u_j = 0.65\,\beta_j + 0.35\,\operatorname{rank}(L)_j, \qquad
       \mathbf{x}_j(t)\), so the exterior follows a piece through non-rigid motion rather than
       being re-extracted.</li>
 </ul>
+
+<h3 id="props">3.5&ensp;Two guarantees</h3>
+
+<p><strong>Proposition 1 (no hanging edge).</strong> Let the lattice be refined by equal-size
+subdivision, each cell of side \(h_c\) splitting into eight of side \(h_c/2\), with the level of
+a cell fixed in advance and not adaptive. Then two face-adjacent cells differ by at most one level
+and their shared face is tiled by either one face or four coincident quarter-faces. No edge of a
+finer face terminates in the interior of a coarser face, so the cut polygon boundary is closed and
+the extracted surface is 2-manifold with Euler characteristic that of the cut region.</p>
+
+<p><em>Proof.</em> The two-level scheme assigns level 1 to skin cells and level 0 elsewhere, so the
+level difference across a face is in \(\{0,1\}\). At difference 0 the faces coincide. At
+difference 1 the four fine faces partition the coarse face exactly, because \(h_f = h_c/2\)
+divides it into \(2\times 2\) congruent squares aligned to the same integer lattice. A T-junction
+requires a fine vertex interior to a coarse edge and not shared by the coarse cell, which the
+alignment excludes. \(\square\)</p>
+
+<p><strong>Proposition 2 (cost of a cut).</strong> Evaluating \(\Pi_k\) against the lattice and
+extracting the connected components of the two sides is
+\(\mathcal{O}(N_{\mathrm{crossed}})\) in the cells the plane crosses, not
+\(\mathcal{O}(N)\).</p>
+
+<p><em>Proof.</em> A cell contributes a polygon only if
+\(|\mathbf{n}_k^\top \mathbf{c}_i + d_k| \le \tfrac{\sqrt{3}}{2} h_c\), which selects
+\(K = N_{\mathrm{crossed}}\) cells by one pass of a comparison that is \(\mathcal{O}(1)\) per
+cell and is evaluated on the whole array at once. Within each, the twelve edges give at most twelve
+roots \(\mathbf{v}_j\), sorted into one convex polygon in \(\mathcal{O}(1)\). Side membership
+is the sign of the same expression, so component labelling proceeds on the sign field by union-find
+over face adjacency, whose merges are confined to the crossed band; cells away from the band retain
+the labelling of the uncut object. The measured constant is
+section&nbsp;<a href="#results">4.2</a>. \(\square\)</p>
+
+<p>The implementation as measured does not attain the bound of Proposition&nbsp;2: adjacency is
+built and component storage allocated over every leaf, so the wall-clock cost tracks \(N\) rather
+than \(K\). Reusing adjacency outside the band removes most of that gap.</p>
 
 <h2 id="results">4&ensp;Experiments</h2>
 
@@ -1375,6 +1425,18 @@ sections&nbsp;<a href="#method">3.1</a> and&nbsp;<a href="#results">4</a>.</p>
 <h3>5.2&ensp;Limitations and future work</h3>
 
 <ul>
+  <li><strong>Ghosting under specimen distortion.</strong> The photographs are of different
+      specimens. Where a specimen's non-rigid distortion exceeds what the similarity fit absorbs
+      &mdash; a compressed loaf, a cake whose layers are not parallel to its own base &mdash; two
+      references disagree about where a boundary lies, and the cell they share holds their mean.
+      This appears as a doubled or smeared membrane rather than as a misplaced one. It bounds the
+      loaf and the cake in Table&nbsp;2, whose shown-transverse scores are 0.4065 and 0.4664
+      against the orange's 0.1238, and no increase in supervision removes it: the disagreement is
+      in the data.</li>
+  <li><strong>No claim on absolute material parameters.</strong> The representation carries a
+      per-cell feature from which regions separate, and a cut produces bodies a solver can accept.
+      No absolute Young's modulus is inferred or claimed, and none is validated against a
+      measurement.</li>
   <li><strong>Unbounded planar cut formulation.</strong> Piece identity is derived from connected
       components over an integer lattice using global sign codes per cutting plane. Partial
       incisions that terminate within the interior therefore cannot be natively expressed without
