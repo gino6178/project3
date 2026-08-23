@@ -687,8 +687,9 @@ and weight, a second-order prior, the low-discrepancy schedule and a single phot
 azimuth all sit inside the seed repeat on every column.</p>
 
 <figure style="margin:16px 0 26px">
-  <img src="assets/pieces_orange.gif?v=s_v2" style="width:100%;max-width:520px;border-radius:4px"
-       alt="two planes cut the orange into four components which separate, each carrying its own exposed faces">
+  <video src="assets/pieces_orange.mp4?v=s_v3" autoplay loop muted playsinline preload="metadata"
+         style="width:100%;max-width:520px;border-radius:4px"
+         aria-label="two planes cut the orange into four components, which separate and fall, each carrying its own exposed faces"></video>
   <figcaption><span class="fnum">Figure 4</span><br><strong>The partition a cut delivers to a
   solver.</strong> Two planes, one transverse and one longitudinal, are evaluated against the
   lattice and connected components extracted by union-find over face adjacency. The orange resolves
@@ -696,8 +697,9 @@ azimuth all sit inside the seed repeat on every column.</p>
   cells &mdash; 770,182 in total, every cell in exactly one component, so mass is conserved by
   construction rather than numerically. Each component carries its own share of the dual-grid
   boundary and its own exposed faces, and all four are rasterised in one pass so the depth test
-  composes them. <strong>The motion is prescribed, not solved:</strong> constant velocity along each
-  cut normal and constant acceleration. No solver, contact resolution or material parameter is
+  composes them. <strong>The motion is prescribed, not solved:</strong> each component
+  separates along the two cut normals, then descends under constant acceleration and stops at a
+  height assigned to it. No solver, contact resolution or material parameter is
   involved. What the figure demonstrates is that the partition, the adjacency and the exposed faces
   are available to one.</figcaption>
 </figure>
