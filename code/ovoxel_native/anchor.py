@@ -87,6 +87,18 @@ class ColourDecoder(nn.Module):
             rgb = torch.where(m[:, None], t, rgb)
         return rgb
 
+    def at(self, f):
+        """The colour this decoder gives an arbitrary feature vector, not only a cell's own.
+
+        `forward` decodes the features at the cells and the cut face then interpolates those
+        colours, so the MLP is a reparametrisation of a per-cell colour and contributes nothing to
+        the field's continuity: between two cells the colour is still linear in world position and
+        its derivative still jumps at the boundary. Decoding an interpolated feature instead makes
+        the MLP part of the field, which is what SEC_FIELD selects. `pin` is deliberately not
+        applied -- it names cells, and this is asked about points.
+        """
+        return torch.sigmoid(self.stage2(self._s1(f)))
+
     def pin_colour(self, mask, target):
         self.pin = (mask, target)
 

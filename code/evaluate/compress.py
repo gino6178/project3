@@ -137,11 +137,35 @@ def lattice(d):
     return N, raw, _zstd(b"".join(parts)), ["Morton delta", "level 1b", f"feature 8b x{FEAT}"], []
 
 
+def ovoxel(spec):
+    """The lattice, plus the dual grid that is what makes it O-Voxel.
+
+    `lattice` counts what the splatted pipeline stores: a coordinate, a level and a feature per
+    cell. O-Voxel also stores where the surface sits inside each cell -- the dual vertex and its
+    split weight -- and that is not free. It is quoted here rather than left out, because a
+    storage figure for a representation that omits the field it is named after is a figure for a
+    different object. The vertex is stored as its offset inside its own voxel at 8 bits an axis,
+    which is 1/256 of a cell and below what the renderer resolves.
+    """
+    import torch
+    d, state = spec.split("+", 1)
+    N, raw, comp, kept, dropped = lattice(d)
+    st = torch.load(state, map_location="cpu", weights_only=False)
+    dv = st["dual_v"].numpy().astype(np.float64)
+    sw = st["split_w"].numpy().astype(np.float64).reshape(-1)
+    hf = float(st["hf"])
+    frac = (dv / hf) - np.floor(dv / hf)
+    parts = [_q(frac[:, i], 8) for i in range(3)] + [_q(sw, 8)]
+    return (N, raw + len(dv) * 16, comp + _zstd(b"".join(parts)),
+            kept + [f"dual vertex 8b x3 + split weight 8b, {len(dv):,} vertices"], dropped)
+
+
 def main(*specs):
     print(f"  {'model':<34} {'elements':>10}  {'as counted':>11} {'compressed':>11}  {'ratio':>6}")
     for spec in specs:
         name, path = spec.split("=", 1)
-        f = lattice if _os.path.isdir(path) else gaussian
+        f = (ovoxel if "+" in path else
+             lattice if _os.path.isdir(path) else gaussian)
         N, raw, comp, kept, dropped = f(path)
         print(f"  {name:<34} {N:>10,}  {raw / MiB:>10.1f}M {comp / MiB:>10.1f}M  "
               f"{raw / max(comp, 1):>5.1f}x")

@@ -199,6 +199,44 @@ def build(lattice_dir, device="cuda", verbose=True):
 
 # ---------------------------------------------------------------- interior field lookup
 
+# Whether the cut face interpolates COLOUR between cells or interpolates the decoder's FEATURE and
+# decodes at the sample point. The first is what the field has always been: piecewise trilinear in
+# world position, so its derivative jumps at every cell boundary however the colours were arrived
+# at. The second puts the MLP inside the field, where a smooth function of a smoothly varying
+# feature is smooth. Off by default; SEC_FIELD=1 selects it.
+FIELD = os.environ.get("SEC_FIELD", "0") == "1"
+
+# Trilinear weights are C0: the value is continuous across a cell boundary and its derivative is
+# not, which is what a flat facet with a crease at every boundary looks like. The cubic B-spline
+# basis over the same 4x4x4 neighbourhood is C2, at the cost of eight times the gathers. SEC_CUBIC
+# selects it; the weights still get the renormalisation an absent neighbour needs.
+CUBIC = os.environ.get("SEC_CUBIC", "0") == "1"
+
+# The control this representation has to be read against: a plain voxel grid. Two things separate
+# the two, and each is a switch here rather than a second codebase, so everything else -- the
+# photographs, the cameras, the schedule, the loss, the number of steps -- is identical by
+# construction.
+#
+#   SEC_NEAREST   the cut face takes the colour of the cell it falls in, instead of interpolating
+#                 its neighbours. This is what a voxel grid IS: a piecewise constant field.
+#   SEC_BLOCKY    the exterior is the boundary faces of the solid cells, instead of the flexible
+#                 dual surface whose vertex sits inside its cell. Marching Cubes on an occupancy
+#                 function puts every vertex at an edge midpoint, which is what makes the staircase
+#                 (Occupancy-Based Dual Contouring, SIGGRAPH Asia 2024); the dual grid is what
+#                 FlexiCubes (TOG 2023) adds degrees of freedom to.
+NEAREST = os.environ.get("SEC_NEAREST", "0") == "1"
+_OFF3 = (-1, 0, 1, 2)
+
+
+def _bspline(t):
+    """The four cubic B-spline weights for a point t in [0,1) of a cell, in _OFF3's order."""
+    t2, t3 = t * t, t * t * t
+    return ((1 - 3 * t + 3 * t2 - t3) / 6.0,
+            (4 - 6 * t2 + 3 * t3) / 6.0,
+            (1 + 3 * t + 3 * t2 - 3 * t3) / 6.0,
+            t3 / 6.0)
+
+
 def sample_interior(st, p):
     """Trilinear interpolation of the per-cell colour field at world points p (M,3).
 
@@ -213,23 +251,37 @@ def sample_interior(st, p):
     w = u - i0
     i0 = i0.long() - torch.as_tensor(st["idx_lo"], dtype=torch.long, device=p.device)
     G = st["idx3"].shape
-    out = torch.zeros(len(p), 3, device=p.device, dtype=st["interior"].dtype)
+    _field = FIELD and st.get("feat") is not None and st.get("decode") is not None
+    src = st["feat"] if _field else st["interior"]
+    out = torch.zeros(len(p), src.shape[1], device=p.device, dtype=src.dtype)
     wsum = torch.zeros(len(p), 1, device=p.device, dtype=st["interior"].dtype)
-    for dx in (0, 1):
-        for dy in (0, 1):
-            for dz in (0, 1):
-                idx = i0 + torch.tensor([dx, dy, dz], device=p.device)
-                inb = ((idx >= 0) & (idx < torch.tensor(G, device=p.device))).all(1)
-                cl = idx.clamp(min=torch.zeros(3, dtype=torch.long, device=p.device),
-                               max=torch.tensor([g - 1 for g in G], device=p.device))
-                row = st["idx3"][cl[:, 0], cl[:, 1], cl[:, 2]].long()
-                val = inb & (row >= 0)
-                ww = ((w[:, 0] if dx else 1 - w[:, 0]) *
-                      (w[:, 1] if dy else 1 - w[:, 1]) *
-                      (w[:, 2] if dz else 1 - w[:, 2]))[:, None] * val[:, None].float()
-                out = out + ww * st["interior"][row.clamp(min=0)]
-                wsum = wsum + ww
-    return out / wsum.clamp(min=1e-6)
+    if NEAREST:
+        # the containing cell and nothing else: no neighbour contributes and there is no ramp
+        # between one cell and the next
+        offs, wts = [(0, 0, 0)], [torch.ones(len(p), device=p.device)]
+        i0 = torch.floor((p - org) / hc).long() \
+            - torch.as_tensor(st["idx_lo"], dtype=torch.long, device=p.device)
+    elif CUBIC:
+        bx, by, bz = _bspline(w[:, 0]), _bspline(w[:, 1]), _bspline(w[:, 2])
+        offs = [(a, b, c) for a in range(4) for b in range(4) for c in range(4)]
+        wts = [bx[a] * by[b] * bz[c] for a, b, c in offs]
+        offs = [(_OFF3[a], _OFF3[b], _OFF3[c]) for a, b, c in offs]
+    else:
+        offs = [(a, b, c) for a in (0, 1) for b in (0, 1) for c in (0, 1)]
+        wts = [(w[:, 0] if a else 1 - w[:, 0]) * (w[:, 1] if b else 1 - w[:, 1])
+               * (w[:, 2] if c else 1 - w[:, 2]) for a, b, c in offs]
+    for (dx, dy, dz), ww0 in zip(offs, wts):
+        idx = i0 + torch.tensor([dx, dy, dz], device=p.device)
+        inb = ((idx >= 0) & (idx < torch.tensor(G, device=p.device))).all(1)
+        cl = idx.clamp(min=torch.zeros(3, dtype=torch.long, device=p.device),
+                       max=torch.tensor([g - 1 for g in G], device=p.device))
+        row = st["idx3"][cl[:, 0], cl[:, 1], cl[:, 2]].long()
+        val = inb & (row >= 0)
+        ww = ww0[:, None] * val[:, None].float()
+        out = out + ww * src[row.clamp(min=0)]
+        wsum = wsum + ww
+    out = out / wsum.clamp(min=1e-6)
+    return st["decode"](out) if _field else out
 
 
 # ---------------------------------------------------------------- the cut face
@@ -379,16 +431,26 @@ def render_section(st, glctx, mvp, n, d, res, bg=1.0, exterior=True, aa=True,
     through overlapping Gaussians -- and it is stated as one.
     """
     if thickness > 0 and n_sub > 1:
-        offs = np.linspace(-thickness, thickness, n_sub)
+        # in lattice units, as the docstring says: `d` is a world-space offset and the object spans
+        # about one world unit, so adding a raw 2.0 puts every sub-plane outside it and the
+        # rasteriser is handed nothing to draw.
+        offs = np.linspace(-thickness, thickness, n_sub) * float(st["hc"])
         acc_i = acc_a = None
-        K = nf = 0
+        K = nf = kept = 0
         for o in offs:
-            im, al, k_, nf_ = render_section(st, glctx, mvp, n, d + float(o), res, bg=bg,
-                                             exterior=exterior, aa=aa, thickness=0.0)
+            try:
+                im, al, k_, nf_ = render_section(st, glctx, mvp, n, d + float(o), res, bg=bg,
+                                                 exterior=exterior, aa=aa, thickness=0.0)
+            except RuntimeError:
+                # a sub-plane past the end of the object cuts nothing and has no exterior behind
+                # it either; it contributes nothing and must not divide the average either
+                continue
             acc_i = im if acc_i is None else acc_i + im
             acc_a = al if acc_a is None else acc_a + al
-            K, nf = max(K, k_), max(nf, nf_)
-        return acc_i / len(offs), acc_a / len(offs), K, nf
+            K, nf, kept = max(K, k_), max(nf, nf_), kept + 1
+        if kept == 0:
+            return render_section(st, glctx, mvp, n, d, res, bg=bg, exterior=exterior, aa=aa)
+        return acc_i / kept, acc_a / kept, K, nf
     import nvdiffrast.torch as dr
     dev = st["interior"].device
     parts_v, parts_c, parts_f, off = [], [], [], 0

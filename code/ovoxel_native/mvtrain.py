@@ -336,6 +336,11 @@ def decode():
     """write_into's role: put the decoded colours where the renderer reads them, in the graph."""
     if ANCHOR:
         st["interior"] = dec_i()
+        if ON.FIELD and ANCHOR:
+            # the cut face reads these instead: the feature per cell and the head that turns an
+            # interpolated one into a colour. `interior` is still decoded because the field prior
+            # and the exterior are stated over cells, not over points.
+            st["feat"], st["decode"] = dec_i.feat, dec_i.at
         st["surf_rgb"] = dec_s()
 
 
@@ -623,6 +628,11 @@ _urng = np.random.default_rng(0)
 # the family's total weight is unchanged and only its distribution moves.
 FAM_BAL = float(os.environ.get("SEC_FAM_BAL", "0"))
 SEC_SCHED = os.environ.get("SEC_SCHED", "random")
+# The half-width of the band a supervised cut is integrated over, in lattice units.
+# 0 is the plane the pipeline has always drawn; the pipeline this is compared against
+# splats every primitive within avg_dis/2 of the plane, which is an integral over a
+# slab several cells wide, and the two are different physical quantities.
+SEC_SLAB = float(os.environ.get("SEC_SLAB", "0"))
 STRATA = int(os.environ.get("SEC_STRATA", "16"))
 _PHI = (1 + 5 ** 0.5) / 2
 _sched_n = {}
@@ -689,7 +699,8 @@ for j in range(ITERS):
             if kind == "h":
                 _f = _jit(("h", i)) * JITTER
                 d = float(hd[H_LO + i]) + h_step * _f
-                img, al, _, _ = ON.render_section(st, glctx, hmvp, hn, d, RES)
+                img, al, _, _ = ON.render_section(st, glctx, hmvp, hn, d, RES,
+                                                  thickness=SEC_SLAB)
                 # the target follows the plane. Both families jitter, and picking the reference by
                 # the integer index leaves a plane that has moved most of the way towards its
                 # neighbour still supervised by its own photograph -- which is exactly the two
@@ -730,7 +741,8 @@ for j in range(ITERS):
                                                  _axis, _cen, _a)
                     _vm = torch.as_tensor(_m2, dtype=torch.float32, device=dev)
                     n = torch.as_tensor(_n2, dtype=torch.float32, device=dev)
-                img, al, _, _ = ON.render_section(st, glctx, _vm, n, dv, RES)
+                img, al, _, _ = ON.render_section(st, glctx, _vm, n, dv, RES,
+                                                  thickness=SEC_SLAB)
                 ref = (refs_v[i] if not (REF_FOLLOW or refsel.SAMPLE) else refsel.as_array(
                     refsel.photo(REF_V, i + (_q(_fv) if REF_FOLLOW else 0), NV), RES))
             else:
@@ -885,6 +897,8 @@ for j in range(ITERS):
                 _f = steps / max(TOTAL_STEPS, 1)
                 _tvw = fieldreg.WEIGHT * (TV_ANNEAL ** (1.0 - min(_f, 1.0)))
             loss = loss + _tvw * fieldreg.penalty(st["interior"], _tvpairs, polar=_tvpolar)
+            if fieldreg.LAP > 0:
+                loss = loss + fieldreg.LAP * fieldreg.laplacian(st["interior"], _tvpairs)
         l1_now = float(np.mean(_l1s))
         opt.zero_grad(set_to_none=True)
         loss.backward()

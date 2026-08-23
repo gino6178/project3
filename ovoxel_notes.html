@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Working notes — The object as an O-Voxel grid, end to end</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+      integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+        integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+<style>
+  :root{ --ink:#111; --mut:#5c5c5c; --line:#e6e6e6; --acc:#a8412a; --panel:#f7f7f7; }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:#fff;color:var(--ink);
+       font:17px/1.7 "Charter","Georgia","Times New Roman",serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  .eq{display:flex;align-items:center;gap:14px;margin:20px 0}
+  .eq .body{flex:1;overflow-x:auto;overflow-y:hidden;text-align:center}
+  .eq .num{color:var(--mut);font-size:14px;flex:none}
+  .katex{font-size:1.02em}
+  header{padding:56px 0 30px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(27px,4.4vw,40px);line-height:1.22;margin:0 0 10px;font-weight:600;
+     letter-spacing:-.01em}
+  .sub{color:var(--mut);font-size:clamp(15px,2.2vw,19px);margin:0 0 6px;font-style:italic}
+  .authors{font-size:17px;margin:14px 0 2px}
+  .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:16px;margin-top:16px}
+  .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.35);
+           padding-bottom:1px}
+  .links a:hover{border-bottom-color:var(--acc)}
+  h2{font-size:25px;margin:52px 0 10px;font-weight:600;letter-spacing:-.01em;text-align:left}
+  h3{font-size:19px;margin:34px 0 8px;font-weight:600}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:26px 0}
+  .grid2 figure{margin:0}
+  .grid2 video{width:100%;display:block;border-radius:3px;background:#fff}
+  .grid2 img{width:100%;display:block;border-radius:3px;background:#fff}
+  .grid2 .cap{color:var(--mut);font-size:13.5px;margin-top:5px;text-align:center}
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr} }
+  .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
+  nav.toc{display:flex;flex-wrap:wrap;gap:0 18px;justify-content:center;padding:14px 0 2px;
+          border-bottom:1px solid var(--line);font-size:14.5px}
+  nav.toc a{color:var(--mut);text-decoration:none}
+  nav.toc a:hover{color:var(--acc)}
+  p{margin:0 0 16px;text-align:left}
+  .lead{font-size:17.5px}
+  figure{margin:26px 0}
+  figure video{width:100%;display:block;border-radius:3px;background:#fff}
+  figure img{width:100%;display:block;border-radius:3px;background:#fff}
+  figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
+  .tw{overflow-x:auto;margin:20px 0}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-weight:600;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+  .win{font-weight:700}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:14px 18px;
+        border-radius:0 3px 3px 0;font-size:16px;margin:22px 0;color:#3c3c3c}
+  .note strong{color:var(--ink)}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:14px;
+      overflow-x:auto;font-size:13.5px;line-height:1.5;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+  footer{margin:60px 0 48px;padding-top:22px;border-top:1px solid var(--line);
+         color:var(--mut);font-size:14.5px}
+  ul{margin:0 0 16px;padding-left:24px} li{margin-bottom:7px}
+  @media (max-width:640px){ body{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>O&#8209;Voxel: the working notes</h1>
+  <p class="sub">Every measurement behind the O&#8209;Voxel page, including the ones that came out negative and the three settings defects the seven-object figure caught</p>
+  <p class="authors">Anonymous</p>
+  <div class="links">
+    <a href="index.html">Paper</a>
+    <a href="ovoxel.html">O&#8209;Voxel</a>
+    <a href="supplement.html">Supplement</a>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#what">What this is</a><a href="#best">What the arms are worth</a><a href="#sched">The schedule</a><a href="#method">The pipeline</a><a href="#seven7">Seven objects</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#families">Transverse and longitudinal</a><a href="#setup">How each object is set up</a><a href="#split">The plane count in full</a><a href="#loss">The objective in full</a><a href="#buys">What it buys</a><a href="#rays">Rays and contact</a><a href="#limits">What it does not do</a><a href="experiments.html">Every experiment &rarr;</a>
+</nav>
+
+<h2 id="what">What this is, and what it is not</h2>
+
+<p class="lead">The paper's pipeline stores appearance on a two-level cube lattice and draws it
+through the 3D&nbsp;Gaussian rasteriser: the cells are splatted. This page is a separate build in
+which nothing is splatted. The object <em>is</em> an O&#8209;Voxel dual grid and a per-cell
+interior field, the cut face is the closed-form polygon of a plane against the occupancy, and both
+go into one nvdiffrast pass. It answers a question the paper cannot: what does this object look
+like when the representation is carried all the way through, rather than converted at the surface
+and splatted underneath?</p>
+
+<div class="note">
+<strong>These are not the paper's reported numbers.</strong> Every result on this page comes from
+the O&#8209;Voxel-native build in <code>code/ovoxel_native/</code>, trained separately. The paper's
+tables are unaffected by anything here, and where the two disagree the paper's numbers are the ones
+that were produced by the pipeline it describes.
+</div>
+
+<h2 id="best">What the arms are worth, on seven objects</h2>
+
+<p class="lead">Every arm below is the same program with one thing changed. All fourteen runs in the
+table were configured in one file and launched together, because the alternative &mdash; comparing
+two runs whose settings were recorded nowhere &mdash; produced a 17% improvement that turned out to
+be 2.1% when the control was run properly.</p>
+
+<div class="note">
+<strong>A retraction.</strong> This page reported a patch critic on the unphotographed planes as the
+best arm, at 0.0910 against 0.1099 on the orange &mdash; a 17% improvement. That comparison was
+between an earlier critic run and an earlier control whose configurations were never written down.
+Run against a control built in the same batch, the same change is worth <strong>2.1%</strong> on the
+orange, and on seven objects it is not an improvement at all. The numbers below replace it.
+</div>
+
+<div class="tw"><table>
+<thead><tr><th rowspan="2">object</th><th colspan="2">pixel loss alone</th>
+<th colspan="2">+ critic on the unphotographed planes</th><th rowspan="2">verdict</th></tr>
+<tr><th>transverse</th><th>longitudinal</th><th>transverse</th><th>longitudinal</th></tr></thead>
+<tbody>
+<tr><td>loaf</td><td>0.4721</td><td>0.4806</td><td class="win">0.4306</td><td class="win">0.4414</td><td>better, 8.8% / 8.2%</td></tr>
+<tr><td>orange</td><td>0.1113</td><td>0.2035</td><td class="win">0.1090</td><td class="win">0.2008</td><td>better, 2.1% / 1.3%</td></tr>
+<tr><td>apple</td><td>0.3133</td><td class="win">0.3404</td><td class="win">0.3071</td><td>0.3576</td><td>split</td></tr>
+<tr><td>pomegranate</td><td class="win">0.3028</td><td class="win">0.4243</td><td>0.3033</td><td>0.4275</td><td>worse, slightly</td></tr>
+<tr><td>cake</td><td class="win">0.5459</td><td class="win">0.5846</td><td>0.5532</td><td>0.5853</td><td>worse, slightly</td></tr>
+<tr><td>watermelon</td><td class="win">0.1682</td><td class="win">0.2238</td><td>0.1780</td><td>0.2427</td><td>worse, 5.8% / 8.4%</td></tr>
+<tr><td>doughnut</td><td colspan="4">one photograph per family, so it has no held-out split and cannot be scored</td><td>&mdash;</td></tr>
+</tbody></table></div>
+
+<p><strong>Two objects improve, three are worse, one is split.</strong> The transverse mean moves
+from 0.3189 to 0.3135, 1.7%, and almost all of that is the loaf: remove it and the mean goes the
+other way. The honest statement is that a critic on the planes no photograph corresponds to helps
+one object a great deal, hurts another, and does nothing measurable to the rest &mdash; not that it
+is the method.</p>
+
+<p>What the critic is, and why it was expected to work, is in <a href="experiments.html#critic">the
+experiments</a>. The mechanism is sound and the measurement does not support it as a default, which
+is the same shape as the other single-object results this project has had to withdraw.</p>
+
+<h2 id="sched">The supervision schedule, as a formula</h2>
+
+<p class="lead">The photographs lie on two lines through the space of planes: a transverse plane is
+a fixed normal at a varying depth, a longitudinal one is a varying azimuth about the axis at a fixed
+depth. <a href="experiments.html#touch">Measured</a>, the fixed 26 of them reach 39&ndash;59% of an
+object's cells and that is a ceiling. Drawing the planes instead accumulates &mdash; and drawing them
+by a formula accumulates faster than drawing them at random.</p>
+
+<p>The schedule is deterministic. At step <em>k</em>, with each family keeping its own counter,</p>
+
+<pre>depth   = d0 + (d1 - d0) * frac( radical_inverse_2(k_h) + phi * floor(k_h / P) )
+azimuth = pi * frac( k_v * phi + phi^2 * floor(k_v / P) )</pre>
+
+<p>&mdash; a radical inverse for the depth, the golden angle for the azimuth, and a shift every
+<em>P</em> steps. Every prefix of that sequence is spread rather than spread on average, so "one
+pass covers most of the space" holds by construction; the shift is there because a formula that
+guarantees even coverage in one pass also guarantees it repeats itself in the next.</p>
+
+<div class="tw"><table>
+<thead><tr><th>planes</th><th>the fixed 26</th><th>drawn at random</th><th>from the formula</th><th>a spiral over all orientations</th></tr></thead>
+<tbody>
+<tr><td>26</td><td>54.6%</td><td>48.7%</td><td>36.1%</td><td>28.4%</td></tr>
+<tr><td>50</td><td>&mdash;</td><td>64.4%</td><td>59.9%</td><td>46.2%</td></tr>
+<tr><td>100</td><td>&mdash;</td><td>84.6%</td><td>82.4%</td><td>70.0%</td></tr>
+<tr><td>200</td><td>&mdash;</td><td>92.5%</td><td class="win">94.7%</td><td>91.3%</td></tr>
+<tr><td>400</td><td>&mdash;</td><td>98.0%</td><td>95.2%</td><td class="win">99.1%</td></tr>
+</tbody></table></div>
+
+<p>Coverage alone does not decide it: the formula leads at 200 planes and saturates by 400, random
+keeps finding corners, and a spiral over <em>all</em> orientations wins in the end but starts far
+behind, because an arbitrary plane usually clips a small piece of the object where a family plane
+cuts through its middle. What decides it is what the schedule does to a solve:</p>
+
+<div class="tw"><table>
+<thead><tr><th rowspan="2">the orange, same budget</th><th colspan="2">150 noiseless steps at the end</th><th colspan="2">400 of them</th></tr>
+<tr><th>error</th><th>gradient, unphotographed depths</th><th>error</th><th>gradient</th></tr></thead>
+<tbody>
+<tr><td>planes drawn at random</td><td>0.0559</td><td>258%</td><td>0.0562</td><td>262%</td></tr>
+<tr><td>planes from the formula</td><td class="win">0.0548</td><td class="win">231%</td><td class="win">0.0544</td><td class="win">235%</td></tr>
+</tbody></table></div>
+
+<p>The run was repeated with the noiseless tail nearly tripled, because a short tail was the one
+thing that could have produced the gap on its own. It did not: both arms move by less than half a
+percent, so the formula's advantage is the schedule's and the 231% of excess texture is a property
+of the method rather than of stopping too early.</p>
+
+<p>2.0% on the error, and the excess texture &mdash; the grain a solve leaves where cells are
+touched unevenly &mdash; falls by 27 points. It is the only change measured on this page that moved
+both at once; more steps, a decayed learning rate and a wavelet critic all moved neither.</p>
+
+<figure>
+  <img src="assets/sched_coverage.jpg" alt="what each schedule reaches, at three plane counts">
+  <div class="cap">Every cell shaded by how many of the first N planes touched it; black is a cell
+  no plane reached. <span style="font-size:12.5px">Rows: the fixed schedule &middot; independent
+  draws &middot; the formula. Columns: 26, 100 and 400 planes.</span></div>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>cells that receive any gradient</th><th>26 planes</th><th>100</th><th>400</th><th>most times one cell is touched, at 400</th></tr></thead>
+<tbody>
+<tr><td>the fixed schedule</td><td>32.2%</td><td>32.2%</td><td>32.2%</td><td>167</td></tr>
+<tr><td>drawn at random</td><td>32.6%</td><td>77.9%</td><td>95.6%</td><td>92</td></tr>
+<tr><td>from the formula</td><td class="win">35.5%</td><td class="win">85.6%</td><td class="win">98.3%</td><td class="win">88</td></tr>
+</tbody></table></div>
+
+<p>The first row is the same picture three times: a fixed schedule spends four hundred planes
+re-crossing the third of the object it can reach, touching some cells 167 times while two thirds are
+never touched at all. The formula's advantage over independent draws is visible as evenness rather
+than as extent &mdash; at 26 planes its lines are regularly spaced where the random ones clump, and
+at 400 its busiest cell has been touched 88 times against 92 and 167. That flatness is what shows up
+in the solve.</p>
+
+<p>These percentages are lower than the ones above &mdash; 32.2% here against 54.6% &mdash; because
+they are measured differently, and the stricter measurement is this one: a plane is counted as
+touching a cell only if a gradient actually reaches it, which visibility through the rendered cut
+face can prevent. The earlier figure counts the cells a plane passes through geometrically.</p>
+
+<p>Three constructions were got wrong on the way and are recorded in
+<code>reachrand.py</code> so they are not repeated: a spherical Fibonacci sequence ordered by
+<em>k/N</em> puts its whole prefix at one pole (its first 26 planes reached 0.8% of the interior);
+an offset must be stratified within the object's own extent along that normal, or most planes miss
+it; and two interleaved families must not share one counter, because a strided subsequence of a
+low-discrepancy sequence is not itself low-discrepancy &mdash; fixing that took the 100-plane
+coverage from 47.6% to 82.4%.</p>
+
+<h2 id="method">The pipeline, end to end</h2>
+
+<p class="lead">One program, seven objects, no per-object setting anywhere in it. What follows is
+every step from a released Gaussian model to a cuttable object, then the seven objects it produces,
+then the experiments that decided each step &mdash; including the ones that decided a step should
+not be taken.</p>
+
+<div class="grid2">
+  <figure>
+    <video src="assets/ovcut_orange_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <img src="assets/pair_orange_sp.jpg?v=s_v2" alt="orange_sp: supervised cuts above, held-out cuts below" style="margin-top:6px">
+    <div class="cap">orange &mdash; 9 transverse, 17 longitudinal<br><span style="font-size:12.5px">still frames: <strong>supervised</strong> above, <strong>held out</strong> below; transverse left, longitudinal right</span></div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_watermelon_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <img src="assets/pair_watermelon_sp.jpg?v=s_v2" alt="watermelon_sp: supervised cuts above, held-out cuts below" style="margin-top:6px">
+    <div class="cap">watermelon &mdash; 8/18<br><span style="font-size:12.5px">still frames: <strong>supervised</strong> above, <strong>held out</strong> below; transverse left, longitudinal right</span></div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_apple1_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <img src="assets/pair_apple1_sp.jpg?v=s_v2" alt="apple1_sp: supervised cuts above, held-out cuts below" style="margin-top:6px">
+    <div class="cap">apple &mdash; 8/18<br><span style="font-size:12.5px">still frames: <strong>supervised</strong> above, <strong>held out</strong> below; transverse left, longitudinal right</span></div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_bread_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <img src="assets/pair_bread_sp.jpg?v=s_v2" alt="bread_sp: supervised cuts above, held-out cuts below" style="margin-top:6px">
+    <div class="cap">loaf &mdash; 6/20<br><span style="font-size:12.5px">still frames: <strong>supervised</strong> above, <strong>held out</strong> below; transverse left, longitudinal right</span></div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_cake2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <img src="assets/pair_cake2_sp.jpg?v=s_v2" alt="cake2_sp: supervised cuts above, held-out cuts below" style="margin-top:6px">
+    <div class="cap">cake &mdash; 6/20<br><span style="font-size:12.5px">still frames: <strong>supervised</strong> above, <strong>held out</strong> below; transverse left, longitudinal right</span></div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_pomegranate2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <img src="assets/pair_pomegranate2_sp.jpg?v=s_v2" alt="pomegranate2_sp: supervised cuts above, held-out cuts below" style="margin-top:6px">
+    <div class="cap">pomegranate &mdash; 9/17<br><span style="font-size:12.5px">still frames: <strong>supervised</strong> above, <strong>held out</strong> below; transverse left, longitudinal right</span></div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_doughnut.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <img src="assets/pair_doughnut.jpg?v=s_v2" alt="doughnut: supervised cuts above, held-out cuts below" style="margin-top:6px">
+    <div class="cap">doughnut &mdash; 3/23<br><span style="font-size:12.5px">still frames: <strong>supervised</strong> above, <strong>held out</strong> below; transverse left, longitudinal right</span></div>
+  </figure>
+</div>
+
+<p class="sub" style="margin-top:-8px">All seven under the pipeline as it stands: the shape-derived
+split, the anisotropic field prior, and the target drawn from the two photographs either side of the
+depth rather than averaged. Their numbers are the "+sampled" columns below.</p>
+
+<h3>Step 1 &mdash; the object becomes a lattice, and the skin is pinned</h3>
+
+<p>A released 3D&#8209;Gaussian model is quantised onto a two-level cube lattice,
+\(h_c = L/125\) with the shell at \(h_c/2\). The dual grid and the occupancy come from that and
+are fixed for the run. Six exterior views paint the skin before training starts;
+<code>SHELL_PIN=1</code> then freezes it, so the cut faces can never repaint the rind they are seen
+through, and <code>SEC_SKIP_OUTER=0.10</code> keeps the section loss off the outermost tenth of each
+render from the other side. <strong>The sections own the interior, the six exterior views own the
+skin.</strong></p>
+
+<figure>
+  <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the object's outside from both cameras">
+  <figcaption>What supervises each cut, for all seven objects at once. Left to right: the transverse
+  cut's own mask, the photograph mapped onto it &mdash; <em>that</em> is the target the loss compares
+  the render against &mdash; the outside from the transverse camera, the outside from the
+  longitudinal camera, then the longitudinal mask, its target, and the two photographs the row was
+  built from. Nothing here is a score; every panel is what the pipeline itself sees, which is why
+  three defects that no number caught were visible in it at once.
+  <a href="#setup">What it caught, and what each column is for</a>.</figcaption>
+</figure>
+
+<h3>Step 2 &mdash; how many planes each family gets</h3>
+
+<p>A transverse plane moves along the polar axis; a longitudinal plane turns about it. Resolving
+both at the same spacing takes planes in the ratio of the axis extent to half the circumference, so
+with the total held at 26 for every object:</p>
+
+<pre>N_H = clip(round(26 * L / (L + pi * r)), 2, 24)        # mvcams.py
+N_V = 26 - N_H</pre>
+
+<p>\(L\) and \(r\) are measured from the object's own coarse cells, with the level&#8209;1 skin
+rows excluded &mdash; they are half the spacing and all of them at the rim, and averaging over them
+pulls the radius up 13% and moves the split by a whole plane. This gives the counts under the videos
+above: 9/17 for the orange, 3/23 for the doughnut, and nothing is chosen by hand.
+<a href="#split">The derivation is set out in full below</a>, including two constants in it that are
+wrong and what happens when they are corrected.</p>
+
+<figure>
+  <img src="assets/slab_orange.jpg" alt="The orange with its supervised planes drawn through it: the longitudinal fan seen down the axis, the transverse stack seen from the side">
+  <figcaption>Every plane the orange is supervised on, drawn through it, <strong>at the split these
+  runs used before the baseline moved</strong> &mdash; twelve longitudinal and fourteen transverse,
+  where the baseline is 17 and 9. The geometry of the two families is what this shows and that has
+  not changed; the counts have. Redrawing it needs a generator that was never committed.
+  <strong>Left</strong>: the twelve longitudinal planes, seen down the polar axis, so each appears as
+  two rays of one plane through the centre &mdash; twenty-four rays, twelve planes, one every 15&deg;
+  of azimuth. <strong>Right</strong>: the fourteen transverse planes, from the side and tipped 3&deg;
+  so each disc reads as a surface rather than a hairline. They are uniformly spaced &mdash; every
+  gap is 0.07640 in world units, and the 6% by which the screen gaps narrow towards the bottom is
+  the perspective and nothing else. Their spacing is the object's axis extent
+  over fourteen, and they cover the middle two thirds of it &mdash; the caps have no transverse
+  plane at any setting, which is
+  <a href="experiments.html#overfit">where the 6.56% of cells no photograph ever sees are</a>. The discs are drawn
+  wider than the object so the stack is countable; the planes themselves are unbounded.</figcaption>
+</figure>
+
+<h3>Step 3 &mdash; what a gradient step sees</h3>
+
+<p>One transverse plane, one longitudinal plane and one exterior view <em>together</em>, so a cell
+both families cross meets both constraints in the same backward pass rather than alternately. Each
+family's loss is scaled by its plane count over the number of groups, which keeps its total weight
+per outer iteration equal to its plane count. Before the plane is drawn it is moved: a transverse
+depth is offset by up to half a step, so over a run it sweeps the cells between the supervised
+depths instead of re-cutting the same ones.</p>
+
+<h3>Step 3b &mdash; which photograph the plane is shown</h3>
+
+<p>The transverse photographs are ordered by depth and there are two to twelve of them for fourteen
+or so planes, so a plane sits between two of them. The assignment used to be integer division
+&mdash; planes 1 to 4 get one photograph, 5 to 8 the next &mdash; and each switch drew a line across
+the polar axis that every longitudinal cut crossed. That was replaced by a continuous blend: the two
+photographs either side of the depth, brought onto a common disc and mixed at the fractional part.
+The banding went away.</p>
+
+<p>An average of two sections of two different oranges is a picture neither of them is, and
+averaging removes structure by construction. Measured against the raw photographs, the blended
+target keeps <strong>86% of their gradient on the orange, 90% on the watermelon, 97% on the
+apple</strong> &mdash; structure the loss can never ask for, because it is not in the target.</p>
+
+<p><code>REF_SAMPLE=1</code> draws one of the two instead, with probability equal to the mixing
+weight. The expectation is the blend, so the depth assignment is unchanged in the mean and the
+banding stays away; what changes is that the target on any step is a photograph rather than an
+average of two. A plane sees both over a run, in the right proportions &mdash; it is the difference
+between fitting a mean and fitting samples from a distribution with that mean. The variance it adds
+is what the field prior absorbs.</p>
+
+<h3>Step 4 &mdash; render, and build the target from the render</h3>
+
+<p>The exterior triangles behind the plane and the cut polygon of the plane against the occupancy go
+into one nvdiffrast pass, so the depth test composes them. Then &mdash; and this is the step most
+easily stated wrongly &mdash; <strong>the loss is not the render against the photograph</strong>.
+<code>section_target</code> takes both and returns a third image: the foreground comes from the
+rasteriser's accumulated opacity rather than from "differs from white", the target is initialised as
+a copy of the render rather than as white, and each connected component is matched to the reference
+by hole count and then by coordinates. The photograph supplies appearance as a function of position
+within the section; the render supplies the silhouette.</p>
+
+<h3>Step 5 &mdash; the loss</h3>
+
+<pre>L = sum over this step's planes of  w_family * | render - target |
+    + 0.1 * mean over sampled face-sharing cell pairs of (c_a - c_b)^2,
+      weighted 4x on the two lattice axes perpendicular to the polar axis</pre>
+
+<p>Mean absolute error per plane, and one prior. The prior is the only term beyond the pixel loss
+that this pipeline turns on, and both its weight and its direction were measured rather than
+assumed:</p>
+
+<ul>
+<li><strong>Its direction.</strong> Neighbouring cells agree <em>best</em> along the polar axis, by
+a factor of 1.24 to 1.76 depending on the object &mdash; because the transverse planes are
+perpendicular to that axis, stack along it, and each is supervised and jittered, so it is the
+direction the data pins down. The columns run along it and are made of disagreement across it, so
+the prior is weighted on the two perpendicular directions. Weighting the polar axis, which is what
+the artefact suggests at first sight, would add a constraint where the data already provides
+one.</li>
+<li><strong>Its weight.</strong> Swept at 0.03, 0.1, 0.3 and 1.0 on the orange: 0.03 is too little,
+1.0 smooths away real structure, and 0.1 and 0.3 are indistinguishable. Annealing it in either
+direction changes nothing to the fourth decimal place.</li>
+</ul>
+
+<h3>Step 6 &mdash; what takes the gradient</h3>
+
+<div class="tw"><table>
+<thead><tr><th>tensor</th><th>what it is</th><th>learning rate</th><th>constraint</th></tr></thead>
+<tbody>
+<tr><td><code>interior</code></td><td>an 8-d latent per solid cell through a shared two-stage MLP</td><td>feat 0.005, MLP 0.002</td><td>clamped to [0,1]</td></tr>
+<tr><td><code>surf_rgb</code></td><td>one RGB per dual vertex &mdash; the skin</td><td>0.02</td><td><strong>frozen</strong></td></tr>
+<tr><td><code>dual_v</code>, <code>split_w</code></td><td>the dual grid's offsets and split weights</td><td>1e&#8209;3</td><td>split weights in (0,1)</td></tr>
+</tbody></table></div>
+
+<p>Adam, no schedule &mdash; a schedule was tried and made it worse, twice. 325 outer iterations,
+which is 4,225 to 7,475 gradient steps depending on the split.</p>
+
+<h3>Step 7 &mdash; what is scored, and what is watched</h3>
+
+<p>Twelve planes per object are held out. <strong>Six are validation and the probe reads only those;
+six are test and are not looked at until the run is over.</strong> Before this split the probe and
+the reported score were the same planes, so every "this arm stopped improving" was read off the set
+the arm was then scored against. Every number in the next section is on the test half.</p>
+
+<h2 id="seven7">What the pipeline produces, on seven objects</h2>
+
+<p class="lead" style="background:#fff8e6;border-left:3px solid #d9a520;padding:10px 14px">
+Every arm in this table was trained on the un-suffixed camera set and scored on the balanced one,
+which is the mismatch <a href="#setup">the settings figure</a> exposed. The arms are still a fair
+comparison <em>with each other</em> &mdash; they share that setup exactly &mdash; but the numbers
+are not the baseline any more, and they are not comparable with the ones under
+<a href="#setup">what the corrections were worth</a>. Retraining the four arms on the corrected
+cameras has not been done.</p>
+
+<p>Each arm adds one thing to the one before it, not to the baseline: the third column is the field
+prior <em>and</em> drawing a photograph, since that is how it was run
+(<code>SEC_TV=0.1 SEC_TV_PERP=4 REF_SAMPLE=1</code>). The fourth adds the critic to the pixel loss
+alone. Each is scored twice by one script: at
+the planes its own photographs were taken at, against those photographs, and at the held-out cuts,
+against the photographs no run has opened. Both halves are needed, because an arm can win the
+held-out column by fitting its own supervision loosely. Lower is better; the best in each column is
+marked, and the mean is over the four.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>arm</th><th>shown, trans.</th><th>shown, long.</th>
+<th>unseen, trans.</th><th>unseen, long.</th><th>mean</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">orange</td><td>pixel loss alone</td><td>0.1149</td><td>0.1908</td><td>0.1116</td><td>0.2138</td><td>0.1578</td></tr>
+<tr><td>+ field prior</td><td>0.1135</td><td class="win">0.1813</td><td>0.1095</td><td class="win">0.2003</td><td>0.1511</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td class="win">0.1109</td><td>0.1833</td><td class="win">0.1007</td><td>0.2049</td><td class="win">0.1499</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.1126</td><td>0.1909</td><td>0.1111</td><td>0.2088</td><td>0.1559</td></tr>
+
+<tr><td rowspan="4">watermelon</td><td>pixel loss alone</td><td>0.1916</td><td>0.2121</td><td>0.1679</td><td>0.2252</td><td>0.1992</td></tr>
+<tr><td>+ field prior</td><td>0.1922</td><td>0.2084</td><td>0.1680</td><td>0.2234</td><td>0.1980</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td class="win">0.1873</td><td class="win">0.2014</td><td class="win">0.1639</td><td class="win">0.2137</td><td class="win">0.1916</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.1993</td><td>0.2297</td><td>0.1774</td><td>0.2427</td><td>0.2123</td></tr>
+
+<tr><td rowspan="4">apple</td><td>pixel loss alone</td><td>0.2753</td><td>0.3300</td><td>0.3195</td><td>0.3629</td><td>0.3219</td></tr>
+<tr><td>+ field prior</td><td>0.2747</td><td>0.3229</td><td>0.3164</td><td class="win">0.3487</td><td class="win">0.3157</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td>0.2833</td><td class="win">0.3209</td><td>0.3158</td><td>0.3703</td><td>0.3226</td></tr>
+<tr><td>+ critic, unphotographed</td><td class="win">0.2705</td><td>0.3489</td><td class="win">0.3133</td><td>0.3747</td><td>0.3268</td></tr>
+
+<tr><td rowspan="4">loaf</td><td>pixel loss alone</td><td>0.4264</td><td>0.3890</td><td>0.4689</td><td>0.4637</td><td>0.4370</td></tr>
+<tr><td>+ field prior</td><td>0.4202</td><td>0.3777</td><td>0.4612</td><td>0.4516</td><td>0.4277</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td>0.4034</td><td class="win">0.3573</td><td>0.4420</td><td class="win">0.4280</td><td class="win">0.4077</td></tr>
+<tr><td>+ critic, unphotographed</td><td class="win">0.4008</td><td>0.3676</td><td class="win">0.4340</td><td>0.4363</td><td>0.4097</td></tr>
+
+<tr><td rowspan="4">cake</td><td>pixel loss alone</td><td>0.4626</td><td>0.4208</td><td>0.5505</td><td>0.5877</td><td>0.5054</td></tr>
+<tr><td>+ field prior</td><td>0.4624</td><td>0.4243</td><td>0.5473</td><td>0.5836</td><td>0.5044</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td class="win">0.4041</td><td class="win">0.3608</td><td class="win">0.5267</td><td class="win">0.5700</td><td class="win">0.4654</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.4814</td><td>0.4327</td><td>0.5571</td><td>0.5929</td><td>0.5160</td></tr>
+
+<tr><td rowspan="4">pomegranate</td><td>pixel loss alone</td><td>0.2873</td><td>0.4275</td><td>0.3060</td><td>0.4197</td><td>0.3601</td></tr>
+<tr><td>+ field prior</td><td>0.2932</td><td>0.4351</td><td>0.3072</td><td>0.4233</td><td>0.3647</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td class="win">0.2562</td><td class="win">0.3715</td><td class="win">0.2609</td><td class="win">0.3768</td><td class="win">0.3164</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.2882</td><td>0.4339</td><td>0.3052</td><td>0.4244</td><td>0.3629</td></tr>
+
+<tr><td rowspan="4">doughnut</td><td>pixel loss alone</td><td class="win">0.1787</td><td class="win">0.5701</td><td colspan="2" rowspan="4">no held-out split: one photograph per family</td><td class="win">0.3744</td></tr>
+<tr><td>+ field prior</td><td>0.1783</td><td>0.5732</td><td>0.3757</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td>0.1799</td><td>0.5736</td><td>0.3767</td></tr>
+<tr><td>+ critic, unphotographed</td><td>0.2474</td><td>0.5943</td><td>0.4208</td></tr>
+</tbody></table></div>
+
+<p><strong>Drawing a photograph instead of averaging two takes the mean on four objects</strong>
+&mdash; orange, watermelon, cake, pomegranate &mdash; and ties the loaf with the critic, 0.4077
+against 0.4097. The field prior takes the apple. The pixel loss alone takes the doughnut, which is
+the object where drawing cannot operate: it has one photograph per family, so there is nothing to
+draw from, and its numbers move by 0.001 while every other object's move by several percent. That
+the effect vanishes exactly where the mechanism cannot work is the best evidence that it is the
+mechanism. <strong>The critic takes no object's mean</strong>, and on the doughnut it is 12% worse
+than doing nothing.</p>
+
+<p>The two halves also say something the held-out column alone cannot. On the cake and the
+pomegranate the gain is larger on the planes that <em>were</em> photographed &mdash; the cake's shown
+column improves 12.6% where its unseen column improves 4.3% &mdash; so drawing a photograph mostly
+buys a closer fit to the supervision, and the planes between benefit less. And on the orange and the
+watermelon the two halves are within a few percent of each other in every arm, which means none of
+these arms is overfitting its own photographs: what separates them is the representation's ceiling,
+not memorisation.</p>
+
+<h3>Which half of it works</h3>
+
+<div class="note">
+<strong>The three numbers below are from an earlier batch and an earlier held-out split.</strong>
+The same arm reads 0.0736 there and 0.1009 in the table above, so they are comparable with each
+other and not with anything above them. They are kept because the question they answer &mdash;
+whether the gain comes from the randomness or from the depth assignment &mdash; was only ever asked
+in that batch.
+</div>
+
+<p>Drawing rather than averaging is two changes at once: the target stops being a mean, and it
+becomes random. They can be separated by drawing from the whole family instead of from the two
+photographs either side of the depth &mdash; same randomness, no depth assignment at all. That is
+only a different experiment where a family has more than two photographs, which is the watermelon
+with ten and twelve, and the orange and the loaf with three each.</p>
+
+<div class="tw"><table>
+<thead><tr><th rowspan="2">object</th><th rowspan="2">photos</th><th colspan="3">transverse</th><th colspan="3">longitudinal</th></tr>
+<tr><th>averaged</th><th>drawn from two</th><th>drawn from all</th><th>averaged</th><th>drawn from two</th><th>drawn from all</th></tr></thead>
+<tbody>
+<tr><td>watermelon</td><td>10 / 12</td><td>0.1651</td><td class="win">0.1594</td><td>0.1968</td><td>0.2008</td><td class="win">0.1910</td><td>0.2865</td></tr>
+<tr><td>orange</td><td>3 / 3</td><td>0.0781</td><td class="win">0.0736</td><td>0.0799</td><td class="win">0.1923</td><td>0.2018</td><td>0.2051</td></tr>
+<tr><td>loaf</td><td>3 / 3</td><td>0.3884</td><td class="win">0.3691</td><td>0.3977</td><td>0.4415</td><td class="win">0.4167</td><td>0.4526</td></tr>
+</tbody></table></div>
+
+<p><strong>Drawing from the whole family is worse than both on every object and in every column</strong>,
+and worst where it differs most: the watermelon has the most photographs, so its uniform draw is
+furthest from its neighbour draw, and its longitudinal column degrades 50%. So the two halves come
+apart cleanly. <strong>Not averaging is what works; randomness on its own has no value, and spending
+it on the depth assignment destroys information the ordering carries.</strong></p>
+
+<div class="note">
+<strong>And the validation probe preferred the worst arm, for the fourth time.</strong> Drawing from
+the whole family gives the lowest probe of the three on all three objects &mdash; 0.01369 against
+0.01601 on the watermelon, 0.02861 against 0.03530 on the orange, 0.05128 against 0.05770 on the
+loaf &mdash; and the worst test score of the three on all three. The probe is an L1, and a target
+drawn from the whole family has a high variance whose mean is the family's average appearance;
+fitting that average is safe in L1 and poor perceptually. Together with the three cases in the
+section below, no decision on this page is taken on the probe.
+</div>
+
+<div class="note">
+<strong>The scores do not generalise and the coverage does.</strong> On DreamSim the prior improves
+the longitudinal column on four of seven and the transverse on four of seven, and only three objects
+improve on both. The 6.1% longitudinal gain measured on the orange is not a property of the method;
+it is a property of the orange, the apple and the loaf. <strong>What holds on all seven, without a
+single exception, is the last pair of columns: tens of thousands of cells that received no gradient
+at any point become zero.</strong> Those are the cells no supervised plane ever crosses, and with
+nothing holding them they drift to whatever value happens to suit the planes that are supervised
+&mdash; which is visible as coloured speckle before anything is scored.
+
+<p style="margin-bottom:0">So the honest claim for this term is not that it reconstructs better. It
+is that it removes unconstrained cells, and that claim is supported seven times out of seven. The
+price is also consistent: the field carries 5&ndash;21% less structure between neighbouring cells on
+every object.</p>
+</div>
+
+<h2 id="rep">The representation</h2>
+
+<p>Three tensors are the model, and nothing else is. Two more are fixed and come from the
+occupancy.</p>
+
+<div class="tw"><table>
+<thead><tr><th>tensor</th><th>shape</th><th>what it is</th><th>trained</th></tr></thead>
+<tbody>
+<tr><td><code>dual_v</code></td><td>\((N_s, 3)\)</td><td>where the surface sits inside each active fine voxel</td><td class="mut">pinned here</td></tr>
+<tr><td><code>split_w</code></td><td>\((N_s, 1)\)</td><td>how each dual quad is split into two triangles</td><td class="mut">pinned here</td></tr>
+<tr><td><code>surf_rgb</code></td><td>\((N_s, 3)\)</td><td>the exterior's colour, one per dual vertex</td><td class="mut">pinned here</td></tr>
+<tr><td><code>interior</code></td><td>\((N_c, 3)\)</td><td>the volumetric appearance, one colour per solid coarse cell</td><td><strong>yes</strong></td></tr>
+<tr><td><code>coords</code>, <code>inter</code></td><td>\((N_s, 3)\)</td><td>which fine voxels are active and which of their edges the surface crosses</td><td class="mut">fixed</td></tr>
+<tr><td><code>solid</code>, <code>idx3</code></td><td>\((N_c, 3)\)</td><td>the occupancy after closing and filling, and its index</td><td class="mut">fixed</td></tr>
+</tbody></table></div>
+
+<p><code>interior</code> is the part TRELLIS.2's own container does not carry, because
+<code>mesh_to_flexible_dual_grid</code> only ever returns boundary voxels &mdash; a dual grid is a
+surface, and a cuttable object needs a volume. It is not stored as colours: each cell holds an
+8&#8209;dimensional latent and a shared two-stage decoder produces the colour, which is the paper's
+anchor decoder applied to this container. The exterior gets a second decoder of its own, so the two
+populations cannot leak into each other.</p>
+
+<p>Everything on this page is trained with the exterior pinned, which is the pipeline's own
+setting: the shape and the skin come from the released model and only the interior beneath them
+learns. What that leaves free is between 3.2 and 6.2 million floats depending on the object.</p>
+
+<h2 id="e2e">End to end</h2>
+
+<div class="flow">
+<svg viewBox="0 0 840 300" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="From a lattice to a rendered cut and back: occupancy and dual grid, the interior field, the closed-form cut polygon, one rasteriser pass, and the loss returning to the interior field">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a8a8a"/>
+    </marker>
+    <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a8412a"/>
+    </marker>
+    <style>
+      .bx { fill:#fbfbfb; stroke:#d8d8d8; stroke-width:1.2; rx:4 }
+      .bo { fill:#fbe6de; stroke:#e6c3b6; stroke-width:1.2; rx:4 }
+      .h  { font:600 12.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#111 }
+      .s  { font:11.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#5c5c5c }
+      .a  { font:11.5px -apple-system,Segoe UI,Helvetica,Arial,sans-serif; fill:#a8412a }
+      .ln { stroke:#8a8a8a; stroke-width:1.3; fill:none; marker-end:url(#ar) }
+      .lr { stroke:#a8412a; stroke-width:1.4; fill:none; marker-end:url(#ara);
+            stroke-dasharray:5 3 }
+    </style>
+  </defs>
+
+  <rect class="bx" x="8" y="34" width="150" height="76"/>
+  <text class="h" x="20" y="56">lattice</text>
+  <text class="s" x="20" y="74">occupancy at \(h_c\),</text>
+  <text class="s" x="20" y="90">skin at \(h_f = h_c/2\)</text>
+
+  <path class="ln" d="M162,72 H196"/>
+
+  <rect class="bx" x="200" y="8" width="176" height="60"/>
+  <text class="h" x="212" y="28">boundary &#8594; dual grid</text>
+  <text class="s" x="212" y="46">every exposed cell face,</text>
+  <text class="s" x="212" y="60">one node per surface voxel</text>
+
+  <rect class="bo" x="200" y="78" width="176" height="60"/>
+  <text class="h" x="212" y="98">interior field</text>
+  <text class="s" x="212" y="116">one 8-d latent per solid cell,</text>
+  <text class="s" x="212" y="130">shared decoder &#8594; RGB</text>
+
+  <path class="ln" d="M186,66 L196,40"/>
+  <path class="ln" d="M186,80 L196,104"/>
+
+  <path class="ln" d="M380,38 H420 V96 H444"/>
+  <path class="ln" d="M380,108 H444"/>
+
+  <rect class="bx" x="448" y="66" width="168" height="72"/>
+  <text class="h" x="460" y="86">the cut, in closed form</text>
+  <text class="s" x="460" y="104">plane &#8745; cube = polygon;</text>
+  <text class="s" x="460" y="118">vertices coloured by the</text>
+  <text class="s" x="460" y="132">interior at their own position</text>
+
+  <path class="ln" d="M620,102 H656"/>
+
+  <rect class="bx" x="660" y="66" width="164" height="72"/>
+  <text class="h" x="672" y="86">one rasteriser pass</text>
+  <text class="s" x="672" y="104">exterior behind the plane</text>
+  <text class="s" x="672" y="118">plus the exposed face;</text>
+  <text class="s" x="672" y="132">the depth test composes them</text>
+
+  <path class="ln" d="M742,142 V182"/>
+
+  <rect class="bx" x="596" y="186" width="228" height="66"/>
+  <text class="h" x="608" y="206">loss against the photograph</text>
+  <text class="s" x="608" y="224">0.7(1&#8722;SSIM) + 0.3 MSE on six</text>
+  <text class="s" x="608" y="238">128&#8239;px crops, plus the band term</text>
+
+  <path class="lr" d="M596,219 H300 V142"/>
+  <text class="a" x="330" y="212">the gradient reaches the interior latents only</text>
+
+  <text class="s" x="8" y="284">Which photograph a plane is compared against is the depth assignment:</text>
+  <text class="s" x="8" y="298">continuous in depth for both families, which is the change measured below.</text>
+</svg>
+</div>
+
+<p>The three steps that are not obvious are worth stating plainly.</p>
+
+<p><strong>The occupancy is built once and never moves.</strong> The coarse cells that hold a
+primitive are closed and filled, so the volume is a solid rather than a shell, and the dual grid is
+extracted from the boundary of that solid at the fine spacing. Connectivity therefore comes from
+the occupancy and not from where any vertex sits, which is what lets the cut stay closed form.</p>
+
+<p><strong>The cut is a formula, not a mesh operation.</strong> A plane meets a cube in a convex
+polygon whose vertices are the crossings of its twelve edges, so the exposed face of a cut is the
+union of one polygon per crossed cell, computed directly. Each vertex takes its colour by trilinear
+interpolation of the interior field at its own position &mdash; not at the cell centre, which for a
+face passing near a material boundary would fall on the wrong side of it.</p>
+
+<p><strong>Both surfaces go into one pass.</strong> The exterior mesh is filtered to the half the
+plane keeps, the cut polygons are appended, and the two are rasterised together, so the depth test
+composes them and nothing has to be blended between two renderers. That is the whole reason the
+exterior was converted rather than left as Gaussians: a splatted shell covers only 7 to 20% of the
+frame at \(\alpha\) above one half, so at the silhouette a cut face shows through from the side it
+should be hidden on.</p>
+
+<h2 id="cut">The cut, on seven objects</h2>
+
+<p>Each video is one object, cut twice. On the left a plane perpendicular to the polar axis walks
+down it; on the right a plane containing the axis walks across. Nothing is composited: what changes
+between frames is one number, the plane's offset.</p>
+
+<div class="grid2">
+  <figure>
+    <video src="assets/ovcut_orange_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">orange &mdash; 770,182 interior cells, 900,556 dual vertices</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_watermelon_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">watermelon &mdash; 709,368 and 810,071</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_apple1_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">apple &mdash; 756,905 and 924,929</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_pomegranate2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">pomegranate &mdash; 491,350 and 718,534</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_bread_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">loaf &mdash; 396,075 and 448,876</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_cake2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">cake &mdash; 395,613 and 616,332</div>
+  </figure>
+  <figure>
+    <video src="assets/ovcut_doughnut.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata"></video>
+    <div class="cap">doughnut &mdash; 544,568 and 316,285</div>
+  </figure>
+</div>
+
+<h2 id="families">Transverse and longitudinal are not the same question</h2>
+
+<p>The two families differ in more than orientation. The transverse planes are a <em>stack</em>:
+they are parallel, ordered along the polar axis, and the photographs that supervise them are
+ordered the same way, so which photograph belongs at which depth is a question with an answer. The
+longitudinal planes are a <em>fan</em>: they all contain the axis and differ by azimuth, so they
+all cut the same material and any of them could be compared against any photograph.</p>
+
+<p>That difference has a consequence which is visible rather than theoretical. A transverse cut
+crosses no depth boundary &mdash; it <em>is</em> one depth &mdash; while a longitudinal cut crosses
+every one of them, so anything that varies discontinuously with depth appears as a band across the
+longitudinal face and not at all on the transverse one. Which is what was found, and fixed.</p>
+
+<h2 id="setup">What each object is set up as, all seven at once</h2>
+
+<p class="lead">Three defects went unnoticed for as long as they did because nothing put the seven
+objects' <em>settings</em> side by side. Every one of them was invisible in a score and obvious in a
+picture. This figure is here so that the next one is caught the same way.</p>
+
+<figure>
+  <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: cut masks, targets and exteriors under each object's own settings">
+  <figcaption>Left to right: the transverse cut's own mask, the photograph mapped onto it, the
+  outside from the transverse camera, the outside from the longitudinal camera, the longitudinal
+  mask, its target, and the two photographs the row was built from. Nothing here is drawn from a
+  score; every panel is what the pipeline itself sees.</figcaption>
+</figure>
+
+<p>What each column is for. The <strong>two outside views</strong> say whether the polar axis is the
+object's own: the transverse camera looks along the axis, so a solid of revolution should appear
+circular in it and stand upright in the longitudinal one. The <strong>two masks</strong> say whether
+the cut is the shape the family's name claims &mdash; a transverse cut of an apple has no stem in
+it. The <strong>targets beside them</strong> say whether the photograph fits that shape without
+being bent, and the <strong>photographs at the right</strong> are what the fit is judged against.</p>
+
+<h3>The axis, which every object inherited from the orange</h3>
+
+<p>Each object's conf names <code>CFG=config/orange_physics.json</code>, and the polar axis comes
+from that file's <code>mpm_space_vertical_upward_axis</code>. Four of the released models stand the
+way the orange's does and it is right for them. Three do not, and for those the family called
+transverse was cutting <em>along</em> the object.</p>
+
+<p>Which axis an object turns about is measurable without reference to any label: rotate the solid
+about a candidate direction and count how much of it lands back inside itself. The four objects whose
+stored axis was already right are the check &mdash; a method that cannot recover those is not
+evidence about the others.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>best overlap found</th><th>overlap at the stored axis</th>
+<th>angle between them</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>0.965</td><td>0.965</td><td class="win">0.2&deg;</td></tr>
+<tr><td>doughnut</td><td>0.989</td><td>0.992</td><td class="win">0.3&deg;</td></tr>
+<tr><td>pomegranate</td><td>0.961</td><td>0.958</td><td class="win">5.8&deg;</td></tr>
+<tr><td>watermelon</td><td>0.965</td><td>0.964</td><td class="win">5.9&deg;</td></tr>
+<tr><td>apple</td><td>0.945</td><td>0.906</td><td>87.3&deg;</td></tr>
+<tr><td>bread</td><td>0.779</td><td>0.588</td><td>87.8&deg;</td></tr>
+<tr><td>cake</td><td>0.956</td><td>0.746</td><td>89.5&deg;</td></tr>
+</tbody></table></div>
+
+<p>An object that needs its own axis now says so in its own conf, as one line
+(<code>UP_AXIS=0,0,1</code>), and the plane counts follow the shape rather than the label: the cake
+goes from 9 transverse and 17 longitudinal planes to 6 and 20, because along its true axis it is
+short. The bread is the same defect and is not yet corrected.</p>
+
+<h3>The camera distance, which every object also inherited from the orange</h3>
+
+<p><code>init_radius</code> comes from the same shared file. The pomegranate is taller along its axis
+than that distance allows, and the consequence was not cosmetic: <strong>all 17 of its longitudinal
+cuts reached the edge of the frame</strong>, so what the loss compared a photograph against was a cut
+with its base cropped off, at every step of training.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>fraction of the frame the object reaches</th><th>camera distance</th></tr></thead>
+<tbody>
+<tr><td>watermelon</td><td>0.435</td><td>7.7640, left alone</td></tr>
+<tr><td>doughnut</td><td>0.643</td><td>3.6187, left alone</td></tr>
+<tr><td>orange</td><td>0.729</td><td>3.6000, left alone</td></tr>
+<tr><td>apple</td><td>0.736</td><td>3.6000, left alone</td></tr>
+<tr><td>bread</td><td>0.736</td><td>3.6000, left alone</td></tr>
+<tr><td>cake</td><td>1.022</td><td>3.6000 &rarr; 4.1826</td></tr>
+<tr><td>pomegranate</td><td>1.359</td><td>3.6000 &rarr; 5.5616</td></tr>
+</tbody></table></div>
+
+<p>The guard is a rule and not a number: the distance is increased until the object is inside the
+frame, and never decreased. So the four objects it does not touch keep the cameras they were trained
+against, byte for byte, and the correction is a repair rather than a new configuration. Measured
+again afterwards, the pomegranate's longitudinal cuts reach the frame edge 0 times out of 17, and
+the tallest fills 0.71 of it.</p>
+
+<h3>What the corrections were worth, and what they were not</h3>
+
+<p>All seven were retrained on the corrected cameras and scored on them, and that run is the
+baseline from here: <code>s_v2</code>. Both rows of each object below are scored at the
+<em>same</em> planes, so what separates them is the model and not the evaluation.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>run</th><th>shown, trans.</th><th>shown, long.</th>
+<th>unseen, trans.</th><th>unseen, long.</th><th>mean</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">orange</td><td>previous</td><td class="win">0.1109</td><td>0.1833</td><td class="win">0.1007</td><td>0.2048</td><td>0.1499</td></tr>
+<tr><td>baseline</td><td>0.1238</td><td class="win">0.0919</td><td>0.1046</td><td class="win">0.1881</td><td class="win">0.1271</td></tr>
+<tr><td rowspan="2">watermelon</td><td>previous</td><td class="win">0.1873</td><td>0.2014</td><td class="win">0.1639</td><td class="win">0.2137</td><td class="win">0.1916</td></tr>
+<tr><td>baseline</td><td>0.1954</td><td class="win">0.1852</td><td>0.1754</td><td>0.2231</td><td>0.1948</td></tr>
+<tr><td rowspan="2">apple</td><td>previous</td><td>0.4576</td><td>0.2522</td><td>0.4470</td><td>0.2500</td><td>0.3517</td></tr>
+<tr><td>baseline</td><td class="win">0.2789</td><td class="win">0.1661</td><td class="win">0.2959</td><td class="win">0.2376</td><td class="win">0.2446</td></tr>
+<tr><td rowspan="2">bread</td><td>previous</td><td class="win">0.4033</td><td>0.3573</td><td class="win">0.4420</td><td>0.4279</td><td>0.4076</td></tr>
+<tr><td>baseline</td><td>0.4065</td><td class="win">0.2431</td><td>0.4479</td><td class="win">0.3957</td><td class="win">0.3733</td></tr>
+<tr><td rowspan="2">cake</td><td>previous</td><td class="win">0.4614</td><td>0.4218</td><td>0.6076</td><td>0.5556</td><td>0.5116</td></tr>
+<tr><td>baseline</td><td>0.4664</td><td class="win">0.2413</td><td class="win">0.5866</td><td class="win">0.5144</td><td class="win">0.4522</td></tr>
+<tr><td rowspan="2">pomegranate</td><td>previous</td><td class="win">0.2742</td><td>0.3435</td><td>0.2698</td><td>0.3692</td><td>0.3142</td></tr>
+<tr><td>baseline</td><td>0.2919</td><td class="win">0.1386</td><td class="win">0.2639</td><td class="win">0.3015</td><td class="win">0.2490</td></tr>
+<tr><td rowspan="2">doughnut</td><td>previous</td><td>0.1566</td><td>0.6151</td><td>&mdash;</td><td>&mdash;</td><td>0.3858</td></tr>
+<tr><td>baseline</td><td class="win">0.0968</td><td class="win">0.5980</td><td>&mdash;</td><td>&mdash;</td><td class="win">0.3474</td></tr>
+</tbody></table></div>
+
+<p>The doughnut has one photograph per family, so it has no held-out half and its mean is over two
+columns rather than four.</p>
+
+<p><strong>Most of the longitudinal gain is not the axis and not the camera.</strong> It is a third
+thing the same comparison exposed, and attributing it to the two corrections would be reading the
+table backwards. The previous runs were launched by <code>rs7.sh</code> with
+<code>CAMS_SUFFIX=</code> &mdash; the un-suffixed camera file &mdash; while
+<code>scorefull.py</code> had <code>_bal</code> written into it. They were <em>trained</em> on one
+plane split and <em>scored</em> on another:</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>trained on</th><th>scored on, and trained on from here</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>14 transverse / 12 longitudinal</td><td>9 / 17</td></tr>
+<tr><td>watermelon</td><td>13 / 13</td><td>8 / 18</td></tr>
+<tr><td>apple</td><td>14 / 12</td><td>8 / 18</td></tr>
+<tr><td>bread</td><td>11 / 15</td><td>6 / 20</td></tr>
+<tr><td>cake</td><td>15 / 11</td><td>6 / 20</td></tr>
+<tr><td>pomegranate</td><td>14 / 12</td><td>9 / 17</td></tr>
+<tr><td>doughnut</td><td>4 / 22</td><td>3 / 23</td></tr>
+</tbody></table></div>
+
+<p>The orange separates the three causes on its own, because its axis is right to 0.2&deg; and its
+camera was never moved: nothing changed for it but the plane split, and its longitudinal score
+halved, 0.1833 to 0.0919. That is the scale of what aligning training with evaluation is worth, and
+it arrives with the cost this page has measured before &mdash; every object's transverse score moves
+the other way, by roughly a tenth as much. The apple is the one object where the axis shows
+separately: its transverse score falls from 0.4576 to 0.2789, which no plane count buys.</p>
+
+<p>What is <em>not</em> separated: the cake and the pomegranate changed plane split at the same time
+as they changed axis and camera distance, so their improvement is a sum of corrections and this
+table cannot apportion it. The measurement that would is one arm per correction, and it has not been
+run.</p>
+
+<h3>What stops it happening again</h3>
+
+<p>Two of these three defects were a setting every object inherited from the orange, and the third
+was a run trained on one plane split and scored on another. None of the three moved a number in a
+way anyone would question, and all three were visible at once in the figure at the top of this
+section. So the figure is on the page, and two things now hold the rest:</p>
+
+<p>A run records the cameras it was given, in <code>run.env</code> beside its weights, and
+<code>scorefull.py</code> reads that file and <strong>stops</strong> rather than scoring a run
+against a camera set it was not trained on:</p>
+
+<pre>s_v2_orange_sp was trained on cams_v2 and this is scoring on cams_bal.
+Set SF_CAMS=_v2 or score a run that used these cameras.</pre>
+
+<p>And the baseline is a script, <code>baseline.sh</code>, not a recipe to be remembered: it names
+the camera set, the training arguments, the scoring and the three figures, and rebuilds all of them.
+What went wrong before was that <code>rs7.sh</code> said one thing and <code>scorefull.py</code>
+said another, with nothing to reconcile them.</p>
+
+<h3>The doughnut's skin</h3>
+
+<p>Its state was built from the lattice, which carries no colour, so its shell was flat grey
+&mdash; visible in the figure's two outside columns and nowhere in any number, because the shell is
+pinned in these runs and takes no gradient. Its six-view projection already existed and agrees with
+the lattice cell for cell, so the state is now built from that instead.</p>
+
+<h2 id="split">How the plane count is derived, step by step</h2>
+
+<p class="lead">One line of code decides how many planes each family gets, and it is the change with
+the most at stake on this page. Every step of it is here with the measured number at each stage, for
+all seven objects, including the two constants that are in the equation because leaving them out was
+wrong and the three things it still does not fix.</p>
+
+<figure>
+  <video src="assets/exp_ovbal.mp4" autoplay loop muted playsinline preload="metadata"></video>
+  <figcaption>The orange under <strong>this</strong> rule &mdash; 9 transverse and 17 longitudinal
+  &mdash; cut transverse on the left and longitudinal on the right. Nothing in the trainer, the loss,
+  the jitter or the budget differs between splits: the only thing the rule changes is how the 26
+  planes are divided. The same orange under the superseded 14/12 is
+  <a href="experiments.html#experiments">in the experiments section</a>, and the visible difference between them is
+  small &mdash; the change is worth 9.7% of the longitudinal score and costs 10.8% of the transverse
+  one, and neither is something the eye settles.</figcaption>
+</figure>
+
+<h3>Step 1 &mdash; measure the object, not the file</h3>
+
+<p>Every solid cell centre is projected onto the polar axis \(\hat n\), which is the transverse
+family's own normal. Two numbers come out, both in coarse cells so they are comparable with the
+lattice itself:</p>
+
+<ul>
+<li><strong>Axis extent</strong> \(L = \max(p) - \min(p)\), the object's length along the axis.</li>
+<li><strong>Rim radius</strong> \(R\), the 90th percentile of the perpendicular distance from the
+axis, taken after the perpendicular component is centred.</li>
+</ul>
+
+<p>Two corrections to this measurement, both of which moved objects by whole planes.</p>
+
+<p><strong>The skin rows come out.</strong> <code>gs_fill.ply</code> carries the coarse cells and the
+level&#8209;1 skin in the same rows, and the skin is half the spacing and all of it at the rim:
+480,287 of the orange's 1,162,387 rows. Averaging over all of them pulls the radius up 13%. What the
+sampling has to cover is the interior, so <code>cell_level.pt</code> is read alongside and the
+level&#8209;1 rows are dropped.</p>
+
+<p><strong>The rim, not the mean.</strong> The rule balances the arc between neighbouring
+longitudinal planes against the transverse spacing, and the structure that has to be resolved
+&mdash; segment walls, seeds, crumb &mdash; sits at the rim, not at the average distance from the
+axis. Measured here the rim is 1.5 to 1.9 times the mean, so with the mean the arc where it matters
+was 11.8 to 15.0 cells while the rule believed it was arranging 6.8 to 9.2. The 90th percentile
+rather than the maximum, so that one stray cell cannot set the scale
+(<code>N_PLANES_RIM_PCT=90</code>).</p>
+
+<h3>Step 2 &mdash; the balance, with the constant the sampler actually uses</h3>
+
+<p>A transverse plane moves <em>along</em> the axis; a longitudinal plane turns <em>about</em> it. To
+resolve both at the same spacing the two arcs must be divided the same way. Half a circumference and
+not a whole one, because a plane and its opposite normal are the same cut.</p>
+
+<p>The step that was wrong for a long time is which transverse spacing goes into that equation. The
+depths are <em>not</em> \(N_h\) samples across the axis: <code>mvcams</code> asks
+<code>interpolate_along_camera_direction</code> for \(M = \lceil 1.5\,N_h \rceil\) of them and
+supervises the middle \(N_h\), so the spacing in force is \(L/M\). Balancing \(L/N_h\) against
+\(\pi R/N_v\) therefore solved for a spacing the code never produces, and every object came out
+1.29 to 1.59 times finer on the transverse side than the balance it had just solved &mdash; the rule
+over-supervised precisely the family it was written to stop over-supervising. Putting the constant
+into the equation is the whole of the fix:</p>
+
+<pre>solve   L / (OVER * N_h)  =  pi * R / N_v      with  N_h + N_v = TOTAL
+
+N_H = clip(round(TOTAL * L / (L + OVER * pi * R)), 2, TOTAL - 2)     # mvcams.py
+N_V = TOTAL - N_H
+
+TOTAL = 26            N_PLANES_TOTAL     the budget, unchanged for every object
+OVER  = 1.5           N_PLANES_OVER      the ceil(1.5 * N_h) the sampler lays down
+R     = p90 radius    N_PLANES_RIM_PCT   the rim, not the mean</pre>
+
+<h3>Step 3 &mdash; what it gives each object, and whether it balances</h3>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>\(L\)</th><th>mean \(r\)</th><th>rim \(R\)</th><th>split</th>
+<th>\(M\)</th><th>transverse \(L/M\)</th><th>rim arc \(\pi R/N_v\)</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>126</td><td>33.1</td><td>49.9</td><td>9/17</td><td>14</td><td>9.00</td><td>9.23</td></tr>
+<tr><td>watermelon</td><td>103</td><td>33.8</td><td>50.6</td><td>8/18</td><td>12</td><td>8.56</td><td>8.82</td></tr>
+<tr><td>apple</td><td>121</td><td>33.2</td><td>50.3</td><td>9/17</td><td>14</td><td>8.64</td><td>9.29</td></tr>
+<tr><td>loaf</td><td>80</td><td>32.4</td><td>53.4</td><td>6/20</td><td>9</td><td>8.89</td><td>8.39</td></tr>
+<tr><td>cake</td><td>110</td><td>26.6</td><td>42.3</td><td>9/17</td><td>14</td><td>7.86</td><td>7.82</td></tr>
+<tr><td>pomegranate</td><td>115</td><td>29.1</td><td>44.2</td><td>9/17</td><td>14</td><td>8.21</td><td>8.17</td></tr>
+<tr><td>doughnut</td><td>43</td><td>64.6</td><td>78.1</td><td>3/23</td><td>5</td><td>8.60</td><td>10.67</td></tr>
+</tbody></table></div>
+
+<p>The last two columns are the test: they are the two spacings the rule exists to equalise, and they
+now agree within 10% on six of the seven. The orange was <strong>6.00 against 14.46</strong> before
+these constants went in and is 9.00 against 9.23 after. The doughnut is the exception at 8.60 against
+10.67 &mdash; it is the roundest object here and 3/23 is where the clip at \(N_h \ge 2\) stops it,
+so 26 planes are not enough to balance something that flat.</p>
+
+<h3>Step 4 &mdash; what the split then changes downstream</h3>
+
+<p>Two consequences, neither of them obvious from the equation, and both needed to read the results
+honestly.</p>
+
+<p><strong>The split is a reallocation of gradient weight, one unit for one unit.</strong> Each family
+contributes one plane per step at weight \(|\text{family}|/G\) with \(G = \max(N_h, N_v)\), over
+\(G\) steps, so its total weight over an outer iteration is exactly its plane count. Moving the
+orange from 16/10 to 9/17 removes 44% of the transverse family's weight and adds 70% to the
+longitudinal one. Nothing else in the objective changes.</p>
+
+<p><strong>The split also changes the number of gradient steps.</strong> An outer iteration is \(G\)
+steps, so at the same 325 outer iterations the orange gets 5,525 steps at 9/17 and 4,550 at 14/12
+&mdash; 21% more. That coupling is in the design rather than in this change, but it means no two
+splits are compared at equal steps by default, and a control has to be run rather than argued.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>split</th><th>gradient steps at 325 outer</th>
+<th>axis inside the supervised band</th><th>transverse photos</th><th>longitudinal photos</th>
+<th>longitudinal planes per photo</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>9/17</td><td>5,525</td><td>0.62</td><td>3</td><td>3</td><td>5.7</td></tr>
+<tr><td>watermelon</td><td>8/18</td><td>5,850</td><td>0.64</td><td>10</td><td>12</td><td>1.5</td></tr>
+<tr><td>apple</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>loaf</td><td>6/20</td><td>6,500</td><td>0.62</td><td>3</td><td>3</td><td>6.7</td></tr>
+<tr><td>cake</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>pomegranate</td><td>9/17</td><td>5,525</td><td>0.62</td><td>2</td><td>2</td><td>8.5</td></tr>
+<tr><td>doughnut</td><td>3/23</td><td>7,475</td><td>0.50</td><td>1</td><td>1</td><td>23.0</td></tr>
+</tbody></table></div>
+
+<h3>Step 5 &mdash; what it measures, so far</h3>
+
+<p>DreamSim against each object's own reference families, on held-out planes. The held-out planes are
+byte-identical between the two camera sets, so this is one object under two splits and not two
+evaluations. The floor &mdash; two disjoint halves of a reference family scored against each other
+&mdash; is 0.0593 and 0.0777 on the orange.</p>
+
+<div class="tw"><table>
+<thead>
+<tr><th rowspan="2">object</th><th colspan="3">the split</th><th colspan="2">transverse</th><th colspan="2">longitudinal</th></tr>
+<tr><th>before</th><th>after</th><th>weight moved</th><th>before</th><th>after</th><th>before</th><th>after</th></tr>
+</thead>
+<tbody>
+<tr><td>orange</td><td>14/12</td><td>9/17</td><td>&minus;36% / +42%</td><td class="win">0.0804</td><td>0.0891</td><td>0.2061</td><td class="win">0.1861</td></tr>
+<tr><td>loaf</td><td>11/15</td><td>6/20</td><td>&minus;45% / +33%</td><td class="win">0.3818</td><td>0.3928</td><td>0.4214</td><td class="win">0.3860</td></tr>
+<tr><td>doughnut</td><td>4/22</td><td>3/23</td><td>&minus;25% / +5%</td><td class="win">0.1540</td><td>0.1613</td><td class="win">0.5550</td><td>0.5777</td></tr>
+<tr><td colspan="8">watermelon, apple, cake and pomegranate are training; a matched-step control is running beside them</td></tr>
+</tbody></table></div>
+
+<p>Three of seven; the remaining four and a matched-step control are running, and this table will be
+completed rather than summarised. What it shows so far is the same trade as every other change on
+this page &mdash; longitudinal better, transverse worse &mdash; moved further along the same curve,
+except on the doughnut, which is worse on both for the second time.</p>
+
+<p>The comparison that is clean is against turning the longitudinal planes, because both are 26-plane
+arms on the same object: turning gives 0.1220 transverse and 0.2015 longitudinal, the corrected split
+gives <strong>0.0891 and 0.1861</strong>. It is better on both columns, so the corrected split
+supersedes turning as a way of giving the longitudinal family more of the object. The best
+longitudinal number measured anywhere is still 0.1783, from 104 planes and a Chamfer term &mdash;
+four times the budget for 4% more.</p>
+
+<h3>What this does not fix</h3>
+
+<ol>
+<li><strong>The caps still get no transverse plane.</strong> Folding 1.5 into the balance corrects the
+<em>spacing</em>, not the <em>coverage</em>: <code>mvcams</code> still builds \(M\) depths and
+supervises the middle \(N_h\), so 0.62 of the axis is inside the band and the two caps are outside
+it &mdash; 0.65 before the change, 0.62 after. That is a separate edit to which depths are taken, not
+to the equation.</li>
+<li><strong>The photographs still do not multiply with the planes.</strong> The apple, the cake and
+the pomegranate have two longitudinal photographs for 17 planes; the doughnut has one for 23. Extra
+longitudinal planes are handed targets they already had, which is the most likely reason the doughnut
+&mdash; the object the rule moves for the strongest reason &mdash; is the object it helps least. Only
+photographs fix this.</li>
+<li><strong>The clip binds on the flattest object.</strong> 3/23 is one plane from the bound, and the
+doughnut is the one object whose two spacings still do not meet. A budget of 26 cannot balance an
+object whose half-circumference is five times its axis.</li>
+</ol>
+
+<div class="note">
+<strong>One honest caveat about the radius.</strong> With \(R\) at the 90th percentile the rule is
+self-consistent at the 90th percentile. Choosing the 95th, or the maximum, would make it
+self-consistent there instead and would give a different split &mdash; the orange's maximum radius is
+60.4 cells against 49.9 at p90, which pushes further towards the longitudinal family. So what these
+two constants did was replace a hidden wrong constant with an explicit stated one. It is the same
+number for every object, so it is still one program and not a per-object knob, but the rule does not
+determine it and this page should not pretend otherwise.
+</div>
+
+<h2 id="loss">What is actually optimised, term by term</h2>
+
+<p class="lead">The plane count decides <em>where</em> the object is looked at. This is what happens
+once a plane is chosen &mdash; every step from the plane to the number that gets differentiated,
+with the default weight of each piece. Three tensors take the gradient and nothing else does.</p>
+
+<h3>Step 1 &mdash; what a gradient step sees</h3>
+
+<p>An outer iteration walks every plane once. Under <code>SEC_JOINT=1</code>, the default, a single
+step takes <strong>one transverse plane, one longitudinal plane and one exterior view together</strong>,
+so a cell that both families cross meets both constraints in the same backward pass. It matters
+because before this the step order was a shuffle and a step saw exactly one plane: a shared cell was
+pulled to one photograph, then to the other, and what it settled on depended on which came last.</p>
+
+<p>The families are different sizes &mdash; 14, 12 and 6 on the orange &mdash; so the number of
+groups is the longest of them and the shorter ones are cycled through fresh permutations. Each
+family's loss is then scaled by \(|\text{family}| / G\), which keeps its total weight over an
+outer iteration exactly what it was; without it, cycling the shorter family would silently give it
+more say.</p>
+
+<pre>G = max(N_h, N_v, N_e)                       # 14 on the orange
+step g:  [("h", h_g, 14/14), ("v", v_g, 12/14), ("e", e_g, 6/14)]</pre>
+
+<h3>Step 2 &mdash; the plane is moved before it is drawn</h3>
+
+<p>Neither family is drawn where its camera says. A transverse plane is offset along its normal by
+\(f \cdot \Delta\) with \(f\) uniform on \([-0.5, 0.5]\) (<code>JITTER=0.5</code>) and
+\(\Delta\) the depth step, so over a run it sweeps the cells between the supervised depths rather
+than re-cutting the same ones. A longitudinal plane is pinned by default; <code>JITTER_AZ</code>
+turns it about the axis by up to that fraction of the azimuth spacing, which is the same degree of
+freedom expressed on the parameter that plays the same role.</p>
+
+<div class="note">
+The jitter is also why the lattice-plane bug never touched a trained model. \(f\) is a continuous
+draw, so the depth lands on an exact multiple of the cell size with probability zero. Every number
+on this page was measured at un-jittered depths on held-out planes, and none of those was affected
+either &mdash; checked on all seven objects.
+</div>
+
+<h3>Step 3 &mdash; render</h3>
+
+<p><code>render_section</code> puts two things into <em>one</em> nvdiffrast pass, so the depth test
+composes them and nothing is pasted on afterwards: the exterior triangles lying wholly behind the
+plane, and the cut polygon of the plane against the occupancy, coloured by a trilinear sample of the
+per-cell interior field at each polygon vertex. Out come the image and the accumulated opacity.</p>
+
+<h3>Step 4 &mdash; the target is built from the render, not from the photograph</h3>
+
+<p>This is the step that is easiest to state wrongly, so: <strong>the loss is not the render against
+the photograph.</strong> <code>section_target</code> takes the two and returns a third image, and it
+is that third image the render is compared with.</p>
+
+<ol>
+<li><strong>Where the section is.</strong> Taken from the rasteriser's accumulated opacity, not from
+"differs from white". The orange's core <em>is</em> white: read as background it split the disc into
+two half-moons, each of which then got the whole reference squeezed into it sideways, and the target
+came out flat orange with no radial structure at all.</li>
+<li><strong>The target starts as a copy of the render.</strong> Not as white. A component too small
+to establish a correspondence is skipped, and against a white canvas "skipped" reads as "should be
+background" &mdash; the loss then works to delete it. On the loaf that was 5,689 pixels, a fifth of
+the section's own area, being told to disappear. Copying leaves those pixels with no gradient rather
+than a wrong one.</li>
+<li><strong>Each connected component is matched by topology.</strong> The reference is read twice,
+once with its enclosed regions filled and once open, and the reading whose hole count matches the
+component's is the one used &mdash; filling is right for a pale core and wrong for a hole, and only
+the render knows which it is looking at. If the counts match, a bijection exists and the two are
+mapped by their own coordinates; if not, it falls back to the normalised distance transform, the one
+coordinate both shapes have.</li>
+</ol>
+
+<p>So the photograph supplies <em>appearance as a function of position within the section</em>, and
+the render supplies the silhouette. That is deliberate &mdash; the photograph is of <em>an</em>
+orange, not of this one, so its outline carries no information about this object &mdash; but it also
+means the loss can never correct a silhouette, which is why the loaf and the cake, photographed as a
+slice held at an angle, show a shape mismatch that no amount of training removes.</p>
+
+<h3>Step 5 &mdash; the loss</h3>
+
+<pre>L = sum over the planes in this step of  w_family * | render - target |
+    + SEC_TV * mean over sampled face-sharing cell pairs of (c_a - c_b)^2</pre>
+
+<p>Mean absolute error, per plane, weighted by the family scale from step 1. Everything else is off
+by default and each was measured before being left off:</p>
+
+<div class="tw"><table>
+<thead><tr><th>term</th><th>switch</th><th>default</th><th>what happens when it is on</th></tr></thead>
+<tbody>
+<tr><td>pixel L1</td><td>&mdash;</td><td><strong>always on</strong></td><td>the objective</td></tr>
+<tr><td>field prior</td><td><code>SEC_TV</code></td><td>0</td><td>couples each cell to its face-sharing neighbours over 200,000 sampled pairs per step &mdash; on the whole field, not on what these planes happened to cross, which is the point: the cells the schedule reaches rarely are the ones with nothing else holding them</td></tr>
+<tr><td>patch distribution</td><td><code>SEC_DIST</code></td><td>0</td><td>Chamfer, sliced Wasserstein or JS between the two images' patch sets, phased in after half the run and keeping 30% of the pixel term &mdash; measured three times, harmful once and neutral twice</td></tr>
+<tr><td>cross-section consistency</td><td><code>SEC_XCONS</code></td><td>0</td><td>reconciles a transverse target with cached longitudinal ones along the line they share; two planes meet in a line, so this reaches ~1% of either family's cells and that is its ceiling</td></tr>
+<tr><td>patch pixel loss</td><td><code>SEC_PATCH</code></td><td>0</td><td>replaces the per-pixel L1 with a patch-wise one</td></tr>
+</tbody></table></div>
+
+<h3>Step 6 &mdash; what receives the gradient</h3>
+
+<div class="tw"><table>
+<thead><tr><th>tensor</th><th>what it is</th><th>learning rate</th><th>constraint</th></tr></thead>
+<tbody>
+<tr><td><code>interior</code></td><td>one RGB per solid cell, or the anchor decoder's output</td><td>0.02 (feat 0.005, MLP 0.002)</td><td>clamped to [0,1]</td></tr>
+<tr><td><code>surf_rgb</code></td><td>one RGB per dual vertex &mdash; the skin</td><td>0.02</td><td><strong>frozen</strong> under <code>SHELL_PIN=1</code>, the default</td></tr>
+<tr><td><code>dual_v</code>, <code>split_w</code></td><td>the dual grid's vertex offsets and split weights</td><td>1e&#8209;3</td><td>split weights clamped to (0,1)</td></tr>
+</tbody></table></div>
+
+<p>Adam, no schedule, 5,200 gradient steps. <code>SHELL_PIN=1</code> means the exterior is fixed
+before training and the sections cannot move it, so the exterior views constrain the geometry and
+not the colour; and <code>SEC_SKIP_OUTER=0.10</code> keeps the section loss off the outermost 10% of
+the render, so a cut face is never allowed to repaint the rind it is seen through. Which is the same
+ownership split from both sides: <strong>the sections own the interior, the six exterior views own
+the skin.</strong></p>
+
+<h3>Where this leaves the plane count</h3>
+
+<p>Steps 1 and 5 together are why the plane split is a trade and not a free choice, and the
+arithmetic is worth doing rather than describing. Each family contributes one plane per step at
+weight \(|\text{family}|/G\), over \(G\) steps, so its <strong>total weight over an outer
+iteration is exactly its plane count</strong> &mdash; that is what the scaling was written to
+preserve, and it means the split is not a sampling choice but a direct reallocation of gradient
+weight, one unit for one unit.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>fixed &rarr; derived</th><th>transverse weight</th>
+<th>longitudinal weight</th><th>transverse DS</th><th>longitudinal DS</th></tr></thead>
+<tbody>
+<tr><td>cake</td><td>16/10 &rarr; 15/11</td><td>&minus;6%</td><td>+10%</td><td>0.4641 &rarr; 0.4651</td><td>0.5017 &rarr; 0.4890</td></tr>
+<tr><td>orange</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.0859 &rarr; 0.0804</td><td>0.2257 &rarr; 0.2061</td></tr>
+<tr><td>apple</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.2472 &rarr; 0.2534</td><td>0.3557 &rarr; 0.3437</td></tr>
+<tr><td>pomegranate</td><td>16/10 &rarr; 14/12</td><td>&minus;13%</td><td>+20%</td><td>0.2372 &rarr; 0.2461</td><td>0.4836 &rarr; 0.4718</td></tr>
+<tr><td>watermelon</td><td>16/10 &rarr; 13/13</td><td>&minus;19%</td><td>+30%</td><td>0.1599 &rarr; 0.1623</td><td>0.2044 &rarr; 0.1992</td></tr>
+<tr><td>loaf</td><td>16/10 &rarr; 11/15</td><td>&minus;31%</td><td>+50%</td><td>0.3774 &rarr; 0.3818</td><td>0.4849 &rarr; 0.4214</td></tr>
+<tr><td>doughnut</td><td>16/10 &rarr; 4/22</td><td>&minus;75%</td><td>+120%</td><td>0.0980 &rarr; 0.1540</td><td>0.5494 &rarr; 0.5550</td></tr>
+</tbody></table></div>
+
+<p>Sorted by how far the split moves, and both columns follow it. The cake moves least and barely
+changes on either. The loaf takes the largest survivable reallocation, +50% longitudinal, and posts
+the largest longitudinal gain of the seven, 13%. The doughnut has three quarters of its transverse
+weight removed and its transverse score degrades by 57%, the worst number in the whole set &mdash;
+and its longitudinal column does <em>not</em> improve, because the +120% is spread over 22 planes
+that share one photograph. So the trade is not a mystery and not a property of any object: it is
+the objective doing exactly what it is written to do, and the plane count is the only thing
+deciding how the fixed budget is divided.</p>
+
+<h2 id="buys">What the representation buys, measured</h2>
+
+<p class="lead">Everything here is the same orange, from the run that scores best on the held-out
+half, rendered by <code>code/ovoxel_native/demo_adv.py</code>, <code>demo_shell.py</code> and
+<code>demo_normals.py</code>. Each comparison changes exactly one thing and holds the rest &mdash;
+same field, same plane, same camera, same light &mdash; so what is left is the representation.</p>
+
+<div class="note">
+<strong>Two of these were measured before they were claimed, and one claim was dropped.</strong> A
+demonstration that oblique cuts come out smoother than a voxel slice is the obvious thing to build
+here, and it is wrong: measured at 0, 30 and 45 degrees the two outlines disagree about 0.0% of the
+cut area. The reason is in the code and it is not fixable by presentation, so it is written up at
+the bottom rather than left out.
+</div>
+
+<h2 id="cutface">The cut face: sparse cells buy resolution, and the cut has no thickness</h2>
+
+<p>This object is 770,182 solid cells inside a 117&times;127&times;121 box &mdash; <strong>42.8%
+full</strong>. A dense grid has to store the empty 57.2% as well, so at the same memory its cells
+are 1.33&times; wider in every direction. Comparing against a dense grid at the <em>same</em> cell
+size, which is what a demonstration usually does, quietly hands it 2.3&times; the memory.</p>
+
+<p>The fourth panel is a different opponent: the paper's own pipeline does not draw a plane at all.
+<code>plane_filter</code> splats every primitive within <code>surf_dis</code> of it, which on this
+object is 2.82 coarse cells, so its cut face is an integral over a slab 5.63 cells thick. The
+closed-form polygon has no thickness.</p>
+
+<figure>
+  <img src="assets/demo_cutface.jpg" alt="the same patch of flesh, four ways">
+  <div class="cap">The same patch of flesh at 4&times;.
+  <span style="font-size:12.5px">O&#8209;Voxel &middot; a dense grid at the same cell size &middot;
+  a dense grid at equal memory &middot; the pipeline's 5.63-cell slab</span></div>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>the cut face</th><th>gradient</th><th>difference from ours, per pixel</th></tr></thead>
+<tbody>
+<tr><td>O&#8209;Voxel: polygon, field sampled at the fragment</td><td class="win">0.0073</td><td>&mdash;</td></tr>
+<tr><td>dense grid, same cell size</td><td>0.0092</td><td>0.0253</td></tr>
+<tr><td>dense grid, equal memory (cells 1.33&times; wider)</td><td>0.0084</td><td class="win">0.0350</td></tr>
+<tr><td>the pipeline's slab</td><td>0.0069</td><td>0.0122</td></tr>
+</tbody></table></div>
+
+<p>The mosaic in the middle two panels is one colour per cell across a cross-section several pixels
+wide; the last panel keeps the texture but has been through a low-pass filter several cells deep.</p>
+
+<h2 id="skin">The skin: a vertex inside its cell, against a face on the cell boundary</h2>
+
+<p>The dual grid puts one vertex inside each boundary cell and training moves it, so the surface can
+sit anywhere. A cube occupancy can only put a face on a cell boundary. Same cells, same colours from
+the same field, same camera.</p>
+
+<figure>
+  <img src="assets/demo_skin.jpg" alt="the skin from the dual grid and from cubes">
+  <div class="cap">The rim at 3&times;. <span style="font-size:12.5px">Left: the dual grid's
+  surface. Right: the same solid cells with their own cube faces.</span></div>
+</figure>
+
+<p>The left is a continuous rind with its pores; the right is an axis-aligned staircase that steps
+once per cell, with a stray cube hanging off the edge.</p>
+
+<h2 id="normals">The normals: six directions, at every resolution</h2>
+
+<p>This is the one that does not go away when the grid is refined. A cube face is axis-aligned, so
+its normal is one of six vectors, and that is true whether the cells are coarse or 6.16 million of
+them. Lighting, shading and every gradient of the surface are computed from those normals.</p>
+
+<figure>
+  <img src="assets/demo_normals.jpg" alt="one light, no colour, four surfaces">
+  <div class="cap">One directional light, no colour, no texture &mdash; geometry alone.
+  <span style="font-size:12.5px">dual grid &middot; cubes at the fine cell &middot; at the coarse
+  cell &middot; at twice the coarse cell</span></div>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>surface</th><th>cells</th><th>faces</th><th>distinct normal directions</th></tr></thead>
+<tbody>
+<tr><td>dual grid, fine cell</td><td>900,556</td><td>4,339,728</td><td class="win">3,424,207</td></tr>
+<tr><td>cubes, fine cell</td><td>6,161,456</td><td>558,016</td><td>6</td></tr>
+<tr><td>cubes, coarse cell</td><td>770,182</td><td>139,504</td><td>6</td></tr>
+<tr><td>cubes, twice the coarse cell</td><td>100,600</td><td>34,740</td><td>6</td></tr>
+</tbody></table></div>
+
+<p>Eight times the cells changes the size of the steps and nothing else. In the picture the three
+cube panels are flat facets at every resolution, while the dual grid shades as a curved surface and
+still shows the peel's own relief.</p>
+
+<div class="note">
+<strong>A metric that had to be thrown away.</strong> The mean angle between neighbouring faces was
+tried first, and it made the cubes look <em>better</em>: 15.4&deg; against the dual grid's 23.9&deg;.
+It is not a measure of staircasing &mdash; a cube surface is mostly flat, so most of its edges lie
+inside a face and contribute zero, while a real surface with fine relief contributes a small angle
+everywhere. The count of distinct normal directions has no such loophole.
+</div>
+
+<h2 id="nope">What did not hold: the oblique cut</h2>
+
+<p>The expected demonstration was that an oblique cut &mdash; 30&deg; or 45&deg; to the axis &mdash;
+comes out with a smooth outline where a voxel slice staircases. Measured, it does not.</p>
+
+<div class="tw"><table>
+<thead><tr><th>tilt</th><th>outline ratio, ours</th><th>outline ratio, voxel slice</th><th>area they disagree about</th></tr></thead>
+<tbody>
+<tr><td>0&deg;</td><td>4.654</td><td>4.654</td><td>0.0%</td></tr>
+<tr><td>30&deg;</td><td>4.864</td><td>4.879</td><td>0.0%</td></tr>
+<tr><td>45&deg;</td><td>5.655</td><td>5.657</td><td>0.0%</td></tr>
+</tbody></table></div>
+
+<figure>
+  <img src="assets/demo_oblique.jpg" alt="oblique cuts, both ways">
+  <div class="cap">0&deg;, 30&deg;, 45&deg;. <span style="font-size:12.5px">Above: the closed-form
+  polygon. Below: a nearest-cell voxel slice. They are the same picture.</span></div>
+</figure>
+
+<p><code>cut_polygons</code> intersects the plane with each solid <em>cube</em>, so the outline of
+the union is the occupancy boundary at cell resolution &mdash; exactly what a nearest-cell test
+returns. The dual grid smooths the object's surface and has nothing to do with the outline of a cut.
+What the polygon buys is inside that outline: it is rasterised and coloured from the field at each
+fragment, so one cell's cross-section carries a gradient instead of a single tone. That is the first
+comparison on this page, and it is worth 0.0350 per pixel against a dense grid at equal memory
+&mdash; but it is not an anti-aliasing argument, and calling it one would not survive a reviewer
+opening the file.</p>
+
+<h2 id="rays">Ray tracing and contact: the same measurement twice</h2>
+
+<p>A tracer needs the hit point and the normal to build the reflected ray; a contact solver needs
+the hit point and the normal to build the contact frame. So one set of parallel rays is cast at the
+object and both representations answer. The voxel path marches the grid until a cell is solid and
+returns the face it crossed; the dual grid answers with the surface itself.</p>
+
+<figure>
+  <img src="assets/demo_reflect.jpg" alt="a mirror reflection of an analytic sky, both ways">
+  <div class="cap">A mirror reflection of an analytic sky.
+  <span style="font-size:12.5px">Left: the dual grid. Right: the voxel tracer.</span></div>
+</figure>
+
+<p>The right-hand ball is <strong>one flat blue</strong>. From any single direction a cube surface
+shows three of its six faces, so the tracer has three reflection directions for the whole object and
+the reflection has three tones. Counted over the 132,605 rays that hit both: <strong>3 distinct
+normals against 132,000</strong>. This is what "the ray only ever meets the cube's bounding box"
+costs, and no amount of refinement changes the count.</p>
+
+<figure>
+  <img src="assets/demo_contact.png" alt="contact normal along one line across the object">
+  <div class="cap">How far the contact normal is from radial, along one line across the fruit
+  &mdash; 0 at the top, 90&deg; at the bottom.
+  <span style="font-size:12.5px">Red: the cube collider. Blue: the dual grid.</span></div>
+</figure>
+
+<p>The red trace is a square wave: the collider hands the solver one of a few fixed directions and
+flips between them as the contact slides, which is where a jolt in a simulation comes from. Against
+the direction a ball's contact normal should have &mdash; from the centre to the contact &mdash; the
+cube collider is <strong>49.0&deg; off at the median</strong> and the dual grid
+<strong>36.0&deg;</strong>.</p>
+
+<div class="note">
+<strong>Why 36&deg; and not 5&deg;.</strong> This orange's reconstructed peel is genuinely rough:
+its normals carry the peel's own relief, and that relief is surface, not error. The dual grid's
+advantage here is therefore not that its contact normal is smooth on this object &mdash; it is that
+it <em>can</em> point anywhere, while the cube collider has three directions to choose from no
+matter what the surface does. Two other claims were checked and are not made: the mesh is a triangle
+soup, so welding its vertices to compute smoothed normals does not connect it (1.6 corners per
+position at a tolerance of three quarters of a fine cell), and the first-hit depth differs by a
+median of 2.9 coarse cells for reasons that are not quantisation &mdash; subdividing a coarse cell
+into eight fine ones leaves the union's shape unchanged.
+</div>
+
+<h2 id="limits">What it does not do</h2>
+
+<ul>
+  <li><strong>Held-out longitudinal planes do not look like the supervised ones.</strong> The
+      section above measures it and says why: the longitudinal references are all central
+      sections, so nothing in the data says what an off-centre longitudinal cut contains, and the
+      held-out planes are drawn from exactly the band the supervised ones never occupy.</li>
+  <li><strong>The exterior's staircase is the input's, not the dual grid's.</strong> The boundary
+      handed to the encoder is axis-aligned quads with six normals, so the quadric it minimises has
+      at most three independent directions per cell. Measured as the share of face area whose
+      normal lies within ten degrees of an axis &mdash; 4.6% for a smooth surface &mdash; the
+      converted exteriors give 68.9% to 92.5%. The zero level of the occupancy's own distance
+      transform brings that to 6.9% to 8.5% on 2.2 to 2.4 times fewer voxels, but it is measured
+      and not the reported path.</li>
+  <li><strong>The reference sets are small and uneven.</strong> Between one and ten photographs per
+      family per object. Where there are two, the blend interpolates across the whole object from a
+      single pair, and the jump statistic's switch depth is the middle of the object &mdash; which
+      is where an apple or a cake changes structure anyway. The paired control is what separates
+      those; a single arm's number would not.</li>
+  <li><strong>The exterior is pinned throughout.</strong> Nothing here measures what the dual
+      grid's geometry or its surface colour would do if they were trained, and the counts in the
+      table above are the interior's alone.</li>
+</ul>
+
+<footer>
+  Rendered from <code>code/ovoxel_native/</code>. The videos are produced by
+  <code>ovcut.py</code>, the sheets by <code>ovsheet7.py</code>, the paired table by
+  <code>ovpair.py</code>, and the reference measurement by <code>refspread.py</code>.
+</footer>
+
+</div>
+</body>
+</html>

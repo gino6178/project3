@@ -26,7 +26,7 @@ dev = "cuda"
 ON.FDG = ON._load_ovoxel()
 glctx = dr.RasterizeCudaContext(device=dev)
 st = torch.load(f"{W}/state_{OBJ}.pt", map_location=dev, weights_only=False)
-C = np.load(f"{W}/cams_{OBJ}_bal.npz")
+C = np.load(f"{W}/cams_{OBJ}{os.environ.get('CAMS_SUFFIX', '_v2')}.npz")
 H_LO, H_HI = int(C["h_lo"][0]), int(C["h_hi"][0])
 NV = len(C["v_planes"])
 hmvp = torch.as_tensor(C["h_mvp"], dtype=torch.float32, device=dev)

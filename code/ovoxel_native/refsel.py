@@ -309,10 +309,28 @@ def solved_photo(spec, idx, n):
                        lambda j: _solved_one(spec, files, phases, perm, j))
 
 
+# A diagnostic, not a model: every longitudinal plane is given the SAME photograph, so there is no
+# disagreement between neighbouring azimuths left for the field to resolve. The stripes appear only
+# on longitudinal cuts, only where no photograph was taken, and at exactly the number of
+# longitudinal planes, which is what a seam between wedges painted from different photographs would
+# look like. Seven arms have treated the field and the loss and none has moved it beyond the spread
+# of a repeat; none of them changed what a plane is told to look at. This settles whether that is
+# where it comes from. One photograph for every azimuth is of course wrong -- that is the point:
+# it is wrong in a way that removes exactly one candidate cause.
+REF_V_ONE = os.environ.get("REF_V_ONE", "")
+
+
 def photo(spec, idx, n):
     """The longitudinal family: the continuous depth assignment, equation (14)."""
     _s, _u = SAMPLE_V, UNIFORM_V
     files = sorted(photos_in(spec))
+    if REF_V_ONE != "" and files:
+        k = int(REF_V_ONE) % len(files)
+        key = (spec, "one", k)
+        if key not in _PHOTOS:
+            _PHOTOS[key] = Image.fromarray(
+                (_blend_canonical(files[k]) * 255).astype("uint8"))
+        return _PHOTOS[key]
     if os.environ.get("REF_DEPTH_BLEND", "1") == "1" and len(files) > 1:
         t = idx * len(files) / max(n, 1)
         k0 = int(t) % len(files)

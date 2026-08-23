@@ -26,6 +26,12 @@ import numpy as np
 import torch
 
 WEIGHT = float(os.environ.get("SEC_TV", "0"))
+# A second-order term beside the first-order one. SEC_TV penalises the STEP between
+# neighbours, which is minimised by a field that is flat; SEC_LAP penalises the cell's
+# departure from the mean of its neighbours, which is minimised by a field that is
+# LINEAR. A gradient is free under it and only curvature is charged, so it can smooth a
+# seam without also flattening the ramp a fruit's interior actually has.
+LAP = float(os.environ.get("SEC_LAP", "0"))
 NPAIR = int(os.environ.get("SEC_TV_N", "200000"))
 # Per-axis weights, because the field is not equally constrained in the three directions and it is
 # not constrained worst along the one the columns run down.
@@ -103,3 +109,31 @@ def penalty(colour, pairs, generator=None, polar=None):
     # divided by the mean weight, so turning the anisotropy on does not also change the term's
     # overall size and confound it with SEC_TV itself
     return (sq * wt).mean() / wt.mean() / (3.0 if d.dim() > 1 else 1.0)
+
+
+def laplacian(colour, pairs, generator=None):
+    """Mean squared departure of each cell from the mean of its face-sharing neighbours.
+
+    Built from the same pair list, so it costs a scatter rather than a second neighbourhood search:
+    summing each pair into both endpoints gives every cell the sum of its neighbours and its own
+    count, and the residual is the cell minus that mean. Cells with no sampled neighbour are
+    dropped rather than counted as satisfied.
+    """
+    if LAP <= 0 or pairs is None or len(pairs) == 0:
+        return colour.new_zeros(())
+    if len(pairs) > NPAIR:
+        sel = torch.randint(0, len(pairs), (NPAIR,), device=pairs.device, generator=generator)
+        pairs = pairs[sel]
+    n = colour.shape[0]
+    acc = colour.new_zeros(n, colour.shape[1] if colour.dim() > 1 else 1)
+    cnt = colour.new_zeros(n, 1)
+    a, b = pairs[:, 0], pairs[:, 1]
+    c = colour if colour.dim() > 1 else colour[:, None]
+    acc.index_add_(0, a, c[b])
+    acc.index_add_(0, b, c[a])
+    ones = cnt.new_ones(len(a), 1)
+    cnt.index_add_(0, a, ones)
+    cnt.index_add_(0, b, ones)
+    have = (cnt[:, 0] > 0)
+    res = c[have] - acc[have] / cnt[have]
+    return (res ** 2).sum(-1).mean() / (3.0 if colour.dim() > 1 else 1.0)
