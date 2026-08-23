@@ -172,7 +172,11 @@ dev = "cuda"
 os.makedirs(OUT, exist_ok=True)
 for s in ("eval_init", "eval_final"):
     os.makedirs(f"{OUT}/{s}", exist_ok=True)
-random.seed(0); torch.manual_seed(0); np.random.seed(0)
+# The seed was fixed at 0, which is right for reproducing a run and wrong for measuring one: two
+# arms differing by a percent cannot be separated from a pipeline whose own spread between
+# iteration counts is several. SEED makes repeats possible.
+SEED = int(os.environ.get("SEED", "0"))
+random.seed(SEED); torch.manual_seed(SEED); np.random.seed(SEED)
 
 st = torch.load(STATE, map_location=dev, weights_only=False)
 ON.FDG = ON._load_ovoxel()
@@ -208,6 +212,8 @@ print(f"ANCHOR={int(ANCHOR)}  SHELL_PIN={int(SHELL_PIN)}  SEC_SKIP_OUTER={SEC_SK
 
 # ---------------------------------------------------------------- what the sections may not paint
 from occupancy import surface_cells                                   # noqa: E402
+_axis_t = torch.as_tensor(np.asarray(C["h_planes"][0, :3], float)
+                          / np.linalg.norm(C["h_planes"][0, :3]), dtype=torch.float32, device=dev)
 hc, org = st["hc"], st["org"]
 centres = (st["solid"].float() + 0.5) * hc + torch.as_tensor(org, dtype=torch.float32, device=dev)
 if SEC_SKIP_OUTER > 0:
@@ -571,6 +577,7 @@ _vrad = float((st["solid"].max(0).values - st["solid"].min(0).values).max()) \
 _axis = np.asarray(C["h_planes"][0, :3], float)
 _cen = ((st["solid"].float().mean(0) + 0.5) * float(st["hc"])).cpu().numpy() \
     + np.asarray(st["org"])
+_cen_t = torch.as_tensor(_cen, dtype=torch.float32, device=dev)
 _az_spacing = np.radians(180.0 / max(NV, 1))
 if JITTER_AZ > 0:
     assert azjitter.check(C["v_mvp"][0], C["v_planes"][0, :3], float(C["v_planes"][0, 3]),
@@ -590,30 +597,86 @@ _urng = np.random.default_rng(0)
 #
 # Each plane keeps its own counter, because two families interleaved on one counter each see a
 # strided subsequence, and a strided subsequence of a low-discrepancy sequence is not one.
+# "random"  an independent draw every time, which is what the pipeline has always done
+# "cycle"    a low-discrepancy walk: even coverage, and no gradient noise left where the noise was
+#            doing the regularising. Measured, it loses on six objects of seven, and giving each
+#            plane its own phase -- which fixes a real defect, the planes were moving in lockstep --
+#            does not recover it. So the coverage was never the binding constraint here.
+# "strat"    both: the window is cut into STRATA bands, one is used per iteration in a shuffled
+#            order, and the position WITHIN the band is drawn. Every band is visited once per
+#            STRATA iterations, so coverage is guaranteed rather than hoped for, and every sample
+#            is still random, so the gradient keeps the noise the field is regularised by. This is
+#            randomised quasi-Monte Carlo, and its variance is bounded above by independent
+#            sampling's rather than driven to zero.
+# Balancing the two families in SPACE rather than in total.
+#
+# The joint step already scales each family's loss so that its total weight over an outer iteration
+# is fixed, and that is exactly equal. Where the two families are not equal is per cell: every
+# longitudinal plane passes through the axis, so measured over the pipeline's own schedule a cell
+# in the innermost fifth of the radius hears from the longitudinal family 40 times against the
+# transverse family's 3.6 -- eleven times as often -- while a cell at the rim hears 4.8 against
+# 4.6, which is even. The interior that comes out is extruded along the axis: its colour changes
+# 0.648 as much along the axis as across it on the orange, 0.815 on the watermelon.
+#
+# The count falls as about 1/r, so weighting a longitudinal crop by its distance from the axis
+# flattens that family's say over the section. The weights are normalised by what was drawn, so
+# the family's total weight is unchanged and only its distribution moves.
+FAM_BAL = float(os.environ.get("SEC_FAM_BAL", "0"))
 SEC_SCHED = os.environ.get("SEC_SCHED", "random")
+STRATA = int(os.environ.get("SEC_STRATA", "16"))
 _PHI = (1 + 5 ** 0.5) / 2
 _sched_n = {}
+_strat_q = {}
 
 
 def _seq(key, base=2):
-    """The next value of this plane's own sequence, in [0, 1)."""
+    """The next value of this plane's own sequence, in [0, 1), offset by the plane's own phase.
+
+    The phase is what the first version left out, and it cost the whole idea. Every plane is
+    visited once per outer iteration, so every plane's counter advances together and they all
+    returned the SAME value of the sequence: nine transverse planes sitting at one shared offset,
+    a rigid translation of the fixed grid rather than a jittered one. Their errors were then
+    perfectly correlated, so averaging over nine planes stopped reducing the gradient's noise --
+    in the direction of a whole-band translation it made it about three times larger than
+    independent jitter does. Measured, that arm lost on six objects of seven and lost most on the
+    pomegranate, the object with the fewest photographs and therefore the least other randomness
+    to fall back on.
+
+    A Cranley-Patterson rotation by the plane's index fixes it: each plane keeps a low-discrepancy
+    sequence of its own and the planes are decorrelated from each other.
+    """
     k = _sched_n.get(key, 0) + 1
     _sched_n[key] = k
+    idx = key[1] if isinstance(key, tuple) and len(key) > 1 else 0
+    phase = (idx * _PHI) % 1.0
     if base == 0:                                  # golden angle, for an azimuth
-        return (k * _PHI) % 1.0
+        return ((k * _PHI) + phase) % 1.0
     f, r = 1.0, 0.0
     while k:
         f /= base
         r += f * (k % base)
         k //= base
-    return r
+    return (r + phase) % 1.0
+
+
+def _strat(key):
+    """One band of this plane's window, in shuffled order, with a random position inside it."""
+    q = _strat_q.get(key)
+    if not q:
+        q = list(range(STRATA))
+        random.shuffle(q)
+        _strat_q[key] = q
+    b = q.pop()
+    return (b + random.random()) / STRATA
 
 
 def _jit(key, base=2):
-    """A jitter fraction in [-1, 1], drawn or walked depending on SEC_SCHED."""
-    if SEC_SCHED != "cycle":
-        return (random.random() - 0.5) * 2.0
-    return (_seq(key, base) - 0.5) * 2.0
+    """A jitter fraction in [-1, 1], drawn, walked or stratified depending on SEC_SCHED."""
+    if SEC_SCHED == "cycle":
+        return (_seq(key, base) - 0.5) * 2.0
+    if SEC_SCHED == "strat":
+        return (_strat(key) - 0.5) * 2.0
+    return (random.random() - 0.5) * 2.0
 
 
 print(f"  plane jitter: {SEC_SCHED}", flush=True)
@@ -700,7 +763,22 @@ for j in range(ITERS):
                         if _tot and j % 10 == 0:
                             print(f"  cross-section consistency at {j}: {_tot:,} px reconciled, "
                                   f"disagreement {_dis / max(_tot, 1):.4f}", flush=True)
-            _pl = (secloss.patch_loss(img, tgt) if secloss.SEC_PATCH > 0
+            _wf = None
+            if FAM_BAL > 0 and kind == "v":
+                # the axis, projected into this view: two world points through the same matrix
+                _p0 = torch.cat([_cen_t, torch.ones(1, device=dev)]) @ _vm
+                _p1 = torch.cat([_cen_t + _axis_t, torch.ones(1, device=dev)]) @ _vm
+                _a = (_p0[:2] / _p0[3]), (_p1[:2] / _p1[3])
+                _d = _a[1] - _a[0]
+                _d = _d / _d.norm().clamp(min=1e-9)
+                _o = torch.stack([-_d[1], _d[0]])            # across the axis, in clip space
+
+                def _wf(cy, cx, _o=_o, _a0=_a[0]):
+                    # crop centre in clip coordinates, then its distance from the axis line
+                    u = torch.tensor([cx / RES * 2 - 1, 1 - cy / RES * 2], device=dev)
+                    r = float(((u - _a0) * _o).sum().abs())
+                    return (r / 1.0) ** FAM_BAL
+            _pl = (secloss.patch_loss(img, tgt, wfun=_wf) if secloss.SEC_PATCH > 0
                    else (img - tgt).abs().mean())
             # Asked of the render and the family, not of the render and this plane's own target: the
             # pixel term already says where the structure goes, and this says what it should be made

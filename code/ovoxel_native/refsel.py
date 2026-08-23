@@ -31,9 +31,23 @@ import random as _random
 # uniformly from the whole family, which throws the depth assignment away entirely. 2 is only
 # different from 1 where a family has more than two photographs -- on the cake, the pomegranate and
 # the apple the two neighbours are the whole family, and on the doughnut there is nothing to draw.
+# Drawing a photograph instead of blending two is the best change this project has, and it is the
+# best change for the transverse family. For the longitudinal one it has a cost the transverse
+# family does not pay: every longitudinal plane paints a whole meridian half-plane, its neighbour
+# ten degrees away paints another, and if each draws its own photograph the two wedges disagree
+# along their shared edge -- which is a seam running down the axis. Measured on the angular power
+# of the transverse renders, there is a peak at exactly the number of longitudinal planes: 2.78
+# times the median at 18 planes on the watermelon, 2.09 at 17 on the orange.
+#
+# REF_SAMPLE_V=0 leaves the longitudinal family on the continuous blend, where two neighbouring
+# azimuths differ by the blend weight rather than by a whole photograph, and lets the transverse
+# family keep the draw.
 _SM = os.environ.get("REF_SAMPLE", "0")
 SAMPLE = _SM in ("1", "2")
 UNIFORM = _SM == "2"
+_SMV = os.environ.get("REF_SAMPLE_V", "")
+SAMPLE_V = SAMPLE if _SMV == "" else _SMV in ("1", "2")
+UNIFORM_V = UNIFORM if _SMV == "" else _SMV == "2"
 _RNG = _random.Random(int(os.environ.get("REF_SAMPLE_SEED", "0")))
 
 
@@ -297,14 +311,15 @@ def solved_photo(spec, idx, n):
 
 def photo(spec, idx, n):
     """The longitudinal family: the continuous depth assignment, equation (14)."""
+    _s, _u = SAMPLE_V, UNIFORM_V
     files = sorted(photos_in(spec))
     if os.environ.get("REF_DEPTH_BLEND", "1") == "1" and len(files) > 1:
         t = idx * len(files) / max(n, 1)
         k0 = int(t) % len(files)
         k1 = (k0 + 1) % len(files)
         w = float(t - int(t))
-        if SAMPLE:
-            k = _RNG.randrange(len(files)) if UNIFORM else (k1 if _RNG.random() < w else k0)
+        if _s:
+            k = _RNG.randrange(len(files)) if _u else (k1 if _RNG.random() < w else k0)
             key = (spec, "blends", k)
             if key not in _PHOTOS:
                 _PHOTOS[key] = Image.fromarray(

@@ -38,6 +38,13 @@ import torch.nn as nn
 
 F_DIM = int(os.environ.get("ANCHOR_DIM", "8"))
 C_DIM = int(os.environ.get("ANCHOR_C_DIM", "16"))
+# The shared trunk's width and depth. The claim being tested is that the decoder cannot carry the
+# pull of two families at once and that a larger one would close the gap between the planes that
+# have a photograph and the planes that do not. Nothing here changes what a single cell can
+# express -- its latent is already free and its output is three numbers -- so if the gap does close,
+# the explanation is sharing between cells rather than capacity per cell.
+W_HID = int(os.environ.get("ANCHOR_HID", "128"))
+N_HID = int(os.environ.get("ANCHOR_LAYERS", "2"))
 CHUNK = int(os.environ.get("ANCHOR_CHUNK", "262144"))
 
 
@@ -47,10 +54,11 @@ class ColourDecoder(nn.Module):
     def __init__(self, n, init_rgb=None, f_dim=F_DIM, c_dim=C_DIM):
         super().__init__()
         self.feat = nn.Parameter(torch.randn(n, f_dim) * 0.01)
-        self.stage1 = nn.Sequential(
-            nn.Linear(f_dim, 128), nn.ReLU(inplace=True),
-            nn.Linear(128, 128), nn.ReLU(inplace=True),
-            nn.Linear(128, c_dim))
+        _L = [nn.Linear(f_dim, W_HID), nn.ReLU(inplace=True)]
+        for _ in range(max(N_HID - 1, 0)):
+            _L += [nn.Linear(W_HID, W_HID), nn.ReLU(inplace=True)]
+        _L += [nn.Linear(W_HID, c_dim)]
+        self.stage1 = nn.Sequential(*_L)
         self.stage2 = nn.Sequential(nn.Linear(c_dim, 64), nn.ReLU(inplace=True),
                                     nn.Linear(64, 3))
         self.pin = None                      # (mask, target), col_pin's role

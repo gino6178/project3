@@ -28,6 +28,14 @@ DRAWS = int(os.environ.get("RR_DRAWS", "400"))
 # never clumps the way independent draws do. Clumping is not hypothetical here: 26 independent
 # draws reached less of the interior than the 26 placed planes did.
 SEQ = os.environ.get("RR_SEQ", "families")
+# "jitter" is the pipeline's own scheme rather than an alternative to it: every plane is visited
+# once per outer iteration and moved within its own slot by +-JIT slots. The reach numbers this
+# file reported first were taken at the FIXED depths, with no jitter at all, so they understate
+# what the pipeline actually touches. This measures the real thing, as a function of how wide the
+# slot sweep is -- which is the one knob that can close the gaps between the slabs and the wedges
+# without ever leaving the orientations the photographs were taken at.
+JIT = float(os.environ.get("RR_JIT", "0.5"))
+ITERS = int(os.environ.get("RR_ITERS", "325"))
 PHI = (1 + 5 ** 0.5) / 2
 
 
@@ -95,6 +103,26 @@ _kh = _kv = 0
 marks = sorted({NH + NV, 50, 100, 200, DRAWS})
 print(f"{OBJ}: {N:,} interior cells; fixed schedule is {NH} transverse and {NV} longitudinal")
 t0 = time.time()
+if SEQ == "jitter":
+    marks = sorted({1, 5, 20, 80, ITERS})
+    for it in range(ITERS):
+        for i in range(NH):
+            f = (rng.random() - 0.5) * 2.0 * JIT
+            hit |= touch(hmvp, hn, float(hd[H_LO + i]) + (float(hd[1] - hd[0])) * f)
+        for j in range(NV):
+            f = (rng.random() - 0.5) * 2.0 * JIT
+            a = np.pi * (j + f) / NV
+            u2, w2 = plane_basis_np(np.asarray(hn.cpu()))
+            nv = np.cos(a) * u2 + np.sin(a) * w2
+            hit |= touch(torch.as_tensor(vmvp[j]),
+                         torch.as_tensor(nv, dtype=torch.float32, device=dev),
+                         float(-np.dot(nv, ctr)))
+        if (it + 1) in marks:
+            print(f"  jitter {JIT:g} slots, after {it + 1:4d} iterations: "
+                  f"{100 * hit.float().mean():5.1f}% of the interior   {time.time() - t0:.0f}s",
+                  flush=True)
+    raise SystemExit
+
 for k in range(DRAWS):
     if SEQ == "cycle":
         # each family keeps its own counter. Feeding the global step to both meant each family saw

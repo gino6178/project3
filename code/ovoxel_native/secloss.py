@@ -75,7 +75,30 @@ def whole_loss(rendering, ground_truth):
         + 0.3 * F.mse_loss(rendering, ground_truth)
 
 
-def patch_loss(rendering, ground_truth, n=None, size=None, stat_w=None):
+# The pixel term is a squared error, so where several planes demand different things of one cell
+# the solution it converges to is their weighted MEAN. That is the right estimator when the
+# disagreement is noise around one answer and the wrong one when it is a mixture: two photographs of
+# a different orange laid on the same plane differ by 0.0600 transverse and 0.0964 longitudinal,
+# measured, so the disagreement here is a mixture and the mean of it is a blend of both.
+#
+# ROBUST replaces the squared error with a redescending one -- Geman-McClure, whose influence
+# function falls back towards zero as the residual grows, so a demand far from the current value is
+# down-weighted rather than averaged in. The estimator then settles at a mode of the demands
+# instead of their mean. SEC_ROBUST is the scale at which a residual stops counting, in the units
+# of the image; at 0 the loss is the ordinary squared error.
+ROBUST = float(os.environ.get("SEC_ROBUST", "0"))
+
+
+def _sq(r, g):
+    """Squared error, or Geman-McClure's redescending version of it."""
+    d2 = (r - g) ** 2
+    if ROBUST <= 0:
+        return d2.mean()
+    c2 = ROBUST ** 2
+    return (d2 / (d2 + c2)).mean() * c2      # scaled so the small-residual limit matches MSE
+
+
+def patch_loss(rendering, ground_truth, n=None, size=None, stat_w=None, wfun=None):
     """Score the section in pieces instead of all at once.
 
     Crops come from the foreground only: a crop of background is two constant images and scores
@@ -95,15 +118,20 @@ def patch_loss(rendering, ground_truth, n=None, size=None, stat_w=None):
         return whole_loss(rendering, ground_truth)
     pick = torch.randint(0, ys.numel(), (n,), device=ys.device)
     total = 0.0
+    _w = []
     for k in range(n):
         y0 = int(ys[pick[k]]) - size // 2
         x0 = int(xs[pick[k]]) - size // 2
         y0 = max(0, min(y0, H - size))
         x0 = max(0, min(x0, W - size))
+        _w.append(1.0 if wfun is None else float(wfun(y0 + size / 2, x0 + size / 2)))
         r = rendering[:, y0:y0 + size, x0:x0 + size]
         g = ground_truth[:, y0:y0 + size, x0:x0 + size]
-        total = total + 0.7 * ssim_loss(r, g) + 0.3 * F.mse_loss(r, g)
+        _t = 0.7 * ssim_loss(r, g) + 0.3 * _sq(r, g)
         if stat_w > 0:
             m = ((g.min(0).values < 0.98) | (r.min(0).values < 0.98)).float()[None]
-            total = total + stat_w * band_loss(r, g, m, w_stat=1.0, sig=(0.5, 1.0, 2.0, 4.0))
-    return total / n
+            _t = _t + stat_w * band_loss(r, g, m, w_stat=1.0, sig=(0.5, 1.0, 2.0, 4.0))
+        total = total + _w[k] * _t
+    # normalised by the weights actually drawn, so a weighted family keeps the same total say as
+    # an unweighted one and only its distribution over the section changes
+    return total / max(sum(_w), 1e-6)
