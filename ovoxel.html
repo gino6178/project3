@@ -287,9 +287,11 @@ mixed-material fracture with continuum damage&nbsp;[52].</p>
 
 <p>Our two-level lattice provides integer cell connectivity, mass conservation and sign-based
 contact predicates directly, and closed-form polygon clipping evaluated in parallel gives a cut in
-8.6&ndash;16.5&nbsp;ms. What this supplies is the geometric and topological interface those solvers
-consume; coupling it to a solver and validating the resulting dynamics is outside the scope of this
-work.</p>
+8.6&ndash;16.5&nbsp;ms. What this supplies is the geometric and topological interface those
+solvers consume. Figure&nbsp;4 drives one with it &mdash; the object is cut twice while falling and
+each discovered piece becomes its own MPM solver &mdash; but the dynamics are demonstrated, not
+validated: we report no measurement against a real fall, and the material parameters are chosen,
+not fitted.</p>
 
 <h2 id="method">3&ensp;Method</h2>
 
@@ -687,21 +689,28 @@ and weight, a second-order prior, the low-discrepancy schedule and a single phot
 azimuth all sit inside the seed repeat on every column.</p>
 
 <figure style="margin:16px 0 26px">
-  <video src="assets/pieces_orange.mp4?v=s_v3" autoplay loop muted playsinline preload="metadata"
+  <video src="assets/drop_orange.mp4?v=mpm1" autoplay loop muted playsinline preload="metadata"
          style="width:100%;max-width:520px;border-radius:4px"
-         aria-label="two planes cut the orange into four components, which separate and fall, each carrying its own exposed faces"></video>
-  <figcaption><span class="fnum">Figure 4</span><br><strong>The partition a cut delivers to a
-  solver.</strong> Two planes, one transverse and one longitudinal, are evaluated against the
-  lattice and connected components extracted by union-find over face adjacency. The orange resolves
-  into four components of 188,298&nbsp;/&nbsp;194,277&nbsp;/&nbsp;196,577&nbsp;/&nbsp;191,030
-  cells &mdash; 770,182 in total, every cell in exactly one component, so mass is conserved by
-  construction rather than numerically. Each component carries its own share of the dual-grid
-  boundary and its own exposed faces, and all four are rasterised in one pass so the depth test
-  composes them. <strong>The motion is prescribed, not solved:</strong> each component
-  separates along the two cut normals, then descends under constant acceleration and stops at a
-  height assigned to it. No solver, contact resolution or material parameter is
-  involved. What the figure demonstrates is that the partition, the adjacency and the exposed faces
-  are available to one.</figcaption>
+         aria-label="the orange falls, is cut twice in flight, and its four pieces separate and land"></video>
+  <figcaption><span class="fnum">Figure 4</span><br><strong>The lattice driving a solver:
+  cut in flight, 1&nbsp;&rarr;&nbsp;2&nbsp;&rarr;&nbsp;4.</strong> The orange falls under gravity
+  onto a floor. A transverse plane arrives at frame&nbsp;10 and a longitudinal one at
+  frame&nbsp;24, each stated in the material frame, so a plane aimed at the object still cuts the
+  object after it has fallen. A cut is an event, not a precondition: connectivity is recomputed on
+  the integer lattice, connected-component labelling reports how many pieces now exist
+  &mdash; two of 59,689&nbsp;/&nbsp;60,310 particles, then four of
+  31,403&nbsp;/&nbsp;32,801&nbsp;/&nbsp;28,286&nbsp;/&nbsp;27,509 &mdash; and one MPM
+  solver&nbsp;[19&ndash;21] is built per piece carrying its particles' current positions and
+  velocities. Labelling costs 33.0 and 50.4&nbsp;ms. The cells are the particles, so adjacency
+  needs no <em>k</em>-NN graph and no distance threshold, and the number of pieces does not depend
+  on one. The material is the two-rule field, a peel at
+  \(8.4\times10^{6}\)&nbsp;Pa over an interior at \(1.2\times10^{6}\)&nbsp;Pa;
+  \(\Delta t = 5\times10^{-5}\) with 180 substeps per frame. 78 frames, 11&nbsp;s of solver
+  time on one L40. <strong>What the render approximates:</strong> each piece is drawn by the best
+  rigid transform of its own particles, and the non-rigid residual that discards is measured at
+  0.000 to 1.604 coarse cells &mdash; up to 1.4% of the object's diameter, and reached only at the
+  impact. The pieces separate and land; they do not squash, and an elastic response under load is
+  a different experiment.</figcaption>
 </figure>
 
 <h3 id="stripes">4.4&ensp;Structural anisotropy between the two families</h3>
