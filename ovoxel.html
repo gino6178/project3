@@ -405,6 +405,14 @@ the arm was then scored against. Every number in the next section is on the test
 
 <h2 id="seven7">What the pipeline produces, on seven objects</h2>
 
+<p class="lead" style="background:#fff8e6;border-left:3px solid #d9a520;padding:10px 14px">
+Every arm in this table was trained on the un-suffixed camera set and scored on the balanced one,
+which is the mismatch <a href="#setup">the settings figure</a> exposed. The arms are still a fair
+comparison <em>with each other</em> &mdash; they share that setup exactly &mdash; but the numbers
+are not the baseline any more, and they are not comparable with the ones under
+<a href="#setup">what the corrections were worth</a>. Retraining the four arms on the corrected
+cameras has not been done.</p>
+
 <p>Each arm adds one thing to the one before it, not to the baseline: the third column is the field
 prior <em>and</em> drawing a photograph, since that is how it was run
 (<code>SEC_TV=0.1 SEC_TV_PERP=4 REF_SAMPLE=1</code>). The fourth adds the critic to the pixel loss
@@ -778,6 +786,66 @@ frame, and never decreased. So the four objects it does not touch keep the camer
 against, byte for byte, and the correction is a repair rather than a new configuration. Measured
 again afterwards, the pomegranate's longitudinal cuts reach the frame edge 0 times out of 17, and
 the tallest fills 0.71 of it.</p>
+
+<h3>What the corrections were worth, and what they were not</h3>
+
+<p>All seven were retrained on the corrected cameras and scored on them, and that run is the
+baseline from here: <code>s_v2</code>. Both rows of each object below are scored at the
+<em>same</em> planes, so what separates them is the model and not the evaluation.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>run</th><th>shown, trans.</th><th>shown, long.</th>
+<th>unseen, trans.</th><th>unseen, long.</th><th>mean</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">orange</td><td>previous</td><td class="win">0.1109</td><td>0.1833</td><td class="win">0.1007</td><td>0.2048</td><td>0.1499</td></tr>
+<tr><td>baseline</td><td>0.1238</td><td class="win">0.0919</td><td>0.1046</td><td class="win">0.1881</td><td class="win">0.1271</td></tr>
+<tr><td rowspan="2">watermelon</td><td>previous</td><td class="win">0.1873</td><td>0.2014</td><td class="win">0.1639</td><td class="win">0.2137</td><td class="win">0.1916</td></tr>
+<tr><td>baseline</td><td>0.1954</td><td class="win">0.1852</td><td>0.1754</td><td>0.2231</td><td>0.1948</td></tr>
+<tr><td rowspan="2">apple</td><td>previous</td><td>0.4576</td><td>0.2522</td><td>0.4470</td><td>0.2500</td><td>0.3517</td></tr>
+<tr><td>baseline</td><td class="win">0.2789</td><td class="win">0.1661</td><td class="win">0.2959</td><td class="win">0.2376</td><td class="win">0.2446</td></tr>
+<tr><td rowspan="2">bread</td><td>previous</td><td class="win">0.4033</td><td>0.3573</td><td class="win">0.4420</td><td>0.4279</td><td>0.4076</td></tr>
+<tr><td>baseline</td><td>0.4065</td><td class="win">0.2431</td><td>0.4479</td><td class="win">0.3957</td><td class="win">0.3733</td></tr>
+<tr><td rowspan="2">cake</td><td>previous</td><td class="win">0.4614</td><td>0.4218</td><td>0.6076</td><td>0.5556</td><td>0.5116</td></tr>
+<tr><td>baseline</td><td>0.4664</td><td class="win">0.2413</td><td class="win">0.5866</td><td class="win">0.5144</td><td class="win">0.4522</td></tr>
+<tr><td rowspan="2">pomegranate</td><td>previous</td><td class="win">0.2742</td><td>0.3435</td><td>0.2698</td><td>0.3692</td><td>0.3142</td></tr>
+<tr><td>baseline</td><td>0.2919</td><td class="win">0.1386</td><td class="win">0.2639</td><td class="win">0.3015</td><td class="win">0.2490</td></tr>
+<tr><td rowspan="2">doughnut</td><td>previous</td><td>0.1566</td><td>0.6151</td><td>&mdash;</td><td>&mdash;</td><td>0.3858</td></tr>
+<tr><td>baseline</td><td class="win">0.0968</td><td class="win">0.5980</td><td>&mdash;</td><td>&mdash;</td><td class="win">0.3474</td></tr>
+</tbody></table></div>
+
+<p>The doughnut has one photograph per family, so it has no held-out half and its mean is over two
+columns rather than four.</p>
+
+<p><strong>Most of the longitudinal gain is not the axis and not the camera.</strong> It is a third
+thing the same comparison exposed, and attributing it to the two corrections would be reading the
+table backwards. The previous runs were launched by <code>rs7.sh</code> with
+<code>CAMS_SUFFIX=</code> &mdash; the un-suffixed camera file &mdash; while
+<code>scorefull.py</code> had <code>_bal</code> written into it. They were <em>trained</em> on one
+plane split and <em>scored</em> on another:</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>trained on</th><th>scored on, and trained on from here</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>14 transverse / 12 longitudinal</td><td>9 / 17</td></tr>
+<tr><td>watermelon</td><td>13 / 13</td><td>8 / 18</td></tr>
+<tr><td>apple</td><td>14 / 12</td><td>8 / 18</td></tr>
+<tr><td>bread</td><td>11 / 15</td><td>6 / 20</td></tr>
+<tr><td>cake</td><td>15 / 11</td><td>6 / 20</td></tr>
+<tr><td>pomegranate</td><td>14 / 12</td><td>9 / 17</td></tr>
+<tr><td>doughnut</td><td>4 / 22</td><td>3 / 23</td></tr>
+</tbody></table></div>
+
+<p>The orange separates the three causes on its own, because its axis is right to 0.2&deg; and its
+camera was never moved: nothing changed for it but the plane split, and its longitudinal score
+halved, 0.1833 to 0.0919. That is the scale of what aligning training with evaluation is worth, and
+it arrives with the cost this page has measured before &mdash; every object's transverse score moves
+the other way, by roughly a tenth as much. The apple is the one object where the axis shows
+separately: its transverse score falls from 0.4576 to 0.2789, which no plane count buys.</p>
+
+<p>What is <em>not</em> separated: the cake and the pomegranate changed plane split at the same time
+as they changed axis and camera distance, so their improvement is a sum of corrections and this
+table cannot apportion it. The measurement that would is one arm per correction, and it has not been
+run.</p>
 
 <h3>The doughnut's skin</h3>
 

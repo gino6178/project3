@@ -39,7 +39,9 @@ def spec(key, default=None):
 st = torch.load(f"{W}/state_{OBJ}.pt", map_location=dev, weights_only=False)
 ON.FDG = ON._load_ovoxel()
 glctx = dr.RasterizeCudaContext(device=dev)
-C = np.load(f"{W}/cams_{OBJ}_bal.npz")
+# the camera set the run was trained against: a run on the corrected cameras scored
+# against the old ones is a different object at every plane
+C = np.load(f"{W}/cams_{OBJ}{os.environ.get('SF_CAMS', '_v2')}.npz")
 H_LO, H_HI = int(C["h_lo"][0]), int(C["h_hi"][0])
 hmvp = torch.as_tensor(C["h_mvp"], dtype=torch.float32, device=dev)
 hn = torch.as_tensor(C["h_planes"][0, :3], dtype=torch.float32, device=dev)
@@ -63,6 +65,14 @@ def load(run):
     p = torch.load(f"{W}/{run}/params.pt", map_location=dev)
     st["dual_v"] = p["dual_v"].to(dev); st["split_w"] = p["split_w"].to(dev)
     if "dec_i" in p:
+        # the decoder's shape comes from the checkpoint, not from this process's environment: a run
+        # trained with a wider trunk cannot be loaded into the default one, and silently scoring
+        # the wrong architecture would be worse than the crash it caused
+        w = p["dec_i"]["stage1.0.weight"].shape[0]
+        n = sum(1 for k in p["dec_i"] if k.startswith("stage1.") and k.endswith(".weight")) - 1
+        if (w, n) != (anchor.W_HID, anchor.N_HID):
+            print(f"    {run}: trunk {w}x{n}")
+        anchor.W_HID, anchor.N_HID = w, n
         di = anchor.ColourDecoder(len(st["interior"]), init_rgb=st["interior"]).to(dev)
         di.load_state_dict(p["dec_i"])
         ds = anchor.ColourDecoder(len(st["surf_rgb"]), init_rgb=st["surf_rgb"]).to(dev)

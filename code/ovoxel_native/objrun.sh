@@ -36,9 +36,11 @@ for _a in "$@"; do
 done
 set -- "${_rest[@]+"${_rest[@]}"}"
 
-# a suffix on the camera file, so a run at a different plane count does not overwrite the one
-# every other arm was trained against
-CS="${CAMS_SUFFIX:-}"
+# A suffix on the camera file, so a run at a different plane count does not overwrite the one
+# every other arm was trained against. _v2 is the baseline: the polar axis each conf names, a
+# camera far enough back that the object is inside the frame, and the balanced plane split that
+# `rs7.sh` was scoring against but not training on. Pass CAMS_SUFFIX= for the older sets.
+CS="${CAMS_SUFFIX-_v2}"
 LATD=build_$OBJ/lattice
 [ -f "$R/worktree/$LATD/lattice.pt" ] || { echo "no lattice at $LATD"; exit 1; }
 
