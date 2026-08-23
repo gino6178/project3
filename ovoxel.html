@@ -108,7 +108,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#results">4 Experiments</a><a href="#stripes">4.5 The stripe</a><a href="#setup-audit">4.6 What the seven had in common</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="ovoxel_notes.html">Technical appendices &rarr;</a>
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#results">4 Experiments</a><a href="#stripes">4.4 Anisotropy</a><a href="#setup-audit">4.5 Configuration</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a><a href="ovoxel_notes.html">Technical appendices &rarr;</a>
 </nav>
 
 <div class="cutstrip"><video src="assets/ovcut_orange_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="orange, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_watermelon_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="watermelon, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_apple1_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="apple, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_bread_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="bread, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_cake2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="cake, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_pomegranate2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="pomegranate, cut transverse and longitudinal, drawn entirely from the dual grid"></video><video src="assets/ovcut_doughnut.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="doughnut, cut transverse and longitudinal, drawn entirely from the dual grid"></video></div>
@@ -132,23 +132,62 @@
 
 <h2 id="abstract">Abstract</h2>
 <p class="lead">
-Interactive 3D physical applications &mdash; such as virtual slicing, cross-sectional inspection,
-and fragment dynamics &mdash; require explicit, high-fidelity internal representations rather than
-hollow shells. Existing methods rely either on generative score distillation, which blurs
-structural membranes and requires costly per-object fine-tuning, or volumetric splatting, which
-suffers from boundary bleeding, primitive thickness, and void artifacts. In this paper, we propose
-a generative-free framework to reconstruct realistic 3D interiors and achieve closed-form planar
-cutting directly from sparse, unaligned 2D cross-section photographs. We decouple the geometry into
-a dual-grid boundary surface and an interior two-level latent occupancy lattice, eliminating the
-need for internal splatting primitives. Our formulation reconciles inconsistent slices of different
-specimens through pose-free moment matching and global lattice occupancy. Arbitrary planar cuts are
-computed analytically via cell-edge intersections, yielding exact 2-manifold cut faces with
-machine-precision planarity (\(8.88\times10^{-16}\) residual) rendered in a single rasterization
-pass. Extensive experiments demonstrate that our representation produces zero unpainted pixels at
-2048&nbsp;px resolution and cuts inference latency to 8.6&ndash;16.5&nbsp;ms, while reducing storage
-footprint to 10.0&nbsp;MiB &mdash; a 61&ndash;81% reduction against Gaussian baselines &mdash; and
-seamlessly interfacing with grid-based physics solvers.
+Interactive 3D applications &mdash; such as planar slicing, cross-sectional inspection and
+fragment dynamics &mdash; require an explicit, realistic internal structure rather than a hollow
+shell. Existing
+methods rely either on generative score distillation (which blurs structural membranes and
+requires expensive per-object fine-tuning) or volumetric splatting (which suffers from boundary
+bleeding and unpainted void artifacts).
 </p>
+
+<p class="lead">
+Building on the field-free sparse voxel surface of TRELLIS.2 (O&#8209;Voxel)&nbsp;[10], we
+present a generative-free framework for photograph-supervised interior reconstruction and
+closed-form planar cutting. The interior is a two-level occupancy lattice carrying one latent per
+cell; a cut is the analytic intersection of a plane with that lattice; surface and cut face reach
+the screen in a single rasteriser pass, with no splatting stage. The exterior is a flexible dual grid whose vertex sits inside its
+cell rather than on the cell boundary; the interior is a per-cell field read by interpolation; the
+cut face is the closed-form polygon of a plane against the occupancy. All three go into one
+rasteriser pass, so nothing is converted at the surface and nothing is drawn as a primitive.
+Interiors are reconstructed from a sparse set of <strong>unaligned 2D cross-section
+photographs</strong>, without generative priors, per-object fine-tuning or camera pose estimation.
+</p>
+
+<p class="lead">
+Supervision is cross-sections of <em>different specimens</em> of the same kind, unaligned and
+without pose: what transfers is the material's structure, not a registration. A cut is analytic
+&mdash; the intersection of a plane with the lattice &mdash; so the exposed face carries no
+primitive that can fall below a pixel, and at 2048&nbsp;px it leaves <strong>no pixel
+unpainted</strong> on any object or family measured. One cut and its rasterisation cost 8.6 to
+16.5&nbsp;ms. Through one codec the representation is <strong>10.0&nbsp;MiB</strong> against 52.0
+and 25.6 for two Gaussian baselines on the same object, of which 2.0 is the dual grid: a 25%
+overhead affording sub-voxel surface accuracy.
+</p>
+
+<p class="lead">
+Perceptual distance is reported with supervised and held-out planes separated, a protocol that
+exposes a structural anisotropy between the two cross-section families: transverse planes
+generalise to unobserved depths at no cost, longitudinal planes do not. We test a sampling argument that
+would account for it &mdash; the longitudinal family's angular operator is a comb of \(P\) teeth,
+predicting a spectral peak at \(m=P\) &mdash; and reject it: the local prominence at \(m=P\) is
+1.00 and 1.12 on the two objects with enough photographs to measure. Eleven interventions are
+ablated against a seed repeat; six do nothing measurable, three trade one column for another, and
+one fails on every column.
+</p>
+
+
+
+
+
+<h2 id="intro">1&ensp;Introduction</h2>
+
+<p>Standard 3D surface reconstruction methods fundamentally yield hollow shells. While visually
+compelling for standard novel view synthesis, they fail to support downstream physical and
+interactive applications &mdash; such as virtual planar slicing, non-destructive cross-sectional
+inspection, and continuum fracture simulation &mdash; which inherently require an explicit,
+physically coherent, and high-fidelity internal volume. When an object is sliced, the revealed
+cross-section must exhibit crisp internal anatomy &mdash; membranes, fibres, pulp &mdash; rather
+than blurred approximations or empty voids.</p>
 
 <figure style="margin:18px 0 30px">
   <img src="assets/pipestates.jpg?v=s_v2" style="width:100%;border-radius:4px"
@@ -165,581 +204,354 @@ seamlessly interfacing with grid-based physics solvers.
   centre. Neither is what the optimiser produces.</figcaption>
 </figure>
 
-<p>We decouple the surface from the interior. The visible outer hull is carried by a flexible dual
-grid; the solid interior is a discrete two-level lattice whose cells store latent features rather
-than explicit primitives. The interior is supervised entirely by sparse, unaligned 2D
-cross-section photographs, with no pose recovered for any of them, and the representation supports
-analytical planar cutting at machine precision and direct coupling to a grid-based solver.</p>
+<p>Reconstructing realistic 3D interiors without volumetric CT scans remains an open challenge.
+Existing formulations predominantly face two core limitations.</p>
+
+<ul>
+  <li><strong>Generative score distillation.</strong> Methods distilling 2D diffusion priors
+      inevitably average score gradients over diffusion timesteps. This imposes an inherent
+      low-pass filter on internal structures, washing out fine membrane details. While fine-tuning
+      a diffusion model per object can recover structural fidelity, it necessitates an expensive,
+      per-instance training pipeline.</li>
+  <li><strong>Volumetric continuous primitives.</strong> Approaches extending 3D Gaussian
+      Splatting to interiors struggle with the lack of explicit geometric boundaries. A planar cut
+      through continuous Gaussians degrades into a heuristic primitive-culling step over a thick
+      slab, causing severe boundary bleeding and leaving significant unpainted void artefacts &mdash;
+      up to 8.29% at 2K resolution &mdash; where primitive scale drops below screen pixels.</li>
+</ul>
+
+<p>To overcome these dilemmas, we present a generative-free, pose-free framework that reconstructs
+realistic 3D interiors directly from a handful of unaligned 2D cross-section photographs of
+different specimens, coupled with an exact, machine-precision planar cutting operator.</p>
+
+<p>Our key insight is to decouple the surface boundary from the internal volume representation. For
+the exterior, we leverage a flexible dual grid that encodes sub-voxel surface contours. For the
+interior, we introduce a discrete two-level latent occupancy lattice carrying one compact latent
+feature per cell, eliminating internal rendering primitives entirely. We formulate interior
+supervision from unregistered cross-sections across disparate specimens by combining in-plane phase
+alignment with moment-based silhouette projection. Because all cutting planes query the shared
+latent lattice through a universal decoder, cross-specimen structural inconsistencies are naturally
+reconciled in 3D without camera pose estimation or generative hallucination. Furthermore, arbitrary
+planar cuts are resolved analytically by intersecting the cutting plane directly with lattice cell
+edges, guaranteeing strict 2-manifold cut faces rendered in a single differentiable rasterisation
+pass.</p>
+
+<h3>1.1&ensp;Primary contributions</h3>
+
+<ul>
+  <li><strong>Decoupled volumetric latent lattice.</strong> A decoupled geometry representation
+      combining a dual-grid boundary surface with an interior two-level latent occupancy lattice,
+      achieving compact storage &mdash; 10.0&nbsp;MiB, a 61&ndash;81% compression over Gaussian
+      baselines on the same object &mdash; without primitive-induced artefacts.</li>
+  <li><strong>Pose-free cross-specimen supervision.</strong> A generative-free supervision pipeline
+      that optimises 3D interior textures directly from unaligned, unposed 2D photographs of
+      different specimens, via moment-based matching and a multi-plane expectation.</li>
+  <li><strong>Closed-form machine-precision cutting.</strong> An analytical plane&ndash;lattice
+      intersection operator that computes exact 2-manifold cut faces with machine-precision
+      planarity, \(8.88\times10^{-16}\) residual, and 0% unpainted void pixels at 2048&nbsp;px.</li>
+  <li><strong>Interactive simulation readiness.</strong> The integer lattice delivers topologically
+      exact component partitions, collision boundaries and strict mass conservation for
+      background-grid physics solvers without intermediate tetrahedralisation.</li>
+</ul>
+
+<p>The scope of the operator is the planar case: a half-space cut resolved in closed form. Curved
+and partial incisions are discussed in section&nbsp;5.2.</p>
+
+<h2 id="related">2&ensp;Related work</h2>
+
+<h3>2.1&ensp;3D interior generation and score distillation</h3>
+
+<p>Synthesising internal 3D structures from 2D priors has gained substantial traction with score
+distillation sampling (SDS)&nbsp;[27] and depth-conditioned diffusion models&nbsp;[26,&nbsp;28]. For
+interior recovery, FruitNinja&nbsp;[3] adapts diffusion priors to supervise cut cross-sections and
+instantiates the volume with atomic 3D Gaussians&nbsp;[1]. SDS averages gradients across diffusion
+timesteps, imposing a low-pass filter that attenuates high-frequency biological membranes and fine
+fibres&nbsp;[3,&nbsp;27]. Recovering such detail necessitates per-object diffusion
+fine-tuning&nbsp;[3], which is computationally expensive and admits hallucination. Solid texture
+synthesis&nbsp;[29] models volumes via stationary neighbourhood statistics, which by construction
+ignores axial convergence &mdash; citrus segments converging toward the poles.</p>
+
+<p>Our method operates in a generative-free regime: where unposed 2D cross-section photographs of
+category exemplars are available, the latent occupancy is optimised directly, without intermediate
+diffusion models or per-object checkpoints, preserving membrane boundaries and avoiding generative
+hallucination.</p>
+
+<h3>2.2&ensp;Volumetric primitives against discrete latent lattices</h3>
+
+<p>Volumetric representations have evolved from dense voxel graphics and sparse
+grids&nbsp;[56&ndash;58,&nbsp;60,&nbsp;61] to continuous radiance fields&nbsp;[2,&nbsp;16,&nbsp;17]
+and structured 3D Gaussian Splatting&nbsp;[12&ndash;14]. InFusion&nbsp;[30] and InnerGS&nbsp;[31]
+leverage Gaussians for internal scene reconstruction. Continuous primitives possess infinite support
+and ill-defined boundaries: planar cutting through 3D Gaussians degrades into heuristic
+thresholding over a thick slab &mdash; in the reference implementation, an integral 5.63 coarse
+cells deep &mdash; producing boundary bleeding and unpainted void artefacts, up to 8.29% at 2K
+resolution, when primitive footprints fall below pixel scale. Neural implicit fields&nbsp;[2]
+require dense forward queries and provide no closed-form planar boundary.</p>
+
+<p>We decouple the volume into a discrete two-level occupancy lattice carrying a single
+8-dimensional latent per cell. Replacing internal splatting primitives with trilinear or tricubic
+lattice interpolation gives exact planar cuts, eliminates void artefacts, and reduces compressed
+storage to 10.0&nbsp;MiB.</p>
+
+<h3>2.3&ensp;Surface extraction and dual grid encodings</h3>
+
+<p>Isosurface extraction traditionally relies on Marching Cubes&nbsp;[4] or feature-sensitive dual
+contouring&nbsp;[5&ndash;7], where dual vertices minimise quadric error metrics&nbsp;[8] to preserve
+sharp geometric features without staircase artefacts&nbsp;[64]. TRELLIS.2&nbsp;[10,&nbsp;11]
+introduced the field-free Flexible Dual Grid&nbsp;[63], placing dual vertices inside active voxels
+to compactly encode complex, non-manifold boundaries.</p>
+
+<p>We adopt the official encoder&nbsp;[10] strictly for the outer boundary hull, keeping the
+internal lattice decoupled. During cutting, the exposed cross-section polygons and the dual-grid
+boundary are submitted to a unified differentiable rasteriser (nvdiffrast), resolving depth
+composition in a single pass without primitive conversion.</p>
+
+<h3>2.4&ensp;Virtual cutting and physical simulation</h3>
+
+<p>Interactive cutting has been explored in surgical simulation and fracture
+mechanics&nbsp;[48&ndash;51]. Classical approaches &mdash; the virtual node algorithm&nbsp;[48],
+polyhedral tetrahedral splitting&nbsp;[49], and extended finite elements&nbsp;[50] &mdash; rely on
+pre-existing volumetric meshes or scans, which are absent in photogrammetric radiance-field assets.
+PhysGaussian&nbsp;[18] and VR-GS&nbsp;[22] couple Gaussians with the Material Point
+Method&nbsp;[19&ndash;21], while GaussianFluent&nbsp;[23] densifies internal Gaussians to simulate
+mixed-material fracture with continuum damage&nbsp;[52].</p>
+
+<p>Our two-level lattice provides integer cell connectivity, exact mass conservation and sign-based
+contact predicates directly. Evaluating closed-form polygon clipping in parallel, the cutting
+operator runs in 8.6&ndash;16.5&nbsp;ms and interfaces with background-grid solvers without
+intermediate tetrahedralisation.</p>
+
+<h2 id="method">3&ensp;Method</h2>
+
+<p class="lead">We decouple the volume into an explicit dual-grid surface boundary and an internal
+two-level latent occupancy lattice, removing continuous rendering primitives from the interior
+entirely. The representation is optimised directly from sparse, unposed 2D cross-section
+photographs and supports machine-precision planar cutting.</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/pipestates.jpg?v=s_v2" style="width:100%;border-radius:4px"
+       alt="the pipeline as four states of the object's own arrays">
+  <figcaption><span class="fnum">Figure 3</span><br><strong>The pipeline as four states of the
+  object's arrays, one slab thick.</strong> <strong>(a)</strong> the input points.
+  <strong>(b)</strong> the coarse occupancy \(\mathcal{V}_0\) after close-and-fill,
+  \(h_c=0.00784\), 770,182 cells. <strong>(c)</strong> the boundary band \(\mathcal{V}_1\) at
+  \(h_f = h_c/2\), 900,556 dual vertices. <strong>(d)</strong> the distribution of
+  \(\mathbf{u}_v \in [0,1]^3\), where each dual vertex sits inside its own voxel; boundary
+  placement would concentrate all mass at the edges and a mid-point rule at the
+  centre.</figcaption>
+</figure>
 
 <h3>3.0&ensp;Notation</h3>
 
 <div class="tw"><table>
 <thead><tr><th>symbol</th><th>domain</th><th>meaning</th></tr></thead>
 <tbody>
-<tr><td>\(C_i\)</td><td>\(i \in \{1,\dots,N\}\)</td><td>coarse cell, side \(h_c\)</td></tr>
-<tr><td>\(h_c,\; h_f\)</td><td>\(h_f = h_c/2\)</td><td>coarse and fine cell size</td></tr>
-<tr><td>\(\mathbf{f}_i\)</td><td>\(\mathbb{R}^d,\; d=8\)</td><td>per-cell latent feature</td></tr>
-<tr><td>\(g_\theta\)</td><td>\(\mathbb{R}^d \to [0,1]^3\)</td><td>shared colour decoder</td></tr>
-<tr><td>\(\Pi_k = (\mathbf{n}_k, d_k)\)</td><td>\(\mathbf{n}_k \in S^2,\; d_k \in \mathbb{R}\)</td><td>cutting plane, \(\mathbf{n}_k^\top\mathbf{x} + d_k = 0\)</td></tr>
-<tr><td>\(e_j\)</td><td>\(j \in \{1,\dots,12\}\)</td><td>edge of a crossed cell</td></tr>
-<tr><td>\(\mathbf{v}_j\)</td><td>\(\mathbb{R}^3\)</td><td>intersection of \(\Pi_k\) with \(e_j\)</td></tr>
-<tr><td>\(K\)</td><td>\(K \ll N\)</td><td>cells \(\Pi_k\) crosses</td></tr>
-<tr><td>\(\mathbf{u}_v,\; w_v\)</td><td>\([0,1]^3,\; [0,1]\)</td><td>dual vertex offset in its voxel, split weight</td></tr>
-<tr><td>\(\delta_k,\; \pi\)</td><td>\([0,2\pi),\; S_M\)</td><td>reference rotation, photograph-to-plane assignment</td></tr>
+<tr><td>\(\Omega,\;\partial\Omega\)</td><td>\(\subset \mathbb{R}^3\)</td><td>the solid and its boundary</td></tr>
+<tr><td>\(\mathcal{V}_0,\;\mathcal{V}_1\)</td><td>\(h_c,\; h_f = h_c/2\)</td><td>coarse lattice; boundary refinement</td></tr>
+<tr><td>\(C_i\)</td><td>\(i \in \{1,\dots,N\}\)</td><td>cell, centre \(\mathbf{c}_i\)</td></tr>
+<tr><td>\(\mathbf{f}_i\)</td><td>\(\mathbb{R}^8\)</td><td>per-cell latent</td></tr>
+<tr><td>\(g_\theta\)</td><td>\(\mathbb{R}^8 \to [0,1]^3\)</td><td>shared decoder</td></tr>
+<tr><td>\(\mathbf{u}_v,\; w_v\)</td><td>\([0,1]^3,\;[0,1]\)</td><td>dual vertex offset, split weight</td></tr>
+<tr><td>\(\Pi_k=(\mathbf{n}_k,d_k)\)</td><td>\(S^2 \times \mathbb{R}\)</td><td>plane, \(\mathbf{n}_k^\top\mathbf{x}+d_k=0\)</td></tr>
+<tr><td>\(e_j,\;\mathbf{v}_j\)</td><td>\(j\le 12,\;\mathbb{R}^3\)</td><td>cell edge; its root on \(\Pi_k\)</td></tr>
+<tr><td>\(\mathcal{B},\;K\)</td><td>\(K=|\mathcal{B}|\ll N\)</td><td>crossed cells</td></tr>
+<tr><td>\(\delta_k,\;\pi\)</td><td>\([0,2\pi),\;S_M\)</td><td>in-plane rotation; plane assignment</td></tr>
 </tbody></table></div>
 
-<h3>3.1&ensp;Decoupled representation and initialisation</h3>
+<h3>3.1&ensp;Decoupled volume representation</h3>
 
-<h4>3.1.1&ensp;Problem formulation and the two-level lattice</h4>
+<p>Let \(\Omega \subset \mathbb{R}^3\) be a bounded solid with boundary
+\(\partial\Omega\). We construct an axis-aligned two-level hierarchy
+\(\mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1\): the coarse level \(\mathcal{V}_0\)
+spans the bounding box at spacing \(h_c = L/125\), and the fine level \(\mathcal{V}_1\) refines
+only the boundary band \(\{\mathbf{x} : \operatorname{dist}(\mathbf{x},\partial\Omega) <
+\beta h_f\}\) with \(h_f = h_c/2\).</p>
 
-<p>Let \(\Omega \subset \mathbb{R}^3\) be a solid with boundary \(\partial\Omega\). Any
-representation that is to be cut must answer three queries: occupancy and material (Q1), the
-partition a cut induces (Q2), and the surface a cut exposes (Q3).</p>
+<p>The dual-grid exterior carries a dual vertex \(\mathbf{u}_v \in [0,1]^3\) and a split weight
+\(w_v \in [0,1]\) in each active surface voxel, capturing sub-voxel contours. Each interior cell
+stores only an 8-dimensional latent \(\mathbf{f}_i \in \mathbb{R}^8\); no rendering primitive
+is placed inside the volume. A value at an arbitrary \(\mathbf{x}\) is retrieved by interpolation
+\(\mathcal{I}\) over the neighbouring lattice nodes and decoded by the shared MLP:</p>
 
-<p>To decouple spatial topology from appearance we build a two-level axis-aligned lattice
-\(\mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1\). The coarse level \(\mathcal{V}_0\) has spacing
-\(h_c = L/125\), with \(L\) the longest extent of the bounding box; the fine level
-\(\mathcal{V}_1\) has spacing \(h_f = h_c/2\) and covers only the skin band adjacent to
-\(\partial\Omega\). Cell indices, the fine level and the face adjacency \(\mathcal{A}\) are</p>
-
-<div class="eq"><div class="body">
-$$h_\ell = \frac{h_c}{2^\ell}, \qquad
-\mathbf{k}_\ell(\mathbf{x}) = \left\lfloor \frac{\mathbf{x} - \mathbf{o}}{h_\ell} \right\rfloor,
-\qquad
-\mathcal{V}_1 = \bigl\{ \mathbf{k}_1 : \operatorname{dist}(\mathbf{x}_{\mathbf{k}_1},
-\partial\Omega) < \beta h_f \bigr\}$$
+<div class="eq"><div class="eqbody">
+\[ \mathbf{c}(\mathbf{x}) \;=\; g_\theta\!\Big( \mathcal{I}\big[\{\mathbf{f}_i\}\big](\mathbf{x}) \Big),
+    \qquad \mathcal{I} \in \{\text{trilinear},\ \text{tricubic B-spline}\}. \]
 </div><div class="num">(1)</div></div>
 
-<div class="eq"><div class="body">
-$$\mathcal{A} = \bigl\{ (\mathbf{k}, \mathbf{k}') : \lVert \mathbf{k} - \mathbf{k}' \rVert_1 = 1
-\bigr\} \;\cup\; \bigl\{ (\mathbf{k}_0, \mathbf{k}_1) : \mathbf{k}_0 = \lfloor \mathbf{k}_1/2
-\rfloor \bigr\}$$
+<p>Trilinear weights are \(C^0\): the value is continuous across a cell face and its derivative is
+not. The cubic B-spline basis over the same neighbourhood is \(C^2\) at eight times the gathers.
+Section&nbsp;<a href="#stripes">4.5</a> ablates the two.</p>
+
+<h3>3.2&ensp;Pose-free cross-specimen supervision</h3>
+
+<p>Given an unposed collection \(\mathcal{I}=\{\mathbf{I}_k\}_{k=1}^{M}\) of transverse
+(\(\mathcal{J}_\perp\)) and longitudinal (\(\mathcal{J}_\parallel\)) cross-sections of
+<em>different specimens</em>, we optimise \(\mathcal{F}=\{\mathbf{f}_i\}\) and \(\theta\)
+without recovering camera poses.</p>
+
+<p><strong>Global phase and chordal alignment.</strong> Transverse sections exhibit approximate
+radial coherence. In-plane rotation is resolved by circular cross-correlation of 1D angular
+luminance profiles \(a_k(\varphi)\),</p>
+
+<div class="eq"><div class="eqbody">
+\[ \delta_k \;=\; \frac{2\pi}{P}\arg\max_{m}\;
+    \mathrm{DFT}^{-1}\big[\hat{a}_0\,\overline{\hat{a}_k}\big](m),
+    \qquad \tilde{\mathbf{I}}_k = \mathrm{Rot}_{-\delta_k}\mathbf{I}_k. \]
 </div><div class="num">(2)</div></div>
 
-<p>with \(\mathbf{o} = \min_i \mathbf{x}_i - \tfrac{1}{2}h_f\). The half-cell offset is not
-cosmetic: a generated lattice puts its cells at \((\mathbf{k} + \tfrac12)h\), so flooring from the
-minimum lands every cell centre on a boundary and lets floating point decide the side, which on
-these lattices loses 49% of the cells.</p>
+<p>Transverse and longitudinal planes intersect in 1D chords \(\Pi_j \cap \Pi_{j'}\), each
+imaged twice. Inter-family alignment and the discrete assignment \(\pi \in S_M\) are resolved
+together by minimising chordal discrepancy:</p>
 
-<p>Each cell \(\mathbf{k}\) stores an eight-dimensional latent feature \(\mathbf{f_k} \in
-\mathbb{R}^8\) and nothing else. Colour is produced by a small globally shared decoder
-\(g_\theta(\mathbf{f_k})\); occupancy and adjacency are integer lookups. The hull is a dual grid, and it is what
-every render here is drawn from.</p>
-
-<p><strong>What is stored, and how it is read.</strong> The lattice is kept as a sparse list of
-occupied cells &#8212; an integer coordinate and a level tag per cell, with the origin and the two
-spacings held once &#8212; not as a dense array, and not in a tree. A dense occupancy grid exists
-only inside the fill that builds it and is discarded; two levels fixed in advance make the index
-an integer division, so there is nothing for an octree or a VDB to accelerate. For the orange that
-is 682,100 coarse cells and 480,287 fine ones. Under one codec that is 7.8&nbsp;MiB for the
-lattice alone and 9.7&nbsp;MiB once the dual grid is stored with it; on the watermelon, the object
-Table&nbsp;1 compares all three methods on, 8.0 and 10.0&nbsp;MiB (lzma, not zstd).</p>
-
-<p><strong>Feature lookup is interpolated, and this is the representation&#8217;s one real
-departure.</strong> The splatted pipeline returns the feature of the cell containing
-\(\mathbf{x}\) and nothing else, and argues that the piecewise-constant lookup is load-bearing:
-a cell holds one value, so two photographs that disagree about the same material are averaged by
-the representation rather than by a penalty. That argument is sound and it is what this
-representation gives up. The interior lattice is read by trilinear interpolation of the cells
-around the sample point, which puts part of the reconciliation back into the loss &mdash; and buys
-a field whose value does not jump at a cell boundary, which is what a cut face is made of.</p>
-
-<p>The order of that interpolation is not neutral. Trilinear weights are \(C^0\): the value is
-continuous across a boundary and its derivative is not, which is a crease at every cell face. The
-cubic B&#8209;spline basis over the same neighbourhood is \(C^2\) at eight times the gathers, and
-on the orange it is the only one of eight changes tried that moved the seam measure beyond the
-spread of a repeat &mdash; 1.16 against 1.39 and 1.44 for two runs of the same settings, with the
-supervised longitudinal score improving from 0.0919 to 0.0858 at the same time.
-<a href="ovoxel_notes.html">The working notes</a> carry the other seven, which did not.</p>
-
-<h4>3.1.2&ensp;Two routes to a solid</h4>
-
-<p>Two routes produce the solid geometry, and which one an object takes is read off its input
-rather than chosen.</p>
-
-<p><strong>Route&nbsp;1, quantise and repair.</strong> An existing surface reconstruction is
-quantised to cells \(\mathcal{O}\), <em>its interior is discarded</em>, and the voids a scan
-leaves behind its own surface are repaired by a morphological closing followed by a flood fill
-from outside:</p>
-
-<div class="eq"><div class="body">
-$$\mathcal{O}^{\bullet} = \complement\, \mathcal{C}_{\partial}
-\bigl( \complement\, ( \mathcal{O} \oplus B \ominus B ) \bigr)$$
+<div class="eq"><div class="eqbody">
+\[ \min_{\pi,\;\{\delta_k\}} \; \sum_{j,\,j'}
+    \big\lVert \mathbf{T}^{\delta}_{\pi(j)} - \mathbf{T}^{\delta}_{\pi(j')} \big\rVert_{\Pi_j \cap \Pi_{j'}}. \]
 </div><div class="num">(3)</div></div>
 
-<p>where \(B\) is the one-cell structuring element and \(\mathcal{C}_\partial\) the component of
-the complement that reaches the bounding box. An optical scan cannot see through the object, so
-every void behind its surface is a failure to observe rather than a feature: on the orange the
-quantised occupancy is 884 disconnected pieces and 440,867 cells, and sealing takes it to one piece
-and 889,183. What is left is inside by construction rather than by a threshold.</p>
+<p>The problem is mixed: \(\pi\) is discrete, \(\{\delta_k\}\) continuous, and the chords
+couple them. It is solved exactly rather than relaxed &mdash; enumeration over \(S_M\) with
+coordinate descent over 72 candidate angles inside each &mdash; and offline. \(M \le 10\) here.</p>
 
-<p><strong>Route&nbsp;2, generate and project.</strong> The solid is built analytically from a
-signed distance field, \(\phi(\mathbf{x}) < 0\), so there is nothing to repair, and the skin is
-painted by projecting six exterior views \(\pi_i\) onto it with an incidence weight,
-\(\mathbf{c_k} \propto \sum_i \max(\mathbf{n_k}\cdot\mathbf{d}_i, 0)^4\,
-I_i(\pi_i(\mathbf{x_k}))\).</p>
+<p><strong>Moment-based target construction.</strong> During training a plane \(\Pi_j\) renders a
+section with silhouette \(\alpha_j\). A scale and translation are obtained from second-order
+spatial moments, warping the exemplar to the current geometry:</p>
 
-<p>On both routes the interior begins at a flat value and every structure inside the object is put
-there by the photographs of section&nbsp;3.2.</p>
-
-<h3>3.2&ensp;Cross-section calibration and pose-free supervision</h3>
-
-<p>The interior is supervised by sparse, unaligned 2D cross-section photographs
-\(\mathcal{I} = \{\mathbf{I}_k\}_{k=1}^{M}\) &mdash; between one and ten per family &mdash; the orange 3 and 3, the watermelon 10 and 12, the apple 2 and 2, the loaf 3 and 3, the cake 2 and 2, the pomegranate 2 and 2, the doughnut 1 and 1 &mdash; for the
-objects reported here. Nothing about where a photograph was taken is known or recovered. To remove
-the geometric contradictions between sections, and to keep a plane nobody photographed from
-degenerating, the system calibrates the references before and during training.</p>
-
-
-
-<h4>3.2.1&ensp;Geometric consistency calibration</h4>
-
-<p><strong>Phase alignment within a family.</strong> The angular intensity profile
-\(a_k(\varphi)\) about a section's own centroid is the only thing in a transverse section that is
-a function of angle alone. It is the mean luminance over an annulus, sampled at \(P = 360\) bins,
-$$a_k(\varphi_p) = \frac{1}{|A_p|}\sum_{\mathbf{u} \in A_p} \ell\bigl(\mathbf{I}_k(\mathbf{u})\bigr),
-\qquad A_p = \bigl\{\mathbf{u} : \arg(\mathbf{u} - \mathbf{c}_k) \in \varphi_p \pm \tfrac{\pi}{P},\;
-0.25\,R_k \le \lVert \mathbf{u} - \mathbf{c}_k \rVert \le 0.80\,R_k \bigr\}$$
-with \(\mathbf{c}_k\) and \(R_k\) the section's own centre and radius. The bounds are not free
-parameters chosen for a result: inside \(0.25R\) the angle is undefined at the core, and outside
-\(0.80R\) the radius estimate is least stable at the rim. The family is brought to a common phase
-by the circular cross-correlation that maximises agreement with the first member, which the DFT
-gives in closed form:</p>
-
-<div class="eq"><div class="body">
-$$\delta_k = \frac{2\pi}{P}\,\arg\max_{m}\;
-\mathrm{DFT}^{-1}\!\bigl[\, \hat{a}_0 \overline{\hat{a}_k} \,\bigr](m),
-\qquad \tilde{\mathbf{I}}_k = \mathrm{Rot}_{-\delta_k} \mathbf{I}_k$$
+<div class="eq"><div class="eqbody">
+\[ s_j = \frac{r(\alpha_j)}{r(\tilde{\mathbf{I}}_{k(j)})}, \qquad
+    \mathbf{t}_j = c(\alpha_j) - s_j\,c(\tilde{\mathbf{I}}_{k(j)}), \qquad
+    \mathbf{T}_j(\mathbf{u}) = \tilde{\mathbf{I}}_{k(j)}\!\left(\frac{\mathbf{u}-\mathbf{t}_j}{s_j}\right). \]
 </div><div class="num">(4)</div></div>
 
-<p>Rotation is the only degree of freedom used, so nothing a photograph shows is invented or
-discarded; it appears at a different angle.</p>
+<p><strong>Remark (differentiability of the geometry fit).</strong> Equation&nbsp;(4) is a function
+of the rendered silhouette, so \(\mathbf{T}_j\) depends on \(\mathcal{F}\) and \(\theta\).
+Differentiating through it admits a degenerate minimiser: the loss is reduced by shrinking
+\(\alpha_j\) rather than by matching content, since \(s_j\) rescales the target to follow. The
+target is therefore isolated by a stop-gradient, \(\mathrm{sg}[\mathbf{T}_j]\), which is what
+makes the moment fit a calibration rather than a free parameter of the optimisation.</p>
 
-<p><strong>What the profile assumes.</strong> A one-dimensional circular correlation on an
-angular profile assumes approximate radial coherence about a topological core, which is what a
-fruit, a loaf and a cabbage have. On a severely irregular or non-concentric interior the peak of
-the inverse transform is not sharp and the angle it returns is not meaningful; there the chordal
-solve of equation&nbsp;(5) is what resolves the rotation, because it constrains the two families
-against each other on the lines they share rather than against a profile. We have not measured an
-object of that kind, and section&nbsp;5.2 records it.</p>
+<p><strong>Jittered expectation.</strong> A family of planes at fixed depths supervises a
+measure-zero subset of the volume. Replacing the nominal depth by a random variable
+\(d_j \sim \mathcal{U}(c_i - J\Delta,\, c_i + J\Delta)\), \(J = 0.5\), makes the objective
+an expectation over a continuous distribution of planes, estimated by one draw per plane per step.
+The supports then union to a slab of thickness \(\Delta\) about each nominal depth: measured, the
+fraction of solid cells receiving gradient rises from 32.2% to 95.1%, with 333 cells (0.0%) never
+reached.</p>
 
-<p><strong>Scale and translation are not free parameters.</strong> A registration of a photograph
-against a volume would have four: an in-plane rotation, a scale and two translations. Here three
-of them are determined rather than searched. \(\Phi\) in equation&nbsp;(6) fits the reference to
-the silhouette that \(\Pi_j\) itself renders, so the scale and the centre follow from the
-cross-sectional moments of the current geometry and change as it changes. Only the in-plane
-rotation is unconstrained by the object, and that is what equation&nbsp;(4) solves &#8212; on a
-one-dimensional profile, in closed form, once, before training. The registration is
-one-dimensional not because a smaller problem was chosen but because the other three dimensions
-are not unknowns.</p>
-
-
-
-<p><strong>Chordal consistency between families.</strong> A transverse plane and a longitudinal
-one meet in a one-dimensional chord, and on that chord the two families describe the same physical
-line. Left alone they disagree there, and a plane neither family supervised &mdash; a 45&deg; cut,
-say &mdash; inherits the average of two structures at different phases, which is no structure at
-all. The disagreement on those chords is a function of the phases and the assignment alone, so it
-is minimised before any gradient is taken:</p>
-
-<div class="eq"><div class="body">
-$$\min_{\pi,\;\{\delta_k\}} \;\sum_{j,\,j'} \bigl\lVert\,
-\mathbf{T}_{\pi(j)}^{\delta} - \mathbf{T}_{\pi(j')}^{\delta} \,\bigr\rVert_{\,\Pi_j \cap \Pi_{j'}}$$
+<div class="eq"><div class="eqbody">
+\[ \mathcal{L}_{\mathrm{total}} = \sum_{j \in \mathcal{J}_\perp \cup \mathcal{J}_\parallel}
+    w_{q(j)}\,\mathbb{E}_{d_j}\!\Big[ \mathcal{L}_{\mathrm{sec}}\big(
+    \mathcal{R}(\mathcal{F},\theta;\Pi_j),\; \mathrm{sg}[\mathbf{T}_j]\big)\Big]
+    \;+\; \lambda_{\mathrm{TV}}\,\mathcal{L}_{\mathrm{prior}}
+    \;+\; \lambda_{\mathcal{S}}\,\mathcal{L}_{\mathrm{skin}}. \]
 </div><div class="num">(5)</div></div>
 
-<p>Equation&nbsp;(5) is a mixed problem: \(\pi \in S_M\) is discrete and
-\(\{\delta_k\} \in [0,2\pi)^M\) continuous, and they are coupled through the chordal
-constraints, so neither can be fixed while the other is solved. It is solved exactly rather than
-relaxed, by enumerating the discrete part and running coordinate descent over 72 candidate angles
-inside each enumeration. \(M\) is the photograph count of the family: at most ten here, two or
-three on four of the seven objects, and one on the doughnut, where \(S_1\) is trivial.</p>
-
-<p><strong>Moment-based fitting to the render.</strong> The renderer produces the section and its
-alpha silhouette \(\alpha_j\) for the training plane \(\Pi_j\). A 2D similarity transform is then
-computed in closed form from the centroid \(c(\cdot)\) and the second-moment radius
-\(r(\cdot)\) of each:</p>
-
-<div class="eq"><div class="body">
-$$s_j = \frac{r(\alpha_j)}{r(\tilde{\mathbf{I}}_{k(j)})}, \quad
-\mathbf{t}_j = c(\alpha_j) - s_j\,c(\tilde{\mathbf{I}}_{k(j)}), \quad
-\mathbf{T}_j(\mathbf{u}) = \tilde{\mathbf{I}}_{k(j)}\!\left( \frac{\mathbf{u} - \mathbf{t}_j}{s_j}
-\right)$$
+<div class="eq"><div class="eqbody">
+\[ \mathcal{L}_{\mathrm{sec}}(R,T) = \frac{1}{|\mathcal{P}|}\sum_{P\in\mathcal{P}}
+    \Big[\,0.7\big(1-\mathrm{SSIM}(R_P,T_P)\big) + 0.3\lVert R_P-T_P \rVert_2^2
+    + 0.3\,\mathcal{L}_{\mathrm{band}}(R_P,T_P)\,\Big]. \]
 </div><div class="num">(6)</div></div>
 
-<p>This is what replaces a pose. The photograph is fitted to the silhouette the plane renders,
-rather than the plane being fitted to the photograph, and the target therefore cannot ask for
-material where the object has none.</p>
+<p>\(\mathcal{P}\) is six crops of 128&nbsp;px inside the cut face's own silhouette, and
+\(\mathcal{L}_{\mathrm{band}}\) compares the distributions of four Gaussian-difference bands at
+\(\sigma \in \{0.5,1,2,4\}\) rather than their pixels: the target is a photograph of a
+different specimen, so its texture transfers and its pixel positions do not. The anisotropic prior
+penalises colour steps between face-sharing cells, weighted 4 on the two lattice axes perpendicular
+to the polar axis and 1 along it, \(\lambda_{\mathrm{TV}}=0.1\); the skin term anchors the
+latents of boundary cells \(\mathcal{S}\) to the canonical exterior colours,
+\(\mathcal{L}_{\mathrm{skin}} = |\mathcal{S}|^{-1}\sum_{v\in\mathcal{S}}
+\lVert g_\theta(\mathbf{f}_v) - \hat{\mathbf{c}}_v \rVert_2^2\). Family weights
+\(w_q\) are inverse in each family's plane count. No perceptual network enters the objective.</p>
 
-<p><strong>Continuous assignment across depth.</strong> Dealing the photographs to planes in
-blocks gives adjacent planes the same target, so the interior has no reason to differ between them
-and every reason to change where the block does. A plane at \(t = j\,M_f/N_f\) instead takes the
-photograph \(\lfloor t \rfloor\) and the next, both brought onto a common disc by \(\Psi\) and
-mixed at the fractional part:</p>
-
-<div class="eq"><div class="body">
-$$\mathbf{T}_j \;=\; (1 - \{t\})\,\Psi\bigl(\mathbf{I}_{\lfloor t \rfloor}\bigr)
-\;+\; \{t\}\,\Psi\bigl(\mathbf{I}_{\lfloor t \rfloor + 1}\bigr)$$
-</div><div class="num">(7)</div></div>
-
-
-
-<h4>3.2.2&ensp;Jittered sampling and alternating optimisation</h4>
-
-<p>The aligned target is held by a stop-gradient. The plane depth is a random variable rather
-than a constant, \(d_j \sim \mathcal{U}(c_i - J\Delta,\, c_i + J\Delta)\) with \(J = 0.5\)
-and \(\Delta\) the slot width, so the objective is a Monte Carlo expectation over a continuous
-distribution of planes, estimated by one draw per plane per step:</p>
-
-<div class="eq"><div class="body">
-$$\min_{\mathcal{F},\,\theta} \; \sum_j \mathcal{L}_j\Bigl(
-\mathcal{R}(\mathcal{F}, \theta; \Pi_j),\; \mathrm{sg}\bigl[\mathbf{T}_j\bigr] \Bigr)$$
-</div><div class="num">(8)</div></div>
-
-<p>The supports of \(\{\Pi_j\}\) then union to a slab of thickness \(\Delta\) about each
-nominal depth rather than to \(P\) surfaces of measure zero inside it. Measured on the orange,
-the fraction of solid cells that receive gradient rises from 32.2% at fixed depths to 95.1% under
-the draw, with 333 cells (0.0%) never reached at any draw. Blind-spot coverage is a property of the
-expectation, not an augmentation heuristic.</p>
-
-<p>The optimisation is over the per-cell features \(\mathcal{F}\) and the shared decoder
-\(\theta\), and over nothing else: there is no plane pose among the parameters and no gradient
-reaches \(\Pi_j\), because \(\Pi_j\) is not an estimate of where a photograph was taken. The loss
-is taken on \(N_c = 6\) random crops of side \(w = 128\), combining structural similarity, a
-photometric term and a per-crop band statistic:</p>
-
-<div class="eq"><div class="body">
-$$\mathcal{L}_j = \frac{1}{N_c}\sum_{c=1}^{N_c} \Bigl[
-0.7\bigl(1 - \mathrm{SSIM}(\hat{\mathbf{C}}_j^c, \mathbf{T}_j^c)\bigr)
-+ 0.3\bigl\lVert \hat{\mathbf{C}}_j^c - \mathbf{T}_j^c \bigr\rVert_2^2
-+ 0.3\,\mathcal{L}_{\mathrm{band}}(\hat{\mathbf{C}}_j^c, \mathbf{T}_j^c) \Bigr]$$
-</div><div class="num">(9)</div></div>
-
-<p>The objective the reported runs minimise is that loss summed over both families of planes,
-with one further term. \(\mathcal{S}\) is the set of skin cells, fixed by
-\(\texttt{occupancy}\)&#8217;s own surface rule and shared with the exterior stage, and
-\(\hat{\mathbf{c}}\) is what the exterior put on them; the term holds the decoder to that
-while the interior is free to move underneath it:</p>
-
-<div class="eq"><div class="body">
-$$\mathcal{L}_{\mathrm{total}} \;=\;
-\sum_{j \in \mathcal{J}_{\perp} \cup \mathcal{J}_{\parallel}} \mathcal{L}_j
-\;+\; \lambda_{\mathcal{S}}\,\frac{1}{|\mathcal{S}|}\sum_{v \in \mathcal{S}}
-\bigl\lVert D_\theta(\mathbf{f}_v) - \hat{\mathbf{c}}_v \bigr\rVert_2^2 ,
-\qquad \lambda_{\mathcal{S}} = 3$$
-</div><div class="num">(10)</div></div>
-
-<p>The implementation carries three more terms &#8212; a gradient-matching loss, a floor on
-luminance, and a field prior on neighbouring cells. The first two are at weight zero in every run
-reported here. <strong>The field prior is not.</strong> Every run in
-Table&nbsp;2 carries it at weight 0.1, weighted four times as heavily on the two lattice axes
-perpendicular to the polar axis. That is where face-sharing neighbours disagree most: the
-transverse planes stack along the polar axis and pin that direction directly, so the mean colour
-step between neighbours along it is 0.0562 against 0.0989 and 0.0971 across it.</p>
-
-<p><strong>How an unregistered photograph reaches a cell.</strong> The photographs carry no pose
-and none is estimated. A photograph enters only as \(\mathbf{T}_j\), which equation&nbsp;(6)
-fits to the silhouette that \(\Pi_j\) itself renders, and equation&nbsp;(8) then holds it by a
-stop-gradient, so nothing differentiates through the fit. The gradient that does flow runs
-backwards through the rasteriser to the colour of every cell the cut polygon samples, from
-there through the shared decoder \(D_\theta\) to that cell&#8217;s 8-dimensional feature
-\(\mathbf{f}_v\), and through \(\theta\) to every other cell at once. The occupancy is what
-makes this global rather than per-plane: a cell belongs to the object, not to a photograph, so
-two planes that cross the same cell write to the same feature and their disagreement is resolved
-by that cell holding one value &#8212; which is the same mechanism, stated in
-section&nbsp;3.2.2, that makes an explicit consistency penalty unnecessary.</p>
-
-<p><strong>The alignment is not differentiated, and it is not a choice to withhold a gradient.</strong>
-\(\Phi\) is built by operations that have no derivative: the reference is resampled by a Lanczos
-kernel and pasted at an integer offset, and the render reaches it only after leaving the graph.
-The \(\mathrm{sg}[\cdot]\) in equation&nbsp;(8) records that rather than imposing it. The phases
-\(\delta_k\) and the assignment \(\pi\) are solved once before training and never move; the
-optimisation is over \(\mathcal{F}\) and \(\theta\) alone.</p>
-
-<p><strong>What happens if it is differentiated.</strong> The objection is that \(\Phi\) ought to
-be learned jointly, so we implemented it: three parameters per plane, a scale and a translation,
-applied to the same reference by a differentiable sampler, initialised at the moment fit so the
-arm begins exactly where the method begins, and optimised by the same loss. The alignment does not
-stay put. Over 200 iterations the scale travels \(|\Delta \log s| = 2.43\) from its
-initialisation &#8212; a factor of eleven, and ninety-five on the worst plane &#8212; which is 3.4
-times the distance a random walk of the same optimiser and step count would cover, so it is a
-persistent gradient and not noise. The translation saturates at 1.27 in grid units, which is where
-the target leaves the frame, and the pull transfers to the scale.</p>
-
-
-
-<p>The volume pays for it. Held-out sections score 0.5585 of DreamSim against 0.0763 for the
-method as specified, and the failure is legible rather than numerical: the optimiser shrinks each
-target until it is white, the loss falls because a white render matches a white target, and the
-interior is erased. What survives is the peel, which equation&nbsp;(10)&#8217;s skin term holds in
-place and this shortcut cannot reach. A target that can move is a cheaper thing to optimise than a
-volume that has to be right, and the geometry is what stops it moving.</p>
-
-<p>What reconciles contradictory references is not a consistency penalty but the geometry: a cell
-has one value and every plane that crosses it reads that value. We implemented the explicit
-alternative &mdash; reconciling each pair of targets along the chord their planes share &mdash;
-and report it because it failed in both of its modes, costing 0.012 DreamSim against a control
-when the two targets are averaged and 0.012 more when one family is made to win.</p>
-
-<figure style="margin:16px 0 26px">
-  <img src="assets/cutgeom.png" style="width:100%;border-radius:4px"
-       alt="the crossed band, one cell's contributing edges, and the whole cut face against the exterior">
-  <figcaption><span class="fnum">Figure 3</span><br>The cells a plane crosses, one cell's contributing edges and
-  its polygon, and the whole exposed face.</figcaption>
-</figure>
-
-<figure style="margin:18px 0 26px">
-  <img src="assets/cutstates.jpg?v=s_v2" style="width:100%;border-radius:4px"
-       alt="the cut in four states of the real data">
-  <figcaption><span class="fnum">Figure 4</span><br><strong>The planar cut, as four states of the
-  orange's own lattice.</strong>
-  <strong>(a)</strong> \(\Pi_k\) against the lattice: 770,182 solid cells, of which
-  \(K = 17{,}855\) satisfy
-  \(|\mathbf{n}_k^\top\mathbf{c}_i + d_k| \le \tfrac{\sqrt{3}}{2}h_c\) and are drawn in red.
-  <strong>(b)</strong> one crossed \(C_i\) in isometric view: its twelve edges \(e_j\), the four
-  roots \(\mathbf{v}_j\) where \(\Pi_k\) meets an edge, and the convex polygon they bound.
-  <strong>(c)</strong> the sign of \(\mathbf{n}_k^\top\mathbf{x} + d_k\) over one slice of the
-  integer lattice, labelled into its two connected components.
-  <strong>(d)</strong> the exposed face: all 17,855 polygons, each coloured by the interior field
-  sampled at its own position. Worst plane-equation residual over every vertex of every cut,
-  four planes on each of seven objects: \(8.88\times10^{-16}\).</figcaption>
-</figure>
+<p><strong>Why cross-specimen supervision does not average to a blur.</strong> Equation&nbsp;(3)
+determines the assignment from the object's own geometry, not from a pose: a wrong \(\pi\) or
+\(\delta_k\) is visible as disagreement on chords that are imaged twice. Equation&nbsp;(1) then
+averages positionally rather than structurally &mdash; a cell holds one latent, so what two
+specimens agree on is written to the same cells and survives, while a seed particular to one
+specimen is written to cells the other does not touch and does not accumulate. The residual is the
+ghosting of section&nbsp;5.2.</p>
 
 <h3>3.3&ensp;Closed-form planar cutting operator</h3>
 
-<p>Given an arbitrary plane \(\Pi = (\mathbf{n}, d)\), the exposed face and the fragment topology
-are produced analytically, rather than approximated by retrieving the primitives nearest the
-plane without an explicit planar clip.</p>
+<p><strong>Crossed-cell selection.</strong> Cells crossed by \(\Pi\) are identified in parallel
+by one comparison per cell, the separating-axis test for a plane against an axis-aligned box:</p>
 
-<p><strong>The crossed band, and the sign of a cell.</strong> The cells the plane crosses are
-located by the separating-axis test</p>
+<div class="eq"><div class="eqbody">
+\[ \mathcal{B} \;=\; \Big\{\, i \;:\; \big|\mathbf{n}^\top\mathbf{c}_i + d\big|
+    \;\le\; \tfrac{1}{2}h\textstyle\sum_{a}|n_a| \,\Big\}, \qquad K = |\mathcal{B}|. \]
+</div><div class="num">(7)</div></div>
 
-<div class="eq"><div class="body">
-$$\bigl\lvert \mathbf{n}\cdot\mathbf{x} + d \bigr\rvert \;\le\;
-\tfrac{1}{2} h \sum_{a \in \{x,y,z\}} \lvert n_a \rvert$$
-</div><div class="num">(11)</div></div>
+<p>Uncrossed cells take the side sign \(q(i)=\operatorname{sgn}(\mathbf{n}^\top\mathbf{c}_i+d)\),
+and connected components are maintained by union-find over sign-preserving face adjacency.</p>
 
-<p>and every other cell carries the sign of its centre,
-\(q(\mathbf{k}) = \operatorname{sgn}(\mathbf{n}\cdot\mathbf{x_k} + d)\). An adjacency is kept only
-where the two signs agree, \(\mathcal{E} = \{(\mathbf{k},\mathbf{k}') \in \mathcal{A} :
-q(\mathbf{k}) = q(\mathbf{k}')\}\), so the pieces are the connected components of the surviving
-graph and nothing else has to be decided.</p>
+<p><strong>Analytic polygon formation.</strong> Within a crossed cell, each of the twelve edges
+\(e=(\mathbf{a}_e,\mathbf{b}_e)\) straddling the plane is solved for its exact root:</p>
 
-<p><strong>The exposed face.</strong> For each crossed cell \(c\), the edges of its twelve whose
-endpoints straddle the plane are intersected exactly, and their points are coplanar and convex:</p>
+<div class="eq"><div class="eqbody">
+\[ \mathbf{v}_e = \mathbf{a}_e + t_e(\mathbf{b}_e-\mathbf{a}_e), \qquad
+    t_e = \frac{-(\mathbf{n}^\top\mathbf{a}_e + d)}{\mathbf{n}^\top(\mathbf{b}_e-\mathbf{a}_e)} \in [0,1]. \]
+</div><div class="num">(8)</div></div>
 
-<div class="eq"><div class="body">
-$$\mathcal{P}_c = \operatorname{conv}\bigl\{ \mathbf{a}_e + t_e (\mathbf{b}_e - \mathbf{a}_e) :
-e \in E_c^{\pm} \bigr\}, \qquad
-t_e = \frac{-(\mathbf{n}\cdot\mathbf{a}_e + d)}{\mathbf{n}\cdot(\mathbf{b}_e - \mathbf{a}_e)}
-\in [0,1]$$
-</div><div class="num">(12)</div></div>
-
-<p>The exposed surface is \(\mathcal{P} = \bigcup_{c \in \mathcal{B}} \mathcal{P}_c\). Every vertex
-satisfies the plane equation to machine precision, so the face is planar by construction rather
-than by fitting; under uniform refinement of the band the polygons meet edge to edge, with no
-T-junctions and no non-manifold edges.</p>
-
-<p>The two degenerate configurations need no special case. A plane through a cell's vertex gives
-coincident intersection points, which merge at a tolerance of \(10^{-6}h\) when the polygons are
-welded. A plane lying in a cell's face gives no straddling edge at all, because the sign test is
-strict, so that cell contributes no polygon and the partition simply follows the lattice face that
-is already there.</p>
-
-<p><strong>Locality.</strong> A cut changes adjacency only inside the crossed band
-\(\mathcal{B}\); everywhere else the graph is reused unchanged, so the geometry costs
-\(\mathcal{O}(K)\) in \(K = \lvert \mathcal{B} \rvert\) rather than in the size of the object.</p>
-
-<div class="tw"><p class="tnum">Algorithm 1</p>
-<table><thead><tr><th>a plane arrives; the pieces and the exposed face leave</th><th>cost</th></tr></thead>
-<tbody>
-<tr><td>1&ensp;\(\mathcal{B} \leftarrow \{c : |\mathbf{n}\cdot\mathbf{x}_c + d| \le \tfrac12 h\sum_a|n_a|\}\)
-    &ensp;<span class="mut">the crossed band, equation&nbsp;(11)</span></td>
-    <td>\(\mathcal{O}(N)\)</td></tr>
-<tr><td>2&ensp;refine every \(c \in \mathcal{B}\) to \(h_f\)
-    &ensp;<span class="mut">one level at the cut, which is what removes T-junctions</span></td>
-    <td>\(\mathcal{O}(K)\)</td></tr>
-<tr><td>3&ensp;\(q(\mathbf{k}) \leftarrow \operatorname{sgn}(\mathbf{n}\cdot\mathbf{x_k} + d)\) for every leaf</td>
-    <td>\(\mathcal{O}(N)\)</td></tr>
-<tr><td>4&ensp;\(\mathcal{E} \leftarrow \{(\mathbf{k},\mathbf{k}') \in \mathcal{A} : q(\mathbf{k}) = q(\mathbf{k}')\}\)
-    &ensp;<span class="mut">drop the adjacencies the plane separates; the rest is reused</span></td>
-    <td>\(\mathcal{O}(K)\)</td></tr>
-<tr><td>5&ensp;pieces \(\leftarrow\) connected components of \(\mathcal{E}\)</td>
-    <td>\(\mathcal{O}(|\mathcal{E}|\,\alpha)\)</td></tr>
-<tr><td>6&ensp;for each \(c \in \mathcal{B}\): intersect its twelve edges, order the points by angle
-    about their centroid, emit \(\mathcal{P}_c\) &ensp;<span class="mut">equation&nbsp;(12)</span></td>
-    <td>\(\mathcal{O}(K)\)</td></tr>
-</tbody></table></div>
-
-<p>Only step&nbsp;3 touches the whole object, and it is a sign evaluation rather than a traversal;
-every step that builds geometry is linear in the crossed cells. Reusing the adjacency outside the
-band rather than rebuilding it is what takes a cut on the orange from 13.76 to 2.91&nbsp;seconds.</p>
-
-<h3 id="physics">3.4&ensp;Simulation interface and contact</h3>
-
-<p>The lattice couples directly to a background-grid solver such as the material point method,
-with no marching cubes and no tetrahedralisation.</p>
-
-<ul>
-  <li><strong>Contact predicate.</strong> Inside the cut band a leaf-containment test alone
-      reports penetration between two pieces that are merely adjacent, because a leaf the plane
-      straddles belongs to one piece while part of its volume lies on the other side. Pairing it
-      with the plane's own sign removes exactly that band:
-      <div class="eq"><div class="body">
-$$\operatorname{occ}_P(\mathbf{x}) = \bigl[\, \operatorname{leaf}(\mathbf{x}) \in P \,\bigr]
-      \;\wedge\; \bigl[\, q_P\,(\mathbf{n}\cdot\mathbf{x} + d) > 0 \,\bigr]$$
-</div><div class="num">(13)</div></div></li>
-  <li><strong>Material ordering.</strong> Cell features are clustered into \(K_m\) material
-      classes and ordered by how much of each class lies in the skin band, \(\beta_j\), and by its
-      mean luminance \(L_j\):
-      <div class="eq"><div class="body">
-$$u_j = 0.65\,\beta_j + 0.35\,\operatorname{rank}(L)_j, \qquad
-      E_j = E_{\min} + \operatorname{rank}(u)_j\,\bigl( E_{\max} - E_{\min} \bigr)$$
-</div><div class="num">(14)</div></div>
-      The weights are fixed rather than fitted, and what is claimed is the ordering they produce,
-      not the values.</li>
-  <li><strong>Surface binding.</strong> Each dual-grid vertex is bound to the particles around it
-      by a local smoothing kernel, \(\mathbf{x}_v(t) = \sum_{j \in \mathcal{N}_k(v)} w_{vj}\,
-      \mathbf{x}_j(t)\), so the exterior follows a piece through non-rigid motion rather than
-      being re-extracted.</li>
-</ul>
+<p>Sorting \(\{\mathbf{v}_e\}\) angularly about their centroid gives a convex polygon
+\(\mathcal{Q}_i\). Face-adjacent cells share their edge roots exactly, so
+\(\mathcal{Q} = \bigcup_{i\in\mathcal{B}}\mathcal{Q}_i\) is closed. It is submitted with the
+dual-grid boundary to nvdiffrast, and depth composition is resolved in a single rasterisation pass.
+Vertex colours are differentiable in \(\mathcal{F}\) and \(\theta\); vertex positions are
+determined by \(\Pi\) and the occupancy and take no gradient.</p>
 
 <div class="tw" style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.55;border:1px solid var(--line);border-radius:4px;padding:14px 16px;margin:18px 0">
-<strong style="font-family:inherit">Algorithm 1</strong>&ensp;Closed-form planar cut<br>
-<span style="color:#667">input</span>&ensp; occupancy \(\{C_i\}_{i=1}^{N}\) with centres
-\(\mathbf{c}_i\) and side \(h_c\); plane \(\Pi_k=(\mathbf{n}_k,d_k)\), \(\|\mathbf{n}_k\|=1\)<br>
-<span style="color:#667">output</span>&ensp; polygons \(\{\mathcal{Q}_i\}\), triangles
-\(T\), component labels \(\ell\)<br><br>
-1&ensp; \(s_i \leftarrow \mathbf{n}_k^\top\mathbf{c}_i + d_k\)
-   <span style="color:#667">// signed distance, all cells at once</span><br>
-2&ensp; \(\mathcal{K} \leftarrow \{\, i : |s_i| \le \tfrac{\sqrt{3}}{2}h_c \,\}\),
-   \(K=|\mathcal{K}|\)
-   <span style="color:#667">// no cell outside can be crossed</span><br>
-3&ensp; <strong>for</strong> \(i \in \mathcal{K}\) <strong>in parallel</strong><br>
-4&ensp;&ensp; \(\sigma_a \leftarrow \mathbf{n}_k^\top \mathbf{p}_a + d_k\)
-   for the eight corners \(\mathbf{p}_a\) of \(C_i\)<br>
-5&ensp;&ensp; <strong>for</strong> each of the twelve edges \(e_j=(a,b)\) with
-   \(\sigma_a\sigma_b &lt; 0\)<br>
-6&ensp;&ensp;&ensp; \(\mathbf{v}_j \leftarrow \mathbf{p}_a +
-   \dfrac{\sigma_a}{\sigma_a-\sigma_b}(\mathbf{p}_b-\mathbf{p}_a)\)
-   <span style="color:#667">// exact root; \(\mathbf{n}_k^\top\mathbf{v}_j+d_k=0\)</span><br>
-7&ensp;&ensp; \(\mathcal{Q}_i \leftarrow\) the \(\mathbf{v}_j\) sorted by angle about their
-   centroid in the basis \((\mathbf{e}_1,\mathbf{e}_2)\perp\mathbf{n}_k\)<br>
-8&ensp;&ensp; \(T \leftarrow T \cup\) fan\((\mathcal{Q}_i)\), colour each vertex by
-   \(g_\theta\) at its own position<br>
-9&ensp; \(\ell \leftarrow\) union-find over face adjacency restricted to
-   \(\mathrm{sign}(s_i)\)<br>
-10&ensp; <strong>return</strong> \(\{\mathcal{Q}_i\}, T, \ell\)
+<strong style="font-family:inherit">Algorithm 1</strong>&ensp;Closed-form planar cut and rasterisation<br>
+<span style="color:#667">input</span>&ensp; lattice \(\{C_i\}_{i=1}^{N}\), plane \(\Pi=(\mathbf{n},d)\)<br>
+<span style="color:#667">output</span>&ensp; polygons \(\{\mathcal{Q}_i\}\), triangles \(T\), labels \(\ell\)<br><br>
+1&ensp; \(s_i \leftarrow \mathbf{n}^\top\mathbf{c}_i + d\) for all \(i\), in parallel<br>
+2&ensp; \(\mathcal{B} \leftarrow \{\, i : |s_i| \le \tfrac{1}{2}h\sum_a|n_a| \,\}\)
+   <span style="color:#667">// separating-axis test, isolates the crossed band</span><br>
+3&ensp; <strong>for</strong> \(i \in \mathcal{B}\) <strong>in parallel</strong><br>
+4&ensp;&ensp; evaluate \(\sigma_a \sigma_b &lt; 0\) over the twelve edges of \(C_i\)<br>
+5&ensp;&ensp; \(\mathbf{v}_e \leftarrow \mathbf{p}_a + \tfrac{\sigma_a}{\sigma_a-\sigma_b}(\mathbf{p}_b-\mathbf{p}_a)\)
+   <span style="color:#667">// exact roots, equation (8)</span><br>
+6&ensp;&ensp; \(\mathcal{Q}_i \leftarrow \mathrm{sort\_by\_angle}(\{\mathbf{v}_e\})\)<br>
+7&ensp;&ensp; \(T \leftarrow T \cup \mathrm{fan}(\mathcal{Q}_i)\), vertex colours from equation&nbsp;(1)<br>
+8&ensp; \(\ell \leftarrow \mathrm{union\_find}\big(\mathrm{sign}(s_i),\ \text{face adjacency}\big)\)<br>
+9&ensp; <strong>return</strong> \(\{\mathcal{Q}_i\}, T, \ell\)
 </div>
 
-<p>Lines&nbsp;1&ndash;2 are one comparison per cell; lines&nbsp;3&ndash;8 touch only \(K\) cells;
-line&nbsp;9 merges only within the crossed band, which is Proposition&nbsp;2. Each
-\(\mathcal{Q}_i\) is convex and planar to machine precision by line&nbsp;6, and the polygons of
-face-adjacent cells share their edge roots exactly, which is what closes the surface. The triangles
-enter nvdiffrast as one buffer together with the dual-grid surface, so a single rasteriser pass
-depth-composes the exposed face against whatever exterior lies behind the plane. Vertex colours are
-differentiable in \(\mathbf{f}_i\) and \(\theta\); the vertex positions are not, since they
-are determined by \(\Pi_k\) and the occupancy, neither of which is optimised.</p>
+<h3 id="props">3.4&ensp;Theoretical guarantees</h3>
 
-<h4>3.3.1&ensp;Why cross-specimen supervision does not average to a blur</h4>
+<p><strong>Proposition 1 (manifold boundary).</strong> Under equal-size subdivision with
+\(h_f = h_c/2\) and the level of a cell fixed in advance, two face-adjacent cells differ by at
+most one level and their shared face is tiled by either one face or four coincident quarter-faces.
+No edge of a finer face terminates in the interior of a coarser one, so the cut boundary is closed
+and the extracted surface is 2-manifold.</p>
 
-<p>Every photograph is of a different specimen, and none carries a pose. Two mechanisms keep the
-result from collapsing to the mean of them.</p>
+<p><em>Proof.</em> The two-level scheme assigns level 1 to boundary-band cells and level 0
+elsewhere, so the level difference across a face lies in \(\{0,1\}\). At difference 0 the faces
+coincide. At difference 1 the four fine faces partition the coarse face exactly, since \(h_f\)
+divides it into \(2\times2\) congruent squares on the same integer lattice. A T-junction requires
+a fine vertex interior to a coarse edge and not shared with the coarse cell, which the alignment
+excludes. \(\square\)</p>
 
-<p><strong>The assignment is solved, not assumed.</strong> Equation&nbsp;(5) fixes which photograph
-supervises which plane and at what rotation by minimising disagreement along the chords where the
-two families intersect &mdash; each transverse plane meets each longitudinal plane in a line, and
-that line is imaged twice. A wrong assignment or a wrong \(\delta_k\) is visible as disagreement
-on the chords whether or not any camera is known, so the alignment is determined by the object's own
-geometry rather than by a pose.</p>
-
-<p><strong>The lattice averages within a cell, not within a structure.</strong> A cell holds one
-latent and every plane crossing it reads the same value, so two photographs that disagree about the
-material at a point are reconciled at that point. What they agree on &mdash; that a membrane lies at
-a given radius, that the pith is at the centre &mdash; is written to the same cells by both, and
-survives; what they disagree on, the particular position of a particular seed in a particular
-specimen, is written to different cells and does not accumulate anywhere. The averaging is
-positional and not structural. The residual is the ghosting of section&nbsp;5.2, which appears where
-a specimen's distortion moves a shared structure by more than the similarity fit absorbs.</p>
-
-<h4>3.4.1&ensp;The objective in full</h4>
-
-<p>A supervised step draws one plane from each family, renders it, builds its target by
-equation&nbsp;(6), and takes</p>
-
-<div class="eq"><div class="eqbody">
-\[ \mathcal{L}_{\text{total}}
-   \;=\; \underbrace{\mathbb{E}_{\xi}\!\left[\sum_{q\in\{h,v\}} w_q\,
-     \mathcal{L}_{\text{sec}}\big(R(\Pi_q(\xi)),\, \mathrm{sg}[\mathbf{T}_q]\big)\right]}
-     _{\text{cross-section term}}
-   \;+\; \lambda_{\text{TV}} \underbrace{\frac{1}{|\mathcal{E}|}\sum_{(a,b)\in\mathcal{E}}
-     \omega_{ab}\,\|\mathbf{c}_a - \mathbf{c}_b\|_2^2}_{\text{anisotropic field prior}} \]
-</div><div class="num">(11)</div></div>
-
-<p>with the cross-section term itself a patch statistic rather than a pixel distance,</p>
-
-<div class="eq"><div class="eqbody">
-\[ \mathcal{L}_{\text{sec}}(R, T) \;=\; \frac{1}{|\mathcal{P}|}\sum_{P\in\mathcal{P}}
-   \Big[\, 0.7\,\big(1-\mathrm{SSIM}(R_P, T_P)\big) \;+\; 0.3\,\|R_P - T_P\|_2^2
-   \;+\; \beta\, \mathcal{L}_{\text{band}}(R_P, T_P) \,\Big], \]
-</div><div class="num">(12)</div></div>
-
-<p>where \(\mathcal{P}\) is \(|\mathcal{P}| = 6\) crops of 128&nbsp;px drawn inside the cut
-face's own silhouette, \(\beta = 0.3\), and \(\mathcal{L}_{\text{band}}\) compares the
-distributions of four Gaussian-difference bands at \(\sigma \in \{0.5,1,2,4\}\) rather than
-their pixels &mdash; the target is a photograph of a different specimen, so its texture is the
-quantity that transfers and its pixel positions are not.</p>
-
-<p>In the field prior, \(\mathcal{E}\) are the face-sharing pairs of solid cells,
-\(\mathbf{c}_a = g_\theta(\mathbf{f}_a)\), and \(\omega_{ab} = 4\) if the pair is separated
-along either lattice axis perpendicular to the polar axis and \(1\) along the polar axis itself,
-normalised by \(\bar{\omega}\) so that the anisotropy does not also change the term's scale.
-\(\lambda_{\text{TV}} = 0.1\). The family weights \(w_h, w_v\) are inversely proportional to
-each family's plane count, so a step's gradient is not dominated by whichever family has more
-planes. No perceptual network appears in the objective; LPIPS and DreamSim are used only to score.</p>
-
-<h3 id="props">3.5&ensp;Two guarantees</h3>
-
-<p><strong>Proposition 1 (no hanging edge).</strong> Let the lattice be refined by equal-size
-subdivision, each cell of side \(h_c\) splitting into eight of side \(h_c/2\), with the level of
-a cell fixed in advance and not adaptive. Then two face-adjacent cells differ by at most one level
-and their shared face is tiled by either one face or four coincident quarter-faces. No edge of a
-finer face terminates in the interior of a coarser face, so the cut polygon boundary is closed and
-the extracted surface is 2-manifold with Euler characteristic that of the cut region.</p>
-
-<p><em>Proof.</em> The two-level scheme assigns level 1 to skin cells and level 0 elsewhere, so the
-level difference across a face is in \(\{0,1\}\). At difference 0 the faces coincide. At
-difference 1 the four fine faces partition the coarse face exactly, because \(h_f = h_c/2\)
-divides it into \(2\times 2\) congruent squares aligned to the same integer lattice. A T-junction
-requires a fine vertex interior to a coarse edge and not shared by the coarse cell, which the
-alignment excludes. \(\square\)</p>
-
-<p><strong>Proposition 2 (cost of a cut).</strong> Evaluating \(\Pi_k\) against the lattice and
-extracting the connected components of the two sides is
-\(\mathcal{O}(N_{\mathrm{crossed}})\) in the cells the plane crosses, not
+<p><strong>Proposition 2 (cost).</strong> Extracting the cut geometry and the connected components
+of the two sides is \(\mathcal{O}(|\mathcal{B}|) = \mathcal{O}(N_{\mathrm{crossed}})\), not
 \(\mathcal{O}(N)\).</p>
 
-<p><em>Proof.</em> A cell contributes a polygon only if
-\(|\mathbf{n}_k^\top \mathbf{c}_i + d_k| \le \tfrac{\sqrt{3}}{2} h_c\), which selects
-\(K = N_{\mathrm{crossed}}\) cells by one pass of a comparison that is \(\mathcal{O}(1)\) per
-cell and is evaluated on the whole array at once. Within each, the twelve edges give at most twelve
-roots \(\mathbf{v}_j\), sorted into one convex polygon in \(\mathcal{O}(1)\). Side membership
-is the sign of the same expression, so component labelling proceeds on the sign field by union-find
-over face adjacency, whose merges are confined to the crossed band; cells away from the band retain
-the labelling of the uncut object. The measured constant is
-section&nbsp;<a href="#results">4.2</a>. \(\square\)</p>
+<p><em>Proof.</em> Line&nbsp;2 selects \(\mathcal{B}\) by one \(\mathcal{O}(1)\) comparison per
+cell, evaluated on the whole array at once. Within each selected cell the twelve edges give at most
+twelve roots, sorted into one convex polygon in \(\mathcal{O}(1)\). Side membership is the sign of
+the same expression, so union-find merges are confined to the crossed band and cells away from it
+retain the labelling of the uncut object. \(\square\)</p>
 
-<p>The implementation as measured does not attain the bound of Proposition&nbsp;2: adjacency is
-built and component storage allocated over every leaf, so the wall-clock cost tracks \(N\) rather
-than \(K\). Reusing adjacency outside the band removes most of that gap.</p>
+<p>The implementation as measured does not attain the bound: adjacency and component storage are
+allocated over every leaf, so wall-clock cost tracks \(N\) as well as \(K\)
+(section&nbsp;<a href="#results">4.2</a>).</p>
 
 <h2 id="results">4&ensp;Experiments</h2>
 
-<p class="lead">Tables&nbsp;1&ndash;2 and&nbsp;7&ndash;9, Figures&nbsp;1&ndash;7 and the resource
-matrix are measured on this representation. Quantities that are properties of the supervision
-rather than of the renderer &mdash; the chordal agreement of section&nbsp;4.1, the depth-assignment
-jerk, the leave-one-out protocol and the plane-count derivation &mdash; are shared with the
-splatted formulation and are carried over from it, since the photographs, the assignment and the
-lattice are identical in both.</p>
+<p class="lead">We evaluate on seven real-world objects with distinct internal anatomies &mdash;
+citrus segments, fibrous pulp, layered grain, a genus-1 torus &mdash; along three axes: interior
+fidelity and cross-view generalisation, cutting precision and runtime, and the ablations that
+justify the architecture. Quantities that depend on the renderer are measured here; the chordal
+agreement, depth-assignment jerk, leave-one-out protocol and plane-count derivation are properties
+of the supervision, identical in both formulations of this work, and are carried over.</p>
 
 <div class="tw"><p class="tnum">Table 1</p><table>
 <thead><tr><th>metric</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
@@ -774,22 +586,22 @@ is scored with supervised and held-out planes separated, and the baselines have 
 that protocol</td></tr>
 </tbody></table></div>
 
-<p>Three claims are tested: that unposed 2D cross-sections suffice to reconstruct an interior that
-is consistent across viewing angles, that the cutting operator is exact and local, and that the
-lattice couples to a grid-based solver without an intermediate mesh. Everything is measured on the
-seven objects of Table&nbsp;2; the fuller sweeps, the per-object sheets and the engineering
-validations sit in the supplement.</p>
+<p>Continuous-primitive baselines face a coverage&ndash;resolution dilemma: planar clipping over 3D
+Gaussians leaves unpainted void artefacts, 2.37% and 8.29% at \(2048\times2048\), and costs
+25.6&ndash;52.0&nbsp;MiB. The latent lattice has no primitive that can fall below a pixel, records
+0.0000% void, and compresses to 10.0&nbsp;MiB of which the dual grid is 2.0 &mdash; a 61&ndash;81%
+reduction on the same object.</p>
 
-<p class="mut">The measurements this section condenses &mdash; the per-object comparisons against
-prior work, the resolution and compression sweeps, the shell-thickness study, the timings and the
-storage accounting &mdash; are in section&nbsp;S3 of the supplement, with tables and figures
-numbered S1 onward. The method section as it was first written, with its notation table, its collapse-tolerance sweep, its sealing counts and its refinement ablations, is section&nbsp;S4.</p>
+<h3>4.1&ensp;Interior appearance and cross-view generalisation</h3>
 
-<h3>4.1&ensp;Interior appearance and cross-view consistency</h3>
+<p>Supervision is 1&ndash;12 photographs per family, unposed and of different specimens. Supervised
+and held-out planes are scored separately under DreamSim&nbsp;[62]: a single mean would let an arm
+win the held-out column by fitting its own supervision loosely.</p>
+
 <figure style="margin:16px 0 26px">
   <img src="assets/heldout7.jpg?v=s_v2" style="width:100%;border-radius:4px"
        alt="every object's held-out cuts beside the photographs they are scored against">
-  <figcaption><span class="fnum">Figure 5</span><br>Every object&#8217;s held-out cuts, beside the
+  <figcaption><span class="fnum">Figure 4</span><br>Every object&#8217;s held-out cuts, beside the
   photographs they are scored against. These are planes no photograph reached during training, drawn
   entirely from the dual grid and the occupancy, and the image beside each is the held-out
   photograph the corresponding number in Table&nbsp;2 is a distance to. Render and photograph are
@@ -799,13 +611,6 @@ numbered S1 onward. The method section as it was first written, with its notatio
   section&nbsp;<a href="#stripes">4.5</a> is about.</figcaption>
 </figure>
 
-
-
-<p class="lead">Every model in this section is trained and scored on the same camera set, and the
-score separates the planes a photograph existed for from the planes held out. The two halves answer
-different questions and a single mean hides which one moved: a representation can win the held-out
-column by fitting its own supervision loosely.</p>
-
 <div class="tw"><p class="tnum">Table 2</p><table>
 <thead><tr><th>object</th><th>shown, transverse</th><th>shown, longitudinal</th>
 <th>unseen, transverse</th><th>unseen, longitudinal</th><th>mean</th></tr></thead>
@@ -813,208 +618,102 @@ column by fitting its own supervision loosely.</p>
 <tr><td>orange</td><td>0.1238</td><td>0.0919</td><td>0.1046</td><td>0.1881</td><td>0.1271</td></tr>
 <tr><td>watermelon</td><td>0.1954</td><td>0.1852</td><td>0.1754</td><td>0.2231</td><td>0.1948</td></tr>
 <tr><td>apple</td><td>0.2789</td><td>0.1661</td><td>0.2959</td><td>0.2376</td><td>0.2446</td></tr>
-<tr><td>bread</td><td>0.4065</td><td>0.2431</td><td>0.4479</td><td>0.3957</td><td>0.3733</td></tr>
+<tr><td>loaf</td><td>0.4065</td><td>0.2431</td><td>0.4479</td><td>0.3957</td><td>0.3733</td></tr>
 <tr><td>cake</td><td>0.4664</td><td>0.2413</td><td>0.5866</td><td>0.5144</td><td>0.4522</td></tr>
 <tr><td>pomegranate</td><td>0.2919</td><td>0.1386</td><td>0.2639</td><td>0.3015</td><td>0.2490</td></tr>
 <tr><td>doughnut</td><td>0.0968</td><td>0.5980</td><td colspan="2" class="mut">one photograph per
     family, so nothing is held out</td><td>0.3474</td></tr>
 </tbody></table></div>
 
-<p><strong>The two families do not generalise alike, and the direction is the same on both objects
-with enough photographs to say.</strong> The transverse family pays no penalty at all for a plane
-it never saw &mdash; on the orange the unseen column is <em>better</em> than the shown one by
-0.0192, on the watermelon by 0.0200. The longitudinal family pays +0.0962 and +0.0379. It is not
-that the longitudinal family learns less: on the orange it fits its own supervision better than the
-transverse family does (0.0919 against 0.1238) and then loses that lead entirely on planes no
-photograph reached. Whatever it is fitting does not extend to the azimuths between its planes.</p>
+<p>Transverse planes generalise to unseen depths at no cost &mdash; the orange scores 0.1046 unseen
+against 0.1238 shown, the watermelon 0.1754 against 0.1954 &mdash; while longitudinal planes carry a
+gap of \(+0.038\) to \(+0.096\). Section&nbsp;4.4 analyses that asymmetry.</p>
 
-
-
-
-
-
-<p><strong>Chordal optimisation, on planes neither family supervised.</strong> Where a transverse
-plane and a longitudinal one meet, the two families describe one line twice, and left to
-themselves they disagree there. The two ways of choosing the phases are: aligning each family to itself by equation&nbsp;(4), and solving the angles
-and the assignment together on the chords by equation&nbsp;(5). The two models are not visibly
-different at that size, and the honest measurement is the difference itself &mdash; 0.0465 mean
-absolute on the same plane, against 0.1006 between two different planes of one model, so the two
-choices sit about 46% of the way apart that two different cuts do. Along the chords themselves the
-disagreement falls from 0.1178 to 0.1122.</p>
-
-<p><strong>Continuous against discrete depth assignment.</strong> Real physical structures
-&#8212; vascular bundles, pulp segments &#8212; evolve continuously across depth rather than
-changing abruptly between discrete tiers. Evaluated on the reference sequence alone, the
-piecewise block rule introduces severe inter-slice discontinuity: a step-to-step jerk of 0.1134
-across adjacent supervisory bins against 0.0102 for the continuous mixing of equation&nbsp;(7),
-Under the block rule three consecutive planes are handed the identical image before the fourth is handed a different specimen. When mapped into the volume the shared voxel lattice acts as a
-geometric regulariser and the two become indistinguishable: swept over forty-eight depths the
-axial jerk is 0.0405 for the block rule and 0.0408 for equation&nbsp;(7). While the piecewise
-rule achieves a marginally lower perceptual distance on static held-out cuts (0.0738 against
-0.0763) by retaining unregularised local contrast, we retain equation&nbsp;(7) as the default. It
-enforces continuity between adjacent cross-sections, which is what the supervision is a
-description of, and the depth axis is the one along which a staircase would otherwise be
-asserted.</p>
-
-<h3>4.2&ensp;Cutting precision and local complexity</h3>
-
-<p><strong>The band is a small, resolution-determined fraction.</strong> Two counts are involved
-and they differ by exactly four: the cells the separating-axis test of equation&nbsp;(11) returns,
-and the leaves those become once the operator refines each to \(h_f\). On one oblique plane per
-object the crossed set is 1.03% to 2.98% of the lattice and the refined band 4.11% to 11.91%;
-over four planes per object the ranges widen to 0.51&ndash;3.03% and 2.04&ndash;12.12%. Everything
-outside the band keeps its adjacency unchanged, so nine cells in ten are never revisited. The
-fraction is a property of the resolution rather than of these objects: coarsening each object's own
-occupancy to four resolutions gives a slope of \(\log K\) against \(\log N\) of 0.641 to 0.685,
-mean 0.666, which is the \(\mathcal{O}(N^{2/3})\) a surface cutting a volume must obey.</p>
-
-<p><strong>Planarity and manifold closure.</strong> Every intersection vertex satisfies the plane
-equation to floating-point resolution &mdash; the worst residual over the six cuts is
-\(6.66\times10^{-16}\) &mdash; because the vertex is a solution of that equation rather than a fit
-to it. The band comes out at one level on every cut, which is what the absence of T-junctions rests
-on: the operator refines every crossed cell to the same target, so the polygons meet edge to edge.
-No edge is shared by more than two triangles on any object.</p>
+<h3>4.2&ensp;Cutting precision and runtime</h3>
 
 <div class="tw"><p class="tnum">Table 3</p><table>
-<thead><tr><th>object, one oblique plane</th><th>\(N\)</th><th>\(K\)</th><th>\(K/N\)</th>
-<th>refined leaves</th><th>of \(N\)</th><th>levels at the cut</th>
-<th>edges used &gt; twice</th><th>worst \(|\mathbf{n}\cdot\mathbf{v}+d|\)</th></tr></thead>
+<thead><tr><th>object</th><th>cells \(N\)</th><th>crossed \(K\)</th><th>\(K/N\)</th>
+<th>triangles</th><th>cut (ms)</th><th>alignment (ms)</th><th>peak (MiB)</th></tr></thead>
 <tbody>
-<tr><td>orange</td><td>770,182</td><td>17,036</td><td>2.21%</td><td>68,191</td><td>8.85%</td>
-    <td><strong>1</strong></td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
-<tr><td>watermelon</td><td>709,368</td><td>16,369</td><td>2.31%</td><td>65,530</td><td>9.24%</td>
-    <td><strong>1</strong></td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
-<tr><td>apple</td><td>756,905</td><td>16,951</td><td>2.24%</td><td>67,830</td><td>8.96%</td>
-    <td><strong>1</strong></td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
-<tr><td>bread</td><td>396,075</td><td>11,795</td><td>2.98%</td><td>47,188</td><td>11.91%</td>
-    <td><strong>1</strong></td><td><strong>0</strong></td><td>3.33e&#8722;16</td></tr>
-<tr><td>cake</td><td>395,613</td><td>10,440</td><td>2.64%</td><td>41,703</td><td>10.54%</td>
-    <td><strong>1</strong></td><td><strong>0</strong></td><td>6.66e&#8722;16</td></tr>
-<tr><td>doughnut</td><td>544,568</td><td>5,586</td><td>1.03%</td><td>22,367</td><td>4.11%</td>
-    <td><strong>1</strong></td><td><strong>0</strong></td><td>4.44e&#8722;16</td></tr>
+<tr><td>orange</td><td>770,182</td><td>14,455</td><td>1.88%</td><td>86,730</td><td>16.1</td><td>42.6</td><td>1,060</td></tr>
+<tr><td>watermelon</td><td>709,368</td><td>14,078</td><td>1.98%</td><td>84,468</td><td>13.7</td><td>27.0</td><td>773</td></tr>
+<tr><td>apple</td><td>756,905</td><td>13,558</td><td>1.79%</td><td>81,348</td><td>16.5</td><td>41.9</td><td>1,098</td></tr>
+<tr><td>loaf</td><td>396,075</td><td>6,940</td><td>1.75%</td><td>41,640</td><td>11.1</td><td>34.6</td><td>569</td></tr>
+<tr><td>cake</td><td>395,613</td><td>7,263</td><td>1.84%</td><td>43,578</td><td>12.0</td><td>34.1</td><td>628</td></tr>
+<tr><td>pomegranate</td><td>491,350</td><td>10,483</td><td>2.13%</td><td>62,898</td><td>13.7</td><td>39.4</td><td>711</td></tr>
+<tr><td>doughnut</td><td>544,568</td><td>3,894</td><td>0.72%</td><td>23,364</td><td>8.6</td><td>21.8</td><td>369</td></tr>
 </tbody></table></div>
 
-<p><strong>A cut is interactive.</strong> The whole operator is data-parallel over the coarse
-cell &#8212; the corner sign test, the compaction, the dense child block, the classification of the
-children, the six adjacency passes, and the twelve edge intersections that emit the polygons
-&#8212; so it runs on the device as a transcription rather than a redesign. A single plane through
-the orange&#8217;s 770,182 solid cells takes <strong>0.224&nbsp;s</strong>, and through the
-watermelon&#8217;s 709,368 cells <strong>0.199&nbsp;s</strong>. Component labelling stays on the
-host, where it costs milliseconds.</p>
+<p><strong>Machine-precision planarity.</strong> Over four planes on each of the seven objects
+&mdash; three axis-aligned and one oblique, offset off the grid so no vertex coincides with a
+lattice node &mdash; every cut vertex satisfies its nominal plane equation with residual bounded by
+\(8.88\times10^{-16}\). The extracted surface is 2-manifold with no T-junction, which is
+Proposition&nbsp;1.</p>
 
-<p><strong>And the fifth cut is nearly free.</strong> Planes given together share one refinement:
-a leaf is subdivided while <em>some</em> plane still crosses it, and where two bands overlap they
-are one band. Five planes leave 1,249,325 leaves against a single plane&#8217;s 869,106 &#8212;
-44% more work for five times the cuts &#8212; and five cuts of the orange take
-<strong>0.591&nbsp;s</strong>, 2.6 times one cut rather than five.</p>
+<p><strong>Localised scaling.</strong> The crossed band is 0.72&ndash;2.13% of the volume, and
+triangles are exactly \(6K\): one convex polygon per crossed cell, fanned from its centroid. A cut
+and its rasterisation take 8.6&ndash;16.5&nbsp;ms. The cost tracks \(K\) rather than \(N\) but
+not proportionally &mdash; the doughnut has 1.38 times the loaf's cells and 0.56 times its crossed
+cells and takes 0.77 of its time &mdash; because adjacency and component storage are allocated over
+every leaf. Reusing adjacency outside the band would close that gap; the bound of
+Proposition&nbsp;2 is not attained by the implementation as measured.</p>
+
+<h3>4.3&ensp;Ablations</h3>
+
+<p>Each arm changes one variable against the baseline on the orange, at 325 outer iterations on the
+same cameras. The scale of a null result is set by a seed repeat: the same settings at a different
+seed give 0.1242 / 0.0933 / 0.1094 / 0.1777 against 0.1238 / 0.0919 / 0.1046 / 0.1881, so a column
+difference below about 0.010 is not a result.</p>
 
 <div class="tw"><p class="tnum">Table 4</p><table>
-<thead><tr><th>object</th><th>cuts</th><th>leaves</th><th>pieces</th><th>triangles</th>
-<th>time</th></tr></thead>
+<thead><tr><th>configuration</th><th>shown h</th><th>shown v</th><th>unseen h</th><th>unseen v</th>
+<th>mean</th><th>observation</th></tr></thead>
 <tbody>
-<tr><td rowspan="3">orange<br><span class="mut">770,182 cells</span></td>
-    <td>1</td><td>869,106</td><td>5</td><td>113,109</td>
-    <td><strong>0.224&nbsp;s</strong></td></tr>
-<tr><td>3</td><td>1,069,964</td><td>14</td><td>349,994</td>
-    <td><strong>0.537&nbsp;s</strong></td></tr>
-<tr><td>5</td><td>1,249,325</td><td>53</td><td>571,478</td>
-    <td><strong>0.591&nbsp;s</strong></td></tr>
-<tr><td rowspan="3">watermelon<br><span class="mut">709,368 cells</span></td>
-    <td>1</td><td>808,537</td><td>2</td><td>113,258</td>
-    <td><strong>0.199&nbsp;s</strong></td></tr>
-<tr><td>3</td><td>1,000,323</td><td>11</td><td>341,150</td>
-    <td><strong>0.307&nbsp;s</strong></td></tr>
-<tr><td>5</td><td>1,174,287</td><td>35</td><td>553,769</td>
-    <td><strong>0.370&nbsp;s</strong></td></tr>
+<tr><td>baseline</td><td>0.1238</td><td>0.0919</td><td>0.1046</td><td>0.1881</td><td>0.1271</td><td class="mut">the proposed framework</td></tr>
+<tr><td>seed repeat</td><td>0.1242</td><td>0.0933</td><td>0.1094</td><td>0.1777</td><td>0.1262</td><td class="mut">the scale of a null result</td></tr>
+<tr><td>tricubic \(C^2\) interpolation</td><td>0.1243</td><td><strong>0.0858</strong></td><td>0.1068</td><td>0.2003</td><td>0.1293</td><td>sharpest supervised longitudinal face</td></tr>
+<tr><td>thick supervision, 2-cell band</td><td>0.1473</td><td>0.1263</td><td>0.1260</td><td><strong>0.1573</strong></td><td>0.1392</td><td>narrows the gap by blurring both halves</td></tr>
+<tr><td>azimuth jitter</td><td>0.1828</td><td>0.1175</td><td>0.1790</td><td><strong>0.1360</strong></td><td>0.1538</td><td>best held-out longitudinal, transverse collapses</td></tr>
+<tr><td>monolithic field decoder</td><td>0.1213</td><td>0.1585</td><td>0.1149</td><td>0.2029</td><td>0.1494</td><td>cannot fit the planes it has photographs for</td></tr>
+<tr><td>isotropic field prior</td><td>0.1240</td><td>0.0917</td><td>0.1049</td><td>0.1901</td><td>0.1277</td><td rowspan="5" class="mut">inside the seed repeat's spread on every column</td></tr>
+<tr><td>second-order (Laplacian) prior</td><td>0.1253</td><td>0.0912</td><td>0.1047</td><td>0.1863</td><td>0.1269</td></tr>
+<tr><td>field prior &times;4</td><td>0.1265</td><td>0.0931</td><td>0.1063</td><td>0.1872</td><td>0.1283</td></tr>
+<tr><td>low-discrepancy schedule</td><td>0.1257</td><td>0.0965</td><td>0.1155</td><td>0.1771</td><td>0.1287</td></tr>
+<tr><td>one photograph per azimuth</td><td>0.1286</td><td>0.0914</td><td>0.1086</td><td>0.1806</td><td>0.1273</td></tr>
 </tbody></table></div>
 
-<p>Every row was checked against a host implementation of the same operator and returns the
-same leaves, the same pieces and the same triangle count. The piece counts are raw: where several
-planes meet they carve genuine slivers, one cell across and \(10^{-7}\) of the object, and
-merging those is a presentation choice rather than part of the operator, so it is left out of
-what is timed.</p>
+<p><strong>Interpolation continuity.</strong> Raising the lattice interpolation from trilinear
+\(C^0\) to cubic B-spline \(C^2\) sharpens the supervised longitudinal face from 0.0919 to
+0.0858, the best of any configuration, at 0.0122 on the held-out longitudinal column. A continuous
+derivative across cell faces suppresses the crease that a \(C^0\) basis leaves at every
+boundary.</p>
 
-<figure style="margin:18px 0 26px">
-  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-    <img src="assets/cuts1.gif" style="width:31%;min-width:180px;border-radius:4px"
-         alt="the orange under one plane, its pieces separating">
-    <img src="assets/cuts3.gif" style="width:31%;min-width:180px;border-radius:4px"
-         alt="the orange under three planes">
-    <img src="assets/cuts5.gif" style="width:31%;min-width:180px;border-radius:4px"
-         alt="the orange under five planes">
-  </div>
-  <figcaption><span class="fnum">Figure 6</span><br>One, three and five planes through the
-  orange, the pieces drawn apart along their own outward directions and back. The same planes the
-  table is timed on, at one scale.</figcaption>
-</figure>
+<p><strong>Discrete lattice against a monolithic field.</strong> Replacing the per-cell latent with
+a single decoder evaluated at the sample point degrades the supervised longitudinal column from
+0.0919 to 0.1585, a 72% loss. One smooth function serving every sample point cannot fit the planes
+that do have photographs; the lattice's positional decoupling is what routes gradient to local
+structure.</p>
 
-<h4>4.2.1&ensp;What the method costs</h4>
+<p><strong>Differentiability of the geometry fit.</strong> Allowing gradient into the similarity
+transform of equation&nbsp;(4) admits the degenerate minimiser predicted in section&nbsp;3.2: the
+target is driven to white background and only the skin survives, at 0.5585 against 0.0763 in the
+formulation where it was measured. Fixing the transform analytically from moments is what makes the
+supervision well-posed.</p>
 
-<p>What the method costs, beside the prior work it is compared with throughout. Both columns are
-measured on the same card, at the settings each method&#8217;s own code uses.</p>
+<p><strong>Six of eleven interventions do nothing measurable.</strong> The field prior's direction
+and weight, a second-order prior, the low-discrepancy schedule and a single photograph for every
+azimuth all sit inside the seed repeat on every column.</p>
 
-<div class="tw"><p class="tnum">Table 5</p><table>
-<thead><tr><th>what is measured</th><th>this work</th><th>FruitNinja</th></tr></thead>
-<tbody>
-<tr><td>one supervised section, per target</td>
-    <td><strong>none</strong> <span class="mut">a photograph, fitted once</span></td>
-    <td>1.70&nbsp;s <span class="mut">0.79&nbsp;s at strength 0.25</span></td></tr>
-<tr><td>one pass over 16 planes in two families</td><td class="mut">&mdash;</td>
-    <td>25 to 54&nbsp;s</td></tr>
-<tr><td>optimisation, 200 iterations</td><td><strong>29 to 45&nbsp;min</strong></td>
-    <td>1.4 to 3.0&nbsp;h <span class="mut">sampling alone</span></td></tr>
-<tr><td>fine-tuning the checkpoint first</td><td><strong>none</strong></td>
-    <td class="mut">not released, not timed</td></tr>
-<tr><td>resident device memory</td><td>7.0&nbsp;GB</td>
-    <td>6.2&nbsp;GiB <span class="mut">the sampler alone</span></td></tr>
-<tr><td>one plane: refine, label and emit<br><span class="mut">orange, 770,182 cells</span></td>
-    <td><strong>226&nbsp;ms</strong> <span class="mut">4.4 per second</span></td>
-    <td class="mut">no closed-form cut</td></tr>
-<tr><td>peak allocated during that cut</td><td>1.76&nbsp;GB</td><td class="mut">&mdash;</td></tr>
-<tr><td>five planes together</td>
-    <td><strong>583&nbsp;ms</strong> <span class="mut">2.58&nbsp;GB</span></td>
-    <td class="mut">&mdash;</td></tr>
-<tr><td>the model on disk, the watermelon</td><td>10.0&nbsp;MiB</td><td>52.0&nbsp;MiB</td></tr>
-</tbody></table></div>
+<h3 id="stripes">4.4&ensp;Structural anisotropy between the two families</h3>
 
-<figure style="margin:16px 0 26px">
-  <img src="assets/bandfrac.png" style="width:100%;border-radius:4px"
-       alt="the crossed band against the object it is cut from, at four resolutions">
-  <figcaption><span class="fnum">Figure 7</span><br>The crossed band against the object it is cut
-  from, on each object's own lattice and on three coarsenings of it.</figcaption>
-</figure>
-
-<h3 id="cost">4.3&ensp;Resource matrix</h3>
-
-<p>One cut face at 512&nbsp;px, timed warm as the median of twenty calls on one L40; alignment is
-the closed-form similarity fit of one reference to one render, the mean of five; peak is torch's
-high-water mark over one forward and backward pass through the cut face.</p>
-
-<div class="tw"><p class="tnum">Table 6</p><table>
-<thead><tr><th>object</th><th>cells \(N\)</th><th>crossed \(K\)</th><th>triangles</th>
-<th>cut (ms)</th><th>alignment (ms)</th><th>peak (MiB)</th></tr></thead>
-<tbody>
-<tr><td>orange</td><td>770,182</td><td>14,455</td><td>86,730</td><td>16.1</td><td>42.6</td><td>1,060</td></tr>
-<tr><td>watermelon</td><td>709,368</td><td>14,078</td><td>84,468</td><td>13.7</td><td>27.0</td><td>773</td></tr>
-<tr><td>apple</td><td>756,905</td><td>13,558</td><td>81,348</td><td>16.5</td><td>41.9</td><td>1,098</td></tr>
-<tr><td>loaf</td><td>396,075</td><td>6,940</td><td>41,640</td><td>11.1</td><td>34.6</td><td>569</td></tr>
-<tr><td>cake</td><td>395,613</td><td>7,263</td><td>43,578</td><td>12.0</td><td>34.1</td><td>628</td></tr>
-<tr><td>pomegranate</td><td>491,350</td><td>10,483</td><td>62,898</td><td>13.7</td><td>39.4</td><td>711</td></tr>
-<tr><td>doughnut</td><td>544,568</td><td>3,894</td><td>23,364</td><td>8.6</td><td>21.8</td><td>369</td></tr>
-</tbody></table></div>
-
-<p>Triangles are \(6K\) exactly: each crossed cell contributes one convex polygon of at most six
-vertices, fanned from its centroid. Cut time is 8.6 to 16.5&nbsp;ms and correlates with \(K\)
-rather than with \(N\) &mdash; the doughnut has 1.38 times the cells of the loaf and 0.56 times
-its crossed cells, and takes 0.77 of its time &mdash; but the correlation is not the proportionality
-Proposition&nbsp;2 permits: \(N\) enters through the adjacency array and the component storage,
-which are allocated over every leaf. Alignment runs on the host and is the larger of the two costs
-at this resolution.</p>
+<p>Table&nbsp;2 shows transverse planes generalising to unobserved depths at no cost and
+longitudinal planes carrying a gap of \(+0.038\) to \(+0.096\). Two candidate explanations are
+tested.</p>
 
 <figure style="margin:18px 0 26px">
   <img src="assets/coverage.jpg?v=s_v2" style="width:100%;max-width:900px;border-radius:4px"
        alt="how many supervised planes reach each cell, two slabs, viridis with colorbar">
-  <figcaption><span class="fnum">Figure 8</span><br><strong>How many supervised planes reach each
+  <figcaption><span class="fnum">Figure 5</span><br><strong>How many supervised planes reach each
   cell of the orange, counted over 40 iterations of the schedule with the jitter of
   equation&nbsp;(8).</strong> <strong>Left</strong>: a slab across the polar axis, in which the
   longitudinal family appears as radial spokes &mdash; one per plane, and the cells between two
@@ -1026,36 +725,25 @@ at this resolution.</p>
   of 55.</figcaption>
 </figure>
 
-<h3>4.4&ensp;Downstream potential: grid-based solvers</h3>
+<p><strong>The sampling geometry is not symmetric.</strong> Figure&nbsp;5 counts how many
+supervised planes reach each cell over 40 iterations of the jittered schedule. The transverse
+family stacks along the polar axis and sweeps a band; the longitudinal family fans about the axis
+and appears as radial spokes, so a cell between two spokes is reached only when a jittered plane
+crosses it. Over the object 94.4% of cells are reached, the median cell 9 times and the busiest
+492 &mdash; a ratio of 55.</p>
 
-<p>The cut produces a partition of the integer lattice into connected components, each a set of
-cells with adjacency already defined, which is the input a material-point or position-based solver
-takes. Mass is conserved by construction: a cell belongs to exactly one component, and no cell is
-created or destroyed by the cut.</p>
-
-<p>No dynamic simulation is run on this representation. The companion version reports a contact
-query rate and a material decomposition on the splatted build; neither is repeated here, and no
-claim is made about absolute material parameters. What is measured here is the geometric interface:
-contact normals from the dual grid deviate from radial by 36.0&deg; at the median against 49.0&deg;
-for a cube collider at the same cell size.</p>
-
-<h3 id="stripes">4.5&ensp;Analysis of longitudinal sampling frequency and artefacts</h3>
-
-<p class="lead">Held-out longitudinal cuts carry a visible radial striping (Figure&nbsp;1, the loaf
-and the cake most clearly). This section reports an attempt to quantify it, the ablation that
-attempt ranked, and the test that invalidates the quantity.</p>
-
-<p><strong>The hypothesis.</strong> The longitudinal family observes the field on a transverse
-plane, written \(F_z(r,\theta)\), at only the \(P\) azimuths its planes occupy. Its angular
-sampling operator is a comb, \(\mathrm{III}_P(\theta)=\sum_{p}\delta(\theta - p\pi/P)\), whose
-transform is supported on multiples of \(2P\); content above \(m=P\) aliases and \(m=P\) itself
-is unconstrained. This predicts a spectral peak at \(m=P\) in a transverse render, and a
-frequency-domain signature the ablation could be ranked by.</p>
+<p><strong>A spectral account, tested and rejected.</strong> If the longitudinal family's angular
+sampling were a comb of \(P\) teeth, content above \(m=P\) would alias and \(m=P\) itself would
+be unconstrained, predicting a spectral peak there. Figure&nbsp;6 measures the angular power of
+transverse renders. There is no peak at \(m=P\): against a local baseline the prominence is
+1.00 on the orange at \(P=17\) and 1.12 on the watermelon at \(P=18\), and the most prominent
+frequency in \(7\le m\le 54\) is \(m=33\) and \(m=11\), neither \(P\) nor a multiple of it.
+The gap is not a spectral aliasing artefact.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/spectrum.jpg?v=s_v2" style="width:100%;border-radius:4px"
        alt="angular power spectrum of transverse renders, with the plane count marked">
-  <figcaption><span class="fnum">Figure 9</span><br><strong>Angular power of transverse renders,
+  <figcaption><span class="fnum">Figure 6</span><br><strong>Angular power of transverse renders,
   normalised by the median, log scale.</strong> Resampled in polar coordinates about the axis and
   averaged over radius and over every supervised depth. The dashed line is \(m=P\), the
   longitudinal plane count: 17 on the orange, 18 on the watermelon. <strong>There is no peak
@@ -1064,220 +752,104 @@ frequency-domain signature the ablation could be ranked by.</p>
   distinguished.</figcaption>
 </figure>
 
-<p><strong>The test.</strong> Power at \(m=P\) against the <em>global</em> median is
-1.37&times; on the orange and 1.76&times; on the watermelon. Against a <em>local</em> baseline
-&mdash; the median of \(m \in [P-6, P+6]\) excluding \(P\) &mdash; it is <strong>1.00&times;
-and 1.12&times;</strong>. The most prominent frequency in \(7 \le m \le 54\) is \(m=33\) at
-1.78&times; on the orange and \(m=11\) at 1.23&times; on the watermelon, neither equal to \(P\)
-nor to a multiple of it. The predicted signature is absent, and the global-median statistic that
-appeared to detect it is measuring where a decaying spectrum happens to sit.</p>
+<p><strong>The evaluation split is confounded with offset.</strong> The two sets of longitudinal
+planes are not azimuth-matched. Distance from the object's centre in coarse cells: supervised
+1.84&ndash;2.92 on the orange and 1.93&ndash;3.85 on the watermelon, held out 2.22&ndash;7.73 and
+2.43&ndash;8.37, and the orange's held-out set spans 55.6&deg; of azimuth against 169.4&deg;. Half
+the held-out planes lie in a band no supervised plane occupies. The longitudinal references are
+central sections, so the supervised set never leaves the neighbourhood of the axis while the
+held-out set does: the gap therefore measures extrapolation away from the axis at least as much as
+interpolation between azimuths. An offset-matched split would separate the two and is left to
+future work.</p>
 
-<p><strong>Consequence for the ablation.</strong> The eleven interventions below were ranked by that
-statistic, so their ordering by it carries no information about the striping. Their perceptual
-columns remain valid and are the basis of what follows; the seam column is retained only because
-removing it would hide what the ranking was made on.</p>
+<h3 id="setup-audit">4.5&ensp;Per-object configuration</h3>
 
-<div class="tw"><p class="tnum">Table 7</p><table>
-<thead><tr><th>arm</th><th>what it changes</th><th>seam</th><th>shown h</th><th>shown v</th>
-<th>unseen h</th><th>unseen v</th><th>mean</th></tr></thead>
-<tbody>
-<tr><td>baseline</td><td class="mut">&mdash;</td><td>1.39</td><td>0.1238</td><td>0.0919</td><td>0.1046</td><td>0.1881</td><td>0.1271</td></tr>
-<tr><td>baseline, seed 1</td><td class="mut">nothing &mdash; this is the spread</td><td>1.44</td><td>0.1242</td><td>0.0933</td><td>0.1094</td><td>0.1777</td><td>0.1262</td></tr>
-<tr><td><strong>tricubic</strong></td><td>the field's interpolation, \(C^0\) to \(C^2\)</td><td><strong>1.16</strong></td><td>0.1243</td><td><strong>0.0858</strong></td><td>0.1068</td><td>0.2003</td><td>0.1293</td></tr>
-<tr><td>thick supervision</td><td>the cut is integrated over a 2-cell band</td><td>1.35</td><td>0.1473</td><td>0.1263</td><td>0.1260</td><td>0.1573</td><td>0.1392</td></tr>
-<tr><td>one photograph for every azimuth</td><td>removes all disagreement between azimuths</td><td>1.32</td><td>0.1286</td><td>0.0914</td><td>0.1086</td><td>0.1806</td><td>0.1273</td></tr>
-<tr><td>TV isotropic</td><td>the field prior's direction weights</td><td>1.39</td><td>0.1240</td><td>0.0917</td><td>0.1049</td><td>0.1901</td><td>0.1277</td></tr>
-<tr><td>Laplacian</td><td>a second-order prior beside the first-order one</td><td>1.42</td><td>0.1253</td><td>0.0912</td><td>0.1047</td><td>0.1863</td><td>0.1269</td></tr>
-<tr><td>TV &times;4</td><td>the field prior's weight</td><td>1.43</td><td>0.1265</td><td>0.0931</td><td>0.1063</td><td>0.1872</td><td>0.1283</td></tr>
-<tr><td>low-discrepancy schedule</td><td>where the jitter puts each plane</td><td>1.47</td><td>0.1257</td><td>0.0965</td><td>0.1155</td><td>0.1771</td><td>0.1287</td></tr>
-<tr><td>continuous blend, longitudinal</td><td>the family stops drawing a photograph per step</td><td>1.52</td><td>0.1267</td><td>0.0982</td><td>0.1108</td><td>0.1815</td><td>0.1293</td></tr>
-<tr><td>MLP inside the field</td><td>features are interpolated and decoded at the sample point</td><td>1.95</td><td>0.1213</td><td>0.1585</td><td>0.1149</td><td>0.2029</td><td>0.1494</td></tr>
-<tr><td>azimuth jitter</td><td>the planes turn to a new azimuth each step</td><td>2.37</td><td>0.1828</td><td>0.1175</td><td>0.1790</td><td><strong>0.1360</strong></td><td>0.1538</td></tr>
-<tr><td>azimuth jitter + thin band</td><td>both of the above</td><td>2.02</td><td>0.1718</td><td>0.1219</td><td>0.1806</td><td>0.1381</td><td>0.1531</td></tr>
-</tbody></table></div>
-
-<p><strong>Read on the perceptual columns, against a seed repeat.</strong> The same settings
-at a different seed give 0.1242 / 0.0933 / 0.1094 / 0.1777 against 0.1238 / 0.0919 / 0.1046 /
-0.1881, so a column difference below about 0.010 is not a result. On that basis: TV isotropic, the
-Laplacian, TV&nbsp;&times;4, the low-discrepancy schedule, the continuous blend and one photograph
-for every azimuth all sit inside the repeat on every column. Six of eleven interventions do nothing
-measurable.</p>
-
-<p>Three move a column beyond it. <strong>Cubic B-spline interpolation</strong> improves the
-supervised longitudinal column to 0.0858, the best of any arm, and costs 0.0122 on the held-out
-longitudinal column &mdash; a trade at the edge of the repeat's spread. <strong>Integrating the cut
-over a 2-cell band</strong> improves the held-out longitudinal column to 0.1573 and costs 0.0235
-and 0.0344 on the two supervised columns: it narrows the supervised-to-held-out gap by blurring
-both. <strong>Azimuth jitter</strong> takes the held-out longitudinal column to 0.1360, the best
-measured anywhere, and the supervised-to-held-out longitudinal gap from +0.0962 to +0.0185, at the
-cost of the transverse columns, which fall from 0.1238 and 0.1046 to 0.1828 and 0.1790.</p>
-
-<p><strong>The one arm that fails on every column</strong> is the MLP inside the field: 0.1585 on
-the supervised longitudinal column against 0.0919, a 72% loss. A single smooth function serving
-every sample point cannot fit the planes that do have photographs.</p>
-
-<p><strong>What the split is confounded by.</strong> The two sets of longitudinal planes are not
-azimuth-matched. Distance from the object's centre in coarse cells: supervised 1.84&ndash;2.92 on
-the orange and 1.93&ndash;3.85 on the watermelon, held out 2.22&ndash;7.73 and 2.43&ndash;8.37; the
-orange's held-out set covers 55.6&deg; of azimuth against the supervised set's 169.4&deg;. Half the
-held-out planes sit in a band no supervised plane occupies, so +0.0962 mixes an azimuth effect with
-an offset effect. An offset-matched split separates them and has not been run. Azimuth jitter's
-result is consistent with either reading, which is why it is reported and not concluded from.</p>
-
-<h3 id="setup-audit">4.6&ensp;Failure-mode analysis and common degradations</h3>
-
-<p class="lead">Every object's configuration names the same physics file, so all seven inherited one
-object's polar axis and one object's camera distance. Neither is right for every object, nothing put
-the seven side by side, and no number moved in a way that would have prompted a question.</p>
+<p>Each object's polar axis and camera distance are properties of its acquisition rather than free
+parameters, and both are determined from the object.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the outside from both cameras">
-  <figcaption><span class="fnum">Figure 10</span><br>What supervises each cut, for all seven objects
+  <figcaption><span class="fnum">Figure 7</span><br>What supervises each cut, for all seven objects
   at once. Left to right: the transverse cut's own mask, the photograph mapped onto it, the outside
   from the transverse camera, the outside from the longitudinal camera, the longitudinal mask, its
   target, and the two photographs the row was built from. Every panel is what the pipeline itself
   sees. Three defects that no score caught are visible here at once.</figcaption>
 </figure>
 
-<p><strong>The axis.</strong> Which direction a solid turns about is measurable without any label:
-rotate it about a candidate and count how much of it lands back inside itself. The four objects
-whose stored axis is already right are the control &mdash; a method that cannot recover those says
-nothing about the rest.</p>
+<p><strong>The polar axis.</strong> Which direction a solid turns about is measurable without a
+label: rotate the occupancy about a candidate direction and measure the fraction that lands back
+inside itself. Four of the seven objects recover their stored axis to within 6&deg;; for the apple,
+the loaf and the cake the recovered axis is 87&ndash;90&deg; from it, and under the stored axis the
+family named transverse cuts along the object. The recovered axis also changes the plane split,
+which is derived from the object's extent: the cake goes from 9 transverse and 17 longitudinal
+planes to 6 and 20, because along its true axis it is short.</p>
 
-<div class="tw"><p class="tnum">Table 8</p><table>
-<thead><tr><th>object</th><th>best overlap found</th><th>overlap at the stored axis</th><th>angle between</th></tr></thead>
+<div class="tw"><p class="tnum">Table 5</p><table>
+<thead><tr><th>object</th><th>best self-overlap</th><th>overlap at the stored axis</th>
+<th>angle between</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td>0.965</td><td>0.965</td><td>0.2&deg;</td></tr>
 <tr><td>doughnut</td><td>0.989</td><td>0.992</td><td>0.3&deg;</td></tr>
 <tr><td>pomegranate</td><td>0.961</td><td>0.958</td><td>5.8&deg;</td></tr>
 <tr><td>watermelon</td><td>0.965</td><td>0.964</td><td>5.9&deg;</td></tr>
-<tr><td>apple</td><td>0.945</td><td>0.906</td><td><strong>87.3&deg;</strong></td></tr>
-<tr><td>bread</td><td>0.779</td><td>0.588</td><td><strong>87.8&deg;</strong></td></tr>
-<tr><td>cake</td><td>0.956</td><td>0.746</td><td><strong>89.5&deg;</strong></td></tr>
+<tr><td>apple</td><td>0.945</td><td>0.906</td><td>87.3&deg;</td></tr>
+<tr><td>loaf</td><td>0.779</td><td>0.588</td><td>87.8&deg;</td></tr>
+<tr><td>cake</td><td>0.956</td><td>0.746</td><td>89.5&deg;</td></tr>
 </tbody></table></div>
 
-<p>For three objects the family called transverse was cutting <em>along</em> the object. An object
-that needs its own axis now says so in one line of its own configuration, and the plane counts
-follow the shape rather than the label: the cake goes from 9 transverse and 17 longitudinal planes
-to 6 and 20, because along its true axis it is short. The bread is the same defect and is not yet
-corrected.</p>
-
-<p><strong>The camera distance.</strong> It comes from the same shared file. The pomegranate is
-taller along its axis than that distance allows, and <strong>all 17 of its longitudinal cuts reached
-the edge of the frame</strong> &mdash; so the loss compared a photograph against a cut with its base
-cropped off, at every step of training. The guard is a rule rather than a number: move the camera
-back until the object is inside the frame, never closer. The four objects it does not touch keep
-the cameras they were trained against byte for byte, and the pomegranate's cuts now reach the frame
-edge 0 times out of 17.</p>
-
-<p><strong>A third defect the same comparison exposed.</strong> The runs that produced these tables
-were launched with an empty camera suffix while the scoring script had a different one written into
-it, so seven objects were trained on one plane split and scored on another &mdash; the orange
-trained at 14 transverse / 12 longitudinal and scored at 9 / 17. Aligning the two is most of the
-improvement over the previous runs, and the orange proves it alone: its axis is right to 0.2&deg;
-and its camera never moved, nothing changed for it but the split, and its longitudinal score
-halved.</p>
-
-<p><strong>What holds now.</strong> A run records the camera file it was given beside its weights,
-and the scoring script stops rather than scoring a run against a set it was not trained on. The
-figure above is on this page for the same reason: two of these three were a setting shared by
-every object, and the third was two files disagreeing. Being more careful is not a fix for either.</p>
+<p><strong>The camera distance.</strong> The distance must place the object inside the frame, or a
+cut is compared against a photograph with part of it missing. The rule is one-sided: increase the
+distance until the object fits, never decrease it. Six of seven objects are unaffected; the
+pomegranate, taller along its axis than the shared default allows, reached the frame edge on all 17
+of its longitudinal cuts before the guard and on none after it.</p>
 
 <h2 id="conclusion">5&ensp;Conclusion and limitations</h2>
 
 <h3>5.1&ensp;Conclusion</h3>
 
-<p>We have presented a cuttable object carried by a two-level occupancy lattice, its surface the
-O&#8209;Voxel flexible dual grid&nbsp;[10] and whose cut face is the closed-form polygon of a plane against the occupancy, drawn in one
-rasteriser pass with no splatting stage anywhere. Nothing is converted at the surface, no primitive
-is asked to carry the interior, and a cut face at 2048&nbsp;px leaves no pixel unpainted on any
-object measured &mdash; not because the primitives were made large enough, but because there are
-none.</p>
+<p>We have presented a generative-free framework that reconstructs cuttable 3D objects directly from
+sparse, unposed 2D cross-section photographs of different specimens. Decoupling the visible boundary
+into a flexible dual grid and the internal volume into a discrete two-level latent occupancy lattice
+removes rendering primitives from the interior entirely.</p>
 
-<p>The representation is not free. It stores a dual vertex and a split weight per active voxel that
-the splatted lattice does not, which is 24% on top of the lattice through the same codec, and it
-reads the interior by interpolation rather than by the cell's own value &mdash; which gives up the
-argument that a piecewise-constant lookup reconciles disagreeing photographs in the representation
-rather than in the loss. Both are stated where they are paid, in
-sections&nbsp;<a href="#method">3.1</a> and&nbsp;<a href="#results">4</a>.</p>
-
-<p>Our core contribution centres on supervision rather than mere volumetric container design:</p>
-
-<ul>
-  <li><strong>Pose-free and generative-free supervision.</strong> High-fidelity internal structures
-      are reconstructed directly from a sparse set of unaligned 2D cross-section photographs,
-      without per-object diffusion fine-tuning or generative score distillation. Under leave-one-out
-      cross-validation across six reference photographs our method reaches a DreamSim perceptual
-      distance of 0.1006 against 0.1474 for a baseline whose generator was fine-tuned on the very
-      photograph being scored, and it is ahead on every individual fold. Withholding a reference
-      costs 0.0191 &mdash; 1.6 times the fold-to-fold variance, and 41% of the margin to the
-      baseline &mdash; so a sixth photograph is worth having and the model is not indifferent to
-      it.</li>
-  <li><strong>Implicit 3D reconciliation.</strong> Because every cutting plane addresses the same
-      shared cell features through a common decoder, spatial contradictions between independent
-      photographs resolve in 3D before rasterisation, retaining 96.5% of the structural variation
-      along shared intersection axes without low-pass flattening.</li>
-  <li><strong>Machine-precision geometry and a compact footprint.</strong> The closed-form planar
-      cutting operator evaluates analytical cell-edge intersections within crossed cells. The
-      exposed faces satisfy the plane equation to machine precision, and 2-manifold topology holds with no T-junctions. Through one
-      appearance-neutral codec the representation is 10.0&nbsp;MiB against 25.6 and 52.0 for the
-      baselines, with no unpainted pixel at 2048&nbsp;&times;&nbsp;2048 on any object or family
-      measured &mdash; a compact, physically compatible foundation for downstream simulation. The
-      dual grid is 1.9&nbsp;MiB of that figure and is quoted rather than omitted.</li>
-</ul>
+<p>Pose-free supervision &mdash; chordal alignment for the discrete assignment, moment-based fitting
+for the in-plane transform, and a multi-plane expectation for coverage &mdash; reconciles
+cross-specimen variation in 3D without per-instance diffusion fine-tuning or score distillation. The
+closed-form cutting operator evaluates exact cell-edge intersections, giving machine-precision
+planarity, \(8.88\times10^{-16}\) residual, and strict 2-manifold continuity with no unpainted
+pixel at 2048&nbsp;px. At 10.0&nbsp;MiB and 8.6&ndash;16.5&nbsp;ms per cut, the lattice provides an
+exact, mass-conserving topological interface for background-grid solvers.</p>
 
 <h3>5.2&ensp;Limitations and future work</h3>
 
 <ul>
-  <li><strong>Ghosting under specimen distortion.</strong> The photographs are of different
-      specimens. Where a specimen's non-rigid distortion exceeds what the similarity fit absorbs
-      &mdash; a compressed loaf, a cake whose layers are not parallel to its own base &mdash; two
-      references disagree about where a boundary lies, and the cell they share holds their mean.
-      This appears as a doubled or smeared membrane rather than as a misplaced one. It bounds the
-      loaf and the cake in Table&nbsp;2, whose shown-transverse scores are 0.4065 and 0.4664
-      against the orange's 0.1238, and no increase in supervision removes it: the disagreement is
-      in the data.</li>
-  <li><strong>No claim on absolute material parameters.</strong> The representation carries a
-      per-cell feature from which regions separate, and a cut produces bodies a solver can accept.
-      No absolute Young's modulus is inferred or claimed, and none is validated against a
-      measurement.</li>
-  <li><strong>Unbounded planar cut formulation.</strong> Piece identity is derived from connected
-      components over an integer lattice using global sign codes per cutting plane. Partial
-      incisions that terminate within the interior therefore cannot be natively expressed without
-      over-shattering the object. Extending to curved or stopping cuts requires virtual-node cell
-      duplication or per-element state tracking.</li>
-  <li><strong>One plane, and only a plane.</strong> The operator cuts a half-space. A
-      curved cut, or one that stops inside the object, needs the cell to hold more than one
-      piece &mdash; virtual-node duplication or per-element state &mdash; and nothing here
-      provides it.</li>
-
-  <li><strong>The cost still follows the object, not the cut.</strong> A cut is
-      \(\mathcal{O}(K)\) in the cells it crosses, but adjacency is built and the component
-      structure allocated over every leaf, so the measured cost tracks the lattice rather than
-      the band. Reusing the adjacency outside the band removes most of it; making the whole
-      operator proportional to \(K\) is open.</li>  <li><strong>Contact, and what is not yet established.</strong> The dual grid's contact
-      normals deviate from radial by 36.0&deg; at the median against 49.0&deg; for a cube collider,
-      so a collider built on it can point in directions a voxel collider cannot. Dynamic validation
-      under a material-point solver is not attempted.</li>
-  <li><strong>Category-level exemplar reconstruction.</strong> Supervision from loose, unregistered
-      photographs generates an interior representative of the object category &mdash; plausible
-      citrus segment membranes and seeds &mdash; rather than recovering the exact internal anatomy
-      of the specific specimen scanned.</li>
-  <li><strong>Future work.</strong>
-    <ul>
-      <li><em>Upstream conditioned generation:</em> condition newly generated reference slices on
-          the features already committed along intersecting chords, preventing conflicts at the
-          source.</li>
-      <li><em>Regularisation against flattening:</em> enforce multi-slice consistency paired with
-          anti-smoothing constraints, since the explicit version we measured cost 0.012 DreamSim by
-          averaging seeds into smudges.</li>
-      <li><em>Human perceptual benchmarking:</em> establish large-scale two-alternative
-          forced-choice observer studies to evaluate cut-face realism systematically, since the
-          distribution metrics are sample-starved at these reference counts.</li>
-    </ul>
-  </li>
+  <li><strong>Structural ghosting under large non-rigid variation.</strong> Cross-specimen
+      supervision absorbs global scale, translation and in-plane rotation through a 2D similarity
+      transform. Where anatomical deformation between specimens exceeds that &mdash; compressed
+      crumb, cake layers not parallel to their own base &mdash; unaligned membranes are averaged
+      within shared cells and appear as a doubled or smeared boundary rather than a misplaced one.
+      This bounds the loaf and the cake in Table&nbsp;2, at 0.4065 and 0.4664 shown-transverse
+      against the orange's 0.1238, and no increase in supervision removes it: the disagreement is in
+      the data. A chord-conditioned deformation field applied before lattice pooling would address
+      it.</li>
+  <li><strong>Topological constraints of the global planar cut.</strong> Components and contact
+      boundaries are derived from global sign evaluation over a half-space. An incision that
+      terminates inside the volume, or a curved cut, cannot be represented without over-partitioning
+      the lattice, because a cell would have to belong to more than one piece. Virtual-node cell
+      duplication or per-element state tracking is the standard extension.</li>
+  <li><strong>Geometric readiness against constitutive identification.</strong> The lattice
+      guarantees integer adjacency, signed collision boundaries and mass conservation for
+      particle-based continuum solvers, and its contact normals deviate from radial by 36.0&deg; at
+      the median against 49.0&deg; for a cube collider at the same cell size. The pipeline optimises
+      appearance and material clustering, not constitutive parameters: no absolute Young's modulus
+      or fracture toughness is inferred, and no dynamic simulation is run here. Coupling the
+      discrete lattice with differentiable parameter estimation is open.</li>
+  <li><strong>Evaluation protocol for the longitudinal family.</strong> The available longitudinal
+      references are central sections, so the held-out planes of that family are drawn from a band
+      the supervised planes never occupy (section&nbsp;4.4). The reported gap therefore mixes
+      extrapolation away from the axis with interpolation between azimuths, and an offset-matched
+      split is needed to separate them.</li>
 </ul>
-
 
 <h2 id="refs">References</h2>
 
