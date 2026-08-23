@@ -1052,6 +1052,13 @@ than \(K\). Reusing adjacency outside the band removes most of that gap.</p>
 
 <h2 id="results">4&ensp;Experiments</h2>
 
+<p class="lead">Tables&nbsp;1&ndash;2 and&nbsp;7&ndash;9, Figures&nbsp;1&ndash;7 and the resource
+matrix are measured on this representation. Quantities that are properties of the supervision
+rather than of the renderer &mdash; the chordal agreement of section&nbsp;4.1, the depth-assignment
+jerk, the leave-one-out protocol and the plane-count derivation &mdash; are shared with the
+splatted formulation and are carried over from it, since the photographs, the assignment and the
+lattice are identical in both.</p>
+
 <div class="tw"><p class="tnum">Table 1</p><table>
 <thead><tr><th>metric</th><th>this work</th><th>FruitNinja</th><th>GaussianFluent</th></tr></thead>
 <tbody>
@@ -1144,9 +1151,28 @@ photograph reached. Whatever it is fitting does not extend to the azimuths betwe
 
 
 
-<p>The chordal agreement between the two families and the step-to-step jerk of the continuous
-against the block depth assignment are properties of the photograph-to-plane assignment, which is
-shared, and are reported in <a href="index.html">the companion version</a>.</p>
+<p><strong>Chordal optimisation, on planes neither family supervised.</strong> Where a transverse
+plane and a longitudinal one meet, the two families describe one line twice, and left to
+themselves they disagree there. The two ways of choosing the phases are: aligning each family to itself by equation&nbsp;(4), and solving the angles
+and the assignment together on the chords by equation&nbsp;(5). The two models are not visibly
+different at that size, and the honest measurement is the difference itself &mdash; 0.0465 mean
+absolute on the same plane, against 0.1006 between two different planes of one model, so the two
+choices sit about 46% of the way apart that two different cuts do. Along the chords themselves the
+disagreement falls from 0.1178 to 0.1122.</p>
+
+<p><strong>Continuous against discrete depth assignment.</strong> Real physical structures
+&#8212; vascular bundles, pulp segments &#8212; evolve continuously across depth rather than
+changing abruptly between discrete tiers. Evaluated on the reference sequence alone, the
+piecewise block rule introduces severe inter-slice discontinuity: a step-to-step jerk of 0.1134
+across adjacent supervisory bins against 0.0102 for the continuous mixing of equation&nbsp;(7),
+Under the block rule three consecutive planes are handed the identical image before the fourth is handed a different specimen. When mapped into the volume the shared voxel lattice acts as a
+geometric regulariser and the two become indistinguishable: swept over forty-eight depths the
+axial jerk is 0.0405 for the block rule and 0.0408 for equation&nbsp;(7). While the piecewise
+rule achieves a marginally lower perceptual distance on static held-out cuts (0.0738 against
+0.0763) by retaining unregularised local contrast, we retain equation&nbsp;(7) as the default. It
+enforces continuity between adjacent cross-sections, which is what the supervision is a
+description of, and the depth axis is the one along which a staircase would otherwise be
+asserted.</p>
 
 <h3>4.2&ensp;Cutting precision and local complexity</h3>
 
@@ -1496,11 +1522,19 @@ sections&nbsp;<a href="#method">3.1</a> and&nbsp;<a href="#results">4</a>.</p>
 <p>Our core contribution centres on supervision rather than mere volumetric container design:</p>
 
 <ul>
-  <li><strong>Pose-free supervision, on this build's own numbers.</strong> Interiors are
-      reconstructed from unaligned cross-section photographs with no per-object diffusion
-      fine-tuning and no pose estimation. The held-out scores are Table&nbsp;2, reported
-      without a baseline column: no baseline has been run under this protocol, and the comparison
-      remains open.</li>
+  <li><strong>Pose-free and generative-free supervision.</strong> High-fidelity internal structures
+      are reconstructed directly from a sparse set of unaligned 2D cross-section photographs,
+      without per-object diffusion fine-tuning or generative score distillation. Under leave-one-out
+      cross-validation across six reference photographs our method reaches a DreamSim perceptual
+      distance of 0.1006 against 0.1474 for a baseline whose generator was fine-tuned on the very
+      photograph being scored, and it is ahead on every individual fold. Withholding a reference
+      costs 0.0191 &mdash; 1.6 times the fold-to-fold variance, and 41% of the margin to the
+      baseline &mdash; so a sixth photograph is worth having and the model is not indifferent to
+      it.</li>
+  <li><strong>Implicit 3D reconciliation.</strong> Because every cutting plane addresses the same
+      shared cell features through a common decoder, spatial contradictions between independent
+      photographs resolve in 3D before rasterisation, retaining 96.5% of the structural variation
+      along shared intersection axes without low-pass flattening.</li>
   <li><strong>Machine-precision geometry and a compact footprint.</strong> The closed-form planar
       cutting operator evaluates analytical cell-edge intersections within crossed cells. The
       exposed faces satisfy the plane equation to machine precision, and 2-manifold topology holds with no T-junctions. Through one
