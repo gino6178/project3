@@ -61,7 +61,13 @@ par = load_params_from_gs(g, P())
 pos0 = par["pos"]
 rot_m = generate_rotation_matrices(torch.tensor(pre["rotation_degree"]), pre["rotation_axis"])
 vc_c = torch.tensor(cam_p["mpm_space_viewpoint_center"]).reshape((1, 3)).cuda()
-up = torch.tensor(cam_p["mpm_space_vertical_upward_axis"]).reshape(3).float().cuda()
+# Every object's conf points CFG at the orange's physics file, so all seven inherit the orange's
+# upward axis.  Four of the released models happen to stand the same way and it is right for them;
+# the apple, the cake and the bread are turned about 90 degrees, and the family called transverse
+# then cuts along the object instead of across it.  UP_AXIS names the axis for those.
+up = torch.tensor([float(x) for x in os.environ["UP_AXIS"].split(",")]
+                  if os.environ.get("UP_AXIS") else
+                  cam_p["mpm_space_vertical_upward_axis"]).reshape(3).float().cuda()
 up = up / up.norm()
 tpos, so, om = transform2origin(pos0)
 tpos = shift2center111(tpos)
@@ -92,16 +98,53 @@ def to_pos_frame(plane):
     return n / s, d / s
 
 
+RADIUS = float(cam_p["init_radius"])
+
+
 def cam_at(az, el):
     return get_camera_view(DEMO, default_camera_index=-1, center_view_world_space=vc,
                            observant_coordinates=oc, show_hint=False,
                            init_azimuthm=az, init_elevation=el,
-                           init_radius=cam_p["init_radius"], move_camera=False,
+                           init_radius=RADIUS, move_camera=False,
                            current_frame=0, delta_a=None, delta_e=None, delta_r=None)
 
 
 def mvp_of(cam):
     return cam.full_proj_transform.detach().cpu().numpy().astype(np.float32)
+
+
+# ---- far enough back that the object is inside the frame ---------------------------------
+# `init_radius` comes from the physics config, and every object's conf names the orange's, so
+# every object is viewed from the distance that suited the orange.  The pomegranate is taller
+# along its axis than that allows: all 17 of its longitudinal cuts reached the frame's edge, so
+# what the loss compared a photograph against was a cut with its base cropped off, at every step
+# of training.  The guard is one-sided -- a radius is only ever increased -- so an object that
+# already fits keeps the cameras it was trained with, to the bit.
+_q = Q[:: max(1, len(Q) // 20000)]
+_qh = np.concatenate([_q, np.ones((len(_q), 1))], 1)
+
+
+def _worst_ndc():
+    """How far outside the frame the object reaches, over the directions cameras are taken from."""
+    w = 0.0
+    for az, el in [(0.0, 90.0), (0.0, -90.0)] + [(45.0 * k, 0.0) for k in range(8)]:
+        cl = _qh @ mvp_of(cam_at(az, el)[0]).astype(np.float64)
+        ndc = cl[:, :2] / cl[:, 3:4]
+        w = max(w, float(np.abs(ndc).max()))
+    return w
+
+
+_r0 = RADIUS
+_fill0 = _fill = _worst_ndc()
+for _ in range(8):
+    if _fill <= 0.92:
+        break
+    RADIUS *= _fill / 0.88          # apparent size goes as 1/distance, so this is one Newton step
+    _fill = _worst_ndc()
+print(f"camera distance: {_r0:.4f}"
+      + (f" -> {RADIUS:.4f}: the object reached {_fill0:.3f} of the frame and now reaches "
+         f"{_fill:.3f}" if RADIUS != _r0 else
+         f": the object reaches {_fill0:.3f} of the frame, so it is left alone"))
 
 
 rec = {}

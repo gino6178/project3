@@ -85,7 +85,7 @@
 </header>
 
 <nav class="toc">
-  <a href="#what">What this is</a><a href="#best">What the arms are worth</a><a href="#sched">The schedule</a><a href="#method">The pipeline</a><a href="#seven7">Seven objects</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#families">Transverse and longitudinal</a><a href="#split">The plane count in full</a><a href="#loss">The objective in full</a><a href="#buys">What it buys</a><a href="#rays">Rays and contact</a><a href="#limits">What it does not do</a><a href="experiments.html">Every experiment &rarr;</a>
+  <a href="#what">What this is</a><a href="#best">What the arms are worth</a><a href="#sched">The schedule</a><a href="#method">The pipeline</a><a href="#seven7">Seven objects</a><a href="#rep">The representation</a><a href="#e2e">End to end</a><a href="#cut">The cut</a><a href="#families">Transverse and longitudinal</a><a href="#setup">How each object is set up</a><a href="#split">The plane count in full</a><a href="#loss">The objective in full</a><a href="#buys">What it buys</a><a href="#rays">Rays and contact</a><a href="#limits">What it does not do</a><a href="experiments.html">Every experiment &rarr;</a>
 </nav>
 
 <h2 id="what">What this is, and what it is not</h2>
@@ -702,6 +702,89 @@ all cut the same material and any of them could be compared against any photogra
 crosses no depth boundary &mdash; it <em>is</em> one depth &mdash; while a longitudinal cut crosses
 every one of them, so anything that varies discontinuously with depth appears as a band across the
 longitudinal face and not at all on the transverse one. Which is what was found, and fixed.</p>
+
+<h2 id="setup">What each object is set up as, all seven at once</h2>
+
+<p class="lead">Three defects went unnoticed for as long as they did because nothing put the seven
+objects' <em>settings</em> side by side. Every one of them was invisible in a score and obvious in a
+picture. This figure is here so that the next one is caught the same way.</p>
+
+<figure>
+  <img src="assets/setup7.jpg" alt="seven objects: cut masks, targets and exteriors under each object's own settings">
+  <figcaption>Left to right: the transverse cut's own mask, the photograph mapped onto it, the
+  outside from the transverse camera, the outside from the longitudinal camera, the longitudinal
+  mask, its target, and the two photographs the row was built from. Nothing here is drawn from a
+  score; every panel is what the pipeline itself sees.</figcaption>
+</figure>
+
+<p>What each column is for. The <strong>two outside views</strong> say whether the polar axis is the
+object's own: the transverse camera looks along the axis, so a solid of revolution should appear
+circular in it and stand upright in the longitudinal one. The <strong>two masks</strong> say whether
+the cut is the shape the family's name claims &mdash; a transverse cut of an apple has no stem in
+it. The <strong>targets beside them</strong> say whether the photograph fits that shape without
+being bent, and the <strong>photographs at the right</strong> are what the fit is judged against.</p>
+
+<h3>The axis, which every object inherited from the orange</h3>
+
+<p>Each object's conf names <code>CFG=config/orange_physics.json</code>, and the polar axis comes
+from that file's <code>mpm_space_vertical_upward_axis</code>. Four of the released models stand the
+way the orange's does and it is right for them. Three do not, and for those the family called
+transverse was cutting <em>along</em> the object.</p>
+
+<p>Which axis an object turns about is measurable without reference to any label: rotate the solid
+about a candidate direction and count how much of it lands back inside itself. The four objects whose
+stored axis was already right are the check &mdash; a method that cannot recover those is not
+evidence about the others.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>best overlap found</th><th>overlap at the stored axis</th>
+<th>angle between them</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>0.965</td><td>0.965</td><td class="win">0.2&deg;</td></tr>
+<tr><td>doughnut</td><td>0.989</td><td>0.992</td><td class="win">0.3&deg;</td></tr>
+<tr><td>pomegranate</td><td>0.961</td><td>0.958</td><td class="win">5.8&deg;</td></tr>
+<tr><td>watermelon</td><td>0.965</td><td>0.964</td><td class="win">5.9&deg;</td></tr>
+<tr><td>apple</td><td>0.945</td><td>0.906</td><td>87.3&deg;</td></tr>
+<tr><td>bread</td><td>0.779</td><td>0.588</td><td>87.8&deg;</td></tr>
+<tr><td>cake</td><td>0.956</td><td>0.746</td><td>89.5&deg;</td></tr>
+</tbody></table></div>
+
+<p>An object that needs its own axis now says so in its own conf, as one line
+(<code>UP_AXIS=0,0,1</code>), and the plane counts follow the shape rather than the label: the cake
+goes from 9 transverse and 17 longitudinal planes to 6 and 20, because along its true axis it is
+short. The bread is the same defect and is not yet corrected.</p>
+
+<h3>The camera distance, which every object also inherited from the orange</h3>
+
+<p><code>init_radius</code> comes from the same shared file. The pomegranate is taller along its axis
+than that distance allows, and the consequence was not cosmetic: <strong>all 17 of its longitudinal
+cuts reached the edge of the frame</strong>, so what the loss compared a photograph against was a cut
+with its base cropped off, at every step of training.</p>
+
+<div class="tw"><table>
+<thead><tr><th>object</th><th>fraction of the frame the object reaches</th><th>camera distance</th></tr></thead>
+<tbody>
+<tr><td>watermelon</td><td>0.435</td><td>7.7640, left alone</td></tr>
+<tr><td>doughnut</td><td>0.643</td><td>3.6187, left alone</td></tr>
+<tr><td>orange</td><td>0.729</td><td>3.6000, left alone</td></tr>
+<tr><td>apple</td><td>0.736</td><td>3.6000, left alone</td></tr>
+<tr><td>bread</td><td>0.736</td><td>3.6000, left alone</td></tr>
+<tr><td>cake</td><td>1.022</td><td>3.6000 &rarr; 4.1826</td></tr>
+<tr><td>pomegranate</td><td>1.359</td><td>3.6000 &rarr; 5.5616</td></tr>
+</tbody></table></div>
+
+<p>The guard is a rule and not a number: the distance is increased until the object is inside the
+frame, and never decreased. So the four objects it does not touch keep the cameras they were trained
+against, byte for byte, and the correction is a repair rather than a new configuration. Measured
+again afterwards, the pomegranate's longitudinal cuts reach the frame edge 0 times out of 17, and
+the tallest fills 0.71 of it.</p>
+
+<h3>The doughnut's skin</h3>
+
+<p>Its state was built from the lattice, which carries no colour, so its shell was flat grey
+&mdash; visible in the figure's two outside columns and nowhere in any number, because the shell is
+pinned in these runs and takes no gradient. Its six-view projection already existed and agrees with
+the lattice cell for cell, so the state is now built from that instead.</p>
 
 <h2 id="split">How the plane count is derived, step by step</h2>
 
