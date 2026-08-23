@@ -188,6 +188,33 @@ cuts through its middle. What decides it is what the schedule does to a solve:</
 touched unevenly &mdash; falls by 27 points. It is the only change measured on this page that moved
 both at once; more steps, a decayed learning rate and a wavelet critic all moved neither.</p>
 
+<figure>
+  <img src="assets/sched_coverage.jpg" alt="what each schedule reaches, at three plane counts">
+  <div class="cap">Every cell shaded by how many of the first N planes touched it; black is a cell
+  no plane reached. <span style="font-size:12.5px">Rows: the fixed schedule &middot; independent
+  draws &middot; the formula. Columns: 26, 100 and 400 planes.</span></div>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>cells that receive any gradient</th><th>26 planes</th><th>100</th><th>400</th><th>most times one cell is touched, at 400</th></tr></thead>
+<tbody>
+<tr><td>the fixed schedule</td><td>32.2%</td><td>32.2%</td><td>32.2%</td><td>167</td></tr>
+<tr><td>drawn at random</td><td>32.6%</td><td>77.9%</td><td>95.6%</td><td>92</td></tr>
+<tr><td>from the formula</td><td class="win">35.5%</td><td class="win">85.6%</td><td class="win">98.3%</td><td class="win">88</td></tr>
+</tbody></table></div>
+
+<p>The first row is the same picture three times: a fixed schedule spends four hundred planes
+re-crossing the third of the object it can reach, touching some cells 167 times while two thirds are
+never touched at all. The formula's advantage over independent draws is visible as evenness rather
+than as extent &mdash; at 26 planes its lines are regularly spaced where the random ones clump, and
+at 400 its busiest cell has been touched 88 times against 92 and 167. That flatness is what shows up
+in the solve.</p>
+
+<p>These percentages are lower than the ones above &mdash; 32.2% here against 54.6% &mdash; because
+they are measured differently, and the stricter measurement is this one: a plane is counted as
+touching a cell only if a gradient actually reaches it, which visibility through the rendered cut
+face can prevent. The earlier figure counts the cells a plane passes through geometrically.</p>
+
 <p>Three constructions were got wrong on the way and are recorded in
 <code>reachrand.py</code> so they are not repeated: a spherical Fibonacci sequence ordered by
 <em>k/N</em> puts its whole prefix at one pole (its first 26 planes reached 0.8% of the interior);
