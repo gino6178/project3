@@ -106,6 +106,16 @@ PL_HLD_V = [(evm[i], torch.as_tensor(evp[i, :3], dtype=torch.float32, device=dev
 
 print(f"\n  {'run':<22}{'shown h':>9}{'shown v':>9}{'unseen h':>10}{'unseen v':>10}{'mean':>8}")
 for r in RUNS:
+    # A run records the cameras it was trained on. Scoring it against a different set is what went
+    # unnoticed for seven objects, so it stops here rather than printing a number for a plane the
+    # model was never given.
+    _e = f"{W}/{r}/run.env"
+    if os.path.exists(_e):
+        _cs = [l.split("=", 1)[1].strip() for l in open(_e) if l.startswith("CAMS_SUFFIX=")]
+        if _cs and _cs[0] != os.environ.get('SF_CAMS', '_v2'):
+            raise SystemExit(f"{r} was trained on cams{_cs[0]} and this is scoring on "
+                             f"cams{os.environ.get('SF_CAMS', '_v2')}. Set SF_CAMS={_cs[0]} or "
+                             f"score a run that used these cameras.")
     if not os.path.exists(f"{W}/{r}/params.pt"):
         print(f"  {r:<22}{'(no params)':>9}")
         continue

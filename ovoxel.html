@@ -860,6 +860,25 @@ as they changed axis and camera distance, so their improvement is a sum of corre
 table cannot apportion it. The measurement that would is one arm per correction, and it has not been
 run.</p>
 
+<h3>What stops it happening again</h3>
+
+<p>Two of these three defects were a setting every object inherited from the orange, and the third
+was a run trained on one plane split and scored on another. None of the three moved a number in a
+way anyone would question, and all three were visible at once in the figure at the top of this
+section. So the figure is on the page, and two things now hold the rest:</p>
+
+<p>A run records the cameras it was given, in <code>run.env</code> beside its weights, and
+<code>scorefull.py</code> reads that file and <strong>stops</strong> rather than scoring a run
+against a camera set it was not trained on:</p>
+
+<pre>s_v2_orange_sp was trained on cams_v2 and this is scoring on cams_bal.
+Set SF_CAMS=_v2 or score a run that used these cameras.</pre>
+
+<p>And the baseline is a script, <code>baseline.sh</code>, not a recipe to be remembered: it names
+the camera set, the training arguments, the scoring and the three figures, and rebuilds all of them.
+What went wrong before was that <code>rs7.sh</code> said one thing and <code>scorefull.py</code>
+said another, with nothing to reconcile them.</p>
+
 <h3>The doughnut's skin</h3>
 
 <p>Its state was built from the lattice, which carries no colour, so its shell was flat grey

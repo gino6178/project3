@@ -59,6 +59,24 @@ if [ ! -f "$W/state_$OBJ.pt" ]; then
     bash "$W/run.sh" "$W/build_state.py" || { echo "$OBJ: state failed"; exit 1; }
 fi
 
+# What this run was given, written where the run is, because the defect this guards against was
+# silent: `rs7.sh` trained every arm with CAMS_SUFFIX= while `scorefull.py` had _bal written into
+# it, so seven objects were trained on one plane split and scored on another for as long as nobody
+# put the two side by side. A run that carries its own camera file cannot be scored against a
+# different one by accident.
+mkdir -p "$W/${TAG:-ov}_$OBJ"
+{
+  echo "OBJ=$OBJ"
+  echo "CAMS=$W/cams_$OBJ$CS.npz"
+  echo "CAMS_SUFFIX=$CS"
+  echo "STATE=$W/state_$OBJ.pt"
+  echo "UP_AXIS=${UP_AXIS:-<inherited from CFG>}"
+  echo "REF_H=$REF_H"
+  echo "REF_V=$REF_V"
+  echo "ARGS=$*"
+  echo "WHEN=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} > "$W/${TAG:-ov}_$OBJ/run.env"
+
 # `env` and not a bare assignment prefix: an assignment that arrives through "$@" has already
 # been through expansion, so the shell reads it as the command word rather than as an assignment
 # and reports it as not found. Anything the caller passes therefore has to be handed to env, and
