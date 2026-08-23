@@ -345,6 +345,32 @@ slice to be defined against. We keep the structured grid and remove the renderin
 the interior instead: discrete occupancy with one feature per cell for the volume, and one
 primitive per cell for what is seen.</p>
 
+<h3>2.2.1&ensp;Why not solid texture synthesis, and why not an implicit field</h3>
+
+<p><strong>Solid texture synthesis</strong> [29] generates a volume from exemplars by matching
+neighbourhood statistics. It has no mechanism for a specific object: the exemplars here are
+photographs of particular cross-sections at particular depths, and the depth ordering is the
+signal &mdash; an orange's segments converge towards the poles. A stationary texture model
+discards that ordering by construction. The measurement that stands in for this is
+equation&nbsp;(7)'s block rule against continuous assignment, where ignoring depth order raises the
+step-to-step jerk between adjacent supervisory bins by an order of magnitude.</p>
+
+<p><strong>A neural implicit field</strong> would remove the lattice and with it the two properties
+the cut operator is built on. First, occupancy is an integer lookup: a cut evaluates
+\(\mathbf{n}_k^\top\mathbf{c}_i + d_k\) on \(N\) cell centres and selects \(K\), which is
+one comparison per cell. An implicit field answers the same question with a forward pass per query
+and no exact boundary, so the polygon of Figure&nbsp;3(b) has no closed form and the plane-equation
+residual of \(8.88\times10^{-16}\) has nothing to be measured against. Second, connected
+components are union-find over face adjacency that the lattice defines for free; an implicit field
+has no adjacency until one is discretised, which reintroduces a grid and its resolution.</p>
+
+<p>The cost of the lattice is measured rather than assumed. Against a dense grid at the same cell
+size the O&#8209;Voxel cut face differs by 0.0253 per pixel, and against a dense grid at equal
+memory &mdash; cells 1.33 times wider, since the sparse structure stores 42.8% occupancy &mdash; by
+0.0350. The dense grid is not far behind on the cut face; what it does not have is the 24%
+surcharge's worth of dual vertices, and the surface those buy is the subject of
+section&nbsp;<a href="#results">4</a>.</p>
+
 <h3>2.3&ensp;Virtual cutting and physical simulation</h3>
 
 <p><strong>What is old here, and what is not.</strong> The machinery of the cut is classical: clipping a cube by a plane into a three-to-six-sided polygon is
@@ -408,10 +434,18 @@ around.</p>
 <h2 id="method">3&ensp;Method</h2>
 
 <figure style="margin:18px 0 30px">
-  <img src="assets/pipeline.png" style="width:100%;border-radius:4px"
-       alt="a shell, filled, its surface pinned, and the cross-section photographs that write the interior">
-  <figcaption><span class="fnum">Figure 1</span><br>One object through the whole method: the two routes, the
-  photographs that supervise the interior, and what a cut produces.</figcaption>
+  <img src="assets/pipestates.jpg?v=s_v2" style="width:100%;border-radius:4px"
+       alt="the pipeline as four states of the orange's own arrays">
+  <figcaption><span class="fnum">Figure 1</span><br><strong>The pipeline as four states of the
+  orange's arrays, one slab thick.</strong>
+  <strong>(a)</strong> the released model's points, the only input.
+  <strong>(b)</strong> the coarse occupancy after close-and-fill, \(h_c = 0.00784\), 770,182 cells
+  \(C_i\); this is what a cut is evaluated against.
+  <strong>(c)</strong> the skin at \(h_f = h_c/2\), 900,556 dual vertices.
+  <strong>(d)</strong> the distribution of \(\mathbf{u}_v \in [0,1]^3\), where each dual vertex
+  sits inside its own voxel, as a 2D histogram over two axes. A representation that placed vertices
+  on cell boundaries would put all mass at the edges; a mid-point rule would put it all at the
+  centre. Neither is what the optimiser produces.</figcaption>
 </figure>
 
 <p>We decouple the surface from the interior. The visible outer hull is carried by a flexible dual
@@ -1301,6 +1335,21 @@ Proposition&nbsp;2 permits: \(N\) enters through the adjacency array and the com
 which are allocated over every leaf. Alignment runs on the host and is the larger of the two costs
 at this resolution.</p>
 
+<figure style="margin:18px 0 26px">
+  <img src="assets/coverage.jpg?v=s_v2" style="width:100%;max-width:900px;border-radius:4px"
+       alt="how many supervised planes reach each cell, two slabs, viridis with colorbar">
+  <figcaption><span class="fnum">Figure 9</span><br><strong>How many supervised planes reach each
+  cell of the orange, counted over 40 iterations of the schedule with the jitter of
+  equation&nbsp;(8).</strong> <strong>Left</strong>: a slab across the polar axis, in which the
+  longitudinal family appears as radial spokes &mdash; one per plane, and the cells between two
+  spokes receive gradient only where a jittered plane reaches them. <strong>Right</strong>: a slab
+  along the axis, in which the transverse family appears as bands and the caps at top and bottom
+  fall outside the supervised depth range entirely. Colour is the count, viridis, clipped at the
+  99th percentile of 90 with a maximum of 492. Over the whole object 94.4% of cells are reached at
+  least once and 43,512 never are; the median cell is reached 9 times and the busiest 492, a ratio
+  of 55.</figcaption>
+</figure>
+
 <h3 id="stripes">4.5&ensp;The stripe on unsupervised longitudinal planes: thirteen arms, and what a repeat is worth</h3>
 
 <p class="lead">A longitudinal cut no photograph reached carries a radial stripe. It is plainly
@@ -1361,8 +1410,9 @@ planes have a target that is not constant, each flipping between two photographs
 200 steps, independently of its neighbours. But giving <em>every</em> plane the same photograph
 leaves the seam at 1.32, inside the repeat's spread. Content disagreement is not the cause.</p>
 
-<p>The second was that the seventeen planes always occupy the same seventeen meridians, so the
-cells near them are updated every step and the cells between them only through interpolation.
+<p>The second is visible in Figure&nbsp;6: the seventeen planes occupy seventeen meridians, the
+cells on them are updated at nearly every step and the cells between them only when a jittered plane
+reaches across. The median cell is reached 9 times over 40 iterations and the busiest 492.
 Turning the planes to a new azimuth each step should then spread the gradient and remove the
 periodicity. It takes the seam to 2.37, the worst of any arm. It does do something the others do
 not &mdash; the longitudinal held-out column falls to 0.1360, the best measured anywhere, and the
@@ -1388,7 +1438,7 @@ the seven side by side, and no number moved in a way that would have prompted a 
 
 <figure style="margin:16px 0 26px">
   <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the outside from both cameras">
-  <figcaption><span class="fnum">Figure 9</span><br>What supervises each cut, for all seven objects
+  <figcaption><span class="fnum">Figure 10</span><br>What supervises each cut, for all seven objects
   at once. Left to right: the transverse cut's own mask, the photograph mapped onto it, the outside
   from the transverse camera, the outside from the longitudinal camera, the longitudinal mask, its
   target, and the two photographs the row was built from. Every panel is what the pipeline itself
