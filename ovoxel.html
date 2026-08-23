@@ -399,38 +399,46 @@ the arm was then scored against. Every number in the next section is on the test
 
 <h2 id="seven7">What the pipeline produces, on seven objects</h2>
 
-<p>The same program on all seven, with its own control on each: the identical run with the prior
-switched off. DreamSim against each object's own photographs, on the test half.</p>
+<p>Every arm is the same program with one thing changed, scored by the same script on each object's
+own held-out photographs &mdash; the ones no run has opened. Lower is better; the best in each row
+is marked.</p>
 
 <div class="tw"><table>
-<thead><tr><th rowspan="2">object</th><th rowspan="2">split</th><th rowspan="2">photos<br>h / v</th>
-<th colspan="3">transverse</th><th colspan="3">longitudinal</th><th colspan="2">no gradient</th></tr>
-<tr><th>plain</th><th>+prior</th><th>+sampled</th><th>plain</th><th>+prior</th><th>+sampled</th>
-<th>plain</th><th>+prior</th></tr></thead>
+<thead><tr><th rowspan="2">object</th><th colspan="2">pixel loss alone</th><th colspan="2">+ the field prior</th>
+<th colspan="2">+ drawing a photograph</th><th colspan="2">+ critic, unphotographed planes</th></tr>
+<tr><th>trans.</th><th>long.</th><th>trans.</th><th>long.</th><th>trans.</th><th>long.</th><th>trans.</th><th>long.</th></tr></thead>
 <tbody>
-<tr><td>cake</td><td>15/11</td><td>2 / 2</td><td>0.4560</td><td>0.4560</td><td class="win">0.3692</td><td>0.4796</td><td>0.4853</td><td class="win">0.4223</td><td>6,781</td><td class="win">1</td></tr>
-<tr><td>pomegranate</td><td>14/12</td><td>2 / 2</td><td>0.2488</td><td>0.2543</td><td class="win">0.2046</td><td>0.4864</td><td>0.4878</td><td class="win">0.4263</td><td>21,491</td><td class="win">0</td></tr>
-<tr><td>loaf</td><td>11/15</td><td>3 / 3</td><td>0.3965</td><td>0.3884</td><td class="win">0.3691</td><td>0.4553</td><td>0.4415</td><td class="win">0.4167</td><td>37,387</td><td class="win">0</td></tr>
-<tr><td>orange</td><td>14/12</td><td>3 / 3</td><td>0.0796</td><td>0.0781</td><td class="win">0.0736</td><td>0.2049</td><td class="win">0.1923</td><td>0.2018</td><td>36,977</td><td class="win">1</td></tr>
-<tr><td>watermelon</td><td>13/13</td><td>10 / 12</td><td>0.1638</td><td>0.1651</td><td class="win">0.1594</td><td>0.2052</td><td>0.2008</td><td class="win">0.1910</td><td>40,524</td><td class="win">0</td></tr>
-<tr><td>apple</td><td>14/12</td><td>2 / 2</td><td class="win">0.2513</td><td>0.2501</td><td>0.2631</td><td>0.3389</td><td class="win">0.3318</td><td>0.3493</td><td>41,939</td><td class="win">0</td></tr>
-<tr><td>doughnut</td><td>4/22</td><td>1 / 1</td><td class="win">0.1532</td><td>0.1531</td><td>0.1546</td><td class="win">0.5334</td><td>0.5367</td><td>0.5378</td><td>27,986</td><td class="win">0</td></tr>
+<tr><td>orange</td><td>0.1099</td><td>0.2031</td><td>0.1085</td><td class="win">0.1875</td><td class="win">0.1009</td><td>0.1969</td><td>0.1090</td><td>0.2008</td></tr>
+<tr><td>watermelon</td><td>0.1676</td><td>0.2235</td><td>0.1678</td><td>0.2207</td><td class="win">0.1618</td><td class="win">0.2078</td><td>0.1780</td><td>0.2427</td></tr>
+<tr><td>apple</td><td>0.3126</td><td>0.3423</td><td>0.3107</td><td class="win">0.3329</td><td>0.3106</td><td>0.3619</td><td class="win">0.3071</td><td>0.3576</td></tr>
+<tr><td>loaf</td><td>0.4716</td><td>0.4817</td><td>0.4632</td><td>0.4710</td><td>0.4415</td><td>0.4464</td><td class="win">0.4306</td><td class="win">0.4414</td></tr>
+<tr><td>cake</td><td>0.5460</td><td>0.5774</td><td>0.5414</td><td>0.5776</td><td class="win">0.5148</td><td class="win">0.5588</td><td>0.5532</td><td>0.5853</td></tr>
+<tr><td>pomegranate</td><td>0.3056</td><td>0.4262</td><td>0.3064</td><td>0.4281</td><td class="win">0.2672</td><td class="win">0.3791</td><td>0.3033</td><td>0.4275</td></tr>
+<tr><td>doughnut</td><td colspan="8">one photograph per family, so it has no held-out split and cannot be scored</td></tr>
 </tbody></table></div>
 
-<p>Sorted by how many photographs each object has, because that turns out to order the result.
-<strong>Drawing a photograph instead of averaging two improves five objects of seven, and by several
-times what the prior manages</strong> &mdash; the cake by 19.0% on the transverse column and 11.9% on
-the longitudinal, the pomegranate by 17.8% and 12.4%, on both of which the prior had done nothing at
-all. The doughnut is the control nobody arranged: it has one photograph per family, so there is
-nothing to draw, and its numbers move by 0.001. That the effect vanishes exactly where the mechanism
-cannot operate is the best evidence that it is the mechanism.</p>
+<p><strong>Drawing a photograph instead of averaging two wins the transverse family on every object
+that can be scored</strong> &mdash; six of six, with the apple a tie &mdash; and the longitudinal
+family on four of six, the other two going to the field prior. The pomegranate gains most, 12.6% and
+11.1%. The critic wins two columns, both on the loaf, and loses on everything else.</p>
 
-<p>Two objects are worse, the apple and the doughnut, and the apple is not explained by photograph
-count &mdash; it has two, like the cake and the pomegranate, which gain most. The orange gains 7.5%
-on the transverse column and loses 4.9% on the longitudinal. So this is not uniform either, and the
-claim is five of seven rather than all of them.</p>
+<div class="note">
+<strong>How much of a difference is a difference.</strong> Two of these arms are the same
+configuration run in different batches &mdash; the pixel-loss column here and the control of the
+critic batch. They differ by 1.3% on the orange, 0.4% on the watermelon and 0.2% on the apple, which
+is the noise floor of this comparison. The critic's margins are inside it; drawing a photograph is
+several times outside it.
+</div>
 
 <h3>Which half of it works</h3>
+
+<div class="note">
+<strong>The three numbers below are from an earlier batch and an earlier held-out split.</strong>
+The same arm reads 0.0736 there and 0.1009 in the table above, so they are comparable with each
+other and not with anything above them. They are kept because the question they answer &mdash;
+whether the gain comes from the randomness or from the depth assignment &mdash; was only ever asked
+in that batch.
+</div>
 
 <p>Drawing rather than averaging is two changes at once: the target stops being a mean, and it
 becomes random. They can be separated by drawing from the whole family instead of from the two
