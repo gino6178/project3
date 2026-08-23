@@ -173,21 +173,25 @@ photographs</strong>, without generative priors, per-object fine-tuning or camer
 </p>
 
 <p class="lead">
-Through one codec the representation is <strong>10.0&nbsp;MiB</strong> against 52.0 and 25.6 for two
-Gaussian baselines on the same object, of which 2.0&nbsp;MiB is the dual grid the splatted pipeline does not store
-&mdash; a 25% storage overhead that affords sub-voxel surface accuracy. A cut face at
-2048&nbsp;px leaves <strong>no pixel unpainted</strong> on any object or family measured, because
-there are no primitives to fall below a pixel.
+Supervision is cross-sections of <em>different specimens</em> of the same kind, unaligned and
+without pose: what transfers is the material's structure, not a registration. A cut is analytic
+&mdash; the intersection of a plane with the lattice &mdash; so the exposed face carries no
+primitive that can fall below a pixel, and at 2048&nbsp;px it leaves <strong>no pixel
+unpainted</strong> on any object or family measured. One cut and its rasterisation cost 8.6 to
+16.5&nbsp;ms. Through one codec the representation is <strong>10.0&nbsp;MiB</strong> against 52.0
+and 25.6 for two Gaussian baselines on the same object, of which 2.0 is the dual grid: a 25%
+overhead affording sub-voxel surface accuracy.
 </p>
 
 <p class="lead">
 Perceptual distance is reported with supervised and held-out planes separated, a protocol that
 exposes a structural anisotropy between the two cross-section families: transverse planes
-generalise to unobserved depths at no cost, longitudinal planes do not. We give the sampling
-argument that accounts for it &mdash; the longitudinal family's angular sampling operator is a
-comb of \(P\) teeth and leaves the frequency \(m=P\) in its null space &mdash; and a systematic
-ablation of eleven interventions that separates those which act on the sampling from those which
-act only on the field.
+generalise to unobserved depths at no cost, longitudinal planes do not. We test a sampling argument that
+would account for it &mdash; the longitudinal family's angular operator is a comb of \(P\) teeth,
+predicting a spectral peak at \(m=P\) &mdash; and reject it: the local prominence at \(m=P\) is
+1.00 and 1.12 on the two objects with enough photographs to measure. Eleven interventions are
+ablated against a seed repeat; six do nothing measurable, three trade one column for another, and
+one fails on every column.
 </p>
 
 
@@ -209,9 +213,9 @@ two main paradigms:</p>
 
 <ul>
   <li><strong>Generative score distillation.</strong> Distilling 2D diffusion priors averages
-      gradients over diffusion timesteps, acting as an aggressive low-pass filter that washes out
-      delicate internal membranes. Recovering these details requires expensive per-object
-      fine-tuning.</li>
+      gradients over diffusion timesteps, which low-pass filters the target and attenuates
+      membrane-scale structure. Fine-tuning the generator on the object's own photographs restores
+      it, at the cost of a per-object training stage.</li>
   <li><strong>Volumetric splatting.</strong> Relying on continuous 3D Gaussians creates an
       inherent trade-off between coverage and boundary sharpness. This frequently leaves unpainted
       void artifacts (up to 8.29% unpainted) and lacks explicit geometry for well-defined planar
@@ -233,7 +237,7 @@ high-fidelity 3D interiors directly from sparse, unaligned 2D cross-section phot
       extraction.</li>
 </ul>
 
-<h3>1.1&ensp;What is taken and what is contributed</h3>
+<h3>1.1&ensp;Technical background and scope</h3>
 
 <div class="tw"><table>
 <thead><tr><th></th><th>component</th><th>source</th></tr></thead>
@@ -252,7 +256,7 @@ high-fidelity 3D interiors directly from sparse, unaligned 2D cross-section phot
     the plane-distribution expectation of equation&nbsp;(8)</td><td>&mdash;</td></tr>
 </tbody></table></div>
 
-<h3>1.1&ensp;Key contributions</h3>
+<h3>1.2&ensp;Primary contributions</h3>
 
 <ul>
   <li><strong>Decoupled volumetric representation.</strong> An occupancy lattice decoupled from
@@ -283,21 +287,26 @@ high-fidelity 3D interiors directly from sparse, unaligned 2D cross-section phot
 
 <h3>2.1&ensp;Interior generation from 2D generative priors</h3>
 
-<p><strong>Score distillation and what it filters.</strong> Optimising a radiance field or a
+<p><strong>Score distillation, and the regime it is designed for.</strong> Optimising a radiance field or a
 Gaussian set against a pre-trained diffusion model through score distillation [27] averages the
-score over timesteps drawn uniformly from its range, which acts as a low-pass filter on the target.
-We measured the consequence for cross-sections: under either prompt and at any run length the
-distilled target for an orange is a smooth disc with a single bright centre, and the membranes,
-fibres and seeds that a section consists of are absent. Fine-tuning the diffusion model on the
+score over timesteps drawn uniformly from its range, which low-pass filters the target. That is
+correct behaviour for the problem it addresses: where no photograph of the interior exists, a
+plausible interior has to be imagined, and a prior's smoothness is what makes the result plausible
+rather than arbitrary. It is not the behaviour wanted where photographs do exist. Measured on
+cross-sections: under either prompt and at any run length the distilled target for an orange is a
+smooth disc with a single bright centre, without the membranes, fibres and seeds a section consists
+of. Fine-tuning the diffusion model on the
 object's own cross-section photographs restores them, and that is what the closest prior work does;
 the checkpoints involved, here and there, are latent diffusion models [26].</p>
 
 <p><strong>Fine-tuned interior generators.</strong> FruitNinja [3] supervises an object's interior with
 depth-conditioned diffusion on cross-sections and stores it as opaque atomic Gaussians, the
-diffusion model having first been fine-tuned on photographs of the object being reconstructed. We
-take the same photographs and make them the target, so the supervision is images of the object
-rather than a model of images of the object; the interior generator, which is the part that
-paper contributes, is then not needed at all. What we contribute is what holds the result. The
+diffusion model having first been fine-tuned on photographs of the object being reconstructed. The
+two methods address different data regimes. Where the interior must be imagined, a fine-tuned
+generator is the mechanism that makes it plausible. Where photographs of cross-sections exist, they
+can be the target directly, and the question becomes what representation holds them: this work
+supervises images of the object rather than a model of images of the object, and contributes the
+lattice, the cut and the alignment that make that supervision well-posed. The
 lattice it is quantised onto, and the baseline every number here is
 measured against, is a Gaussian model quantised as it stands; the representations it descends from
 are Gaussian splatting [1] and radiance fields [2]. Solid texture synthesis [29] asked the
@@ -1240,7 +1249,7 @@ at this resolution.</p>
 <figure style="margin:18px 0 26px">
   <img src="assets/coverage.jpg?v=s_v2" style="width:100%;max-width:900px;border-radius:4px"
        alt="how many supervised planes reach each cell, two slabs, viridis with colorbar">
-  <figcaption><span class="fnum">Figure 9</span><br><strong>How many supervised planes reach each
+  <figcaption><span class="fnum">Figure 7</span><br><strong>How many supervised planes reach each
   cell of the orange, counted over 40 iterations of the schedule with the jitter of
   equation&nbsp;(8).</strong> <strong>Left</strong>: a slab across the polar axis, in which the
   longitudinal family appears as radial spokes &mdash; one per plane, and the cells between two
@@ -1265,69 +1274,43 @@ claim is made about absolute material parameters. What is measured here is the g
 contact normals from the dual grid deviate from radial by 36.0&deg; at the median against 49.0&deg;
 for a cube collider at the same cell size.</p>
 
-<h3 id="stripes">4.5&ensp;Structural anisotropy and generalisation analysis</h3>
+<h3 id="stripes">4.5&ensp;Structural anisotropy: a measurement that does not survive its own test</h3>
 
-<p class="lead">A longitudinal cut at an unobserved azimuth carries a radial stripe at the
-frequency of the plane count. This section gives the sampling argument that predicts it, then
-ablates the two families of remedy it implies.</p>
+<p class="lead">Held-out longitudinal cuts carry a visible radial striping (Figure&nbsp;1, the loaf
+and the cake most clearly). This section reports an attempt to quantify it, the ablation that
+attempt ranked, and the test that invalidates the quantity.</p>
 
-<p><strong>The two families sample different domains.</strong> Write the interior field on a
-transverse plane at height \(z\) in polar coordinates about the axis,
-\(F_z(r,\theta)\). The transverse family observes \(F_z\) on a set of heights, each observation
-complete in \((r,\theta)\). The longitudinal family observes, for every \(z\) and \(r\), only
-the \(P\) azimuths \(\theta_p = p\pi/P\) its planes occupy. In the angular coordinate its
-sampling operator is a Dirac comb,</p>
+<p><strong>The hypothesis.</strong> The longitudinal family observes the field on a transverse
+plane, written \(F_z(r,\theta)\), at only the \(P\) azimuths its planes occupy. Its angular
+sampling operator is a comb, \(\mathrm{III}_P(\theta)=\sum_{p}\delta(\theta - p\pi/P)\), whose
+transform is supported on multiples of \(2P\); content above \(m=P\) aliases and \(m=P\) itself
+is unconstrained. This predicts a spectral peak at \(m=P\) in a transverse render, and a
+frequency-domain signature the ablation could be ranked by.</p>
 
-<div class="eq"><div class="eqbody">
-\[ \mathrm{III}_P(\theta) = \sum_{p=0}^{P-1} \delta\!\left(\theta - \tfrac{p\pi}{P}\right),
-   \qquad \widehat{\mathrm{III}_P}(m) = \tfrac{P}{\pi}\sum_{q\in\mathbb{Z}}
-   \delta\!\left(m - 2qP\right), \]
-</div></div>
+<figure style="margin:16px 0 26px">
+  <img src="assets/spectrum.jpg?v=s_v2" style="width:100%;border-radius:4px"
+       alt="angular power spectrum of transverse renders, with the plane count marked">
+  <figcaption><span class="fnum">Figure 8</span><br><strong>Angular power of transverse renders,
+  normalised by the median, log scale.</strong> Resampled in polar coordinates about the axis and
+  averaged over radius and over every supervised depth. The dashed line is \(m=P\), the
+  longitudinal plane count: 17 on the orange, 18 on the watermelon. <strong>There is no peak
+  there.</strong> The spectrum falls monotonically from low \(m\) and crosses the median near
+  \(m\approx25\), so any \(m\) below the crossing exceeds the median whether or not it is
+  distinguished.</figcaption>
+</figure>
 
-<p>so any angular content of \(F_z\) above \(m = P\) folds onto content below it, and the
-reconstruction is free in the null space of the sampling — free, in particular, at \(m = P\)
-itself. The stripe is that alias, and its frequency is a prediction rather than an observation:
-measured on transverse renders, the angular power at \(m = P\) is 1.39 times the median on the
-orange at \(P = 17\) and 1.69 on the watermelon at \(P = 18\), against a strongest component of
-22.6 at \(m = 2\), which is the silhouette.</p>
+<p><strong>The test.</strong> Power at \(m=P\) against the <em>global</em> median is
+1.37&times; on the orange and 1.76&times; on the watermelon. Against a <em>local</em> baseline
+&mdash; the median of \(m \in [P-6, P+6]\) excluding \(P\) &mdash; it is <strong>1.00&times;
+and 1.12&times;</strong>. The most prominent frequency in \(7 \le m \le 54\) is \(m=33\) at
+1.78&times; on the orange and \(m=11\) at 1.23&times; on the watermelon, neither equal to \(P\)
+nor to a multiple of it. The predicted signature is absent, and the global-median statistic that
+appeared to detect it is measuring where a decaying spectrum happens to sit.</p>
 
-<p>The geometry of these objects makes the asymmetry worse rather than incidental. A fruit is
-close to a solid of revolution: \(F_z(r,\theta)\) has most of its energy at low angular
-frequency, so a transverse photograph is nearly determined by its radial profile and two such
-photographs at neighbouring depths interpolate well. The structure that is <em>not</em>
-rotationally symmetric &mdash; segment walls, a seed ring, the pith &mdash; lives at angular
-frequencies of the same order as \(P\), which is exactly the band the longitudinal sampling
-aliases. The transverse family therefore inherits an easy problem and the longitudinal family the
-hard remainder, and the split is a property of the objects and the acquisition rather than of
-either family's optimisation.</p>
-
-<p>The transverse family has no equivalent null space in \((r,\theta)\); it is under-constrained
-in \(z\) alone, where the photographs are ordered and equation&nbsp;(7) interpolates. This is the
-asymmetry, and it is a property of the acquisition, not of the representation: no interpolation
-scheme, prior or decoder recovers content that the sampling operator annihilates. Two remedies are
-admissible &mdash; raise \(P\), or band-limit \(F_z\) in \(\theta\) &mdash; and the ablation
-below tests both, alongside the field- and loss-side changes that the argument predicts will
-fail.</p>
-
-<p><strong>The two sets of longitudinal planes are not azimuth-matched, and this bounds what
-the gap can be read as.</strong> Measured as distance from the object's centre in coarse cells, the
-supervised longitudinal planes span 1.84&ndash;2.92 on the orange and 1.93&ndash;3.85 on the
-watermelon; the held-out ones span 2.22&ndash;7.73 and 2.43&ndash;8.37, and on the orange they cover
-55.6&deg; of azimuth against the supervised set's 169.4&deg;. Half the held-out planes sit in a band
-no supervised plane occupies. The +0.0962 therefore confounds azimuth with offset, and an
-offset-matched split would be needed to separate them. The arms below were aimed at the azimuth
-reading.</p>
-
-<p><strong>The measure.</strong> Resample a transverse render in polar coordinates about the axis
-and take the power spectrum around the angle. A seam between the wedges each longitudinal plane
-paints would appear at exactly the number of longitudinal planes; the number quoted is that
-frequency's power against the median, so 1.0 is no peak. On the orange the strongest angular
-component is frequency 2 at 22.6&times; the median, which is the object's own silhouette and not a
-seam.</p>
-
-<p><strong>The size of a repeat.</strong> The same settings at a different seed give 1.44 against
-1.39, and the held-out longitudinal column 0.1777 against 0.1881. Every difference below that is
-not a result.</p>
+<p><strong>Consequence for the ablation.</strong> The eleven interventions below were ranked by that
+statistic, so their ordering by it carries no information about the striping. Their perceptual
+columns remain valid and are the basis of what follows; the seam column is retained only because
+removing it would hide what the ranking was made on.</p>
 
 <div class="tw"><p class="tnum">Table 7</p><table>
 <thead><tr><th>arm</th><th>what it changes</th><th>seam</th><th>shown h</th><th>shown v</th>
@@ -1348,48 +1331,33 @@ not a result.</p>
 <tr><td>azimuth jitter + thin band</td><td>both of the above</td><td>2.02</td><td>0.1718</td><td>0.1219</td><td>0.1806</td><td>0.1381</td><td>0.1531</td></tr>
 </tbody></table></div>
 
-<p><strong>The ablation splits along the prediction.</strong> Eight arms change the field's
-interpolation, its regularisation, its decoder or the loss. None alters the sampling operator, so by
-the argument above none can recover annihilated content, and none does: TV isotropic 1.39,
-Laplacian 1.42, TV&nbsp;&times;4 1.43, low-discrepancy schedule 1.47, continuous blend 1.52, every
-one inside the 1.39&ndash;1.44 spread of a seed repeat. The MLP-in-field arm reaches 1.95 and costs
-72% on the supervised longitudinal column: one smooth function over all sample points band-limits
-\((r,z)\) as well as \(\theta\), discarding content the photographs do constrain.</p>
+<p><strong>Read on the perceptual columns, against a seed repeat.</strong> The same settings
+at a different seed give 0.1242 / 0.0933 / 0.1094 / 0.1777 against 0.1238 / 0.0919 / 0.1046 /
+0.1881, so a column difference below about 0.010 is not a result. On that basis: TV isotropic, the
+Laplacian, TV&nbsp;&times;4, the low-discrepancy schedule, the continuous blend and one photograph
+for every azimuth all sit inside the repeat on every column. Six of eleven interventions do nothing
+measurable.</p>
 
-<p>Two arms act on the sampling. Cubic B-spline interpolation band-limits the reconstruction
-without band-limiting the supervision, and is the only change to leave the spread on the correct
-side: 1.16, with the supervised longitudinal score improving from 0.0919 to 0.0858. Azimuth jitter
-replaces the comb by a continuous distribution, raising the effective \(P\); the held-out
-longitudinal column falls to 0.1360, the best measured anywhere, and the supervised-to-held-out
-longitudinal gap from +0.0962 to +0.0185. Its cost is that a photograph is then compared against a
-plane it was not taken at, and the transverse column collapses from 0.1046 to 0.1790.</p>
+<p>Three move a column beyond it. <strong>Cubic B-spline interpolation</strong> improves the
+supervised longitudinal column to 0.0858, the best of any arm, and costs 0.0122 on the held-out
+longitudinal column &mdash; a trade at the edge of the repeat's spread. <strong>Integrating the cut
+over a 2-cell band</strong> improves the held-out longitudinal column to 0.1573 and costs 0.0235
+and 0.0344 on the two supervised columns: it narrows the supervised-to-held-out gap by blurring
+both. <strong>Azimuth jitter</strong> takes the held-out longitudinal column to 0.1360, the best
+measured anywhere, and the supervised-to-held-out longitudinal gap from +0.0962 to +0.0185, at the
+cost of the transverse columns, which fall from 0.1238 and 0.1046 to 0.1828 and 0.1790.</p>
 
-<p><strong>Two hypotheses were tested directly and both failed.</strong> The first was that
-neighbouring azimuths are painted from different photographs and the field cannot satisfy both.
-A direct count of the data path supports the premise &mdash; 16 of the orange's 17 longitudinal
-planes have a target that is not constant, each flipping between two photographs tens of times over
-200 steps, independently of its neighbours. But giving <em>every</em> plane the same photograph
-leaves the seam at 1.32, inside the repeat's spread. Content disagreement is not the cause.</p>
+<p><strong>The one arm that fails on every column</strong> is the MLP inside the field: 0.1585 on
+the supervised longitudinal column against 0.0919, a 72% loss. A single smooth function serving
+every sample point cannot fit the planes that do have photographs.</p>
 
-<p>The second is visible in Figure&nbsp;6: the seventeen planes occupy seventeen meridians, the
-cells on them are updated at nearly every step and the cells between them only when a jittered plane
-reaches across. The median cell is reached 9 times over 40 iterations and the busiest 492.
-Turning the planes to a new azimuth each step should then spread the gradient and remove the
-periodicity. It takes the seam to 2.37, the worst of any arm. It does do something the others do
-not &mdash; the longitudinal held-out column falls to 0.1360, the best measured anywhere, and the
-gap between supervised and unsupervised longitudinal planes falls from +0.0962 to +0.0185 &mdash;
-but the transverse family collapses with it, from 0.1046 to 0.1790.</p>
-
-<p>On this arm the two measures move in opposite directions, which bounds what either can be
-read as. Angular power is computed on a transverse render, and this arm's transverse renders are
-much worse; the measure is not invariant to that, so its 2.37 is not separable from the degradation
-that produced it.</p>
-
-<p>Thirteen arms treated the field's interpolation, its regularisation, its decoder, the
-schedule, the thickness of the supervision and the assignment of photographs. One moved the stripe
-beyond the spread of a repeat and none removed it. Given the offset confound above, the hypothesis
-these were aimed at is not the one the evidence now favours, and an offset-matched evaluation split
-is the measurement that would settle it.</p>
+<p><strong>What the split is confounded by.</strong> The two sets of longitudinal planes are not
+azimuth-matched. Distance from the object's centre in coarse cells: supervised 1.84&ndash;2.92 on
+the orange and 1.93&ndash;3.85 on the watermelon, held out 2.22&ndash;7.73 and 2.43&ndash;8.37; the
+orange's held-out set covers 55.6&deg; of azimuth against the supervised set's 169.4&deg;. Half the
+held-out planes sit in a band no supervised plane occupies, so +0.0962 mixes an azimuth effect with
+an offset effect. An offset-matched split separates them and has not been run. Azimuth jitter's
+result is consistent with either reading, which is why it is reported and not concluded from.</p>
 
 <h3 id="setup-audit">4.6&ensp;Diagnostic audit and failure-mode analysis</h3>
 
@@ -1399,7 +1367,7 @@ the seven side by side, and no number moved in a way that would have prompted a 
 
 <figure style="margin:16px 0 26px">
   <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the outside from both cameras">
-  <figcaption><span class="fnum">Figure 10</span><br>What supervises each cut, for all seven objects
+  <figcaption><span class="fnum">Figure 9</span><br>What supervises each cut, for all seven objects
   at once. Left to right: the transverse cut's own mask, the photograph mapped onto it, the outside
   from the transverse camera, the outside from the longitudinal camera, the longitudinal mask, its
   target, and the two photographs the row was built from. Every panel is what the pipeline itself
