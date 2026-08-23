@@ -405,7 +405,10 @@ the arm was then scored against. Every number in the next section is on the test
 
 <h2 id="seven7">What the pipeline produces, on seven objects</h2>
 
-<p>Every arm is the same program with one thing changed, and each is scored twice by one script: at
+<p>Each arm adds one thing to the one before it, not to the baseline: the third column is the field
+prior <em>and</em> drawing a photograph, since that is how it was run
+(<code>SEC_TV=0.1 SEC_TV_PERP=4 REF_SAMPLE=1</code>). The fourth adds the critic to the pixel loss
+alone. Each is scored twice by one script: at
 the planes its own photographs were taken at, against those photographs, and at the held-out cuts,
 against the photographs no run has opened. Both halves are needed, because an arm can win the
 held-out column by fitting its own supervision loosely. Lower is better; the best in each column is
@@ -417,37 +420,37 @@ marked, and the mean is over the four.</p>
 <tbody>
 <tr><td rowspan="4">orange</td><td>pixel loss alone</td><td>0.1149</td><td>0.1908</td><td>0.1116</td><td>0.2138</td><td>0.1578</td></tr>
 <tr><td>+ field prior</td><td>0.1135</td><td class="win">0.1813</td><td>0.1095</td><td class="win">0.2003</td><td>0.1511</td></tr>
-<tr><td>+ drawing a photograph</td><td class="win">0.1109</td><td>0.1833</td><td class="win">0.1007</td><td>0.2049</td><td class="win">0.1499</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td class="win">0.1109</td><td>0.1833</td><td class="win">0.1007</td><td>0.2049</td><td class="win">0.1499</td></tr>
 <tr><td>+ critic, unphotographed</td><td>0.1126</td><td>0.1909</td><td>0.1111</td><td>0.2088</td><td>0.1559</td></tr>
 
 <tr><td rowspan="4">watermelon</td><td>pixel loss alone</td><td>0.1916</td><td>0.2121</td><td>0.1679</td><td>0.2252</td><td>0.1992</td></tr>
 <tr><td>+ field prior</td><td>0.1922</td><td>0.2084</td><td>0.1680</td><td>0.2234</td><td>0.1980</td></tr>
-<tr><td>+ drawing a photograph</td><td class="win">0.1873</td><td class="win">0.2014</td><td class="win">0.1639</td><td class="win">0.2137</td><td class="win">0.1916</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td class="win">0.1873</td><td class="win">0.2014</td><td class="win">0.1639</td><td class="win">0.2137</td><td class="win">0.1916</td></tr>
 <tr><td>+ critic, unphotographed</td><td>0.1993</td><td>0.2297</td><td>0.1774</td><td>0.2427</td><td>0.2123</td></tr>
 
 <tr><td rowspan="4">apple</td><td>pixel loss alone</td><td>0.2753</td><td>0.3300</td><td>0.3195</td><td>0.3629</td><td>0.3219</td></tr>
 <tr><td>+ field prior</td><td>0.2747</td><td>0.3229</td><td>0.3164</td><td class="win">0.3487</td><td class="win">0.3157</td></tr>
-<tr><td>+ drawing a photograph</td><td>0.2833</td><td class="win">0.3209</td><td>0.3158</td><td>0.3703</td><td>0.3226</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td>0.2833</td><td class="win">0.3209</td><td>0.3158</td><td>0.3703</td><td>0.3226</td></tr>
 <tr><td>+ critic, unphotographed</td><td class="win">0.2705</td><td>0.3489</td><td class="win">0.3133</td><td>0.3747</td><td>0.3268</td></tr>
 
 <tr><td rowspan="4">loaf</td><td>pixel loss alone</td><td>0.4264</td><td>0.3890</td><td>0.4689</td><td>0.4637</td><td>0.4370</td></tr>
 <tr><td>+ field prior</td><td>0.4202</td><td>0.3777</td><td>0.4612</td><td>0.4516</td><td>0.4277</td></tr>
-<tr><td>+ drawing a photograph</td><td>0.4034</td><td class="win">0.3573</td><td>0.4420</td><td class="win">0.4280</td><td class="win">0.4077</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td>0.4034</td><td class="win">0.3573</td><td>0.4420</td><td class="win">0.4280</td><td class="win">0.4077</td></tr>
 <tr><td>+ critic, unphotographed</td><td class="win">0.4008</td><td>0.3676</td><td class="win">0.4340</td><td>0.4363</td><td>0.4097</td></tr>
 
 <tr><td rowspan="4">cake</td><td>pixel loss alone</td><td>0.4626</td><td>0.4208</td><td>0.5505</td><td>0.5877</td><td>0.5054</td></tr>
 <tr><td>+ field prior</td><td>0.4624</td><td>0.4243</td><td>0.5473</td><td>0.5836</td><td>0.5044</td></tr>
-<tr><td>+ drawing a photograph</td><td class="win">0.4041</td><td class="win">0.3608</td><td class="win">0.5267</td><td class="win">0.5700</td><td class="win">0.4654</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td class="win">0.4041</td><td class="win">0.3608</td><td class="win">0.5267</td><td class="win">0.5700</td><td class="win">0.4654</td></tr>
 <tr><td>+ critic, unphotographed</td><td>0.4814</td><td>0.4327</td><td>0.5571</td><td>0.5929</td><td>0.5160</td></tr>
 
 <tr><td rowspan="4">pomegranate</td><td>pixel loss alone</td><td>0.2873</td><td>0.4275</td><td>0.3060</td><td>0.4197</td><td>0.3601</td></tr>
 <tr><td>+ field prior</td><td>0.2932</td><td>0.4351</td><td>0.3072</td><td>0.4233</td><td>0.3647</td></tr>
-<tr><td>+ drawing a photograph</td><td class="win">0.2562</td><td class="win">0.3715</td><td class="win">0.2609</td><td class="win">0.3768</td><td class="win">0.3164</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td class="win">0.2562</td><td class="win">0.3715</td><td class="win">0.2609</td><td class="win">0.3768</td><td class="win">0.3164</td></tr>
 <tr><td>+ critic, unphotographed</td><td>0.2882</td><td>0.4339</td><td>0.3052</td><td>0.4244</td><td>0.3629</td></tr>
 
 <tr><td rowspan="4">doughnut</td><td>pixel loss alone</td><td class="win">0.1787</td><td class="win">0.5701</td><td colspan="2" rowspan="4">no held-out split: one photograph per family</td><td class="win">0.3744</td></tr>
 <tr><td>+ field prior</td><td>0.1783</td><td>0.5732</td><td>0.3757</td></tr>
-<tr><td>+ drawing a photograph</td><td>0.1799</td><td>0.5736</td><td>0.3767</td></tr>
+<tr><td>+ prior + drawing a photograph</td><td>0.1799</td><td>0.5736</td><td>0.3767</td></tr>
 <tr><td>+ critic, unphotographed</td><td>0.2474</td><td>0.5943</td><td>0.4208</td></tr>
 </tbody></table></div>
 
