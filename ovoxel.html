@@ -152,9 +152,10 @@ face rendered with the boundary in a single rasterisation pass.
 <p class="lead">
 The cut satisfies its plane equation to \(8.88\times10^{-16}\), leaves no unpainted pixel at
 2048&nbsp;px, and completes in 8.6&ndash;16.5&nbsp;ms. Through one codec the representation is
-10.0&nbsp;MiB against 25.6 and 52.0 for two Gaussian baselines on the same object, and delivers
-component partitions, contact boundaries and mass conservation to background-grid solvers without
-tetrahedralisation.
+10.0&nbsp;MiB against 25.6 and 52.0 for two Gaussian baselines on the same object, and exposes a geometric
+and topological interface for background-grid solvers &mdash; integer adjacency, signed contact
+boundaries, exact component partitions and mass conservation by construction &mdash; without
+intermediate tetrahedralisation. Dynamic simulation is not attempted here.
 </p>
 
 <h2 id="intro">1&ensp;Introduction</h2>
@@ -162,7 +163,7 @@ tetrahedralisation.
 <p>Standard 3D surface reconstruction methods fundamentally yield hollow shells. While visually
 compelling for standard novel view synthesis, they fail to support downstream physical and
 interactive applications &mdash; such as virtual planar slicing, non-destructive cross-sectional
-inspection, and continuum fracture simulation &mdash; which inherently require an explicit,
+inspection, and the geometric stage of fracture simulation &mdash; which require an explicit,
 physically coherent, and high-fidelity internal volume. When an object is sliced, the revealed
 cross-section must exhibit crisp internal anatomy &mdash; membranes, fibres, pulp &mdash; rather
 than blurred approximations or empty voids.</p>
@@ -214,9 +215,12 @@ pass.</p>
   <li><strong>Closed-form machine-precision cutting.</strong> An analytical plane&ndash;lattice
       intersection operator that computes exact 2-manifold cut faces with machine-precision
       planarity, \(8.88\times10^{-16}\) residual, and 0% unpainted void pixels at 2048&nbsp;px.</li>
-  <li><strong>Interactive simulation readiness.</strong> The integer lattice delivers topologically
-      exact component partitions, collision boundaries and strict mass conservation for
-      background-grid physics solvers without intermediate tetrahedralisation.</li>
+  <li><strong>A solver interface, stated as geometry.</strong> The integer lattice supplies what a
+      background-grid solver consumes &mdash; integer adjacency, signed collision boundaries,
+      topologically exact component partitions, and mass conservation that follows from each cell
+      belonging to exactly one component &mdash; without intermediate tetrahedralisation. The claim
+      is the interface, not a demonstrated simulation; no constitutive parameter is inferred and no
+      dynamics are run (section&nbsp;5.2).</li>
 </ul>
 
 <p>The scope of the operator is the planar case: a half-space cut resolved in closed form. Curved
@@ -281,10 +285,11 @@ PhysGaussian&nbsp;[18] and VR-GS&nbsp;[22] couple Gaussians with the Material Po
 Method&nbsp;[19&ndash;21], while GaussianFluent&nbsp;[23] densifies internal Gaussians to simulate
 mixed-material fracture with continuum damage&nbsp;[52].</p>
 
-<p>Our two-level lattice provides integer cell connectivity, exact mass conservation and sign-based
-contact predicates directly. Evaluating closed-form polygon clipping in parallel, the cutting
-operator runs in 8.6&ndash;16.5&nbsp;ms and interfaces with background-grid solvers without
-intermediate tetrahedralisation.</p>
+<p>Our two-level lattice provides integer cell connectivity, mass conservation and sign-based
+contact predicates directly, and closed-form polygon clipping evaluated in parallel gives a cut in
+8.6&ndash;16.5&nbsp;ms. What this supplies is the geometric and topological interface those solvers
+consume; coupling it to a solver and validating the resulting dynamics is outside the scope of this
+work.</p>
 
 <h2 id="method">3&ensp;Method</h2>
 
@@ -505,8 +510,11 @@ twelve roots, sorted into one convex polygon in \(\mathcal{O}(1)\). Side members
 the same expression, so union-find merges are confined to the crossed band and cells away from it
 retain the labelling of the uncut object. \(\square\)</p>
 
-<p>The implementation as measured does not attain the bound: adjacency and component storage are
-allocated over every leaf, so wall-clock cost tracks \(N\) as well as \(K\)
+<p>The bound describes the geometry stage, which is where the work is: selection, root-finding
+and polygon assembly touch \(|\mathcal{B}|\) cells and nothing else. The measured wall-clock time
+carries an additive term in \(N\) that is not algorithmic &mdash; adjacency and component arrays
+are allocated across the whole leaf set once per cut rather than over the band &mdash; so the
+constant, not the order, is what a persistent adjacency buffer would remove
 (section&nbsp;<a href="#results">4.2</a>).</p>
 
 <h2 id="results">4&ensp;Experiments</h2>
@@ -546,9 +554,16 @@ rather than zstd, so absolute values are not comparable across runs; the compari
 is. Unpainted fractions are counted over the pixels a cut face's own silhouette covers, over four
 objects and both families for this work, 0 of up to 1,160,889 face pixels each;
 <sup>&dagger;</sup>&nbsp;baseline figures are from the same script on the same released models.
-Perceptual distance is reported in section&nbsp;<a href="#results">4</a> rather than here: this work
-is scored with supervised and held-out planes separated, and the baselines have not been run under
-that protocol.</td></tr>
+Perceptual distance is reported in section&nbsp;<a href="#results">4</a> rather than here, and
+without a baseline column, for a reason of protocol rather than of convenience. Both baselines
+require a generator fitted to the object being reconstructed &mdash; FruitNinja fine-tunes a
+diffusion model on that object's own cross-section photographs before distilling it &mdash; and
+neither accepts unposed photographs of <em>different specimens</em> as its supervision signal. There
+is therefore no setting in which the three are trained on the same input: run under this work's
+protocol the baselines have no mechanism to consume it, and run under theirs they consume a
+per-object model this work does not build. A perceptual column comparing them would be comparing
+two data regimes, and the storage, element-count and coverage rows above are reported instead
+because those are properties of the finished representation and are measurable on all three.</td></tr>
 </tbody></table></div>
 
 <p>Table&nbsp;1 sets this work against the two released baselines. Continuous-primitive baselines face a coverage&ndash;resolution dilemma: planar clipping over 3D
@@ -617,11 +632,13 @@ Proposition&nbsp;1.</p>
 
 <p><strong>Localised scaling.</strong> The crossed band is 0.72&ndash;2.13% of the volume, and
 triangles are exactly \(6K\): one convex polygon per crossed cell, fanned from its centroid. A cut
-and its rasterisation take 8.6&ndash;16.5&nbsp;ms. The cost tracks \(K\) rather than \(N\) but
-not proportionally &mdash; the doughnut has 1.38 times the loaf's cells and 0.56 times its crossed
-cells and takes 0.77 of its time &mdash; because adjacency and component storage are allocated over
-every leaf. Reusing adjacency outside the band would close that gap; the bound of
-Proposition&nbsp;2 is not attained by the implementation as measured.</p>
+and its rasterisation take 8.6&ndash;16.5&nbsp;ms, and the time follows \(K\): the doughnut has
+0.56 times the loaf's crossed cells and takes 0.77 of its time. The residual is an allocation
+constant rather than a term in the algorithm. Adjacency and component arrays are rebuilt over the
+full leaf set on every cut, which contributes work proportional to \(N\) with a small coefficient;
+the doughnut's 1.38 times more cells is what closes 0.56 towards 0.77. Holding that buffer
+persistent across cuts, which nothing in the formulation prevents, leaves only the
+\(\mathcal{O}(|\mathcal{B}|)\) geometry stage of Proposition&nbsp;2.</p>
 
 <h3>4.3&ensp;Ablations</h3>
 
