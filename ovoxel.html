@@ -549,23 +549,14 @@ of the supervision, identical in both formulations of this work, and are carried
 <tr><td>elements &darr;<br><span class="mut" style="font-size:12.5px">watermelon, all three</span></td><td><strong>1,245,168</strong></td>
     <td>7,959,789</td><td>1,381,100</td></tr>
 <tr><td colspan="4" class="mut" style="font-size:13px;line-height:1.5;padding-top:10px">
-Storage and element counts are one run of the same codec over all three representations
-<strong>on the same object</strong>, the watermelon, which is the object all three have released.
-Of our 10.0&nbsp;MiB, 8.0 is the interior lattice and 2.0 the dual grid. The codec is lzma here
-rather than zstd, so absolute values are not comparable across runs; the comparison within this one
-is. Unpainted fractions are counted over the pixels a cut face's own silhouette covers, over four
-objects and both families for this work, 0 of up to 1,160,889 face pixels each;
-<sup>&dagger;</sup>&nbsp;baseline figures are from the same script on the same released models.
-Perceptual distance is reported in section&nbsp;<a href="#results">4</a> rather than here, and
-without a baseline column, for a reason of protocol rather than of convenience. Both baselines
-require a generator fitted to the object being reconstructed &mdash; FruitNinja fine-tunes a
-diffusion model on that object's own cross-section photographs before distilling it &mdash; and
-neither accepts unposed photographs of <em>different specimens</em> as its supervision signal. There
-is therefore no setting in which the three are trained on the same input: run under this work's
-protocol the baselines have no mechanism to consume it, and run under theirs they consume a
-per-object model this work does not build. A perceptual column comparing them would be comparing
-two data regimes, and the storage, element-count and coverage rows above are reported instead
-because those are properties of the finished representation and are measurable on all three.</td></tr>
+Storage and element counts are one run of the same codec over all three representations on the
+same object, the watermelon, which is the object all three have released; the codec is lzma here
+rather than zstd, so values are comparable within this run and not across runs. Of our
+10.0&nbsp;MiB, 8.0 is the interior lattice and 2.0 the dual grid. Unpainted fractions are counted
+over the pixels a cut face's own silhouette covers, four objects and both families for this work,
+0 of up to 1,160,889 face pixels each. <sup>&dagger;</sup>&nbsp;from the same script on the same
+released models. Perceptual distance is reported in section&nbsp;<a href="#results">4</a>, without
+a baseline column.</td></tr>
 </tbody></table></div>
 
 <p>Table&nbsp;1 sets this work against the two released baselines. Continuous-primitive baselines face a coverage&ndash;resolution dilemma: planar clipping over 3D
@@ -573,6 +564,16 @@ Gaussians leaves unpainted void artefacts, 2.37% and 8.29% at \(2048\times2048\)
 25.6&ndash;52.0&nbsp;MiB. The latent lattice has no primitive that can fall below a pixel, records
 0.0000% void, and compresses to 10.0&nbsp;MiB of which the dual grid is 2.0 &mdash; a 61&ndash;81%
 reduction on the same object.</p>
+
+<p>Table&nbsp;1 carries no perceptual column, for a reason of protocol rather than of convenience.
+Both baselines require a generator fitted to the object being reconstructed &mdash; FruitNinja
+fine-tunes a diffusion model on that object's own cross-section photographs before distilling it
+&mdash; and neither accepts unposed photographs of <em>different specimens</em> as its supervision
+signal. There is therefore no setting in which the three are trained on the same input: under this
+work's protocol the baselines have no mechanism to consume it, and under theirs they consume a
+per-object model this work does not build. A perceptual column would be comparing two data regimes.
+The storage, element-count and coverage rows are reported instead, being properties of the finished
+representation and measurable on all three.</p>
 
 <h3>4.1&ensp;Interior appearance and cross-view generalisation</h3>
 
@@ -730,39 +731,40 @@ azimuth all sit inside the seed repeat on every column.</p>
   <video src="assets/drop_orange.mp4?v=mpm1" autoplay loop muted playsinline preload="metadata"
          style="width:100%;max-width:520px;border-radius:4px"
          aria-label="the orange falls, is cut twice in flight, and its four pieces separate and land"></video>
-  <figcaption><span class="fnum">Figure 4</span><br><strong>The lattice driving a solver:
-  cut in flight, 1&nbsp;&rarr;&nbsp;2&nbsp;&rarr;&nbsp;4.</strong> The orange falls under gravity
-  onto a floor. A transverse plane arrives at frame&nbsp;10 and a longitudinal one at
-  frame&nbsp;24, each stated in the material frame, so a plane aimed at the object still cuts the
-  object after it has fallen. A cut is an event, not a precondition: connectivity is recomputed on
-  the integer lattice, connected-component labelling reports how many pieces now exist
-  &mdash; two of 59,689&nbsp;/&nbsp;60,310 particles, then four of
+  <figcaption><span class="fnum">Figure 4</span><br><strong>The orange dropped, cut in flight,
+  1&nbsp;&rarr;&nbsp;2&nbsp;&rarr;&nbsp;4.</strong> A transverse plane arrives at frame&nbsp;10 and
+  a longitudinal one at frame&nbsp;24, both stated in the material frame. Connected-component
+  labelling on the integer lattice reports the pieces &mdash; two of
+  59,689&nbsp;/&nbsp;60,310 particles, then four of
   31,403&nbsp;/&nbsp;32,801&nbsp;/&nbsp;28,286&nbsp;/&nbsp;27,509 &mdash; and one MPM
-  solver&nbsp;[19&ndash;21] is built per piece carrying its particles' current positions and
-  velocities. Labelling costs 33.0 and 52.9&nbsp;ms. One solver per piece buys exact separation
-  and costs the half of contact a shared background grid gives away, so contact between pieces is
-  taken back from the lattice: the occupancy is already a grid, so the way out of one piece has an
-  exact answer for every particle &mdash; the vector to the nearest free cell, all of them from one
-  distance transform of the free space. Those are reduced to a single rigid translation of the
-  piece, which adds no strain, so contact cannot be what breaks a piece apart. The impulse is the
-  opposite: it is weighted onto the particles around the contact and normalised, so each body
-  exchanges exactly the momentum a uniform response would. Applied uniformly it means a piece
-  landing on another piece can never deform &mdash; the two quarters that reached the floor
-  squashed by 3.2 coarse cells and the two that landed on them by 0.02. Pieces are in contact on 32
-  of the 78 frames; the deepest overlap a step produces is 5.1 contact cells and 2.1 remain on
-  average after the pass, one of which is the closing margin the query itself adds. The cells are the particles, so adjacency
-  needs no <em>k</em>-NN graph and no distance threshold, and the number of pieces does not depend
-  on one. The material is the two-rule field, a peel at
-  \(2.1\times10^{6}\)&nbsp;Pa over an interior at \(3\times10^{5}\)&nbsp;Pa;
-  \(\Delta t = 5\times10^{-5}\) with 180 substeps per frame. 78 frames, 13&nbsp;s of solver
-  time on one L40. <strong>The deformation is drawn, not summarised.</strong> The solver moves
-  120,000 particles and the surface carries 1,985,488 vertices, so each piece is drawn by the best
-  rigid transform of its own particles plus the part that transform does not explain &mdash;
-  splatted onto a grid at four cells&rsquo; spacing, blurred into the cells no particle landed in,
-  and sampled at every vertex. A piece&rsquo;s mean departure from its own rigid motion reaches
-  3.413 coarse cells at the impact and 15.4 locally, 13% of the object&rsquo;s diameter, and it is
-  what the peel and the interior do differently under load rather than an average of the two.</figcaption>
+  solver&nbsp;[19&ndash;21] is built per piece from its particles' current state. Peel at
+  \(2.1\times10^{6}\)&nbsp;Pa over an interior at \(3\times10^{5}\)&nbsp;Pa,
+  \(\Delta t = 5\times10^{-5}\), 180 substeps per frame; 78 frames, 13&nbsp;s on one
+  L40.</figcaption>
 </figure>
+
+<p><strong>A cut is an event, not a precondition.</strong> Connectivity is adjacency on the
+integer lattice, so a plane is a per-cell sign test and labelling is exact and parameter-free:
+33.0&nbsp;ms at the first plane and 52.9&nbsp;ms at the second. The cells are the particles, so no
+<em>k</em>-NN graph is built and the number of pieces does not depend on a distance threshold.</p>
+
+<p><strong>Contact, and where the impulse lands.</strong> One solver per piece gives exact
+separation and gives up the contact a shared background grid supplies. The occupancy is already a
+grid, so a penetrating particle's way out is the vector to the nearest free cell and all of them
+come from one distance transform of the free space. Positions are corrected by a single rigid
+translation per piece, which adds no strain and so cannot tear a piece apart; the impulse is
+instead weighted onto the particles around the contact and normalised to the same exchanged
+momentum. Applied uniformly, a piece landing on another piece cannot deform at all &mdash; the two
+quarters that reached the floor departed from their own rigid motion by 3.2 coarse cells and the
+two that landed on them by 0.02. Pieces are in contact on 32 of the 78 frames; the deepest overlap
+a step produces is 5.1 contact cells and 2.1 remain after the pass, one of which is the margin the
+query adds by closing the occupancy.</p>
+
+<p><strong>The deformation is drawn, not summarised.</strong> The solver moves 120,000 particles
+and the surface carries 1,985,488 vertices. Each piece is drawn by the best rigid transform of its
+own particles plus the residual that transform does not explain, splatted onto a grid at four
+cells' spacing and sampled at every vertex. That departure reaches 3.413 coarse cells in the mean
+and 15.4 locally, 13% of the object's diameter.</p>
 
 <h3 id="stripes">4.4&ensp;Structural anisotropy between the two families</h3>
 
