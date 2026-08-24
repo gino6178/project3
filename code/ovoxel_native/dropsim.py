@@ -238,6 +238,14 @@ def resolve_contacts(f):
                 xb = xb - nrm * d * wj
                 moved = True
             if moved:
+                # The separation splits by mass and knows nothing about the floor, so a piece
+                # already resting on it was pushed straight through by the piece landing on top:
+                # the lower quarters ended with their centroids four cells above a floor they
+                # should have been sitting twenty-five cells above. Neither body may end below it.
+                for bd, xx in ((bi, xa), (bj, xb)):
+                    below = -float((((xx - bd["shift"]) - floor_world) @ up).min())
+                    if below > 0:
+                        xx += up * below
                 # What is left after the passes, measured the same way, so the figure can say the
                 # overlap was resolved rather than that a correction was attempted.
                 wa, wb = xa - bi["shift"], xb - bj["shift"]
@@ -278,10 +286,26 @@ def resolve_contacts(f):
                 vrel = float((va.mean(0) - vb.mean(0)) @ nrm)
                 if vrel < 0:
                     jm = -(1.0 + CONTACT_REST) * vrel
+                    # The impulse lands where the pieces touch, not uniformly over each body.
+                    # A uniform velocity change adds no strain by construction, which is right for
+                    # the position correction -- it is what stops contact from tearing a piece
+                    # apart -- but applied to velocity as well it means a piece landing on another
+                    # piece can never deform. The two quarters that hit the floor squashed by
+                    # three coarse cells and the two that landed on them by 0.02: the solver was
+                    # not being told where it had been hit. The weight is a Gaussian about the
+                    # contact centroid, and it is normalised, so the momentum each body exchanges
+                    # is exactly what the uniform version exchanged.
+                    ctr_c = (wa[pen].mean(0) if bool(pen.any()) else wa.mean(0))
+                    sig = 6.0 * hc
+
+                    def band(x, shift):
+                        w = torch.exp(-(((x - shift) - ctr_c).norm(dim=1) / sig) ** 2)
+                        return (w / w.mean().clamp_min(1e-8)).clamp(max=8.0)[:, None]
+
                     bi["solver"].import_particle_v_from_torch(
-                        (va + nrm * (jm * wi)).contiguous(), device=DEV)
+                        (va + nrm * (jm * wi) * band(xa, bi["shift"])).contiguous(), device=DEV)
                     bj["solver"].import_particle_v_from_torch(
-                        (vb - nrm * (jm * wj)).contiguous(), device=DEV)
+                        (vb - nrm * (jm * wj) * band(xb, bj["shift"])).contiguous(), device=DEV)
     return deep, left[0]
 
 
