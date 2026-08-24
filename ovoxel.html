@@ -644,8 +644,9 @@ persistent across cuts, which nothing in the formulation prevents, leaves only t
 
 <h3>4.3&ensp;Ablations</h3>
 
-<p>Table&nbsp;4 isolates each design choice. Each arm changes one variable against the baseline on the orange, at 325 outer iterations on the
-same cameras. The scale of a null result is set by a seed repeat: the same settings at a different
+<p>Table&nbsp;4 isolates each design choice on one object and Table&nbsp;5 repeats the three
+supervision terms on all seven. Each arm of Table&nbsp;4 changes one variable against the baseline
+on the orange, at 325 outer iterations on the same cameras. The scale of a null result is set by a seed repeat: the same settings at a different
 seed give 0.1242 / 0.0933 / 0.1094 / 0.1777 against 0.1238 / 0.0919 / 0.1046 / 0.1881, so a column
 difference below about 0.010 is not a result.</p>
 
@@ -665,6 +666,43 @@ difference below about 0.010 is not a result.</p>
 <tr><td>low-discrepancy schedule</td><td>0.1257</td><td>0.0965</td><td>0.1155</td><td>0.1771</td><td>0.1287</td><td class="mut">within the seed repeat</td></tr>
 <tr><td>one photograph per azimuth</td><td>0.1286</td><td>0.0914</td><td>0.1086</td><td>0.1806</td><td>0.1273</td><td class="mut">within the seed repeat</td></tr>
 </tbody></table></div>
+
+<p>Table&nbsp;4 changes one variable at a time on one object, which answers whether a choice helps
+<em>the orange</em>. Table&nbsp;5 asks the question the deployment actually poses: the three
+supervision terms are switched on cumulatively and every one of the seven objects is retrained at
+each step, 28 runs on the same cameras and the same 325 iterations. Each entry is that run&#39;s
+four-column mean. The one seed repeat available moves the orange&#39;s mean by 0.0009, which is the
+scale below which a mean difference is not a result.</p>
+
+<div class="tw"><p class="tnum">Table 5</p><table>
+<thead><tr><th>configuration</th><th>orange</th><th>melon</th><th>apple</th><th>loaf</th>
+<th>cake</th><th>pomegr.</th><th>doughnut</th><th>mean</th><th>objects helped</th></tr></thead>
+<tbody>
+<tr><td>pixel objective alone</td><td>0.1324</td><td>0.2021</td><td>0.2378</td><td>0.3902</td>
+<td>0.4953</td><td>0.2874</td><td>0.3464</td><td>0.2988</td><td class="mut">&mdash;</td></tr>
+<tr><td>&plus; anisotropic smoothness</td><td>0.1335</td><td>0.2009</td><td>0.2371</td><td>0.3837</td>
+<td>0.4931</td><td>0.2892</td><td>0.3473</td><td>0.2978</td><td class="mut">3 of 7, none beyond 0.0065</td></tr>
+<tr><td>&plus; reference sampling</td><td>0.1271</td><td><strong>0.1943</strong></td><td>0.2449</td><td>0.3734</td>
+<td><strong>0.4527</strong></td><td>0.2490</td><td><strong>0.3477</strong></td><td><strong>0.2842</strong></td><td>5 of 7</td></tr>
+<tr><td>&plus; critic</td><td><strong>0.1220</strong></td><td>0.2110</td><td><strong>0.2524</strong></td><td><strong>0.3542</strong></td>
+<td>0.4828</td><td><strong>0.2402</strong></td><td>0.3633</td><td>0.2894</td><td>3 of 7</td></tr>
+</tbody></table></div>
+
+<p><strong>Anisotropic smoothness does nothing.</strong> Its largest effect on any object is
+0.0065 and its mean effect is \(-0.0010\), at the seed repeat. It is retained in the released
+configuration only because it is free; nothing in Table&nbsp;5 argues for it.</p>
+
+<p><strong>Reference sampling is the one term that generalises.</strong> It improves five of the
+seven objects, by 0.0404 on the cake and 0.0402 on the pomegranate, and the two it does not
+improve it leaves alone &mdash; \(+0.0078\) on the apple and \(+0.0004\) on the doughnut. It is
+the only step whose mean gain, \(-0.0137\), is larger than any single object&#39;s loss.</p>
+
+<p><strong>The critic is the arm the orange would have sold us.</strong> On the orange it is the
+best configuration in the table, \(-0.0051\) beyond reference sampling, and on the loaf and the
+pomegranate it improves again. Across all seven it is a regression: \(+0.0053\) on the mean, with
+\(+0.0301\) on the cake, \(+0.0167\) on the melon and \(+0.0156\) on the doughnut. One object
+cannot decide a term that is applied to every object, and it is off in the released configuration
+for that reason and no other.</p>
 
 <p><strong>Interpolation continuity.</strong> Raising the lattice interpolation from trilinear
 \(C^0\) to cubic B-spline \(C^2\) sharpens the supervised longitudinal face from 0.0919 to
@@ -759,7 +797,7 @@ the technical appendices.</a></p>
 
 <p>Two quantities are properties of an object's acquisition rather than free parameters, and both
 are determined from the object itself; Figure&nbsp;6 shows what each object is set up as, and
-Table&nbsp;5 the measurement behind the first.</p>
+Table&nbsp;6 the measurement behind the first.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/setup7.jpg?v=s_v2" alt="seven objects: each cut's mask, the photograph mapped onto it, and the outside from both cameras">
@@ -777,7 +815,7 @@ the procedure recovers it to within 6&deg;, which is what makes its answer usabl
 axis then fixes the plane split, which follows the object's extent &mdash; a short axis takes fewer
 transverse planes and more longitudinal ones.</p>
 
-<div class="tw"><p class="tnum">Table 5</p><table>
+<div class="tw"><p class="tnum">Table 6</p><table>
 <thead><tr><th>object</th><th>best self-overlap</th><th>overlap at the recovered axis vs. a
 90&deg; alternative</th></tr></thead>
 <tbody>
