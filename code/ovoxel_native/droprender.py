@@ -36,6 +36,41 @@ hc, mid = float(P["hc"]), t("mid").float()
 R = t("R", D).float(); T = t("T", D).float(); NV = D["nv"]
 stage_f = D["stage_frames"]; stage_a = D["stage_assign"]
 x0 = t("x0", D).float()
+XS = D["xs"]                     # per-frame particle positions, the deformation included
+GCELL = 4.0 * hc                 # the residual field's spacing
+
+
+def residual_field(rest, cur, Rb, Tb):
+    """The part of a piece's motion that its rigid transform does not explain, as a field.
+
+    Drawing a piece by its best rigid transform alone is what made the impact look like four
+    stones landing: the solver computes the squash and the render discarded it. The residual is
+    small and smooth -- a few cells at the deepest -- so it does not need a skin over sixteen
+    neighbours per vertex. It is splatted onto a coarse grid, blurred to fill the cells no
+    particle landed in, and sampled trilinearly at each vertex's rest position, which costs one
+    grid_sample over two million vertices instead of a k-NN over a hundred thousand particles.
+    """
+    r = cur - (rest @ Rb.T + Tb)
+    lo = rest.min(0).values - GCELL * 2
+    dim = (torch.ceil((rest.max(0).values + GCELL * 2 - lo) / GCELL).long() + 1).tolist()
+    idx = ((rest - lo) / GCELL).long().clamp(torch.zeros(3, dtype=torch.long, device=dev),
+                                             torch.tensor(dim, device=dev) - 1)
+    flat = (idx[:, 0] * dim[1] + idx[:, 1]) * dim[2] + idx[:, 2]
+    acc = torch.zeros(dim[0] * dim[1] * dim[2], 4, device=dev)
+    acc.index_add_(0, flat, torch.cat([r, torch.ones_like(r[:, :1])], 1))
+    acc = acc.reshape(*dim, 4).permute(3, 0, 1, 2)[None]
+    for _ in range(3):           # push the field into the empty cells, weight and all
+        acc = torch.nn.functional.avg_pool3d(acc, 3, 1, 1)
+    fld = acc[:, :3] / acc[:, 3:].clamp_min(1e-8)
+    return fld, lo, torch.tensor(dim, device=dev)
+
+
+def sample_field(fld, lo, dim, X):
+    g = (X - lo) / GCELL
+    g = 2.0 * g / (dim.float() - 1) - 1.0
+    g = g[:, [2, 1, 0]].reshape(1, 1, 1, -1, 3)      # grid_sample indexes W, H, D
+    return torch.nn.functional.grid_sample(fld, g, align_corners=True,
+                                           padding_mode="border")[0, :, 0, 0].T
 FRAMES = min(len(NV), int(os.environ.get("RFRAMES", len(NV))))
 
 # sign code of every particle and every surface vertex: 0..3 for the four sign regions
@@ -146,21 +181,40 @@ for s in range(len(stage_f)):
             corners.append(tilted(g, R[f, b], T[f, b]))
 corners = torch.cat(corners)
 PIV = corners.mean(0)
-q = ndc(mvp, (corners - PIV) + PIV)
-lo, hi = q.min(0).values, q.max(0).values
-Z = float(1.80 / float((hi - lo).max()))
-print(f"  the run sweeps {[round(float(x), 2) for x in (hi - lo)]} of the frame's 2.0 "
-      f"in ndc; scene scaled by {Z:.3f} about its centre to fit")
+OFF = torch.zeros(3, device=dev)
+Z = 1.0
+# Scaling world positions about a point does not scale their projection about the projection of
+# that point -- the camera is perspective, and the depth changes too. So the fit is measured and
+# corrected rather than solved once: project, read the error, move. The world offset that shifts
+# the picture by a given amount comes from three probes, not from an assumed screen basis.
+J = torch.stack([(ndc(mvp, (PIV + torch.eye(3, device=dev)[i] * hc * 20)[None])[0]
+                  - ndc(mvp, PIV[None])[0]) / (hc * 20) for i in range(3)], 1)
+for _ in range(8):
+    q = ndc(mvp, (corners - PIV) * Z + PIV + OFF)
+    lo, hi = q.min(0).values, q.max(0).values
+    ext = float((hi - lo).max())
+    ctr = (lo + hi) / 2
+    Z *= 1.78 / ext
+    OFF = OFF - torch.linalg.pinv(J) @ ctr        # J is 2x3: the minimum-norm move
+q = ndc(mvp, (corners - PIV) * Z + PIV + OFF)
+print(f"  the run fits {[round(float(x), 2) for x in (q.max(0).values - q.min(0).values)]} "
+      f"of the frame's 2.0 in ndc, centred at "
+      f"{[round(float(x), 3) for x in (q.max(0).values + q.min(0).values) / 2]}; scale {Z:.3f}")
 
 frames = []
 for f in range(FRAMES):
     s = int(np.searchsorted(stage_f, f, side="right") - 1)
+    pa = torch.from_numpy(stage_a[s]).to(dev).long()
+    xf = torch.from_numpy(XS[f]).to(dev)
     parts_v, parts_c, parts_f, off = [], [], [], 0
     for reg, b in region_of[s].items():
         Rb, Tb = R[f, b], T[f, b]
 
+        fld, flo, fdim = residual_field(x0[pa == b], xf[pa == b], Rb, Tb)
+
         def place(X):
-            return (tilted(X, Rb, Tb) - PIV) * Z + PIV
+            Y = X @ Rb.T + Tb + sample_field(fld, flo, fdim, X)
+            return ((Y - mid) @ TILT.T + mid - PIV) * Z + PIV + OFF
 
         F = face_at[s]
         sel = F[(vc_at[s][F.long()] == reg).all(1)]

@@ -322,6 +322,7 @@ CUTS = [(CUT_FRAMES[0], "n1", n1, d1), (CUT_FRAMES[1], "n2", n2, d2)]
 _g = np.stack(np.mgrid[0:dims[0], 0:dims[1], 0:dims[2]], -1).astype(np.float32)
 _pc = (_g + 0.5) * hc + P["org"].reshape(1, 1, 1, 3)
 
+XS = np.zeros((FRAMES, len(x0), 3), np.float32)   # the deformation is in here
 Rs = np.zeros((FRAMES, 8, 3, 3), np.float32)
 Ts = np.zeros((FRAMES, 8, 3), np.float32)
 NV = np.zeros(FRAMES, np.int32)
@@ -370,6 +371,7 @@ for f in range(FRAMES):
         cur_x[bd["idx"]] = xl - bd["shift"]
         cur_v[bd["idx"]] = bd["solver"].export_particle_v_to_torch().to(DEV).detach()
 
+    XS[f] = cur_x.cpu().numpy()
     NV[f] = len(bodies)
     for b, bd in enumerate(bodies):
         rest, cur = bd["rest"], cur_x[bd["idx"]].detach()
@@ -387,7 +389,7 @@ for f in range(FRAMES):
               f"residual {resid[-1]:.3f} cells  deepest overlap {deepest[-1]:.2f} "
               f"cells -> {leftover[-1]:.2f} left  {time.time()-t_start:.0f}s")
 
-np.savez(f"{W}/drop_traj_{OBJ}.npz", R=Rs, T=Ts, nv=NV, x0=x0.cpu().numpy(),
+np.savez(f"{W}/drop_traj_{OBJ}.npz", R=Rs, T=Ts, nv=NV, x0=x0.cpu().numpy(), xs=XS,
          sub=sub.astype(np.int32), sel0=sel0.cpu().numpy().astype(np.int32),
          stage_frames=np.array([s[0] for s in stages], np.int32),
          stage_assign=np.stack([s[1] for s in stages]),
