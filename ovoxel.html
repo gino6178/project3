@@ -744,10 +744,13 @@ azimuth all sit inside the seed repeat on every column.</p>
   taken back from the lattice: the occupancy is already a grid, so the way out of one piece has an
   exact answer for every particle &mdash; the vector to the nearest free cell, all of them from one
   distance transform of the free space. Those are reduced to a single rigid translation of the
-  piece, which adds no strain, so contact cannot be what breaks a piece apart. Pieces are in
-  contact on 25 of the 78 frames; the deepest overlap a step produces is 2.0 contact cells, of
-  which one is the closing margin the query itself adds &mdash; a
-  residual interpenetration of one contact cell, 1.7% of the object&rsquo;s diameter. The cells are the particles, so adjacency
+  piece, which adds no strain, so contact cannot be what breaks a piece apart. The impulse is the
+  opposite: it is weighted onto the particles around the contact and normalised, so each body
+  exchanges exactly the momentum a uniform response would. Applied uniformly it means a piece
+  landing on another piece can never deform &mdash; the two quarters that reached the floor
+  squashed by 3.2 coarse cells and the two that landed on them by 0.02. Pieces are in contact on 32
+  of the 78 frames; the deepest overlap a step produces is 5.1 contact cells and 2.1 remain on
+  average after the pass, one of which is the closing margin the query itself adds. The cells are the particles, so adjacency
   needs no <em>k</em>-NN graph and no distance threshold, and the number of pieces does not depend
   on one. The material is the two-rule field, a peel at
   \(2.1\times10^{6}\)&nbsp;Pa over an interior at \(3\times10^{5}\)&nbsp;Pa;
@@ -756,9 +759,9 @@ azimuth all sit inside the seed repeat on every column.</p>
   120,000 particles and the surface carries 1,985,488 vertices, so each piece is drawn by the best
   rigid transform of its own particles plus the part that transform does not explain &mdash;
   splatted onto a grid at four cells&rsquo; spacing, blurred into the cells no particle landed in,
-  and sampled at every vertex. That residual reaches 3.767 coarse cells, 3.3% of the
-  object&rsquo;s diameter, at the impact, and it is what the peel and the interior do differently
-  under load rather than an average of the two.</figcaption>
+  and sampled at every vertex. A piece&rsquo;s mean departure from its own rigid motion reaches
+  3.413 coarse cells at the impact and 15.4 locally, 13% of the object&rsquo;s diameter, and it is
+  what the peel and the interior do differently under load rather than an average of the two.</figcaption>
 </figure>
 
 <h3 id="stripes">4.4&ensp;Structural anisotropy between the two families</h3>
