@@ -80,11 +80,13 @@
 <div class="tw"><p class="tnum">Table 1</p><table>
 <thead><tr><th>plane set</th><th>photographs</th><th>Stage 1</th><th>+ Stage 4 lift</th><th>&Delta;</th></tr></thead>
 <tbody>
-<tr><td>held-out longitudinal</td><td>3 (unseen)</td><td>0.1922</td><td><strong>0.1537</strong></td><td>&minus;0.0385 (&minus;20%)</td></tr>
-<tr><td>supervised longitudinal (guardrail)</td><td>3 (seen)</td><td>0.0970</td><td>0.1050</td><td>+0.0080</td></tr>
+<tr><td>held-out longitudinal</td><td>3 (unseen)</td><td>0.1921</td><td><strong>0.1548</strong></td><td>&minus;0.0373 (&minus;19%)</td></tr>
+<tr><td>held-out transverse</td><td>3 (unseen)</td><td>0.1084</td><td><strong>0.0981</strong></td><td>&minus;0.0103 (&minus;10%)</td></tr>
+<tr><td>supervised longitudinal (guardrail)</td><td>3 (seen)</td><td>0.0969</td><td>0.1128</td><td>+0.0159</td></tr>
+<tr><td>supervised transverse (guardrail)</td><td>3 (seen)</td><td>0.1281</td><td>0.1229</td><td>&minus;0.0052</td></tr>
 </tbody></table></div>
 
-<p>The held-out planes gain 20%. The supervised planes, which must not degrade, move by less than the seed repeat on this pipeline (~0.010).</p>
+<p>The lift is on longitudinal held-out planes only. The transverse held-out planes gain 0.0103 anyway, because a single 3-D latent lattice renders both families: adding detail to the cells a longitudinal plane passes through changes what transverse planes see at those same cells. That gain is what a per-plane 2-D update cannot buy. The supervised transverse guardrail moves in the same direction (&minus;0.005); only the supervised longitudinal moves the wrong way, by 0.016, which is above the seed repeat and is what the anchor discipline is designed to bound.</p>
 
 <h2>Stage 3 sweep: how far back to noise</h2>
 
