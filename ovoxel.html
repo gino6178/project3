@@ -701,14 +701,22 @@ azimuth all sit inside the seed repeat on every column.</p>
   &mdash; two of 59,689&nbsp;/&nbsp;60,310 particles, then four of
   31,403&nbsp;/&nbsp;32,801&nbsp;/&nbsp;28,286&nbsp;/&nbsp;27,509 &mdash; and one MPM
   solver&nbsp;[19&ndash;21] is built per piece carrying its particles' current positions and
-  velocities. Labelling costs 33.0 and 50.4&nbsp;ms. The cells are the particles, so adjacency
+  velocities. Labelling costs 33.0 and 52.9&nbsp;ms. One solver per piece buys exact separation
+  and costs the half of contact a shared background grid gives away, so contact between pieces is
+  taken back from the lattice: the occupancy is already a grid, so the way out of one piece has an
+  exact answer for every particle &mdash; the vector to the nearest free cell, all of them from one
+  distance transform of the free space. Those are reduced to a single rigid translation of the
+  piece, which adds no strain, so contact cannot be what breaks a piece apart. Pieces are in
+  contact on 30 of the 78 frames; the deepest overlap a step produces is 5.0 contact cells and the
+  pass leaves at most 2.0, of which one is the closing margin the query itself adds &mdash; a
+  residual interpenetration of one contact cell, 1.7% of the object&rsquo;s diameter. The cells are the particles, so adjacency
   needs no <em>k</em>-NN graph and no distance threshold, and the number of pieces does not depend
   on one. The material is the two-rule field, a peel at
   \(8.4\times10^{6}\)&nbsp;Pa over an interior at \(1.2\times10^{6}\)&nbsp;Pa;
   \(\Delta t = 5\times10^{-5}\) with 180 substeps per frame. 78 frames, 11&nbsp;s of solver
   time on one L40. <strong>What the render approximates:</strong> each piece is drawn by the best
   rigid transform of its own particles, and the non-rigid residual that discards is measured at
-  0.000 to 1.604 coarse cells &mdash; up to 1.4% of the object's diameter, and reached only at the
+  0.000 to 1.444 coarse cells &mdash; 1.3% of the object's diameter, and reached only at the
   impact. The pieces separate and land; they do not squash, and an elastic response under load is
   a different experiment.</figcaption>
 </figure>

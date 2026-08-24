@@ -23,6 +23,7 @@ import warp as wp
 wp.init()
 from mpm_solver_warp.mpm_solver_warp import MPM_Simulator_WARP
 from scipy import ndimage
+import torch.nn.functional as Fn
 
 DEV = "cuda:0"
 W = os.path.dirname(os.path.abspath(__file__))
@@ -37,6 +38,15 @@ E_PEEL = float(os.environ.get("E_PEEL", "8.4e6"))
 CUT_FRAMES = [int(x) for x in os.environ.get("CUT_FRAMES", "15,38").split(",")]
 DROP = float(os.environ.get("DROP", "1.1"))          # floor, in world units below the object
 SPREAD = float(os.environ.get("SPREAD", "0.35"))     # the blade parts what it separates
+# Contact between pieces. One solver per piece buys exact separation and costs the half of contact
+# a shared background grid gives away: two pieces have no idea the other exists. CONTACT_PUSH is
+# the fraction of the measured penetration removed per pass, CONTACT_ITERS how many query-and-
+# separate passes per contacting pair per frame, and MAX_SEP_CELLS caps one pass -- an uncapped
+# correction throws the deepest particle out of its own solver grid, which is how this died first.
+CONTACT_PUSH = float(os.environ.get("CONTACT_PUSH", "0.6"))
+CONTACT_REST = float(os.environ.get("CONTACT_REST", "0.25"))
+CONTACT_ITERS = int(os.environ.get("CONTACT_ITERS", "3"))
+MAX_SEP_CELLS = float(os.environ.get("MAX_SEP_CELLS", "4"))
 
 P = np.load(f"{W}/drop_prep_{OBJ}.npz")
 hc = float(P["hc"])
@@ -140,6 +150,141 @@ def make_solver(xw, vw, mE, mnu, mrho):
     return dict(solver=s, shift=shift, L=L, ng=ng)
 
 
+contact_on = {}
+
+
+def resolve_contacts(f):
+    """Query per particle, respond per piece.
+
+    Displacing each penetrating particle on its own does clear the overlap, but it moves the
+    particles at the contact face and not the ones behind them, so the piece is thinned exactly
+    where it lands and the correction fights the material model until the piece comes apart. The
+    query stays per particle and the response is one rigid translation: the occupied set is a union
+    of axis-aligned cells, so "how far into you am I, and which way out" has an exact answer for
+    every particle -- the vector to the nearest free cell, all of them from a single distance
+    transform. A uniform translation adds no strain, so the piece is the same piece afterwards.
+
+    This is what the lattice hands back: the occupancy needed for the query is already a grid.
+    """
+    CELL = 2.0 * hc
+    deep, left = 0.0, [0.0]
+    for i in range(len(bodies)):
+        for j in range(i + 1, len(bodies)):
+            bi, bj = bodies[i], bodies[j]
+            xa = bi["solver"].export_particle_x_to_torch().to(DEV).detach()
+            xb = bj["solver"].export_particle_x_to_torch().to(DEV).detach()
+            ma, mb = len(xa), len(xb)
+            wi, wj = mb / (ma + mb), ma / (ma + mb)
+            nrm, moved = None, False
+            for it in range(CONTACT_ITERS):
+                wa = xa - bi["shift"]
+                wb = xb - bj["shift"]
+                bmin = wb.min(0).values - CELL * 2
+                bdim = torch.ceil((wb.max(0).values + CELL * 2 - bmin) / CELL).long() + 1
+                if int(bdim.prod()) >= 60_000_000:
+                    break
+                ob = torch.zeros(bdim.tolist(), device=DEV)
+                jb = ((wb - bmin) / CELL).long().clamp(
+                    torch.zeros(3, dtype=torch.long, device=DEV), bdim - 1)
+                ob[jb[:, 0], jb[:, 1], jb[:, 2]] = 1.0
+                # The solver holds one particle per six cells, so a contact cell inside the body still
+                # has a fair chance of holding no particle, and an occupancy read straight off them is
+                # full of holes a piece can be measured as passing through. Closing it by one cell is the
+                # same repair the labelling needs, for the same reason, and the margin it adds is the
+                # margin the depth test then discounts.
+                ob = (Fn.max_pool3d(ob[None, None], 3, 1, 1)[0, 0] > 0.5)
+                ia = ((wa - bmin) / CELL).long()
+                inb = ((ia >= 0) & (ia < bdim)).all(1)
+                pen = torch.zeros(len(wa), dtype=torch.bool, device=DEV)
+                if inb.any():
+                    q = ia[inb]
+                    pen[inb] = ob[q[:, 0], q[:, 1], q[:, 2]]
+                # Freshly separated pieces share their cut face by construction, so a pair does
+                # not collide until it has been seen apart once; otherwise the cut itself reads as
+                # a collision and injects separation on every step after it.
+                if not bool(pen.any()):
+                    contact_on[(i, j)] = True
+                    break
+                if not contact_on.get((i, j), False):
+                    break
+                _, ind = ndimage.distance_transform_edt(ob.cpu().numpy(), return_indices=True)
+                ind = torch.from_numpy(np.stack(ind)).to(DEV)
+                pa = ia[pen]
+                tgt = torch.stack([ind[d][pa[:, 0], pa[:, 1], pa[:, 2]] for d in range(3)],
+                                  1).float()
+                out = (tgt - pa.float()) * CELL
+                n_out = out.norm(dim=1, keepdim=True).clamp_min(1e-9)
+                if it == 0:
+                    # Depth, not count, is what contact can drive to zero: two pieces resting on
+                    # each other touch, and a particle within a cell of the other body is contact,
+                    # not a defect. Recorded before the frame's first correction, so it is the
+                    # state the step produced.
+                    deep = max(deep, float(n_out.max()) / CELL)
+                nrm = (out / n_out).mean(0)
+                if float(nrm.norm()) < 1e-8:
+                    break
+                nrm = nrm / nrm.norm()
+                # the 99th percentile, so one stray particle deep inside the other piece cannot
+                # set the step for the whole contact face
+                # Only what is deeper than one contact cell is removed. Two pieces resting on
+                # each other touch by definition, and a correction that adds a cell of clearance
+                # every pass pumps energy into exactly the case where nothing is wrong: with it,
+                # four quarters that had landed pushed each other back into the air.
+                d = float(torch.quantile((out * nrm).sum(1), 0.99)) - CELL
+                d = max(0.0, min(d, CELL * MAX_SEP_CELLS)) * CONTACT_PUSH
+                if d <= 0.0:
+                    break
+                xa = xa + nrm * d * wi
+                xb = xb - nrm * d * wj
+                moved = True
+            if moved:
+                # What is left after the passes, measured the same way, so the figure can say the
+                # overlap was resolved rather than that a correction was attempted.
+                wa, wb = xa - bi["shift"], xb - bj["shift"]
+                bmin = wb.min(0).values - CELL * 2
+                bdim = torch.ceil((wb.max(0).values + CELL * 2 - bmin) / CELL).long() + 1
+                if int(bdim.prod()) < 60_000_000:
+                    ob = torch.zeros(bdim.tolist(), device=DEV)
+                    jb = ((wb - bmin) / CELL).long().clamp(
+                        torch.zeros(3, dtype=torch.long, device=DEV), bdim - 1)
+                    ob[jb[:, 0], jb[:, 1], jb[:, 2]] = 1.0
+                    # The solver holds one particle per six cells, so a contact cell inside the body still
+                    # has a fair chance of holding no particle, and an occupancy read straight off them is
+                    # full of holes a piece can be measured as passing through. Closing it by one cell is the
+                    # same repair the labelling needs, for the same reason, and the margin it adds is the
+                    # margin the depth test then discounts.
+                    ob = (Fn.max_pool3d(ob[None, None], 3, 1, 1)[0, 0] > 0.5)
+                    ia = ((wa - bmin) / CELL).long()
+                    inb = ((ia >= 0) & (ia < bdim)).all(1)
+                    pen = torch.zeros(len(wa), dtype=torch.bool, device=DEV)
+                    if inb.any():
+                        q = ia[inb]
+                        pen[inb] = ob[q[:, 0], q[:, 1], q[:, 2]]
+                    if bool(pen.any()):
+                        _, ind = ndimage.distance_transform_edt(ob.cpu().numpy(),
+                                                                return_indices=True)
+                        ind = torch.from_numpy(np.stack(ind)).to(DEV)
+                        pa = ia[pen]
+                        tgt = torch.stack([ind[d][pa[:, 0], pa[:, 1], pa[:, 2]]
+                                           for d in range(3)], 1).float()
+                        left[0] = max(left[0], float(((tgt - pa.float()) * CELL).norm(dim=1).max()) / CELL)
+                bi["solver"].import_particle_x_from_torch(xa.contiguous(), device=DEV)
+                bj["solver"].import_particle_x_from_torch(xb.contiguous(), device=DEV)
+                # and the same for velocity, or the next step undoes the translation: take the
+                # approaching part of the relative motion out along the separation direction,
+                # uniformly over each body so neither gains strain from the correction
+                va = bi["solver"].export_particle_v_to_torch().to(DEV).detach()
+                vb = bj["solver"].export_particle_v_to_torch().to(DEV).detach()
+                vrel = float((va.mean(0) - vb.mean(0)) @ nrm)
+                if vrel < 0:
+                    jm = -(1.0 + CONTACT_REST) * vrel
+                    bi["solver"].import_particle_v_from_torch(
+                        (va + nrm * (jm * wi)).contiguous(), device=DEV)
+                    bj["solver"].import_particle_v_from_torch(
+                        (vb - nrm * (jm * wj)).contiguous(), device=DEV)
+    return deep, left[0]
+
+
 cur_x = x0.clone()
 cur_v = torch.zeros_like(x0)
 signs, bodies, assign = [], [], None
@@ -161,6 +306,10 @@ def rebuild(frame):
         new.append(bd)
     bodies = new
     assign = pid
+    contact_on.clear()
+    for i in range(len(bodies)):
+        for j in range(i + 1, len(bodies)):
+            contact_on[(i, j)] = False
     stages.append((frame, pid.cpu().numpy().astype(np.int16)))
     print(f"  frame {frame}: {npc} pieces "
           f"{[int(b['idx'].numel()) for b in bodies]}, labelling {lab_ms:.1f} ms, "
@@ -176,7 +325,7 @@ _pc = (_g + 0.5) * hc + P["org"].reshape(1, 1, 1, 3)
 Rs = np.zeros((FRAMES, 8, 3, 3), np.float32)
 Ts = np.zeros((FRAMES, 8, 3), np.float32)
 NV = np.zeros(FRAMES, np.int32)
-resid = []
+resid, deepest, leftover = [], [], []
 step = 0
 t_start = time.time()
 
@@ -198,6 +347,9 @@ for f in range(FRAMES):
         step += 1
         for bd in bodies:
             bd["solver"].p2g2p(step, DT, device=DEV)
+
+    _d, _l = resolve_contacts(f)
+    deepest.append(_d); leftover.append(_l)
 
     for bd in bodies:
         xl = bd["solver"].export_particle_x_to_torch().to(DEV).detach()
@@ -232,14 +384,17 @@ for f in range(FRAMES):
     if f % 10 == 0 or f == FRAMES - 1:
         h = float(((cur_x.mean(0) - floor_world) @ up))
         print(f"  frame {f:3d}  {len(bodies)} bodies  height {h/hc:6.1f} cells  "
-              f"residual {resid[-1]:.3f} cells  {time.time()-t_start:.0f}s")
+              f"residual {resid[-1]:.3f} cells  deepest overlap {deepest[-1]:.2f} "
+              f"cells -> {leftover[-1]:.2f} left  {time.time()-t_start:.0f}s")
 
 np.savez(f"{W}/drop_traj_{OBJ}.npz", R=Rs, T=Ts, nv=NV, x0=x0.cpu().numpy(),
          sub=sub.astype(np.int32), sel0=sel0.cpu().numpy().astype(np.int32),
          stage_frames=np.array([s[0] for s in stages], np.int32),
          stage_assign=np.stack([s[1] for s in stages]),
          floor=floor_world.cpu().numpy(), up=up.cpu().numpy(),
-         resid=np.array(resid, np.float32))
+         resid=np.array(resid, np.float32), deepest=np.array(deepest, np.float32), leftover=np.array(leftover, np.float32))
 print(f"drop_traj_{OBJ}.npz: {FRAMES} frames, {len(stages)} stages, "
       f"non-rigid residual {min(resid):.3f} to {max(resid):.3f} coarse cells, "
+      f"deepest overlap a step produced {max(deepest):.2f} contact cells, "
+      f"{max(leftover):.2f} left after contact, "
       f"{time.time()-t_start:.0f}s")

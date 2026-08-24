@@ -148,7 +148,7 @@ corners = torch.cat(corners)
 PIV = corners.mean(0)
 q = ndc(mvp, (corners - PIV) + PIV)
 lo, hi = q.min(0).values, q.max(0).values
-Z = float(1.88 / float((hi - lo).max()))
+Z = float(1.80 / float((hi - lo).max()))
 print(f"  the run sweeps {[round(float(x), 2) for x in (hi - lo)]} of the frame's 2.0 "
       f"in ndc; scene scaled by {Z:.3f} about its centre to fit")
 
