@@ -733,29 +733,6 @@ azimuth all sit inside the seed repeat on every column.</p>
   L40.</figcaption>
 </figure>
 
-<p><strong>A cut is an event, not a precondition.</strong> Connectivity is adjacency on the
-integer lattice, so a plane is a per-cell sign test and labelling is exact and parameter-free:
-33.0&nbsp;ms at the first plane and 52.9&nbsp;ms at the second. The cells are the particles, so no
-<em>k</em>-NN graph is built and the number of pieces does not depend on a distance threshold.</p>
-
-<p><strong>Contact, and where the impulse lands.</strong> One solver per piece gives exact
-separation and gives up the contact a shared background grid supplies. The occupancy is already a
-grid, so a penetrating particle's way out is the vector to the nearest free cell and all of them
-come from one distance transform of the free space. Positions are corrected by a single rigid
-translation per piece, which adds no strain and so cannot tear a piece apart; the impulse is
-instead weighted onto the particles around the contact and normalised to the same exchanged
-momentum. Applied uniformly, a piece landing on another piece cannot deform at all &mdash; the two
-quarters that reached the floor departed from their own rigid motion by 3.2 coarse cells and the
-two that landed on them by 0.02. Pieces are in contact on 32 of the 78 frames; the deepest overlap
-a step produces is 5.1 contact cells and 2.1 remain after the pass, one of which is the margin the
-query adds by closing the occupancy.</p>
-
-<p><strong>The deformation is drawn, not summarised.</strong> The solver moves 120,000 particles
-and the surface carries 1,985,488 vertices. Each piece is drawn by the best rigid transform of its
-own particles plus the residual that transform does not explain, splatted onto a grid at four
-cells' spacing and sampled at every vertex. That departure reaches 3.413 coarse cells in the mean
-and 15.4 locally, 13% of the object's diameter.</p>
-
 <h3 id="stripes">4.4&ensp;Structural anisotropy between the two families</h3>
 
 <p>Table&nbsp;2 shows transverse planes generalising to unobserved depths at no cost and
