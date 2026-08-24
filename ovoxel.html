@@ -565,16 +565,6 @@ Gaussians leaves unpainted void artefacts, 2.37% and 8.29% at \(2048\times2048\)
 0.0000% void, and compresses to 10.0&nbsp;MiB of which the dual grid is 2.0 &mdash; a 61&ndash;81%
 reduction on the same object.</p>
 
-<p>Table&nbsp;1 carries no perceptual column, for a reason of protocol rather than of convenience.
-Both baselines require a generator fitted to the object being reconstructed &mdash; FruitNinja
-fine-tunes a diffusion model on that object's own cross-section photographs before distilling it
-&mdash; and neither accepts unposed photographs of <em>different specimens</em> as its supervision
-signal. There is therefore no setting in which the three are trained on the same input: under this
-work's protocol the baselines have no mechanism to consume it, and under theirs they consume a
-per-object model this work does not build. A perceptual column would be comparing two data regimes.
-The storage, element-count and coverage rows are reported instead, being properties of the finished
-representation and measurable on all three.</p>
-
 <h3>4.1&ensp;Interior appearance and cross-view generalisation</h3>
 
 <p>Figure&nbsp;3 shows every object's held-out cuts beside the photographs they are scored on. Supervision is 1&ndash;12 photographs per family, unposed and of different specimens. Supervised
