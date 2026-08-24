@@ -57,7 +57,19 @@
   </div>
 </header>
 
-<div class="cutstrip" style="justify-content:center;margin:0 0 30px"><video src="assets/ovcut_orange_sp_lift.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:260px" aria-label="orange, cut transverse and longitudinal, drawn from the lifted 3-D field"></video></div>
+<div class="cutstrip" style="justify-content:center;margin:0 0 6px">
+  <figure style="margin:0 6px">
+    <video src="assets/ovcut_orange_sp_lift.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:220px;border-radius:3px" aria-label="sparse lift: six held-out planes"></video>
+    <figcaption style="text-align:center;font-size:12px;margin-top:4px">sparse: 6 held-out planes<br><span class="mut">held long &minus;0.037, held trans &minus;0.010</span></figcaption>
+  </figure>
+  <figure style="margin:0 6px">
+    <video src="assets/ovcut_orange_sp_lift_dense.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:220px;border-radius:3px" aria-label="dense lift: 19 depths uniformly across the sweep"></video>
+    <figcaption style="text-align:center;font-size:12px;margin-top:4px">dense: 19 depths across sweep<br><span class="mut">held long +0.028, held trans +0.031</span></figcaption>
+  </figure>
+</div>
+<p style="text-align:center;font-size:13px;color:var(--mut);margin:0 0 24px">
+Trade-off: the sparse lift updates six narrow depth bands (better DreamSim, visible stripes in the sweep). The dense lift updates every depth uniformly (no stripes, but every plane is pulled toward the one photograph the 2-D diffusion was trained on, so numbers regress). Fix under investigation: three 1-photo diffusions per family, one per training photo, randomised across the dense planes.
+</p>
 
 <h2>The problem</h2>
 
