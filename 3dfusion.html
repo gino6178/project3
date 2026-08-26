@@ -59,13 +59,47 @@
 
 <h2>Per-instance overfit: one fit per cut face</h2>
 
-<p>The lift below shares one field across every plane, which is what makes it consistent and also what caps its detail: a single 8-D latent per cell cannot be sharp on every unseen depth at once. The alternative on this page is to give up the shared model at generation time and <em>overfit one diffusion per plane</em>. It is expensive &mdash; a full 6000-step fit for each cut face &mdash; and it is the only thing that reaches photographic detail on a plane with no photograph.</p>
+<p>The lift below shares one field across every plane, which is what makes it consistent and also what caps its detail: a single 8-D latent per cell cannot be sharp on every unseen depth at once. The alternative is to give up the shared model at generation time and <em>overfit one diffusion per plane</em> &mdash; a full 6000-step fit for each cut face. It is the only thing that reaches photographic detail on a plane with no photograph.</p>
 
-<p><strong>The conditional model.</strong> SinDiffusion is a diffusion trained on a single image; with a patch-scale receptive field it learns that image&rsquo;s local statistics and resamples them into new layouts. Its input convolution is widened from 3 to 7 channels &mdash; \([\,x_t\;(3),\;\text{base}\;(3),\;\text{gen-mask}\;(1)\,]\) &mdash; and the weights are grown from the released single-image checkpoint. The <em>base</em> holds the frozen supervised cells at their own colour, the peel/background pinned to white, and a blurred guess in the flesh gap; the <em>gen-mask</em> marks the only region the model is free to paint, the flesh a photograph never constrained. What made this trainable at all was fixing <em>both</em> constraints: the frozen cells and the background. With the background left free the model wastes capacity tinting it and the reconstruction error is \(7\times\) worse.</p>
+<h3>The constrained target</h3>
 
-<p><strong>Overfitting one plane.</strong> For a target cut face &mdash; a reference photograph affine-warped into the plane&rsquo;s silhouette &mdash; the model is trained 6000 steps to denoise that face, the loss up-weighted \(3\times\) inside the gen-mask. Then it is sampled from pure noise for the full reverse schedule, the frozen cells and background pinned at every step. On a single plane this reconstructs the target to a mean-squared error of \(8\times10^{-4}\) with no lattice grid and no seam &mdash; the constrained task is well within what the architecture can represent. Two things quietly ruin it and are worth stating: sampling from the blurry base instead of from noise keeps the blur, and any colour transfer that touches the mid frequencies erases the columella and the segment walls. The target is used raw.</p>
+<p>For a plane with normal \(n\) and offset \(d\), write \(f\) for its flesh silhouette (rasterised from the O-Voxel shell), \(k\) for the supervised cells it passes through, and</p>
 
-<p><strong>Why not one model for all planes.</strong> A single model trained on the union of masks and augmented photographs does not generalise to this quality; it returns to the soft, gridded look. So each of the swept planes gets its own fit. Variety across planes is not a failure to suppress but a lever: a <em>different</em> reference photograph per plane &mdash; three supervised, three held out &mdash; yields distinct, plausible cut faces rather than one texture stamped everywhere. The swept faces are splatted back into one voxel field over a slab, and that field is what the video renders. The DreamSim scores below are for the shared-field lift; a per-plane fit is not measured against the held-out photographs because it is trained toward them by construction.</p>
+$$m \;=\; f\odot(1-k)$$
+
+<p>for the <em>gen-mask</em> &mdash; the flesh no photograph ever constrained, the only region the model may paint. The target \(y\in[-1,1]^{3\times H\times W}\) is a reference photograph affine-warped so its silhouette fills \(f\). The model is conditioned on a <em>base</em> that fixes everything outside \(m\):</p>
+
+$$b \;=\; \underbrace{k\odot y}_{\text{frozen cells}} \;+\; \underbrace{m\odot (G_\sigma\!*\,y)}_{\text{blurred flesh guess}} \;+\; \underbrace{(1-f)\odot \mathbf 1}_{\text{white background}},\qquad \sigma=15\ \text{px}.$$
+
+<p>Fixing <em>both</em> the cells \(k\) and the background \((1-f)\) is what makes the task trainable; with the background left free the model spends capacity tinting it and the reconstruction error is \(7\times\) worse.</p>
+
+<h3>The conditional single-image diffusion</h3>
+
+<p>SinDiffusion is a diffusion trained on one image; a patch-scale receptive field lets it learn that image&rsquo;s local statistics and resample them into new layouts. Its \(3\)-channel input convolution is widened to \(7\) and grown from the released checkpoint, the new channels zeroed so the fit begins exactly at the pretrained model:</p>
+
+$$W'_{\mathrm{in}}\in\mathbb R^{C\times 7\times 3\times 3},\qquad W'_{\mathrm{in}}[:,0\!:\!3]=W_{\mathrm{in}},\qquad W'_{\mathrm{in}}[:,3\!:\!7]=0.$$
+
+<p>It then reads noised sample, base and mask stacked on the channel axis: \(\;\epsilon_\theta\big([\,x_t \,\Vert\, b \,\Vert\, m\,],\,t\big)\).</p>
+
+<h3>Overfitting one plane</h3>
+
+<p>Train \(\theta\) for \(6000\) steps to denoise the target, the loss up-weighted \(3\times\) inside the gen-mask:</p>
+
+$$\mathcal L(\theta)=\mathbb E_{t,\,\epsilon}\Big[\,(1+3m)\odot\big\lVert\, \epsilon-\epsilon_\theta\big([\,x_t\Vert b\Vert m\,],\,t\big)\,\big\rVert^2\Big],\qquad x_t=\sqrt{\bar\alpha_t}\,y+\sqrt{1-\bar\alpha_t}\,\epsilon.$$
+
+<p>The face is then generated from pure noise over the full reverse schedule, the constraint re-pinned after every step so the cells and background never move:</p>
+
+$$x_T\sim\mathcal N(0,I),\qquad x_{t-1}\;=\; m\odot\Phi_\theta(x_t,t)\;+\;(1-m)\odot b,$$
+
+<p>where \(\Phi_\theta\) is one DDPM reverse step conditioned on \([\,x_t\Vert b\Vert m\,]\). On a single plane this reconstructs \(y\) to a mean-squared error of \(8\times10^{-4}\) with no lattice grid and no seam &mdash; the constrained task is well within what the architecture represents. Two things quietly ruin it: sampling from the blurry base instead of from noise keeps the blur, and any colour transfer that touches the mid frequencies (\(y \leftarrow y-G_\sigma\!*y+\text{field}\)) erases the columella and the segment walls. The target is used raw.</p>
+
+<h3>From planes to one field</h3>
+
+<p>A single model trained on the union of masks and augmented photographs does not generalise to this quality; it returns to the soft, gridded look. So each swept plane gets its own fit, and variety is a lever, not a failure: a <em>different</em> reference photograph per plane (three supervised, three held out) gives distinct plausible faces rather than one texture stamped everywhere. Each reconstruction \(r_p\) is splatted back over a slab of \(n_{\text{sub}}=5\) sub-planes at offsets \(o\in[-\delta,\delta]\), \(\delta=2\) cells; a cell&rsquo;s colour is the mean of every reconstructed pixel that projects into it,</p>
+
+$$C_i=\frac{1}{|\mathcal P_i|}\sum_{(o,u)\in\mathcal P_i} r_{o}(u),\qquad \mathcal P_i=\big\{(o,u): \pi_{\,n,\,d+o}(u)=i,\ f(u)>0\big\},$$
+
+<p>with \(\pi\) the plane-to-cell projection. That field is what the video renders (slab, thickness \(2.82\) cells). The DreamSim scores below are for the shared-field lift; a per-plane fit is not measured against the held-out photographs because it is trained toward them by construction.</p>
 
 <p>Two limits are honest and open. The reference is a central longitudinal cut, so warping it to every depth writes a columella at depths that should have none &mdash; off-centre planes have no photograph, and inventing one is the next problem. And the write-back into the discrete lattice, plus the slab integration, softens the per-plane fits that were sharp in 2-D; keeping that sharpness means rendering each frame by generation rather than storing it in voxels.</p>
 
