@@ -48,7 +48,7 @@
 
 <header>
   <h1>3DFusion: Lifting 2-D Diffusion Priors into an O-Voxel Interior</h1>
-  <p class="sub">Two or three photographs per family cannot supervise a volume. A 2-D diffusion model trained on the ones that exist is used to write a target on the planes that have none, and every target is lifted into the same 3-D field.</p>
+  <p class="sub">Two or three photographs per family cannot supervise a volume. The method: for every cut plane with no photograph, overfit a single-image diffusion &mdash; 6000 steps, a hard constraint on both the supervised cells and the background &mdash; to generate its flesh from noise, then write the swept faces back into one 3-D field.</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint &middot; work in progress</p>
   <div class="links">
@@ -56,11 +56,6 @@
     <a href="index.html">The splatted pipeline</a>
   </div>
 </header>
-
-<figure style="margin:0 0 10px">
-  <video src="assets/ovcut_orange_perplane.mp4?v=pp" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="per-instance overfit sweep"></video>
-  <figcaption style="text-align:center">Per-instance overfit. Each depth is a separate 6000-step fit of a conditional single-image diffusion, generating the flesh a photograph never reached while the supervised cells and the background are held fixed; the swept faces are then written back into one voxel field. Vivid, detailed, and consistent across the sweep.</figcaption>
-</figure>
 
 <h2>Per-instance overfit: one fit per cut face</h2>
 
@@ -73,6 +68,11 @@
 <p><strong>Why not one model for all planes.</strong> A single model trained on the union of masks and augmented photographs does not generalise to this quality; it returns to the soft, gridded look. So each of the swept planes gets its own fit. Variety across planes is not a failure to suppress but a lever: a <em>different</em> reference photograph per plane &mdash; three supervised, three held out &mdash; yields distinct, plausible cut faces rather than one texture stamped everywhere. The swept faces are splatted back into one voxel field over a slab, and that field is what the video renders. The DreamSim scores below are for the shared-field lift; a per-plane fit is not measured against the held-out photographs because it is trained toward them by construction.</p>
 
 <p>Two limits are honest and open. The reference is a central longitudinal cut, so warping it to every depth writes a columella at depths that should have none &mdash; off-centre planes have no photograph, and inventing one is the next problem. And the write-back into the discrete lattice, plus the slab integration, softens the per-plane fits that were sharp in 2-D; keeping that sharpness means rendering each frame by generation rather than storing it in voxels.</p>
+
+<figure style="margin:6px 0 24px">
+  <video src="assets/ovcut_orange_perplane.mp4?v=pp" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="per-instance overfit sweep"></video>
+  <figcaption style="text-align:center">Per-instance overfit: twelve longitudinal depths, each a separate 6000-step fit, written back into one voxel field and slab-rendered. Vivid, detailed, consistent across the sweep.</figcaption>
+</figure>
 
 <h2>The shared-field lift, for comparison</h2>
 
