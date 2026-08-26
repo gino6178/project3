@@ -70,6 +70,10 @@
     <video src="assets/ovcut_orange_mt9.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:220px;border-radius:3px" aria-label="sparse lift with depth smoothness"></video>
     <figcaption style="text-align:center;font-size:12px;margin-top:4px">sparse + depth smoothness<br><span class="mut">held long &minus;0.020, held trans &minus;0.014</span></figcaption>
   </figure>
+  <figure style="margin:0 6px">
+    <video src="assets/ovcut_orange_mt16_slab.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:220px;border-radius:3px" aria-label="global colour lift, slab-rendered sweep"></video>
+    <figcaption style="text-align:center;font-size:12px;margin-top:4px">global colour + slab render<br><span class="mut">held long &minus;0.014, held trans &minus;0.003</span></figcaption>
+  </figure>
 </div>
 <p style="text-align:center;font-size:13px;color:var(--mut);margin:0 0 24px">
 Trade-off: the sparse lift updates six narrow depth bands (better DreamSim, visible stripes in the sweep). The dense lift updates every depth uniformly (no stripes, but every plane is pulled toward the one photograph the 2-D diffusion was trained on, so numbers regress). Fix under investigation: three 1-photo diffusions per family, one per training photo, randomised across the dense planes.
