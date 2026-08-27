@@ -156,6 +156,29 @@ $$w(s)=\sqrt{\,r_c^{2}-s^{2}\,}\ \ (\,|s|<r_c\,),\qquad 0\ \text{otherwise.}$$
 
 <p>Rather than pin a columella, we crop the reference&rsquo;s own pith to that width before warping: central planes carry a full pith, off-centre planes carry a thinner one, and beyond the core the input is de-pithed so the model grows none. The gating rides entirely on the input, which suits a patch-local model &mdash; it paints a columella only where its neighbourhood already looks like one.</p>
 
+<h3>Why the axis \(n\) is a photograph, not the shell &mdash; the boundary&ndash;anatomy decoupling problem</h3>
+
+<p>The obvious objection to \(w(s)\) is that the axis it needs should come from the shell, not from a photograph: extract a medial axis, or a signed distance field, or a principal direction, and derive the core geometrically. For this object that is impossible in principle, and the failure has a clean statement.</p>
+
+<p><strong>Claim.</strong> When the shell is rotationally near-symmetric (an \(SO(3)\)-isotropic boundary &mdash; citrus, tomato, an eyeball, most organs), the boundary carries <em>no</em> information about the anatomical polarity of the interior. A sphere has no preferred axis, so any shell-only operator &mdash; SDF, skeletonisation, PCA &mdash; either returns a rotationally-ambiguous answer or an artefact of the discretisation, never the stem&ndash;blossom axis the pith actually follows. The interior axis is <em>decoupled</em> from the boundary; only the orthogonal cut <em>photographs</em>, through their normals \(n\), supply it.</p>
+
+<figure style="margin:12px 0 10px">
+  <img src="assets/ovdecoupling.png" alt="SDF, skeleton, and PCA all fail to recover the columella axis on a near-spherical orange; the photograph normal recovers it" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption style="text-align:center">On a near-spherical orange the distance field is isotropic, the medial axis collapses to a central blob, and the PCA principal axis is essentially arbitrary (here tilted off the true pith). Only the supervised cut normal \(n\) &mdash; the blue band, our \(w(s)\) &mdash; locates the anatomical axis. \(r_c\) is still a scalar read from the photograph; what the shell cannot give is the <em>direction</em>.</figcaption>
+</figure>
+
+<p>This scopes when a geometric core-extractor is the right tool and when it is not:</p>
+
+<ul>
+<li><strong>Geometry-driven</strong> &mdash; a banana, a croissant, a doughnut: curvature or topology fixes the axis, and an SDF/medial axis recovers it cleanly (a torus&rsquo; skeleton is its central ring).</li>
+<li><strong>Anatomy-driven</strong> &mdash; citrus, tomato, an eyeball, a uniform organ: the boundary is isotropic and the axis must come from the orthogonal slice photographs&rsquo; normals \(n\). This is the regime this method targets.</li>
+</ul>
+
+<figure style="margin:10px 0 24px">
+  <img src="assets/ovtaxonomy.png" alt="orange skeleton is a tangled blob; doughnut skeleton is a clean ring" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption style="text-align:center">The same skeletoniser on both regimes: the near-spherical orange gives a tangled central blob (no usable axis), the doughnut a clean 356-cell ring (the topology&rsquo;s medial curve). Geometry recovers the axis exactly when the shape defines it &mdash; and not otherwise.</figcaption>
+</figure>
+
 <h3>From planes to one field</h3>
 
 <p>Both cut families feed one field. The longitudinal sweep is generated from the <code>or_long</code> references with the geometric pith crop above; the transverse sweep is generated from <code>or_trans</code> orange-wheel references, whose central pith needs no crop &mdash; every transverse plane crosses the axis, so the columella is simply a dot at the centre. Each generated face \(r_p\) is splatted back over a slab whose half-width is set to just over half the inter-plane spacing, so neighbouring planes tile the depth range with no unwritten gap; a cell&rsquo;s colour is the mean of every reconstructed pixel that projects into it,</p>
