@@ -200,6 +200,17 @@ $$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\t
 </div>
 <p style="text-align:center;font-size:13px;color:var(--mut);margin:0 0 24px">Six objects, one program. Each clip is a depth sweep read from that object&rsquo;s voxel field; orange and watermelon show both cut families side by side.</p>
 
+<h3>Why not a continuous Triplane field &mdash; an ablation</h3>
+
+<p>The natural objection is that a discrete voxel field should be replaced by a continuous implicit representation &mdash; a Triplane (three orthogonal feature planes decoded by a small MLP) fit to the generated cut faces, with a 3-D total-variation prior filling the gaps. We built it: three \(16\times192\times192\) planes and a two-layer MLP, supervised by the same \(3.9\times10^{5}\) sharp cut-face pixels (both families) plus 3-D TV, converging to \(1.3\times10^{-3}\) MSE in about twelve seconds. It renders any oblique angle as a full cross-section &mdash; the continuity claim holds.</p>
+
+<p>But it does not improve on the voxel field; it is worse. The two cut families <em>disagree</em> along the line where their planes intersect, and a single continuous field can only fit a compromise &mdash; so the Triplane reconstructs a speckled, conflicted interior, exactly the projection-intersection artifact its three shared planes are supposed to prevent. The 3-D TV that would suppress the speckle only trades it for over-smoothing. The voxel field, rendered as a slab, stays cleaner because each cut reads a local neighbourhood rather than a globally-reconciled field.</p>
+
+<figure style="margin:6px 0 24px">
+  <img src="assets/ovtriplane_ablation.png" alt="Triplane INR versus voxel field on oblique cuts" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption style="text-align:center"><em>Top:</em> a Triplane INR fit to the generated faces plus 3-D TV. <em>Bottom:</em> the voxel field, slab-rendered. Cut normal tilted \(0^\circ\!\to\!90^\circ\). Both fill every angle, but the continuous field is speckled where the two families&rsquo; planes intersect; the voxel field stays clean. Under two or three photographs of constraint, a globally-reconciled implicit field is not the safer choice.</figcaption>
+</figure>
+
 <footer>Companion note to the base O-Voxel work. The interior generator runs on the 2-D cut face and writes a projected update into the voxel field; the base O-Voxel shell and skin are unchanged by any of it.</footer>
 
 </div>
