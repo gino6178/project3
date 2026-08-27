@@ -167,7 +167,7 @@ $$C_i=\frac{1}{|\mathcal P_i|}\sum_{(o,u)\in\mathcal P_i} r_{o}(u),\qquad \mathc
 <p>Two limits are honest and open. The write-back into the discrete lattice, plus the slab integration, softens faces that were sharp in 2-D &mdash; the same voxel-storage cost the shared lift pays; keeping the 2-D sharpness means generating each frame at render time instead of storing it. And the core is thin, so only the one or two most central planes carry a columella; the depth gating is correct but visually sparse.</p>
 
 <figure style="margin:6px 0 24px">
-  <video src="assets/ovring_orange_vh.mp4?v=vh" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="longitudinal and transverse cut-face sweep"></video>
+  <video src="assets/ovring_orange_vh.mp4?v=vh2" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="longitudinal and transverse cut-face sweep"></video>
   <figcaption style="text-align:center">One released diffusion, no per-plane training. <em>Left:</em> the longitudinal sweep &mdash; the columella appears near the axis and fades off it, by geometry. <em>Right:</em> the transverse sweep &mdash; orange-wheel faces with a central pith dot. Both are input-driven SDEdit (\(\rho=0.25\), rind-only pin) from depth-assigned references, written into <em>one</em> voxel field and slab-rendered; the two directions read out of the same voxels.</figcaption>
 </figure>
 
@@ -182,6 +182,15 @@ $$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\t
 <figure style="margin:6px 0 24px">
   <img src="assets/ovring_orange_oblique.png" alt="six oblique cuts of one voxel field" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
   <figcaption style="text-align:center">The cut normal tilted \(0^\circ\!\to\!90^\circ\) from longitudinal to transverse. None of these angles were generated; each face is read from the same voxel field. The columella moves from a vertical line to a central dot &mdash; geometrically coherent because the interior is one 3-D volume.</figcaption>
+</figure>
+
+<h3>The same program on another object</h3>
+
+<p>Nothing above is orange-specific. Swapping the single-image diffusion for one trained on a watermelon photograph and the reference for a watermelon cut, the identical pipeline fills a watermelon: red flesh, a green rind ring, and seeds. Two object-general refinements earn their place here. First, a single-image diffusion erases features that are rare in its one training image &mdash; the seeds &mdash; at any SDEdit strength, so the input&rsquo;s dark seed pixels are composited back onto the generated flesh, \(r \leftarrow (1-m_s)\odot r + m_s\odot y\) with \(m_s\) the pixels darker than the flesh median. Second, a uniform flesh exposes a moiré the busy orange texture had hidden &mdash; aliasing between the slab&rsquo;s \(n_{\text{sub}}\) samples and the lattice &mdash; so the slab is rendered at \(2\times\) and averaged down. Both are general; neither is a watermelon knob.</p>
+
+<figure style="margin:6px 0 24px">
+  <video src="assets/ovring_watermelon_vh.mp4?v=wm" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="watermelon longitudinal and transverse sweep"></video>
+  <figcaption style="text-align:center">The same pipeline on a watermelon &mdash; longitudinal (left) and transverse (right), read from one voxel field. The single-image diffusion, the reference photographs, and the seed compositing are the only things that changed from the orange.</figcaption>
 </figure>
 
 <footer>Companion note to the base O-Voxel work. The interior generator runs on the 2-D cut face and writes a projected update into the voxel field; the base O-Voxel shell and skin are unchanged by any of it.</footer>
