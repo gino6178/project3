@@ -194,6 +194,19 @@ $$C_i=\frac{1}{|\mathcal P_i|}\sum_{(o,u)\in\mathcal P_i} r_{o}(u),\qquad \mathc
   <figcaption style="text-align:center">One released diffusion, no per-plane training. <em>Left:</em> the longitudinal sweep &mdash; the columella appears near the axis and fades off it, by geometry. <em>Right:</em> the transverse sweep &mdash; orange-wheel faces with a central pith dot. Both are input-driven SDEdit (\(\rho=0.25\), rind-only pin) from depth-assigned references, written into <em>one</em> voxel field and slab-rendered; the two directions read out of the same voxels.</figcaption>
 </figure>
 
+<h3>Bidirectional fusion: each cut reads the field its own photographs built</h3>
+
+<p>Averaging the two families into one field is the simplest fusion, but it dilutes a longitudinal cut with transverse evidence and vice versa. A better rule keeps a <em>separate</em> field per family, \(C^{v}\) and \(C^{h}\), and blends them at query time by how well the queried cut normal \(n\) aligns with each family&rsquo;s own normal:</p>
+
+$$C(n)=\omega_v\,C^{v}+\omega_h\,C^{h},\qquad \omega_v=\frac{\cos^{k}\!\angle(n,n_v)}{\cos^{k}\!\angle(n,n_v)+\cos^{k}\!\angle(n,n_h)},\quad k=4,$$
+
+<p>with \(\omega_h=1-\omega_v\). A longitudinal query reads almost entirely the field built from longitudinal photographs, a transverse query the transverse field, and an oblique query a smooth mix &mdash; so every direction is reconstructed by the evidence that actually constrains it, and the object stays consistent whichever way it is opened. The gain is largest at the pure axes (a crisper columella at \(0^\circ\)); it is modest on the orange only because its two fields already agree.</p>
+
+<figure style="margin:6px 0 24px">
+  <img src="assets/ovbidir.png" alt="anisotropic angle-weighted fusion versus naive mean, cut at 0/30/45/60/90 degrees" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption style="text-align:center">Angle-weighted bidirectional fusion (top) vs the naive mean (bottom), cut from \(0^\circ\) (longitudinal) to \(90^\circ\) (transverse). Each cut in the top row is reconstructed by the field its own family&rsquo;s photographs built; the columella at \(0^\circ\) is less diluted.</figcaption>
+</figure>
+
 <h3>The result is a cuttable 3-D asset</h3>
 
 <p>Because the write-back stores a colour per cell rather than a set of pre-rendered images, the field is a filled volume: \(99.9\%\) of interior cells are written, and <em>any</em> plane &mdash; including orientations never generated &mdash; reads its face straight out of the voxels. Tilt the cut normal continuously from longitudinal to transverse,</p>
