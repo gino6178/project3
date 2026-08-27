@@ -61,6 +61,67 @@
 
 <p>An O-Voxel gives an object a shell and a supervised skin, but its interior is only the handful of cut planes a few photographs constrain; every other depth is unseen. The task here is to fill that interior so any cut looks like a real cut of this specimen. An earlier version of this method reached photographic detail by <em>overfitting one diffusion per plane</em> &mdash; a 6000-step fit toward a warped reference, generated from noise with the supervised cells and background hard-pinned. It was sharp, but every seed produced the <em>same</em> face, and it cost a full training run per plane. The method here replaces it: one released single-image diffusion, no per-plane training, constrained only at sampling, with the variation moved onto the axis that actually carries it &mdash; the input.</p>
 
+<figure style="margin:18px 0 28px">
+<svg viewBox="0 0 760 650" width="100%" role="img" aria-label="Pipeline flowchart: silhouette and warped reference, rind-only pin, SDEdit generation, slab write-back into one voxel field" style="max-width:760px;display:block;margin:0 auto;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5c5c5c"/>
+    </marker>
+  </defs>
+  <rect x="14" y="14" width="732" height="436" rx="10" fill="#fafafa" stroke="#e6e6e6"/>
+  <text x="30" y="37" font-size="12.5" fill="#a8412a" font-weight="600">for each cut plane (n, d)</text>
+
+  <rect x="56" y="52" width="286" height="46" rx="6" fill="#fff" stroke="#d9d9d9"/>
+  <text x="199" y="80" text-anchor="middle" font-size="14" fill="#111">O-Voxel shell</text>
+  <rect x="418" y="52" width="286" height="46" rx="6" fill="#fff" stroke="#d9d9d9"/>
+  <text x="561" y="74" text-anchor="middle" font-size="14" fill="#111">reference photo</text>
+  <text x="561" y="90" text-anchor="middle" font-size="11.5" fill="#5c5c5c">depth-assigned</text>
+
+  <line x1="199" y1="98" x2="199" y2="124" stroke="#5c5c5c" marker-end="url(#ah)"/>
+  <line x1="561" y1="98" x2="561" y2="124" stroke="#5c5c5c" marker-end="url(#ah)"/>
+
+  <rect x="56" y="126" width="286" height="46" rx="6" fill="#fff" stroke="#d9d9d9"/>
+  <text x="199" y="154" text-anchor="middle" font-size="13.5" fill="#111">rasterise flesh silhouette&#160;&#160;f</text>
+  <rect x="418" y="126" width="286" height="46" rx="6" fill="#fff" stroke="#d9d9d9"/>
+  <text x="561" y="154" text-anchor="middle" font-size="13.5" fill="#111">affine-warp into f&#160;&#160;&#8594;&#160;&#160;x&#8320;</text>
+
+  <line x1="199" y1="172" x2="199" y2="189" stroke="#5c5c5c"/>
+  <line x1="561" y1="172" x2="561" y2="189" stroke="#5c5c5c"/>
+  <line x1="197" y1="189" x2="563" y2="189" stroke="#5c5c5c"/>
+  <line x1="380" y1="189" x2="380" y2="200" stroke="#5c5c5c" marker-end="url(#ah)"/>
+
+  <rect x="150" y="202" width="460" height="52" rx="6" fill="#fff" stroke="#d9d9d9"/>
+  <text x="380" y="223" text-anchor="middle" font-size="13.5" fill="#111">pin rind ring + background</text>
+  <text x="380" y="242" text-anchor="middle" font-size="12.5" fill="#5c5c5c">k = (f &#8743; &#172;erode f) &#8744; (1 &#8722; f)</text>
+
+  <line x1="380" y1="254" x2="380" y2="271" stroke="#5c5c5c" marker-end="url(#ah)"/>
+
+  <rect x="104" y="273" width="552" height="67" rx="6" fill="#f6e9e4" stroke="#a8412a"/>
+  <text x="380" y="297" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">SDEdit</text>
+  <text x="380" y="315" text-anchor="middle" font-size="12.5" fill="#111">noise x&#8320; to &#961;T, denoise with one single-image diffusion &#934;,</text>
+  <text x="380" y="332" text-anchor="middle" font-size="12.5" fill="#111">re-pin k every reverse step&#160;&#160;&#183;&#160;&#160;&#961; &#8776; 0.25</text>
+
+  <line x1="380" y1="340" x2="380" y2="360" stroke="#5c5c5c" marker-end="url(#ah)"/>
+
+  <rect x="256" y="362" width="248" height="44" rx="6" fill="#fff" stroke="#d9d9d9"/>
+  <text x="380" y="389" text-anchor="middle" font-size="13.5" fill="#111">generated cut face&#160;&#160;r&#8346;</text>
+
+  <line x1="380" y1="450" x2="380" y2="470" stroke="#5c5c5c" marker-end="url(#ah)"/>
+  <text x="380" y="486" text-anchor="middle" font-size="12.5" fill="#5c5c5c">repeated over depths &#215; { longitudinal &#183; transverse }</text>
+
+  <rect x="104" y="498" width="552" height="50" rx="6" fill="#fff" stroke="#d9d9d9"/>
+  <text x="380" y="520" text-anchor="middle" font-size="13.5" fill="#111">slab write-back into one voxel field</text>
+  <text x="380" y="538" text-anchor="middle" font-size="12" fill="#5c5c5c">C&#7522; = mean of every reconstructed pixel projecting into cell i</text>
+
+  <line x1="380" y1="548" x2="380" y2="568" stroke="#5c5c5c" marker-end="url(#ah)"/>
+
+  <rect x="150" y="570" width="460" height="50" rx="6" fill="#f6e9e4" stroke="#a8412a"/>
+  <text x="380" y="592" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">filled 3-D asset</text>
+  <text x="380" y="610" text-anchor="middle" font-size="12" fill="#5c5c5c">any cut plane reads its face from the voxels</text>
+</svg>
+<figcaption style="text-align:center">The pipeline for one object. Everything in the panel runs per cut plane and takes about a second; the loop fills one shared voxel field that any later cut &mdash; at any orientation &mdash; reads from directly.</figcaption>
+</figure>
+
 <h3>Where a single-image diffusion&rsquo;s variety actually lives</h3>
 
 <p>SinDiffusion has a patch-scale receptive field (no attention, no bottleneck), so it resamples an image&rsquo;s local statistics into new layouts. Sampled unconditionally on our orange it is genuinely diverse. But that diversity is almost entirely <em>global layout</em> &mdash; where the silhouette sits, the big colour blocks &mdash; and our task fixes the silhouette and boundary by construction. Measuring the per-seed standard deviation in the flesh region on one plane makes the collapse quantitative:</p>
