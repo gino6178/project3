@@ -184,14 +184,21 @@ $$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\t
   <figcaption style="text-align:center">The cut normal tilted \(0^\circ\!\to\!90^\circ\) from longitudinal to transverse. None of these angles were generated; each face is read from the same voxel field. The columella moves from a vertical line to a central dot &mdash; geometrically coherent because the interior is one 3-D volume.</figcaption>
 </figure>
 
-<h3>The same program on another object</h3>
+<h3>The same program on six objects</h3>
 
-<p>Nothing above is orange-specific. Swapping the single-image diffusion for one trained on a watermelon photograph and the reference for a watermelon cut, the identical pipeline fills a watermelon: red flesh, a green rind ring, and seeds. Two object-general refinements earn their place here. First, a single-image diffusion erases features that are rare in its one training image &mdash; the seeds &mdash; at any SDEdit strength, so the input&rsquo;s dark seed pixels are composited back onto the generated flesh, \(r \leftarrow (1-m_s)\odot r + m_s\odot y\) with \(m_s\) the pixels darker than the flesh median. Second, a uniform flesh exposes a moiré the busy orange texture had hidden &mdash; aliasing between the slab&rsquo;s \(n_{\text{sub}}\) samples and the lattice &mdash; so the slab is rendered at \(2\times\) and averaged down. Both are general; neither is a watermelon knob.</p>
+<p>Nothing above is orange-specific. Per object the only things that change are its own single-image diffusion (trained on that object&rsquo;s cut photograph) and its reference; the pipeline, the constraints, and the render are identical. The same program fills a watermelon, an apple, a pomegranate, a loaf of bread, and a layered cake &mdash; each read from its own voxel field.</p>
 
-<figure style="margin:6px 0 24px">
-  <video src="assets/ovring_watermelon_vh.mp4?v=wm" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="watermelon longitudinal and transverse sweep"></video>
-  <figcaption style="text-align:center">The same pipeline on a watermelon &mdash; longitudinal (left) and transverse (right), read from one voxel field. The single-image diffusion, the reference photographs, and the seed compositing are the only things that changed from the orange.</figcaption>
-</figure>
+<p>Two object-general refinements earn their place across the set. A single-image diffusion erases features that are rare in its one training image &mdash; watermelon seeds, pomegranate arils &mdash; at any SDEdit strength, so the input&rsquo;s dark pixels are composited back onto the generated flesh, \(r \leftarrow (1-m_s)\odot r + m_s\odot y\) with \(m_s\) the pixels darker than the flesh median (used where an object has such features, left off for the apple&rsquo;s pale core). And a uniform flesh exposes a moiré the busy orange texture had hidden &mdash; aliasing between the slab&rsquo;s \(n_{\text{sub}}\) samples and the lattice &mdash; so the slab is rendered at \(2\times\) and averaged down. Both are general; neither is a per-object knob.</p>
+
+<div class="cutstrip" style="justify-content:center;margin:8px 0 6px">
+  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_orange_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="orange sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">orange</figcaption></figure>
+  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_watermelon_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="watermelon sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">watermelon</figcaption></figure>
+  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_pomegranate2_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="pomegranate sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">pomegranate</figcaption></figure>
+  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_apple1_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="apple sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">apple</figcaption></figure>
+  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_bread_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="bread sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">bread</figcaption></figure>
+  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_cake2_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="cake sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">cake</figcaption></figure>
+</div>
+<p style="text-align:center;font-size:13px;color:var(--mut);margin:0 0 24px">Six objects, one program. Each clip is a depth sweep read from that object&rsquo;s voxel field; orange and watermelon show both cut families side by side.</p>
 
 <footer>Companion note to the base O-Voxel work. The interior generator runs on the 2-D cut face and writes a projected update into the voxel field; the base O-Voxel shell and skin are unchanged by any of it.</footer>
 
