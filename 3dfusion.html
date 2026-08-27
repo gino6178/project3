@@ -48,7 +48,7 @@
 
 <header>
   <h1>3DFusion: Lifting 2-D Diffusion Priors into an O-Voxel Interior</h1>
-  <p class="sub">Two or three photographs per family cannot supervise a volume. The method: for every cut plane with no photograph, overfit a single-image diffusion &mdash; 6000 steps, a hard constraint on both the supervised cells and the background &mdash; to generate its flesh from noise, then write the swept faces back into one 3-D field.</p>
+  <p class="sub">Two or three photographs per family cannot supervise a volume. The method: for every cut plane with no photograph, warp a depth-assigned reference into the silhouette and let one released single-image diffusion re-generate it &mdash; pinning only the rind, a light SDEdit that keeps the input&rsquo;s structure &mdash; so the variation rides on the input, not the seed; then write the swept faces back into one 3-D field.</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint &middot; work in progress</p>
   <div class="links">
@@ -57,55 +57,57 @@
   </div>
 </header>
 
-<h2>Per-instance overfit: one fit per cut face</h2>
+<h2>One diffusion, constrained at generation: the input drives the cut face</h2>
 
-<p>The lift below shares one field across every plane, which is what makes it consistent and also what caps its detail: a single 8-D latent per cell cannot be sharp on every unseen depth at once. The alternative is to give up the shared model at generation time and <em>overfit one diffusion per plane</em> &mdash; a full 6000-step fit for each cut face. It is the only thing that reaches photographic detail on a plane with no photograph.</p>
+<p>The lift below shares one field across every plane, which is what makes it consistent and also what caps its detail: a single 8-D latent per cell cannot be sharp on every unseen depth at once. An earlier version of this page reached photographic detail by <em>overfitting one diffusion per plane</em> &mdash; a full 6000-step fit toward a warped reference, generated from noise with the supervised cells and background hard-pinned. It was sharp, but every seed produced the <em>same</em> face. The method below is what replaced it: one released single-image diffusion, no per-plane training, constrained only at sampling, with the variation moved onto the axis that actually carries it &mdash; the input.</p>
 
-<h3>The constrained target</h3>
+<h3>Where a single-image diffusion&rsquo;s variety actually lives</h3>
 
-<p>For a plane with normal \(n\) and offset \(d\), write \(f\) for its flesh silhouette (rasterised from the O-Voxel shell), \(k\) for the supervised cells it passes through, and</p>
+<p>SinDiffusion has a patch-scale receptive field (no attention, no bottleneck), so it resamples an image&rsquo;s local statistics into new layouts. Sampled unconditionally on our orange it is genuinely diverse. But that diversity is almost entirely <em>global layout</em> &mdash; where the silhouette sits, the big colour blocks &mdash; and our task fixes the silhouette and boundary by construction. Measuring the per-seed standard deviation in the flesh region on one plane makes the collapse quantitative:</p>
 
-$$m \;=\; f\odot(1-k)$$
+<table style="margin:8px auto;border-collapse:collapse;font-size:0.92em">
+<tr><th style="text-align:left;padding:2px 14px 2px 0">regime</th><th style="padding:2px 10px">flesh std</th><th style="text-align:left;padding:2px 0">outcome</th></tr>
+<tr><td style="padding:2px 14px 2px 0">unconditional (unconstrained)</td><td style="text-align:center;padding:2px 10px">0.130</td><td>diverse, consistent texture</td></tr>
+<tr><td style="padding:2px 14px 2px 0">per-instance overfit</td><td style="text-align:center;padding:2px 10px">0.030</td><td>every seed identical</td></tr>
+<tr><td style="padding:2px 14px 2px 0">de-leaked base + augmentation</td><td style="text-align:center;padding:2px 10px">0.035</td><td>still identical</td></tr>
+<tr><td style="padding:2px 14px 2px 0">masked resampling (RePaint)</td><td style="text-align:center;padding:2px 10px">0.011</td><td>even lower</td></tr>
+</table>
 
-<p>for the <em>gen-mask</em> &mdash; the flesh no photograph ever constrained, the only region the model may paint. The target \(y\in[-1,1]^{3\times H\times W}\) is a reference photograph affine-warped so its silhouette fills \(f\). The model is conditioned on a <em>base</em> that fixes everything outside \(m\):</p>
+<p>Pinning only a thin rind ring &mdash; the outpainting regime, a large free interior &mdash; does not rescue it either (std \(0.021\), and the interior loses all structure). The conclusion is that seed diversity is not a missing knob under these constraints; the correct source of variation is a <em>different reference per plane</em>, which is also what makes the depth sweep change with depth.</p>
 
-$$b \;=\; \underbrace{k\odot y}_{\text{frozen cells}} \;+\; \underbrace{m\odot (G_\sigma\!*\,y)}_{\text{blurred flesh guess}} \;+\; \underbrace{(1-f)\odot \mathbf 1}_{\text{white background}},\qquad \sigma=15\ \text{px}.$$
+<h3>The generator: rind-only pin, low-strength SDEdit</h3>
 
-<p>Fixing <em>both</em> the cells \(k\) and the background \((1-f)\) is what makes the task trainable; with the background left free the model spends capacity tinting it and the reconstruction error is \(7\times\) worse.</p>
+<p>For a plane with normal \(n\) and offset \(d\), rasterise the flesh silhouette \(f\) from the O-Voxel shell. A depth-assigned reference photograph is affine-warped to fill \(f\), giving the input image \(x_0\in[-1,1]^{3\times H\times W}\). The <em>only</em> pinned region is a thin rind ring plus the white background,</p>
 
-<h3>The conditional single-image diffusion</h3>
+$$k \;=\; \big(f \wedge \neg\,\mathrm{erode}(f)\big)\;\vee\;(1-f),$$
 
-<p>SinDiffusion is a diffusion trained on one image; a patch-scale receptive field lets it learn that image&rsquo;s local statistics and resample them into new layouts. Its \(3\)-channel input convolution is widened to \(7\) and grown from the released checkpoint, the new channels zeroed so the fit begins exactly at the pretrained model:</p>
+<p>and the interior &mdash; segments, juice vesicles, columella &mdash; is left entirely to the model. Generation is SDEdit: noise the input to a fraction \(\rho\) of the schedule and denoise from there, re-pinning the ring after every reverse step,</p>
 
-$$W'_{\mathrm{in}}\in\mathbb R^{C\times 7\times 3\times 3},\qquad W'_{\mathrm{in}}[:,0\!:\!3]=W_{\mathrm{in}},\qquad W'_{\mathrm{in}}[:,3\!:\!7]=0.$$
+$$x_{\rho T}=\sqrt{\bar\alpha_{\rho T}}\,x_0+\sqrt{1-\bar\alpha_{\rho T}}\,\epsilon,\qquad x_{t-1}=k\odot\big(\sqrt{\bar\alpha_{t}}\,x_0+\sqrt{1-\bar\alpha_{t}}\,\epsilon_t\big)+(1-k)\odot\Phi(x_t,t),$$
 
-<p>It then reads noised sample, base and mask stacked on the channel axis: \(\;\epsilon_\theta\big([\,x_t \,\Vert\, b \,\Vert\, m\,],\,t\big)\).</p>
+<p>with \(\Phi\) one unconditional DDPM reverse step. The strength \(\rho\) is the whole trade-off: at \(\rho\!\approx\!0.55\) the model washes the interior to a canonical smooth blob and the input stops mattering; at \(\rho\!\approx\!0.25\) the input&rsquo;s structure survives, the diffusion only harmonises it into this plane&rsquo;s silhouette and rind, and <em>different references give visibly different, sharp cut faces</em>. There is no per-plane training: a face is generated in a second.</p>
 
-<h3>Overfitting one plane</h3>
+<h3>The columella is geometry, carried by the input</h3>
 
-<p>Train \(\theta\) for \(6000\) steps to denoise the target, the loss up-weighted \(3\times\) inside the gen-mask:</p>
+<p>The pith is a thin core along the fruit&rsquo;s axis; whether a plane shows it is not a texture choice but an intersection. With a core cylinder of radius \(r_c\!\approx\!0.13\,R\) about the axis, a longitudinal plane at perpendicular offset \(s\) meets it over a band of half-width</p>
 
-$$\mathcal L(\theta)=\mathbb E_{t,\,\epsilon}\Big[\,(1+3m)\odot\big\lVert\, \epsilon-\epsilon_\theta\big([\,x_t\Vert b\Vert m\,],\,t\big)\,\big\rVert^2\Big],\qquad x_t=\sqrt{\bar\alpha_t}\,y+\sqrt{1-\bar\alpha_t}\,\epsilon.$$
+$$w(s)=\sqrt{\,r_c^{2}-s^{2}\,}\ \ (\,|s|<r_c\,),\qquad 0\ \text{otherwise.}$$
 
-<p>The face is then generated from pure noise over the full reverse schedule, the constraint re-pinned after every step so the cells and background never move:</p>
-
-$$x_T\sim\mathcal N(0,I),\qquad x_{t-1}\;=\; m\odot\Phi_\theta(x_t,t)\;+\;(1-m)\odot b,$$
-
-<p>where \(\Phi_\theta\) is one DDPM reverse step conditioned on \([\,x_t\Vert b\Vert m\,]\). On a single plane this reconstructs \(y\) to a mean-squared error of \(8\times10^{-4}\) with no lattice grid and no seam &mdash; the constrained task is well within what the architecture represents. Two things quietly ruin it: sampling from the blurry base instead of from noise keeps the blur, and any colour transfer that touches the mid frequencies (\(y \leftarrow y-G_\sigma\!*y+\text{field}\)) erases the columella and the segment walls. The target is used raw.</p>
+<p>Rather than pin a columella, we crop the reference&rsquo;s own pith to that width before warping: central planes carry a full pith, off-centre planes carry a thinner one, and beyond the core the input is de-pithed so the model grows none. The gating rides entirely on the input, which suits a patch-local model &mdash; it paints a columella only where its neighbourhood already looks like one.</p>
 
 <h3>From planes to one field</h3>
 
-<p>A single model trained on the union of masks and augmented photographs does not generalise to this quality; it returns to the soft, gridded look. So each swept plane gets its own fit, and variety is a lever, not a failure: a <em>different</em> reference photograph per plane (three supervised, three held out) gives distinct plausible faces rather than one texture stamped everywhere. Each reconstruction \(r_p\) is splatted back over a slab of \(n_{\text{sub}}=5\) sub-planes at offsets \(o\in[-\delta,\delta]\), \(\delta=2\) cells; a cell&rsquo;s colour is the mean of every reconstructed pixel that projects into it,</p>
+<p>Each generated face \(r_p\) is splatted back over a slab of \(n_{\text{sub}}=5\) sub-planes at offsets \(o\in[-\delta,\delta]\), \(\delta=2\) cells; a cell&rsquo;s colour is the mean of every reconstructed pixel that projects into it,</p>
 
 $$C_i=\frac{1}{|\mathcal P_i|}\sum_{(o,u)\in\mathcal P_i} r_{o}(u),\qquad \mathcal P_i=\big\{(o,u): \pi_{\,n,\,d+o}(u)=i,\ f(u)>0\big\},$$
 
-<p>with \(\pi\) the plane-to-cell projection. That field is what the video renders (slab, thickness \(2.82\) cells). The DreamSim scores below are for the shared-field lift; a per-plane fit is not measured against the held-out photographs because it is trained toward them by construction.</p>
+<p>with \(\pi\) the plane-to-cell projection. Twelve planes fill the field in about three seconds total; that field is what the video renders (slab, thickness \(2.82\) cells).</p>
 
-<p>Two limits are honest and open. The reference is a central longitudinal cut, so warping it to every depth writes a columella at depths that should have none &mdash; off-centre planes have no photograph, and inventing one is the next problem. And the write-back into the discrete lattice, plus the slab integration, softens the per-plane fits that were sharp in 2-D; keeping that sharpness means rendering each frame by generation rather than storing it in voxels.</p>
+<p>Two limits are honest and open. The write-back into the discrete lattice, plus the slab integration, softens faces that were sharp in 2-D &mdash; the same voxel-storage cost the shared lift pays; keeping the 2-D sharpness means generating each frame at render time instead of storing it. And the core is thin, so only the one or two most central planes carry a columella; the depth gating is correct but visually sparse.</p>
 
 <figure style="margin:6px 0 24px">
-  <video src="assets/ovcut_orange_perplane.mp4?v=pp" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="per-instance overfit sweep"></video>
-  <figcaption style="text-align:center">Per-instance overfit: twelve longitudinal depths, each a separate 6000-step fit, written back into one voxel field and slab-rendered. Vivid, detailed, consistent across the sweep.</figcaption>
+  <video src="assets/ovring_orange_sweep.mp4?v=ring" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="input-driven cut-face sweep"></video>
+  <figcaption style="text-align:center">One released diffusion, no per-plane training: twelve longitudinal depths, each an input-driven SDEdit (\(\rho=0.25\), rind-only pin) from a depth-assigned reference, written back into one voxel field and slab-rendered. The columella appears near the axis and fades off it, by geometry.</figcaption>
 </figure>
 
 <h2>The shared-field lift, for comparison</h2>
