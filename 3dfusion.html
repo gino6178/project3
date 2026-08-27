@@ -97,17 +97,17 @@ $$w(s)=\sqrt{\,r_c^{2}-s^{2}\,}\ \ (\,|s|<r_c\,),\qquad 0\ \text{otherwise.}$$
 
 <h3>From planes to one field</h3>
 
-<p>Each generated face \(r_p\) is splatted back over a slab of \(n_{\text{sub}}=5\) sub-planes at offsets \(o\in[-\delta,\delta]\), \(\delta=2\) cells; a cell&rsquo;s colour is the mean of every reconstructed pixel that projects into it,</p>
+<p>Both cut families feed one field. The longitudinal sweep is generated from the <code>or_long</code> references with the geometric pith crop above; the transverse sweep is generated from <code>or_trans</code> orange-wheel references, whose central pith needs no crop &mdash; every transverse plane crosses the axis, so the columella is simply a dot at the centre. Each generated face \(r_p\) is splatted back over a slab whose half-width is set to just over half the inter-plane spacing, so neighbouring planes tile the depth range with no unwritten gap; a cell&rsquo;s colour is the mean of every reconstructed pixel that projects into it,</p>
 
 $$C_i=\frac{1}{|\mathcal P_i|}\sum_{(o,u)\in\mathcal P_i} r_{o}(u),\qquad \mathcal P_i=\big\{(o,u): \pi_{\,n,\,d+o}(u)=i,\ f(u)>0\big\},$$
 
-<p>with \(\pi\) the plane-to-cell projection. Twelve planes fill the field in about three seconds total; that field is what the video renders (slab, thickness \(2.82\) cells).</p>
+<p>with \(\pi\) the plane-to-cell projection. Both families together fill the field in about seven seconds; that one field is what every cut renders (slab, thickness \(2.82\) cells) &mdash; longitudinal and transverse read out of the same voxels.</p>
 
 <p>Two limits are honest and open. The write-back into the discrete lattice, plus the slab integration, softens faces that were sharp in 2-D &mdash; the same voxel-storage cost the shared lift pays; keeping the 2-D sharpness means generating each frame at render time instead of storing it. And the core is thin, so only the one or two most central planes carry a columella; the depth gating is correct but visually sparse.</p>
 
 <figure style="margin:6px 0 24px">
-  <video src="assets/ovring_orange_sweep.mp4?v=ring" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="input-driven cut-face sweep"></video>
-  <figcaption style="text-align:center">One released diffusion, no per-plane training: twelve longitudinal depths, each an input-driven SDEdit (\(\rho=0.25\), rind-only pin) from a depth-assigned reference, written back into one voxel field and slab-rendered. The columella appears near the axis and fades off it, by geometry.</figcaption>
+  <video src="assets/ovring_orange_vh.mp4?v=vh" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="longitudinal and transverse cut-face sweep"></video>
+  <figcaption style="text-align:center">One released diffusion, no per-plane training. <em>Left:</em> the longitudinal sweep &mdash; the columella appears near the axis and fades off it, by geometry. <em>Right:</em> the transverse sweep &mdash; orange-wheel faces with a central pith dot. Both are input-driven SDEdit (\(\rho=0.25\), rind-only pin) from depth-assigned references, written into <em>one</em> voxel field and slab-rendered; the two directions read out of the same voxels.</figcaption>
 </figure>
 
 <h2>The shared-field lift, for comparison</h2>
