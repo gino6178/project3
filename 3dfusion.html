@@ -59,7 +59,7 @@
 
 <h2>One diffusion, constrained at generation: the input drives the cut face</h2>
 
-<p>The lift below shares one field across every plane, which is what makes it consistent and also what caps its detail: a single 8-D latent per cell cannot be sharp on every unseen depth at once. An earlier version of this page reached photographic detail by <em>overfitting one diffusion per plane</em> &mdash; a full 6000-step fit toward a warped reference, generated from noise with the supervised cells and background hard-pinned. It was sharp, but every seed produced the <em>same</em> face. The method below is what replaced it: one released single-image diffusion, no per-plane training, constrained only at sampling, with the variation moved onto the axis that actually carries it &mdash; the input.</p>
+<p>An O-Voxel gives an object a shell and a supervised skin, but its interior is only the handful of cut planes a few photographs constrain; every other depth is unseen. The task here is to fill that interior so any cut looks like a real cut of this specimen. An earlier version of this method reached photographic detail by <em>overfitting one diffusion per plane</em> &mdash; a 6000-step fit toward a warped reference, generated from noise with the supervised cells and background hard-pinned. It was sharp, but every seed produced the <em>same</em> face, and it cost a full training run per plane. The method here replaces it: one released single-image diffusion, no per-plane training, constrained only at sampling, with the variation moved onto the axis that actually carries it &mdash; the input.</p>
 
 <h3>Where a single-image diffusion&rsquo;s variety actually lives</h3>
 
@@ -110,151 +110,20 @@ $$C_i=\frac{1}{|\mathcal P_i|}\sum_{(o,u)\in\mathcal P_i} r_{o}(u),\qquad \mathc
   <figcaption style="text-align:center">One released diffusion, no per-plane training. <em>Left:</em> the longitudinal sweep &mdash; the columella appears near the axis and fades off it, by geometry. <em>Right:</em> the transverse sweep &mdash; orange-wheel faces with a central pith dot. Both are input-driven SDEdit (\(\rho=0.25\), rind-only pin) from depth-assigned references, written into <em>one</em> voxel field and slab-rendered; the two directions read out of the same voxels.</figcaption>
 </figure>
 
-<h2>The shared-field lift, for comparison</h2>
+<h3>The result is a cuttable 3-D asset</h3>
 
-<div class="cutstrip" style="justify-content:center;margin:0 0 6px">
-  <figure style="margin:0 6px">
-    <video src="assets/ovcut_orange_sp_lift.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:220px;border-radius:3px" aria-label="sparse lift: six held-out planes"></video>
-    <figcaption style="text-align:center;font-size:12px;margin-top:4px">sparse: 6 held-out planes<br><span class="mut">held long &minus;0.037, held trans &minus;0.010</span></figcaption>
-  </figure>
-  <figure style="margin:0 6px">
-    <video src="assets/ovcut_orange_sp_lift_dense.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:220px;border-radius:3px" aria-label="dense lift: 19 depths uniformly across the sweep"></video>
-    <figcaption style="text-align:center;font-size:12px;margin-top:4px">dense: 57 depths, 1.6-cell spacing<br><span class="mut">held long +0.036, held trans +0.049</span></figcaption>
-  </figure>
-  <figure style="margin:0 6px">
-    <video src="assets/ovcut_orange_mt9.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:220px;border-radius:3px" aria-label="sparse lift with depth smoothness"></video>
-    <figcaption style="text-align:center;font-size:12px;margin-top:4px">sparse + depth smoothness<br><span class="mut">held long &minus;0.020, held trans &minus;0.014</span></figcaption>
-  </figure>
-  <figure style="margin:0 6px">
-    <video src="assets/ovcut_orange_mt23_slab.mp4?v=fusion" autoplay loop muted playsinline preload="metadata" style="height:220px;border-radius:3px" aria-label="global colour lift, slab-rendered sweep"></video>
-    <figcaption style="text-align:center;font-size:12px;margin-top:4px">global colour + normal-TV + gap-Laplacian + slab<br><span class="mut">held long &minus;0.024, held trans +0.002</span></figcaption>
-  </figure>
-</div>
-<p style="text-align:center;font-size:13px;color:var(--mut);margin:0 0 24px">
-From left to right, four lifts of the same targets into the same field. The sparse lift is sharp on the six supervised depths but the sweep flickers between them; the dense lift fills every depth but the independent per-plane generations disagree and collapse to one texture, and the numbers regress. The last is the current method: one global flesh colour, a normal-direction smoothness that fills the depth gaps, a Laplacian that removes the lattice grid where no photograph constrains it, and a slab render for the face. The rest of this note is what each of those terms is and why.
-</p>
+<p>Because the write-back stores a colour per cell rather than a set of pre-rendered images, the field is a filled volume: \(99.9\%\) of interior cells are written, and <em>any</em> plane &mdash; including orientations never generated &mdash; reads its face straight out of the voxels. Tilt the cut normal continuously from longitudinal to transverse,</p>
 
-<h2>The problem</h2>
+$$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\tfrac{\pi}{2},$$
 
-<p>The base pipeline fits a two-level occupancy lattice with an 8-D latent per cell, supervised by 1&ndash;12 cross-section photographs of different specimens. On planes those photographs reach, the fit is faithful; on planes they do not, the interior is a plausible average with no local detail. A held-out longitudinal cut of the orange scores 0.1942 in DreamSim against photographs of a real cut; a supervised one scores 0.0970.</p>
+<p>and the columella passes from a vertical stripe to a central dot with no discontinuity, because it was stored consistently in 3-D. One colour per cell is the price: the interior is exact for the families written into it and merely plausible for a strongly oblique cut &mdash; the single-value-per-cell limit any voxel interior carries &mdash; but every cut is filled and renders instantly.</p>
 
-<p>The photographs are what they are: three per family, taken of different oranges, at unknown poses. They cannot themselves supervise every plane. But a 2-D diffusion model can be trained on those three photographs alone, and then used to write a target on planes that have none. Four stages:</p>
+<figure style="margin:6px 0 24px">
+  <img src="assets/ovring_orange_oblique.png" alt="six oblique cuts of one voxel field" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption style="text-align:center">The cut normal tilted \(0^\circ\!\to\!90^\circ\) from longitudinal to transverse. None of these angles were generated; each face is read from the same voxel field. The columella moves from a vertical line to a central dot &mdash; geometrically coherent because the interior is one 3-D volume.</figcaption>
+</figure>
 
-<h2>Four stages</h2>
-
-<p><strong>Stage 1: the fitted 3-D field.</strong> This is the base pipeline; nothing new. One 8-D latent per coarse cell, one shared decoder, the interior optimised against the photographs whose planes we know.</p>
-
-<p><strong>Stage 2: a 2-D diffusion model of a good cut face.</strong> SinDiffusion architecture, patch-scale receptive field, trained on the supervised longitudinal photographs of the orange &mdash; the three of them. 12,000 steps, four L40s. The held-out three (or_long_01/03/06) are never touched here or anywhere in what follows; they are the only thing left to measure against.</p>
-
-<p><strong>Stage 3: writing a target on a plane with no photograph (SDEdit).</strong> For each held-out plane, render the plane from the Stage 1 field, noise the render partway back under the diffusion schedule, then denoise under the Stage 2 model. The starting point is our render rather than pure noise, so the target keeps this object&rsquo;s own layout and gains the statistics the render is missing. The peel is not refined: a flesh mask is derived from <code>render_section(exterior=False)</code>, and at every reverse step everything outside that mask is pinned to the render diffused to that step. The shell we already have is the shell the target keeps.</p>
-
-<p><strong>Stage 4: lifting the targets into the one 3-D field.</strong> Only the per-cell latent moves; the shared decoder is frozen, so the supervised planes are not disturbed through it. Write \(R(n,d)\) for the flesh render of the field on the plane with unit normal \(n\) and offset \(d\), \(T_t\) for the target on plane \(t\), and \(M_t\) for its flesh mask. The field \(f=\{f_i\}\) (one 8-D latent per interior cell \(i\)) minimises</p>
-
-$$\mathcal{L}(f)=\underbrace{\tfrac{1}{|\mathcal T|}\sum_{t\in\mathcal T}\big\lVert R(n_t,d_t)-T_t\big\rVert^2_{M_t}}_{\text{data (fit every plane)}}\;+\;\lambda_a\lVert f-f^{0}\rVert^2\;+\;\lambda_n\,\mathcal L_{\mathrm{nTV}}\;+\;\lambda_\ell\,\mathcal L_{\mathrm{lap}},$$
-
-<p>anchored to the Stage 1 latent \(f^{0}\), and after every step each cell is norm-clamped, \(\lVert f_i\rVert\le\kappa\lVert f^{0}_i\rVert\), so a runaway cell cannot paint a bright speck. One field renders every target at once, so a texture plausible on one plane but disagreeing with the others cannot survive &mdash; that is what a single 2-D generation cannot supply. The colour of the targets, and the two regularisers \(\mathcal L_{\mathrm{nTV}}\) and \(\mathcal L_{\mathrm{lap}}\), are what turn a consistent-but-striped fit into a clean one; each is one measured decision.</p>
-
-<h3>The target colour is one global flesh distribution, not the render&rsquo;s</h3>
-
-<p>The 2-D model is a strong generator of <em>structure</em> (columella, fibre, peel) but an unreliable one of <em>colour</em>: it collapses any input toward its single training image&rsquo;s palette, and on transverse faces its flesh came out \(+0.07\) too bright, which lifted into bright horizontal bands in the longitudinal sweep. So the target keeps only the high-frequency luma of the generation and takes its colour from one global flesh distribution \(\bar c=(\bar Y,\overline{Cb},\overline{Cr})\), the mean over both families&rsquo; photograph flesh. In \(YCbCr\), with \(G\!*\) a flesh-masked low-pass and subscripts \(g,r\) for the generation and the render,</p>
-
-$$Y=\underbrace{(Y_g-G\!*\,Y_g)}_{\text{hi-freq detail}}+\underbrace{\big(G\!*\,Y_r-\overline{Y_r}\big)+\bar Y}_{\text{shading shape, global mean}},\qquad (Cb,Cr)=(Cb_r,Cr_r)-\overline{(Cb_r,Cr_r)}+(\overline{Cb},\overline{Cr}).$$
-
-<p>Every plane of the object now shares one colour distribution, so the sweep has no colour bands, and the distribution is the photograph&rsquo;s rather than the duller render&rsquo;s &mdash; the held-out score confirmed the render was the wrong reference, not the generation.</p>
-
-<h3>A normal-direction smoothness fills the gaps between supervised depths</h3>
-
-<p>Only the cells a target plane passes through are updated; between two supervised depths the interior stays at the Stage 1 average, so a sweep reads as sharp&ndash;smooth&ndash;sharp and the eye sees a stripe. A first-order smoothness along each held plane&rsquo;s own normal &mdash; a finite difference by one step \(\Delta\) &mdash; pushes that plane&rsquo;s detail into the neighbouring depth instead of leaving an island:</p>
-
-$$\mathcal L_{\mathrm{nTV}}=\sum_{h\in\mathcal H}\big\lVert R(n_h,\,d_h+\Delta)-R(n_h,\,d_h)\big\rVert^2_{M_h},\qquad \Delta\approx1.5\,\text{cells}.$$
-
-<p>It is applied on the held-out planes only. On the supervised planes it would drag the anchors toward their duller neighbours; kept off them, the supervised guardrails hold.</p>
-
-<h3>A gap-only Laplacian removes the lattice grid where no photograph constrains it</h3>
-
-<p>The interior is sampled trilinearly, so it is \(C^0\); but the derivative still jumps at every coarse-cell boundary, and that \(C^1\) kink renders as a faint cross-hatch grid. A discrete Laplacian on the decoded colour \(z_i=g(f_i)\) over the lattice graph forces \(C^1\) continuity (it penalises curvature, so linear gradients &mdash; the columella, the shading &mdash; survive). It is weighted to zero within one cell of any target plane, so it smooths only the unobserved gap cells and never the scored faces:</p>
-
-$$\mathcal L_{\mathrm{lap}}=\frac{\sum_i w_i\,\big\lVert\sum_{j\in\mathcal N(i)}(z_j-z_i)\big\rVert^2}{\sum_i w_i},\qquad w_i=1-\max_{p\in\mathcal T}\mathbf 1\big[\,|x_i\!\cdot n_p+d_p|<h\,\big].$$
-
-<h3>The face is a slab, not a zero-thickness plane</h3>
-
-<p>The pipeline&rsquo;s real cut face is not a mathematical plane but an integral over a slab of half-width \(\delta\) (measured at \(2.82\) coarse cells for this orange); a zero-thickness section aliases the lattice into vertical depth-sampling stripes. Rendering the sweep as the slab average low-passes them away:</p>
-
-$$R_{\mathrm{slab}}(n,d)=\frac1K\sum_{k=1}^{K}R\big(n,\,d+o_k\big),\qquad o_k\in[-\delta,\delta].$$
-
-<h2>Held-out DreamSim, before and after</h2>
-
-<div class="tw"><p class="tnum">Table 1</p><table>
-<thead><tr><th>plane set</th><th>photographs</th><th>Stage 1</th><th>+ Stage 4 lift</th><th>&Delta;</th></tr></thead>
-<tbody>
-<tr><td>held-out longitudinal</td><td>3 (unseen)</td><td>0.1921</td><td><strong>0.1680</strong></td><td>&minus;0.0241 (&minus;13%)</td></tr>
-<tr><td>held-out transverse</td><td>3 (unseen)</td><td>0.1084</td><td>0.1102</td><td>+0.0018</td></tr>
-<tr><td>supervised longitudinal (guardrail)</td><td>3 (seen)</td><td>0.0969</td><td>0.1048</td><td>+0.0079</td></tr>
-<tr><td>supervised transverse (guardrail)</td><td>3 (seen)</td><td>0.1281</td><td>0.1309</td><td>+0.0028</td></tr>
-</tbody></table></div>
-
-<p>The current method, all terms on. The held-out longitudinal cut &mdash; the one with no photograph &mdash; moves \(13\%\) closer to real photographs of a cut; the two supervised guardrails and the transverse held-out set all stay within the seed repeat (\(\approx0.004\)), so nothing the lift did to remove stripes and grid cost the planes that were already right. The one number the colour change bought outright is the transverse held-out set: before the global-colour distribution it sat at \(+0.008\) (the render was too dull a reference); matched to the photograph it returned to the floor. The next table is the price list &mdash; what each anti-aliasing term costs the fit.</p>
-
-<h2>Anti-aliasing against fidelity: the lattice&rsquo;s Pareto edge</h2>
-
-<p>The cross-hatch grid is a \(C^1\) kink at every cell boundary. The Laplacian \(\mathcal L_{\mathrm{lap}}\) removes it &mdash; but on a discrete lattice, removing it and keeping the supervised planes sharp pull against each other, because the residual grid lives in the same low-gradient flesh that carries the photograph&rsquo;s micro-texture. Four points on that curve, same targets, same field, only the smoothing changed:</p>
-
-<div class="tw"><p class="tnum">Table 3</p><table>
-<thead><tr><th>variant</th><th>grid</th><th>held long</th><th>held trans</th><th>supv long</th><th>supv trans</th></tr></thead>
-<tbody>
-<tr><td>colour + normal-TV (no Laplacian)</td><td>present</td><td><strong>&minus;0.026</strong></td><td>&minus;0.002</td><td>+0.006</td><td>+0.002</td></tr>
-<tr><td>global Laplacian, \(\lambda_\ell=5\)</td><td>gone</td><td>&minus;0.021</td><td>+0.037</td><td>+0.047</td><td>+0.038</td></tr>
-<tr><td>gap-only Laplacian (current)</td><td>reduced</td><td>&minus;0.024</td><td>+0.002</td><td>+0.008</td><td>+0.003</td></tr>
-<tr><td>edge-aware + soft-mask, \(\lambda_\ell=8\)</td><td>reduced</td><td>&minus;0.025</td><td>+0.013</td><td>+0.019</td><td>+0.020</td></tr>
-</tbody></table></div>
-
-<p>A global Laplacian strong enough to erase the grid smears the anchors (\(+0.047\) on the supervised longitudinal); weighting it to zero near every target plane (the current method) holds the anchors at the seed floor but only reduces the grid, because half the volume lies within a cell of some plane and keeps its grid. Making the weight edge-aware (relax where \(\lVert\nabla z^{0}\rVert\) is large) and the mask a soft Gaussian does not escape the wall: the grid and the micro-texture overlap in gradient space, so no weight separates them. The gap-only point plus a slab render is the practical optimum of this representation; a fully grid-free interior needs a different one.</p>
-
-<h2>Why the grid is a representation limit, and what is not</h2>
-
-<p>Two things were separated by replacing the per-cell latent with a continuous tri-plane interior &mdash; three feature planes \(T_{xy},T_{yz},T_{zx}\in\mathbb R^{C\times R\times R}\) and a shallow decoder, queried by trilinear projection at the fragment&rsquo;s world position \(x\): \(z(x)=g\big([\,T_{xy}(x_{xy});T_{yz}(x_{yz});T_{zx}(x_{zx})\,]\big)\).</p>
-
-<p>Fit to the Stage 1 field it renders with <em>no grid at all</em> &mdash; a continuous field has no cell boundary, so no \(C^1\) kink, at no smoothing cost. That is the proof that the grid is a property of the discrete lattice, not of the lift. But lifting the tri-plane to the targets does not beat the lattice: its global continuity couples nearby planes, so fitting the held-out detail drags the supervised planes (\(+0.05\) to \(+0.09\) on the supervised longitudinal), and its capacity blurs the held detail the per-cell latent kept sharp (\(-0.005\) against the lattice&rsquo;s \(-0.026\)).</p>
-
-<p>What that isolates is the real ceiling. When the supervised planes are <em>not</em> frozen and every plane is asked to match its own generated target, the fit residual triples and the guardrails regress &mdash; on the tri-plane and on the dense lattice alike. The residual blur is not the representation; it is that the targets are generated independently, one plane at a time, and independent 2-D generations do not agree in 3-D. A shared field can only average their disagreement. Removing it needs a target that is 3-D-consistent by construction &mdash; a generative model over the volume (a true 3-D or tri-plane diffusion), which needs many fitted volumes to train and is left as the next stage. The current method is the best that the 2-D prior and this representation admit: sharp on the planes a photograph reaches, clean between them, and honest about the one thing it cannot yet buy.</p>
-
-<h2>Stage 3 sweep: how far back to noise</h2>
-
-<p>SDEdit&rsquo;s single knob is the fraction of the schedule the render is noised through before being denoised. Higher values give the model more room to make the target look right; lower values keep it close to the render. Whether keeping the shell locked matters is the same question, so both are swept together. DreamSim against the same three held-out photographs, lower is better.</p>
-
-<div class="tw"><p class="tnum">Table 2</p><table>
-<thead><tr><th>SDEdit strength</th><th>refine everything</th><th>refine flesh only</th></tr></thead>
-<tbody>
-<tr><td>the fitted render (no refine)</td><td>0.1942</td><td>0.1944</td></tr>
-<tr><td>s = 0.2</td><td>0.1668</td><td><strong>0.1576</strong></td></tr>
-<tr><td>s = 0.35</td><td>0.1707</td><td>0.1649</td></tr>
-<tr><td>s = 0.5</td><td>0.1484</td><td>0.1810</td></tr>
-<tr><td>s = 0.7</td><td><strong>0.1313</strong></td><td>0.1716</td></tr>
-</tbody></table></div>
-
-<p>Two things change when the shell is locked. The best strength moves from s = 0.7 to s = 0.2, and the low score at s = 0.7 without a mask is worse in a specific way &mdash; the model at that strength is repainting the peel and the outline as well as the flesh. Held to the flesh, the model has less room to help itself to structure that came from photographs, so a lighter refine is optimal, and the number is honest.</p>
-
-<h2>What each stage was tried against, and rejected</h2>
-
-<p>Two paths were built and measured before the current one; both failed, and the failures are informative about what makes Stage 3 work.</p>
-
-<p><strong>3-D diffusion over the latent volume.</strong> A UNet3D was trained on random 32<sup>3</sup> crops of the fitted latent volume, then sampled from noise inside a band around the held-out plane while every cell outside the band was pinned to Stage 1. DreamSim: 0.2180 &rarr; <strong>0.3237</strong> (+52%). Two mistakes made this worse than doing nothing. The predicted noise at the full-volume scale never fell below 0.96 of unit even at t = 100 &mdash; the model was trained on 32<sup>3</sup> where 100% of positions carry the object, and asked to sample on 117&times;128&times;120 where 57% are exactly zero; GroupNorm reads different statistics on the two, so it never realises the input is nearly clean. Tiling at the training size fixes that. The other one: <code>clip_denoised</code> was off because the latent is not in [&minus;1, 1], but the cosine schedule multiplies noise-prediction errors by <var>&radic;(1/&#x0101;)</var> = 300+ at t = 999; the samples ended 158 times larger than the fit they started from. A bound at the latent&rsquo;s own scale is what was needed.</p>
-
-<p><strong>Latent inpainting of a band around each plane.</strong> Same 3-D model, samples used to overwrite the fitted cells within &plusmn;4 coarse cells of the held-out plane. Discarded on grounds that pre-dated the failure: the band the &plusmn;4 rule selects is not the set of cells without supervision. Cells within four of a held-out longitudinal plane are still hit by transverse photographs, so the ablation was replacing photograph-supervised cells with a weak model&rsquo;s guess. What is unobserved is defined by the union of the plane families&rsquo; slabs, not by proximity to any one plane.</p>
-
-<p>The path that works is not the ambitious one. Diffusion runs on the 2-D face, where a model that has to know the object at all can be trained on three photographs and produces a target that is judged by other photographs of the same object. The lift into 3-D is a projected update to the field, not a generation.</p>
-
-<h2>Why one field, not six 2-D targets</h2>
-
-<p>Stage 4 could be replaced by six independent updates &mdash; overwrite the latent at each plane with the target for that plane. It is not, because the lattice is the same lattice at every plane, and a cell touched by two held-out planes gets one value. Two targets on the two planes at that cell must agree, or one of them will be pulled towards the other and both towards the field. In practice the flesh masks of six planes overlap over most of the interior, and the joint optimisation is what enforces the agreement. A single 2-D generation cannot do that.</p>
-
-<h2>What is not claimed</h2>
-
-<p>The 2-D model is trained on this object&rsquo;s own supervised photographs, and the target it writes on a held-out plane is a plausible cut face of this specimen &mdash; not a ground truth. DreamSim measures perceptual distance to real photographs of a similar cut, and it goes down; SSIM, LPIPS and a per-plane pixel loss are not reported here because we do not think they are the right measurement. The lift is a modest change to a fit that already exists; it is not a generative model of oranges.</p>
-
-<p>The Stage 4 lift moves the guardrail by 0.008, which is inside the seed repeat, but that has been measured on one object and one held-out set. Applying this to the other six objects, and to transverse planes, is what comes next. The base O-Voxel measurements do not depend on any of this &mdash; if Stage 4 turns out to be object-specific or unstable, the base pipeline is unchanged.</p>
-
-<footer>Companion note to the base O-Voxel work. All numbers here were measured against held-out photographs never used in training this or the base fit.</footer>
+<footer>Companion note to the base O-Voxel work. The interior generator runs on the 2-D cut face and writes a projected update into the voxel field; the base O-Voxel shell and skin are unchanged by any of it.</footer>
 
 </div>
 </body>
