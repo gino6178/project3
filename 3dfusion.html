@@ -111,6 +111,13 @@
 <figcaption style="text-align:center">The whole pipeline for one object, about a minute end to end. The 2-D prior never holds state; it only proposes a clean slice, and the volume decides what to keep.</figcaption>
 </figure>
 
+<figure style="margin:6px 0 28px">
+  <div class="tw" style="margin:0">
+    <img src="assets/cfsd_stages.png" alt="one slice at each stage: as held, canonically framed, noised, the prior's clean slice, the residual, the update, and the coverage weight" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  </div>
+  <figcaption style="text-align:center">The same boxes, on a real slice &mdash; one transverse slice well off the equator, at a mid-anneal noise level. The residual is shown at \(3\times\) to be visible at all; it is a correction, not a repaint. The last panel is the coverage weight on this slice, and it is worth a second look: the dark radial spokes are where the <em>longitudinal</em> photographs cut, because a pencil of planes through the axis meets a transverse slice as a set of radii. That picture is the reason the longitudinal family constrains so little of the volume.</figcaption>
+</figure>
+
 <h3>The volume is axis-aligned so that slices <em>are</em> the photographed family</h3>
 
 <p>Build a dense volume in the object&rsquo;s own frame with the sweep axis set to the transverse cut normal. Then the slices perpendicular to that axis are the transverse family itself, at native resolution &mdash; no resampling stands between a slice and the thing the photographs show. Every voxel maps to a lattice cell; outside the shell is white background; the volume is initialised from the fitted field.</p>
@@ -149,6 +156,11 @@ $$\mathrm{cov}(x)=\sum_{p}\exp\!\Big(\!-\big(\tfrac{n_p\cdot x + d_p}{\sigma}\bi
 $$X \;\leftarrow\; X_0 + \omega\odot\big(X-X_0\big).$$
 
 <p>Where the photographs cut, \(\omega\to 0\) and the data survives; where they never reached, \(\omega\to 1\) and the prior fills. This is the component that decides the sign of the whole result &mdash; the same total damping applied <em>uniformly</em> instead of by coverage is worth almost nothing, so it is the spatial structure doing the work, not the regularisation.</p>
+
+<figure style="margin:14px 0 26px">
+  <img src="assets/cfsd_anneal.gif" alt="the interior forming over sixteen annealing steps, transverse and longitudinal cut faces side by side" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption style="text-align:center">Sixteen outer steps, noise level annealed from \(\rho=0.40\) to \(0.04\). Both faces are held-out planes read from the lattice after every step, so this is the shared 3-D field changing, not two images being denoised. The transverse face grows radial membranes out to the rind; the longitudinal face, which the volume never slices directly, follows because it is reading the same cells.</figcaption>
+</figure>
 
 <h3>One photograph pins one plane</h3>
 
