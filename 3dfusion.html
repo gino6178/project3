@@ -159,7 +159,7 @@ $$X \;\leftarrow\; X_0 + \omega\odot\big(X-X_0\big).$$
 
 <figure style="margin:14px 0 26px">
   <img src="assets/cfsd_anneal.gif" alt="the interior forming over sixteen annealing steps, transverse and longitudinal cut faces side by side" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption style="text-align:center">Sixteen outer steps, noise level annealed from \(\rho=0.40\) to \(0.04\). Both faces are held-out planes read from the lattice after every step, so this is the shared 3-D field changing, not two images being denoised. The transverse face grows radial membranes out to the rind; the longitudinal face, which the volume never slices directly, follows because it is reading the same cells.</figcaption>
+  <figcaption style="text-align:center">Sixteen outer steps, noise level annealed from \(\rho=0.40\) to \(0.04\), in the shipped configuration &mdash; data term and axis-correlated noise included. Both faces are held-out planes read from the lattice after every step, so this is the shared 3-D field changing, not two images being denoised. The transverse face grows radial membranes out to the rind; the longitudinal face, which the volume never slices directly, follows because it is reading the same cells.</figcaption>
 </figure>
 
 <h3>One photograph pins one plane</h3>
@@ -180,7 +180,9 @@ $$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\t
 
 <p>and the columella passes from a vertical stripe to a central dot with no discontinuity, because it was stored consistently in 3-D. One colour per cell is the price: the interior is exact for the family the volume swept and merely plausible for a strongly oblique cut &mdash; the single-value-per-cell limit any voxel interior carries &mdash; but every cut is filled and renders instantly.</p>
 
-<p>The open limit is the one the geometry predicts. The volume sweeps the transverse stack, and that is the family the lift improves; the longitudinal planes form a pencil through the axis, of which an axis-aligned volume contains only the two azimuths aligned with its own axes, and on that family the lift is at best neutral. Closing it is a change of representation &mdash; a volume swept in azimuth rather than in depth &mdash; not another stage bolted onto this one.</p>
+<p>A second limit is visible if you look for it, and it is worth stating with a number rather than hoping the reader does not. Banding along the sweep axis &mdash; measured as the high-frequency power of the row-mean profile inside the flesh &mdash; runs at \(0.0085\) on the real photographs and \(0.0086\) on the FruitNinja arm, against \(0.0130\) for our fitted field before any generation and \(0.0161\) after the lift. So roughly half the excess is already in the lattice fit and the lift roughly doubles it. Correlating the noise along the sweep axis was the obvious repair and it is not one: it improves the appearance score on all six objects but moves the banding only from \(0.0161\) to \(0.0154\). It is kept for the score and the banding is still open.</p>
+
+<p>The other open limit is the one the geometry predicts. The volume sweeps the transverse stack, and that is the family the lift improves; the longitudinal planes form a pencil through the axis, of which an axis-aligned volume contains only the two azimuths aligned with its own axes, and on that family the lift is at best neutral. Closing it is a change of representation &mdash; a volume swept in azimuth rather than in depth &mdash; not another stage bolted onto this one.</p>
 
 <figure style="margin:6px 0 24px">
   <img src="assets/ovring_orange_oblique.png" alt="six oblique cuts of one voxel field" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
