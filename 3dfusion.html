@@ -50,7 +50,7 @@
 
 <header>
   <h1>3DFusion: Lifting 2-D Diffusion Priors into an O-Voxel Interior</h1>
-  <p class="sub">Two or three photographs per family cannot supervise a volume. The method: for every cut plane with no photograph, warp a depth-assigned reference into the silhouette and let one released single-image diffusion re-generate it &mdash; pinning only the rind, a light SDEdit that keeps the input&rsquo;s structure &mdash; so the variation rides on the input, not the seed; then write the swept faces back into one 3-D field.</p>
+  <p class="sub">Two or three photographs per family cannot supervise a volume. The method: make the 3-D volume itself the state, and let a single-image cut prior propose one slice of it at a time &mdash; each slice resampled into the framing the prior was trained at, each proposal anchored back to the fitted field by measured photographic coverage. Cuts are then consistent by construction, and the asset is baked once and read at any angle with no generation at cut time.</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint &middot; work in progress</p>
   <div class="links">
@@ -59,121 +59,116 @@
   </div>
 </header>
 
-<h2>One diffusion, constrained at generation: the input drives the cut face</h2>
+<h2>Lifting one 2-D cut prior into a 3-D interior</h2>
 
-<p>An O-Voxel gives an object a shell and a supervised skin, but its interior is only the handful of cut planes a few photographs constrain; every other depth is unseen. The task here is to fill that interior so any cut looks like a real cut of this specimen. An earlier version of this method reached photographic detail by <em>overfitting one diffusion per plane</em> &mdash; a 6000-step fit toward a warped reference, generated from noise with the supervised cells and background hard-pinned. It was sharp, but every seed produced the <em>same</em> face, and it cost a full training run per plane. The method here replaces it: one released single-image diffusion, no per-plane training, constrained only at sampling, with the variation moved onto the axis that actually carries it &mdash; the input.</p>
+<p>An O-Voxel gives an object a shell and a supervised skin, but its interior is only the handful of cut planes a few photographs constrain; every other depth is unseen. The task is to fill that interior so any cut looks like a real cut of this specimen. Earlier versions of this method generated each cut face <em>in 2-D</em> and wrote it back into the lattice &mdash; first by overfitting one diffusion per plane, then by input-driven SDEdit from a warped reference. Both were sharp on the planes they generated, and both paid for the round trip: a face written into cells and re-read is a compromise between whatever else was written near it, and nothing in the procedure made two faces agree in three dimensions except averaging.</p>
+
+<p>The method here inverts that. <strong>The state is the 3-D volume, and the 2-D prior only ever proposes an update for one slice of it.</strong> Consistency is then structural rather than enforced: there is one volume, so any two cut faces necessarily agree along the line where they meet. What makes it work is that the prior is asked its question in the only frame it can answer.</p>
 
 <figure style="margin:18px 0 28px">
-<svg viewBox="0 0 760 650" width="100%" role="img" aria-label="Pipeline flowchart: silhouette and warped reference, rind-only pin, SDEdit generation, slab write-back into one voxel field" style="max-width:760px;display:block;margin:0 auto;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
+<svg viewBox="0 0 760 470" width="100%" role="img" aria-label="Pipeline: fitted field to volume, per-slice canonical frame, denoise, residual back, coverage anchor, loop, then back to the lattice" style="max-width:760px;display:block;margin:0 auto;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
   <defs>
-    <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#5c5c5c"/>
+    <marker id="cah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b6b6b"/>
     </marker>
   </defs>
-  <rect x="14" y="14" width="732" height="436" rx="10" fill="#fafafa" stroke="#e6e6e6"/>
-  <text x="30" y="37" font-size="12.5" fill="#a8412a" font-weight="600">for each cut plane (n, d)</text>
-
-  <rect x="56" y="52" width="286" height="46" rx="6" fill="#fff" stroke="#d9d9d9"/>
-  <text x="199" y="80" text-anchor="middle" font-size="14" fill="#111">O-Voxel shell</text>
-  <rect x="418" y="52" width="286" height="46" rx="6" fill="#fff" stroke="#d9d9d9"/>
-  <text x="561" y="74" text-anchor="middle" font-size="14" fill="#111">reference photo</text>
-  <text x="561" y="90" text-anchor="middle" font-size="11.5" fill="#5c5c5c">depth-assigned</text>
-
-  <line x1="199" y1="98" x2="199" y2="124" stroke="#5c5c5c" marker-end="url(#ah)"/>
-  <line x1="561" y1="98" x2="561" y2="124" stroke="#5c5c5c" marker-end="url(#ah)"/>
-
-  <rect x="56" y="126" width="286" height="46" rx="6" fill="#fff" stroke="#d9d9d9"/>
-  <text x="199" y="154" text-anchor="middle" font-size="13.5" fill="#111">rasterise flesh silhouette&#160;&#160;f</text>
-  <rect x="418" y="126" width="286" height="46" rx="6" fill="#fff" stroke="#d9d9d9"/>
-  <text x="561" y="154" text-anchor="middle" font-size="13.5" fill="#111">affine-warp into f&#160;&#160;&#8594;&#160;&#160;x&#8320;</text>
-
-  <line x1="199" y1="172" x2="199" y2="189" stroke="#5c5c5c"/>
-  <line x1="561" y1="172" x2="561" y2="189" stroke="#5c5c5c"/>
-  <line x1="197" y1="189" x2="563" y2="189" stroke="#5c5c5c"/>
-  <line x1="380" y1="189" x2="380" y2="200" stroke="#5c5c5c" marker-end="url(#ah)"/>
-
-  <rect x="150" y="202" width="460" height="52" rx="6" fill="#fff" stroke="#d9d9d9"/>
-  <text x="380" y="223" text-anchor="middle" font-size="13.5" fill="#111">pin rind ring + background</text>
-  <text x="380" y="242" text-anchor="middle" font-size="12.5" fill="#5c5c5c">k = (f &#8743; &#172;erode f) &#8744; (1 &#8722; f)</text>
-
-  <line x1="380" y1="254" x2="380" y2="271" stroke="#5c5c5c" marker-end="url(#ah)"/>
-
-  <rect x="104" y="273" width="552" height="67" rx="6" fill="#f6e9e4" stroke="#a8412a"/>
-  <text x="380" y="297" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">SDEdit</text>
-  <text x="380" y="315" text-anchor="middle" font-size="12.5" fill="#111">noise x&#8320; to &#961;T, denoise with one single-image diffusion &#934;,</text>
-  <text x="380" y="332" text-anchor="middle" font-size="12.5" fill="#111">re-pin k every reverse step&#160;&#160;&#183;&#160;&#160;&#961; &#8776; 0.25</text>
-
-  <line x1="380" y1="340" x2="380" y2="360" stroke="#5c5c5c" marker-end="url(#ah)"/>
-
-  <rect x="256" y="362" width="248" height="44" rx="6" fill="#fff" stroke="#d9d9d9"/>
-  <text x="380" y="389" text-anchor="middle" font-size="13.5" fill="#111">generated cut face&#160;&#160;r&#8346;</text>
-
-  <line x1="380" y1="450" x2="380" y2="470" stroke="#5c5c5c" marker-end="url(#ah)"/>
-  <text x="380" y="486" text-anchor="middle" font-size="12.5" fill="#5c5c5c">repeated over depths &#215; { longitudinal &#183; transverse }</text>
-
-  <rect x="104" y="498" width="552" height="50" rx="6" fill="#fff" stroke="#d9d9d9"/>
-  <text x="380" y="520" text-anchor="middle" font-size="13.5" fill="#111">slab write-back into one voxel field</text>
-  <text x="380" y="538" text-anchor="middle" font-size="12" fill="#5c5c5c">C&#7522; = mean of every reconstructed pixel projecting into cell i</text>
-
-  <line x1="380" y1="548" x2="380" y2="568" stroke="#5c5c5c" marker-end="url(#ah)"/>
-
-  <rect x="150" y="570" width="460" height="50" rx="6" fill="#f6e9e4" stroke="#a8412a"/>
-  <text x="380" y="592" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">filled 3-D asset</text>
-  <text x="380" y="610" text-anchor="middle" font-size="12" fill="#5c5c5c">any cut plane reads its face from the voxels</text>
+  <rect x="250" y="14" width="260" height="44" rx="6" fill="#eef2f5" stroke="#5b7f93"/>
+  <text x="380" y="33" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">fitted O-Voxel field</text>
+  <text x="380" y="49" text-anchor="middle" font-size="11.5" fill="#5c5c5c">2&ndash;3 cut photographs, one colour per cell</text>
+  <line x1="380" y1="58" x2="380" y2="82" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
+  <rect x="200" y="82" width="360" height="44" rx="6" fill="#eef2f5" stroke="#5b7f93"/>
+  <text x="380" y="101" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">dense volume in the object's own frame</text>
+  <text x="380" y="117" text-anchor="middle" font-size="11.5" fill="#5c5c5c">sweep axis = the transverse normal, so slices are the family</text>
+  <line x1="380" y1="126" x2="380" y2="150" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
+  <rect x="40" y="150" width="680" height="212" rx="8" fill="#fcfaf7" stroke="#c9bfae" stroke-dasharray="5 4"/>
+  <text x="60" y="171" font-size="11.5" fill="#8a7f6d" font-weight="600" letter-spacing="0.06em">PER OUTER STEP, NOISE LEVEL ANNEALED</text>
+  <rect x="62" y="184" width="150" height="52" rx="6" fill="#fff" stroke="#a8412a"/>
+  <text x="137" y="205" text-anchor="middle" font-size="12.5" fill="#111" font-weight="600">canonical frame</text>
+  <text x="137" y="222" text-anchor="middle" font-size="11" fill="#5c5c5c">each slice to its own bbox</text>
+  <line x1="212" y1="210" x2="243" y2="210" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
+  <rect x="245" y="184" width="140" height="52" rx="6" fill="#fff" stroke="#a8412a"/>
+  <text x="315" y="205" text-anchor="middle" font-size="12.5" fill="#111" font-weight="600">add iid noise</text>
+  <text x="315" y="222" text-anchor="middle" font-size="11" fill="#5c5c5c">in that frame</text>
+  <line x1="385" y1="210" x2="416" y2="210" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
+  <rect x="418" y="184" width="140" height="52" rx="6" fill="#fff" stroke="#a8412a"/>
+  <text x="488" y="205" text-anchor="middle" font-size="12.5" fill="#111" font-weight="600">one prior step</text>
+  <text x="488" y="222" text-anchor="middle" font-size="11" fill="#5c5c5c">predict clean slice</text>
+  <line x1="558" y1="210" x2="589" y2="210" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
+  <rect x="591" y="184" width="120" height="52" rx="6" fill="#fff" stroke="#a8412a"/>
+  <text x="651" y="205" text-anchor="middle" font-size="12.5" fill="#111" font-weight="600">residual back</text>
+  <text x="651" y="222" text-anchor="middle" font-size="11" fill="#5c5c5c">at volume scale</text>
+  <line x1="651" y1="236" x2="651" y2="262" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
+  <rect x="230" y="262" width="440" height="46" rx="6" fill="#f6e9e4" stroke="#a8412a"/>
+  <text x="450" y="282" text-anchor="middle" font-size="13" fill="#111" font-weight="600">anchor to the fitted field by measured coverage</text>
+  <text x="450" y="299" text-anchor="middle" font-size="11.5" fill="#5c5c5c">keep the data where photographs cut, let the prior speak where they did not</text>
+  <path d="M 230 285 L 137 285 L 137 244" fill="none" stroke="#6b6b6b" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#cah)"/>
+  <text x="150" y="330" font-size="11.5" fill="#8a7f6d" font-style="italic">next noise level</text>
+  <line x1="450" y1="362" x2="450" y2="386" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
+  <rect x="230" y="386" width="440" height="50" rx="6" fill="#e9eef0" stroke="#5b7f93"/>
+  <text x="450" y="406" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">average back into the lattice &mdash; the asset</text>
+  <text x="450" y="424" text-anchor="middle" font-size="11.5" fill="#5c5c5c">any plane at any angle reads its face; nothing generated at cut time</text>
 </svg>
-<figcaption style="text-align:center">The pipeline for one object. Everything in the panel runs per cut plane and takes about a second; the loop fills one shared voxel field that any later cut &mdash; at any orientation &mdash; reads from directly.</figcaption>
+<figcaption style="text-align:center">The whole pipeline for one object, about a minute end to end. The 2-D prior never holds state; it only proposes a clean slice, and the volume decides what to keep.</figcaption>
 </figure>
 
-<h3>The generator: rind-only pin, low-strength SDEdit</h3>
+<h3>The volume is axis-aligned so that slices <em>are</em> the photographed family</h3>
 
-<p>For a plane with normal \(n\) and offset \(d\), rasterise the flesh silhouette \(f\) from the O-Voxel shell. A depth-assigned reference photograph is affine-warped to fill \(f\), giving the input image \(x_0\in[-1,1]^{3\times H\times W}\). The <em>only</em> pinned region is a thin rind ring plus the white background,</p>
+<p>Build a dense volume in the object&rsquo;s own frame with the sweep axis set to the transverse cut normal. Then the slices perpendicular to that axis are the transverse family itself, at native resolution &mdash; no resampling stands between a slice and the thing the photographs show. Every voxel maps to a lattice cell; outside the shell is white background; the volume is initialised from the fitted field.</p>
 
-$$k \;=\; \big(f \wedge \neg\,\mathrm{erode}(f)\big)\;\vee\;(1-f),$$
+<p>Only one family can be swept. Measured across all seven objects, the transverse planes are a <em>parallel stack</em> (normal spread \(0^\circ\)) and the longitudinal planes are a <em>pencil</em> through the axis (spread \(\approx 85^\circ\)). A stack tiles a volume; a pencil does not. So the volume is driven by the transverse prior alone, and each object needs one prior rather than two.</p>
 
-<p>and the interior &mdash; segments, juice vesicles, columella &mdash; is left entirely to the model. Generation is SDEdit: noise the input to a fraction \(\rho\) of the schedule and denoise from there, re-pinning the ring after every reverse step,</p>
+<h3>The canonical frame: asking the prior a question it can answer</h3>
 
-$$x_{\rho T}=\sqrt{\bar\alpha_{\rho T}}\,x_0+\sqrt{1-\bar\alpha_{\rho T}}\,\epsilon,\qquad x_{t-1}=k\odot\big(\sqrt{\bar\alpha_{t}}\,x_0+\sqrt{1-\bar\alpha_{t}}\,\epsilon_t\big)+(1-k)\odot\Phi(x_t,t),$$
+<p>The prior is a single-image diffusion with no attention and no middle block, so its receptive field is fixed in <em>pixels</em> and it was trained at one object size. A slice at normalised depth \(t\) is only \(\sqrt{1-t^{2}}\) as wide, so away from the equator the object shrinks in the frame and the model is out of distribution. It does not degrade gently: it returns a structureless disc, and sprawls rind-coloured material across the background.</p>
 
-<p>with \(\Phi\) one unconditional DDPM reverse step. The strength \(\rho\) is the whole trade-off: at \(\rho\!\approx\!0.55\) the model washes the interior to a canonical smooth blob and the input stops mattering; at \(\rho\!\approx\!0.25\) the input&rsquo;s structure survives, the diffusion only harmonises it into this plane&rsquo;s silhouette and rind, and <em>different references give visibly different, sharp cut faces</em>. There is no per-plane training: a face is generated in a second.</p>
+<p>So every slice is resampled into the framing the prior was trained at before it is queried. With the slice&rsquo;s own silhouette bounding box of extent \(d\) and centre \((c_x,c_y)\), the window half-width is</p>
 
-<h3>The columella is geometry, carried by the input</h3>
+$$h=\frac{d}{2\tau},\qquad \tau=0.82,$$
 
-<p>The pith is a thin core along the fruit&rsquo;s axis; whether a plane shows it is not a texture choice but an intersection. With a core cylinder of radius \(r_c\!\approx\!0.13\,R\) about the axis, a longitudinal plane at perpendicular offset \(s\) meets it over a band of half-width</p>
+<p>with \(\tau\) not a tuned constant but the framing every prior&rsquo;s <em>training images</em> are normalised to, so the inference frame is the training frame by construction. Noise is then added in that frame, where it is the iid pixel noise the model was trained on:</p>
 
-$$w(s)=\sqrt{\,r_c^{2}-s^{2}\,}\ \ (\,|s|\lt r_c\,),\qquad 0\ \text{otherwise.}$$
+$$\tilde x=\sqrt{\bar\alpha_{t}}\,W(x)+\sqrt{1-\bar\alpha_{t}}\,\epsilon,\qquad \epsilon\sim\mathcal N(0,I),$$
 
-<p>Rather than pin a columella, we crop the reference&rsquo;s own pith to that width before warping: central planes carry a full pith, off-centre planes carry a thinner one, and beyond the core the input is de-pithed so the model grows none. The gating rides entirely on the input, which suits a patch-local model &mdash; it paints a columella only where its neighbourhood already looks like one.</p>
+<p>with \(W\) the canonical warp. The frame is a <em>query</em> frame only. Warping the model&rsquo;s prediction straight back would resample the whole slice, and doing that once per axis per step blurs the volume away; instead only what the prior <em>added</em> travels back, and the base stays at volume resolution:</p>
 
-<h3>From planes to one field</h3>
-
-<p>Both cut families feed one field. The longitudinal sweep is generated from the <code>or_long</code> references with the geometric pith crop above; the transverse sweep is generated from <code>or_trans</code> orange-wheel references, whose central pith needs no crop &mdash; every transverse plane crosses the axis, so the columella is simply a dot at the centre. Each generated face \(r_p\) is splatted back over a slab whose half-width is set to just over half the inter-plane spacing, so neighbouring planes tile the depth range with no unwritten gap; a cell&rsquo;s colour is the mean of every reconstructed pixel that projects into it,</p>
-
-$$C_i=\frac{1}{|\mathcal P_i|}\sum_{(o,u)\in\mathcal P_i} r_{o}(u),\qquad \mathcal P_i=\big\{(o,u): \pi_{\,n,\,d+o}(u)=i,\ f(u)>0\big\},$$
-
-<p>with \(\pi\) the plane-to-cell projection. Both families together fill the field in about seven seconds; that one field is what every cut renders (slab, thickness \(2.82\) cells) &mdash; longitudinal and transverse read out of the same voxels.</p>
-
-<p>Two limits are honest and open. The write-back into the discrete lattice, plus the slab integration, softens faces that were sharp in 2-D &mdash; the same voxel-storage cost the shared lift pays; keeping the 2-D sharpness means generating each frame at render time instead of storing it. And the core is thin, so only the one or two most central planes carry a columella; the depth gating is correct but visually sparse.</p>
+$$x \;\leftarrow\; x + W^{-1}\!\big(\hat x_0 - W(x)\big).$$
 
 <figure style="margin:6px 0 24px">
-  <video src="assets/ovring_orange_vh.mp4?v=vh2" autoplay loop muted playsinline preload="metadata" style="display:block;margin:0 auto;height:300px;border-radius:4px" aria-label="longitudinal and transverse cut-face sweep"></video>
-  <figcaption style="text-align:center">One released diffusion, no per-plane training. <em>Left:</em> the longitudinal sweep &mdash; the columella appears near the axis and fades off it, by geometry. <em>Right:</em> the transverse sweep &mdash; orange-wheel faces with a central pith dot. Both are input-driven SDEdit (\(\rho=0.25\), rind-only pin) from depth-assigned references, written into <em>one</em> voxel field and slab-rendered; the two directions read out of the same voxels.</figcaption>
+  <img src="assets/cfsd_scale.png" alt="the prior applied to a raw volume slice against the same slice canonically framed, at four depths" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption style="text-align:center">Four transverse slices, from the equator down toward the pole. <em>Column&nbsp;1</em> the slice as the volume holds it; <em>column&nbsp;2</em> the prior applied to it directly &mdash; fine at the equator, a pale disc and then debris as the object shrinks in the frame; <em>column&nbsp;3</em> the same slice canonically framed; <em>column&nbsp;4</em> the prior on that &mdash; radial membranes and a pith at every depth; <em>column&nbsp;5</em> warped back and masked. The failure was never the prior; it was the frame it was asked in.</figcaption>
 </figure>
 
-<h3>Bidirectional fusion: each cut reads the field its own photographs built</h3>
+<h3>The coverage posterior</h3>
 
-<p>Averaging the two families into one field is the simplest fusion, but it dilutes a longitudinal cut with transverse evidence and vice versa. A better rule keeps a <em>separate</em> field per family, \(C^{v}\) and \(C^{h}\), and blends them at query time by how well the queried cut normal \(n\) aligns with each family&rsquo;s own normal:</p>
+<p>Left alone, the prior repaints everywhere, including the planes the photographs already determine. Coverage is measurable, so read it as a posterior. For each supervised plane \(p\) with unit normal \(n_p\) and offset \(d_p\), accumulate over cell centres \(x\)</p>
 
-$$C(n)=\omega_v\,C^{v}+\omega_h\,C^{h},\qquad \omega_v=\frac{\cos^{k}\!\angle(n,n_v)}{\cos^{k}\!\angle(n,n_v)+\cos^{k}\!\angle(n,n_h)},\quad k=4,$$
+$$\mathrm{cov}(x)=\sum_{p}\exp\!\Big(\!-\big(\tfrac{n_p\cdot x + d_p}{\sigma}\big)^{2}\Big),\qquad \omega(x)=1-\min\big(\mathrm{cov}(x),1\big),$$
 
-<p>with \(\omega_h=1-\omega_v\). A longitudinal query reads almost entirely the field built from longitudinal photographs, a transverse query the transverse field, and an oblique query a smooth mix &mdash; so every direction is reconstructed by the evidence that actually constrains it, and the object stays consistent whichever way it is opened. The gain is largest at the pure axes (a crisper columella at \(0^\circ\)); it is modest on the orange only because its two fields already agree.</p>
+<p>and after every outer step pull the volume back toward the fitted field \(X_0\) in proportion:</p>
+
+$$X \;\leftarrow\; X_0 + \omega\odot\big(X-X_0\big).$$
+
+<p>Where the photographs cut, \(\omega\to 0\) and the data survives; where they never reached, \(\omega\to 1\) and the prior fills. This is the component that decides the sign of the whole result &mdash; the same total damping applied <em>uniformly</em> instead of by coverage is worth almost nothing, so it is the spatial structure doing the work, not the regularisation.</p>
+
+<h3>One photograph pins one plane</h3>
+
+<p>Each supervised photograph is affine-warped into the silhouette of the volume slice it belongs to and held there through the anneal. It is tempting, with two photographs and eight supervised planes, to cycle them &mdash; and it is wrong: the same slice then gets stretched into eight different silhouettes at eight different depths, writing content that is right in one place and wrong everywhere else. Planes without a photograph simply receive no data term; the posterior above already knows they are unconstrained. The longitudinal photographs are pinned at a lower weight, because an axis-aligned volume contains only the two azimuths of the pencil that align with its own axes, and pinning those hard writes a visible coordinate cross into every transverse face.</p>
+
+<figure style="margin:6px 0 24px">
+  <img src="assets/cfsd_sweep.png" alt="transverse and longitudinal sweeps, fitted field against the lifted field" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption style="text-align:center">Six transverse depths and six longitudinal azimuths, read from one field. <em>Rows 1 and 3</em> the fitted field alone: flat flesh, a blurred centre, and a dark brown core that is the wrong colour. <em>Rows 2 and 4</em> after the lift: radial membranes running to the rind, a defined pith, and a clean white columella the full height of the fruit. The six azimuths agree with each other about where the columella is because they are slices of one volume, not six separately generated images.</figcaption>
+</figure>
+
 
 <h3>The result is a cuttable 3-D asset</h3>
 
-<p>Because the write-back stores a colour per cell rather than a set of pre-rendered images, the field is a filled volume: \(99.9\%\) of interior cells are written, and <em>any</em> plane &mdash; including orientations never generated &mdash; reads its face straight out of the voxels. Tilt the cut normal continuously from longitudinal to transverse,</p>
+<p>The volume is averaged back into the lattice and that field <em>is</em> the asset: one colour per cell, every interior cell written, and <em>any</em> plane &mdash; including orientations the volume never sliced &mdash; reads its face straight out of the voxels, with no generation at cut time. Tilt the cut normal continuously from longitudinal to transverse,</p>
 
 $$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\tfrac{\pi}{2},$$
 
-<p>and the columella passes from a vertical stripe to a central dot with no discontinuity, because it was stored consistently in 3-D. One colour per cell is the price: the interior is exact for the families written into it and merely plausible for a strongly oblique cut &mdash; the single-value-per-cell limit any voxel interior carries &mdash; but every cut is filled and renders instantly.</p>
+<p>and the columella passes from a vertical stripe to a central dot with no discontinuity, because it was stored consistently in 3-D. One colour per cell is the price: the interior is exact for the family the volume swept and merely plausible for a strongly oblique cut &mdash; the single-value-per-cell limit any voxel interior carries &mdash; but every cut is filled and renders instantly.</p>
+
+<p>The open limit is the one the geometry predicts. The volume sweeps the transverse stack, and that is the family the lift improves; the longitudinal planes form a pencil through the axis, of which an axis-aligned volume contains only the two azimuths aligned with its own axes, and on that family the lift is at best neutral. Closing it is a change of representation &mdash; a volume swept in azimuth rather than in depth &mdash; not another stage bolted onto this one.</p>
 
 <figure style="margin:6px 0 24px">
   <img src="assets/ovring_orange_oblique.png" alt="six oblique cuts of one voxel field" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
@@ -184,7 +179,9 @@ $$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\t
 
 <p>Nothing above is orange-specific. Per object the only things that change are its own single-image diffusion (trained on that object&rsquo;s cut photograph) and its reference; the pipeline, the constraints, and the render are identical. The same program fills a watermelon, an apple, a pomegranate, a loaf of bread, and a layered cake &mdash; each read from its own voxel field.</p>
 
-<p>Two object-general refinements earn their place across the set. A single-image diffusion erases features that are rare in its one training image &mdash; watermelon seeds, pomegranate arils &mdash; at any SDEdit strength, so the input&rsquo;s dark pixels are composited back onto the generated flesh, \(r \leftarrow (1-m_s)\odot r + m_s\odot y\) with \(m_s\) the pixels darker than the flesh median (used where an object has such features, left off for the apple&rsquo;s pale core). And a uniform flesh exposes a moiré the busy orange texture had hidden &mdash; aliasing between the slab&rsquo;s \(n_{\text{sub}}\) samples and the lattice &mdash; so the slab is rendered at \(2\times\) and averaged down. Both are general; neither is a per-object knob.</p>
+<p>One set of settings runs all of them: the anneal schedule, the gate width, the pin weights and the canonical framing are the same numbers for every object. Where an idea needed a value chosen per object it was dropped rather than kept.</p>
+
+<p>Two object-general details earn their place. Each prior&rsquo;s training photographs are renormalised to the canonical framing <em>before</em> training, which is what turns \(\tau\) from a constant guessed on one fruit into a property of the data. And a uniform flesh exposes a moiré the busy orange texture had hidden &mdash; aliasing between the slab&rsquo;s \(n_{\text{sub}}\) samples and the lattice &mdash; so the slab is rendered at \(2\times\) and averaged down.</p>
 
 <div class="cutstrip" style="justify-content:center;margin:8px 0 6px">
   <figure style="margin:0 6px 6px"><video src="assets/ovsweep_orange_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="orange sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">orange</figcaption></figure>
@@ -197,7 +194,7 @@ $$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\t
 </div>
 <p style="text-align:center;font-size:13px;color:var(--mut);margin:0 0 24px">Seven objects, one program. Each clip is a depth sweep read from that object&rsquo;s voxel field; orange, watermelon and doughnut show both cut families side by side. Per object only the single-image diffusion and the reference photographs change. The doughnut&rsquo;s ring topology survives the sweep, the hole staying open at every depth.</p>
 
-<footer>Companion note to the base O-Voxel work. The interior generator runs on the 2-D cut face and writes a projected update into the voxel field; the base O-Voxel shell and skin are unchanged by any of it.</footer>
+<footer>Companion note to the base O-Voxel work. The interior is lifted from a 2-D cut prior into a 3-D volume and averaged back into the lattice; the base O-Voxel shell and skin are unchanged by any of it.</footer>
 
 </div>
 </body>
