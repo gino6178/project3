@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>3DFusion: Lifting 2-D Diffusion Priors into an O-Voxel Interior</title>
+<title>3DFusion: Cuttable Interiors from Two Cut Families</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
       integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
@@ -19,247 +19,571 @@
        font:17px/1.7 "Charter","Georgia","Times New Roman",serif;
        -webkit-font-smoothing:antialiased}
   .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  .stale{border-left:3px solid #b45309;background:#fffbeb;padding:.55em .8em;margin:0 0 8px;
+    font-size:.86em;line-height:1.45;color:#78350f;border-radius:0 3px 3px 0}
+  .stale b{font-weight:600}
   .cutstrip{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 26px}
   .cutstrip img,.cutstrip video{height:170px;width:auto;border-radius:3px}
   @media(max-width:900px){.cutstrip img,.cutstrip video{height:112px}}
-  header{margin:36px 0 24px}
-  h1{font-size:30px;line-height:1.25;margin:0 0 10px;letter-spacing:-.01em}
-  .sub{color:var(--mut);margin:0 0 12px}
-  .authors,.venue{color:var(--mut);margin:0}
-  .links{margin-top:10px;font-size:15px}
-  .links a{margin-right:14px;color:var(--acc);text-decoration:none;border-bottom:1px solid var(--acc)}
-  h2{font-size:22px;margin:34px 0 10px;letter-spacing:-.005em}
-  h3{font-size:18px;margin:22px 0 8px}
-  p{margin:.55em 0}
-  figure{margin:14px 0 26px}
-  figcaption{color:var(--mut);font-size:14px;line-height:1.55;margin-top:8px}
-  .fnum{color:var(--acc);font-weight:600}
-  table{border-collapse:collapse;width:100%;font-size:15px}
-  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:right}
+  .eq{display:flex;align-items:center;gap:14px;margin:20px 0}
+  .eq .body{flex:1;overflow-x:auto;overflow-y:hidden;text-align:center}
+  .eq .num{color:var(--mut);font-size:14px;flex:none}
+  .katex{font-size:1.02em}
+  header{padding:56px 0 30px;text-align:center;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(27px,4.4vw,40px);line-height:1.22;margin:0 0 10px;font-weight:600;
+     letter-spacing:-.01em}
+  .sub{color:var(--mut);font-size:clamp(15px,2.2vw,19px);margin:0 0 6px;font-style:italic}
+  .authors{font-size:17px;margin:14px 0 2px}
+  .venue{color:var(--mut);font-size:15px;margin:0 0 20px}
+  .links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:16px}
+  .links a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.35);
+           padding-bottom:1px}
+  .links a:hover{border-bottom-color:var(--acc)}
+  h2{font-size:25px;margin:52px 0 10px;font-weight:600;letter-spacing:-.01em;text-align:left}
+  h3{font-size:19px;margin:34px 0 8px;font-weight:600}
+  h4{font-size:16.5px;margin:24px 0 6px;font-weight:600;color:#2a2a2a}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0}
+  .grid3 figure{margin:0}
+  .grid3 video{width:100%;display:block;border-radius:3px;background:#fff}
+  .grid3 .cap{color:var(--mut);font-size:13.5px;margin-top:5px;text-align:center}
+  @media (max-width:640px){ .grid3{grid-template-columns:1fr} }
+  .algo{border:1px solid var(--line);border-radius:3px;margin:18px 0;overflow:hidden}
+  .algo-h{background:var(--panel);border-bottom:1px solid var(--line);padding:7px 12px;
+          font-weight:600;font-size:14.5px}
+  .algo pre{margin:0;padding:11px 12px;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;
+            overflow-x:auto}
+  .algo-f{border-top:1px solid var(--line);padding:7px 12px;font-size:13px;color:var(--mut)}
+  h5{font-size:15px;margin:22px 0 6px;color:var(--mut);font-weight:600;
+     letter-spacing:.2px}
+  .flow{margin:26px 0} .flow svg{width:100%;height:auto;display:block}
+  nav.toc{display:flex;flex-wrap:wrap;gap:0 18px;justify-content:center;padding:14px 0 2px;
+          border-bottom:1px solid var(--line);font-size:14.5px}
+  nav.toc a{color:var(--mut);text-decoration:none}
+  nav.toc a:hover{color:var(--acc)}
+  p{margin:0 0 16px;text-align:left}
+  .lead{font-size:17.5px}
+  figure{margin:26px 0}
+  figure video{width:100%;display:block;border-radius:3px;background:#fff}
+  figure img{width:100%;display:block;border-radius:3px;background:#fff}
+  figcaption{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.6;text-align:left}
+  .tnum,.fnum{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:0 0 6px}
+  .tw{overflow-x:auto;margin:20px 0}
+  td.mut{color:var(--mut)}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:520px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
   th:first-child,td:first-child{text-align:left}
-  th{border-bottom:2px solid var(--ink);font-weight:600}
-  .tnum{color:var(--acc);font-size:14px;margin:0 0 4px;font-weight:600}
-  .tw{overflow-x:auto;margin:14px 0 26px}
-  .katex-display{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
-  .katex-display>.katex{white-space:nowrap}
-  .mut{color:var(--mut)}
-  footer{border-top:1px solid var(--line);margin:40px 0 20px;padding-top:14px;color:var(--mut);font-size:14px}
+  thead th{font-weight:600;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+  .win{font-weight:700}
+  .note{background:var(--panel);border-left:3px solid var(--acc);padding:14px 18px;
+        border-radius:0 3px 3px 0;font-size:16px;margin:22px 0;color:#3c3c3c}
+  .note strong{color:var(--ink)}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:14px;
+      overflow-x:auto;font-size:13.5px;line-height:1.5;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+  footer{margin:60px 0 48px;padding-top:22px;border-top:1px solid var(--line);
+         color:var(--mut);font-size:14.5px}
+  ul{margin:0 0 16px;padding-left:24px} li{margin-bottom:7px}
+  ol.refs{padding-left:30px;font-size:14.5px;line-height:1.55;color:#333}
+  ol.refs li{margin-bottom:9px}
+  ol.refs a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(168,65,42,.3)}
+  @media (max-width:640px){ body{font-size:16px} }
 </style>
-
+</head>
+<body>
 <div class="wrap">
 
+
 <header>
-  <h1>3DFusion: Lifting 2-D Diffusion Priors into an O-Voxel Interior</h1>
-  <p class="sub">Two or three photographs per family cannot supervise a volume. The method: make the 3-D volume itself the state, and let a single-image cut prior propose one slice of it at a time &mdash; each slice resampled into the framing the prior was trained at, each proposal anchored back to the fitted field by measured photographic coverage. Cuts are then consistent by construction, and the asset is baked once and read at any angle with no generation at cut time. The current baseline puts both photographed families on one cylindrical state and denoises them jointly; it is the first section below, and it beats the fitted field on held-out photographs.</p>
+  <h1>3DFusion: Cuttable Interiors from Two Cut Families &mdash; Single-Image Diffusion Priors Lifted onto an O-Voxel Lattice</h1>
+  <p class="sub">Two or three photographs of longitudinal cuts and two or three of transverse cuts, of different specimens, become a volume whose every cut looks like one of them: a product of two single-image diffusion priors over all slices of one cylindrical state, carried on a decoupled occupancy lattice that is cut in closed form</p>
   <p class="authors">Anonymous</p>
-  <p class="venue">Preprint &middot; work in progress</p>
+  <p class="venue">Preprint &middot; supersedes the O-Voxel carrier paper</p>
   <div class="links">
-    <a href="ovoxel.html">The base O-Voxel paper</a>
+    <a href="ovoxel.html">The O-Voxel carrier paper (superseded)</a>
+    <a href="3dfusion_route.html">The route: every arm that failed on the way</a>
     <a href="index.html">The splatted pipeline</a>
+    <a href="ovoxel_notes.html">Technical appendices</a>
   </div>
 </header>
 
-<h2>The current baseline: two cut families, one cylinder</h2>
-<p>The sections below this one record the route. This section is where the method stands now, measured on held-out photographs the priors never saw.</p>
+<nav class="toc">
+  <a href="#abstract">Abstract</a><a href="#intro">1 Introduction</a><a href="#related">2 Related work</a><a href="#method">3 Method</a><a href="#results">4 Experiments</a><a href="#conclusion">5 Conclusion and limitations</a><a href="#refs">References</a>
+</nav>
 
-<figure>
-  <img src="assets/x3d_sweep.gif" alt="a longitudinal plane turning about the axis and then a transverse plane sweeping along it, fitted O-Voxel field on the left, the lifted interior on the right" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption><span class="fnum">Figure 0.</span> The baked asset read at every angle: a longitudinal plane turning about the axis, then a transverse plane sweeping along it. Left, the fitted O-Voxel field; right, the interior lifted from two photograph families by the method below. The block tiling of the fitted field is gone, the colour is the photographs', and no cut shows a seam, a spoke or a band.</figcaption>
+<figure style="margin:14px 0 26px">
+  <img src="assets/x3d_sweep.gif" style="width:100%;border-radius:4px" alt="a longitudinal plane turning about the axis, then a transverse plane sweeping along it; the fitted lattice on the left, the lifted interior on the right">
+  <figcaption><span class="fnum">Figure 1</span><br><strong>The asset read at every angle.</strong> A longitudinal plane turning about the polar axis, then a transverse plane sweeping along it. Left, the interior as fitted directly to the photographs on the lattice of section&nbsp;3.1; right, the same lattice after the interior of section&nbsp;3.2 is written into its cells. The block tiling of the fitted field is gone, the colour is the photographs&#8217;, and no plane shows a seam, a spoke or a band. Nothing is generated at cut time: the volume is baked once and read.</figcaption>
 </figure>
 
-<p>Two or three photographs of longitudinal cuts and two or three of transverse cuts are all the evidence there is about the inside. The one assumption that connects them to a volume has to be stated: a volume is real if every longitudinal slice of it lies in the longitudinal photographs' patch distribution and every transverse slice in the transverse photographs'. As a prior that is a product of two single-image diffusion priors over all slices,</p>
-$$p(x)\;\propto\;\prod_{k} p_L\!\big(S_{\theta_k} x\big)\;\prod_{j} p_T\!\big(S_{z_j} x\big),$$
-<p>and its score is a sum over the slices through each voxel. A slice of a Gaussian-noised volume is a Gaussian-noised image at the same noise level, so the two 2-D denoisers apply unchanged: there is no 3-D training and no 3-D data.</p>
+<h2 id="abstract">Abstract</h2>
+<p class="lead">
+Interactive physical applications &mdash; virtual slicing, cross-sectional inspection, fragment dynamics &mdash; require an explicit interior. A discrete occupancy lattice fitted directly to a few unposed cross-section photographs of different specimens supplies one that can be cut in closed form, but only where a photograph reached: between the supervised planes it holds a block-tiled average, and a cut at any other angle shows it.
+</p>
+<p class="lead">
+We lift that interior with the only assumption two photograph families can justify: a volume is real if every longitudinal slice of it lies in the longitudinal photographs&#8217; patch distribution and every transverse slice in the transverse ones&#8217;. As a prior this is a product of two single-image diffusion models over all slices of the volume, and because a slice of a Gaussian-noised volume is a Gaussian-noised image at the same level, the two 2-D denoisers apply unchanged &mdash; no 3-D training, no 3-D data. What makes the product samplable is the coordinate system: in a cylindrical state \(A[r,\varphi,z]\) both families are exact axis-aligned slices, both denoise the same \(x_t\), and the transverse family&#8217;s segment membranes &mdash; radial lines no patch can hold in Cartesian coordinates &mdash; become parallel stripes a patch prior learns. The fitted lattice supplies what a patch prior cannot, its layout, through a low-pass constraint inside the chain; the shell is never written; the result is written back into the lattice cells once.
+</p>
+<p class="lead">
+On held-out photographs the priors never saw, the lifted orange scores 0.112&nbsp;/&nbsp;0.062&nbsp;/&nbsp;0.087 (DreamSim, longitudinal / transverse / mean) against the fitted lattice&#8217;s 0.148&nbsp;/&nbsp;0.077&nbsp;/&nbsp;0.113 and FruitNinja&#8217;s 0.158. The same program, with no per-object setting but the polar axis, improves five of six further objects and is gated off by measurement on the sixth. Three findings on the way carry weight of their own: a cross-conditioned prior that reproduced its condition and collapsed without it, a clamp inside the chain that walked every colour toward grey, and a training length that is a per-family choice &mdash; one family improves to thirty thousand steps while the other memorises its three strips past four thousand.
+</p>
 
-<p>What makes the product usable is the coordinate system. The state is one array \(A[r,\varphi,z]\). A longitudinal plane at azimuth \(\varphi_k\) is the exact \((s,z)\) slice made of columns \(\varphi_k\) and \(\varphi_k+\pi\); a transverse plane at height \(z_j\) is the exact polar slice \((r,\varphi)\) at that height. Both families are axis-aligned slices of the same array, both denoise the same \(x_t\), and the product prior's step is one line, \(\hat x_0 = w(r)\,\hat x_0^{L} + (1-w(r))\,\hat x_0^{T}\), the longitudinal family leading at the axis, where it sees the columella as a continuous strip, and the transverse family leading away from it, where it sees the segment membranes. Nothing is interpolated inside the chain. The fitted O-Voxel field supplies what a patch prior cannot: its low-pass is pinned on every longitudinal plane at every step, its shell is never written, and the asset is written back once at the end.</p>
+<h2 id="intro">1&ensp;Introduction</h2>
 
-<figure>
-  <img src="assets/x3d_polar.png" alt="a transverse photograph and its polar unwrap: the segment membranes become parallel vertical stripes" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption><span class="fnum">Figure 0b.</span> Why polar. A transverse photograph and its unwrap into \((r,\varphi)\). The ten segment membranes, thin radial lines with a global organisation no patch can hold, become a row of parallel stripes that a single-image prior learns as texture. The transverse prior is trained on these strips, with the wrap-around in \(\varphi\) as a free augmentation.</figcaption>
-</figure>
+<p>Standard 3D surface reconstruction methods fundamentally yield hollow shells. While visually compelling for novel view synthesis, they fail to support downstream physical and interactive applications &mdash; virtual planar slicing, non-destructive cross-sectional inspection, the geometric stage of fracture simulation &mdash; which require an explicit, physically coherent, high-fidelity internal volume. When an object is sliced, the revealed cross-section must exhibit crisp internal anatomy &mdash; membranes, fibres, pulp &mdash; rather than blurred approximations or empty voids.</p>
 
-<figure>
-  <img src="assets/x3d_compare.png" alt="transverse and longitudinal cut faces: fitted O-Voxel field, the lifted interior, and a held-out photograph" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption><span class="fnum">Figure 0c.</span> Cut faces in the photographs' canonical frame, transverse above and longitudinal below: the fitted field, the lifted interior, and a held-out photograph of a different orange. Segment membranes in the right number, a continuous columella, vesicle grain, the photographs' colour.</figcaption>
-</figure>
+<p>Reconstructing realistic 3D interiors without volumetric scans remains open, and the existing formulations each carry a limitation that the others do not fix.</p>
 
-<p class="tnum">Table 0. Held-out DreamSim, lower is better</p>
+<ul>
+  <li><strong>Generative score distillation.</strong> Methods distilling 2D diffusion priors average score gradients over diffusion timesteps, an inherent low-pass filter that washes out fine membrane detail; recovering it needs a diffusion model fine-tuned per object&nbsp;[3].</li>
+  <li><strong>Volumetric continuous primitives.</strong> Extending 3D Gaussian Splatting to interiors leaves a plane with no exact intersection: a cut degrades into primitive culling over a thick slab, with boundary bleeding and unpainted voids of up to 8.29% at 2K.</li>
+  <li><strong>Direct fitting.</strong> A discrete lattice fitted to the photographs themselves&nbsp;&mdash; the carrier of this work, section&nbsp;3.1 &mdash; cuts exactly and has no primitive to fall below a pixel, but it knows only the planes it was shown. Between them it holds a block-tiled average whose Laplacian is twice a real photograph&#8217;s; held-out longitudinal cuts score 0.038&ndash;0.096 worse than supervised ones; and nothing about a plane at an unphotographed angle is constrained at all.</li>
+</ul>
+
+<p>This paper keeps the carrier and replaces its interior. The insight is that two photograph families, however few the photographs, define a three-dimensional patch distribution through its two marginals, and that a single-image diffusion prior&nbsp;[65] is exactly the object that learns a patch distribution from two or three exemplars. Composing two such priors over every slice of the volume is a product of experts&nbsp;[76,&nbsp;75] whose score is a sum over the slices through each voxel; a slice of a Gaussian-noised volume is a Gaussian-noised image at the same noise level, so the 2-D denoisers apply to the 3-D chain unchanged. The difficulty is not the prior but the coordinates. Every prior approach that ran 2-D denoisers on slices of a Cartesian grid &mdash; perpendicular priors&nbsp;[71], position-aware blending&nbsp;[72], and our own first eight aggregation rules &mdash; re-slices the state through the grid at every step, and the tent filters of that resampling cost 7&ndash;17% of fine texture on a round trip, while the transverse family&#8217;s defining structure, thin radial membranes with a global organisation, is beyond any patch. In a cylindrical state both problems dissolve: the two families are exact slices of one array, and the membranes are parallel stripes.</p>
+
+<h3>1.1&ensp;Primary contributions</h3>
+
+<ul>
+  <li><strong>A 3-D diffusion prior from two cut families with no 3-D training.</strong> The product-of-experts prior over slices, its derivation, and a sampler in cylindrical coordinates in which both families denoise one shared state with nothing interpolated inside the chain (section&nbsp;3.2&ndash;3.3).</li>
+  <li><strong>The fitted lattice as data term.</strong> The carrier&#8217;s low-pass is pinned inside the chain (ILVR&nbsp;[69]) and its shell is never written; the patch prior supplies texture and structure under a layout it could not invent. A radius-dependent leadership between the families puts the longitudinal prior in charge where it sees the columella and the transverse prior where it sees the membranes (section&nbsp;3.3).</li>
+  <li><strong>Measured on held-out specimens, on seven objects, through one program.</strong> Declared splits, a fixed protocol shared by every candidate, and one per-object declaration &mdash; the polar axis, read from the occupancy. A measured gate keeps the lift only where it lowers the distance to the object&#8217;s own training photographs and can never fall below the carrier (section&nbsp;4).</li>
+  <li><strong>The carrier, carried over.</strong> The decoupled two-level lattice, the pose-free cross-specimen supervision and the closed-form planar cut of the superseded paper are restated in section&nbsp;3.1 and their measurements in section&nbsp;4.5; the lifted interior is written back into the same cells, so everything that held for the carrier &mdash; machine-precision planarity, 0% unpainted pixels, 8.6&ndash;16.5&nbsp;ms per cut, the solver interface &mdash; holds for the result.</li>
+</ul>
+
+<h2 id="related">2&ensp;Related work</h2>
+
+<h3>2.1&ensp;3D interior generation from 2D priors</h3>
+
+<p>Synthesising internal 3D structure from 2D priors has largely gone through score distillation&nbsp;[27] and depth-conditioned diffusion&nbsp;[26,&nbsp;28]. For interiors, FruitNinja&nbsp;[3] fine-tunes a diffusion model per object to supervise cut cross-sections and instantiates the volume with 3D Gaussians&nbsp;[1]; distillation averages gradients over timesteps and attenuates membranes and fibres. In medical imaging, perpendicular 2D priors&nbsp;[71] and position-aware score blending&nbsp;[72] run pretrained 2-D denoisers on orthogonal slices of a Cartesian volume and combine their estimates; SyncDreamer&nbsp;[73] and MVDream&nbsp;[74] enforce multi-view agreement between 2-D diffusion samples through attention across views. Solid texture synthesis&nbsp;[29] models volumes by stationary neighbourhood statistics, which by construction ignores axial convergence.</p>
+
+<p>This work composes two <em>single-image</em> priors&nbsp;[65,&nbsp;66] &mdash; the only kind that learns from two or three photographs &mdash; as a product of experts&nbsp;[75,&nbsp;76] over the slices of a cylindrical state, so that the combination happens on one shared \(x_t\) rather than by averaging finished or re-sliced estimates, and so that the anisotropy of the object (radial membranes, an axial columella) is axis-aligned structure the priors can learn. The fitted lattice enters as a low-pass constraint inside the chain&nbsp;[69] and a shell that is never written, in the manner of inpainting with a known region&nbsp;[77]. No attention crosses the families; the intersections do.</p>
+
+<h3>2.2&ensp;Volumetric primitives against discrete latent lattices</h3>
+
+<p>Volumetric representations have evolved from dense voxel graphics and sparse grids&nbsp;[56&ndash;58,&nbsp;60,&nbsp;61] to continuous radiance fields&nbsp;[2,&nbsp;16,&nbsp;17] and structured 3D Gaussian Splatting&nbsp;[12&ndash;14]. InFusion&nbsp;[30] and InnerGS&nbsp;[31] leverage Gaussians for internal scene reconstruction. Continuous primitives possess infinite support and ill-defined boundaries: planar cutting through 3D Gaussians degrades into heuristic thresholding over a thick slab &mdash; in the reference implementation, an integral 5.63 coarse cells deep &mdash; producing boundary bleeding and unpainted void artefacts, up to 8.29% at 2K resolution, when primitive footprints fall below pixel scale. Neural implicit fields&nbsp;[2] require dense forward queries and provide no closed-form planar boundary. The carrier used here decouples the volume into a discrete two-level occupancy lattice carrying a single 8-dimensional latent per cell; replacing internal splatting primitives with lattice interpolation gives exact planar cuts, eliminates void artefacts, and reduces compressed storage to 10.0&nbsp;MiB.</p>
+
+<h3>2.3&ensp;Surface extraction and dual grid encodings</h3>
+
+<p>Isosurface extraction traditionally relies on Marching Cubes&nbsp;[4] or feature-sensitive dual contouring&nbsp;[5&ndash;7], where dual vertices minimise quadric error metrics&nbsp;[8] to preserve sharp features without staircase artefacts&nbsp;[64]. TRELLIS.2&nbsp;[10,&nbsp;11] introduced the field-free Flexible Dual Grid&nbsp;[63], placing dual vertices inside active voxels to compactly encode complex boundaries. The carrier adopts the official encoder&nbsp;[10] strictly for the outer hull, keeping the internal lattice decoupled; the exposed cross-section polygons and the dual-grid boundary are submitted to one differentiable rasteriser (nvdiffrast) in a single pass.</p>
+
+<h3>2.4&ensp;Virtual cutting and physical simulation</h3>
+
+<p>Interactive cutting has been explored in surgical simulation and fracture mechanics&nbsp;[48&ndash;51]. Classical approaches &mdash; the virtual node algorithm&nbsp;[48], polyhedral tetrahedral splitting&nbsp;[49], extended finite elements&nbsp;[50] &mdash; rely on pre-existing volumetric meshes, absent in photogrammetric assets. PhysGaussian&nbsp;[18] and VR-GS&nbsp;[22] couple Gaussians with the Material Point Method&nbsp;[19&ndash;21]; GaussianFluent&nbsp;[23] densifies internal Gaussians for mixed-material fracture&nbsp;[52]. The lattice provides integer connectivity, mass conservation and sign-based contact predicates directly, and a cut in 8.6&ndash;16.5&nbsp;ms; the lifted interior changes the colour of its cells and nothing else, so that interface is unchanged.</p>
+
+<h2 id="method">3&ensp;Method</h2>
+
+<p class="lead">The carrier is fitted first (section&nbsp;3.1, restated from the superseded paper). Its interior is then sampled anew from a product of two single-image diffusion priors on a cylindrical state, with the carrier&#8217;s layout and shell as data terms (sections&nbsp;3.2&ndash;3.4), and written back into the carrier&#8217;s cells (section&nbsp;3.5). The cut operator and the solver interface are the carrier&#8217;s and are not touched.</p>
+
+<h3>3.0&ensp;Notation</h3>
+
 <div class="tw"><table>
-<tr><th>cut faces against held-out photographs</th><th>longitudinal</th><th>transverse</th><th>mean</th></tr>
-<tr><td>real: the training photographs against the held-out ones</td><td>0.070</td><td>0.040</td><td>0.055</td></tr>
-<tr><td>fitted O-Voxel field, no generation</td><td>0.148</td><td>0.077</td><td>0.113</td></tr>
-<tr><td>FruitNinja</td><td>0.154</td><td>0.162</td><td>0.158</td></tr>
-<tr><td>the earlier lift, two families in separate chains</td><td>0.151</td><td>0.133</td><td>0.142</td></tr>
-<tr><td><strong>the cylinder</strong></td><td><strong>0.112</strong></td><td><strong>0.062</strong></td><td><strong>0.087</strong></td></tr>
-</table></div>
-<p class="mut">Declared split: three photographs per family train the priors, three per family are held out and never touched. Every row is scored the same way, canonical-frame slices of the voxel grid against the nearest held-out photograph. The absolute numbers are therefore not the renderer protocol's; the ranking is fair. One object so far.</p>
+<thead><tr><th>symbol</th><th>domain</th><th>meaning</th></tr></thead>
+<tbody>
+<tr><td>\(\Omega,\;\partial\Omega\)</td><td>\(\subset \mathbb{R}^3\)</td><td>the solid and its boundary</td></tr>
+<tr><td>\(\mathcal{V}_0,\;\mathcal{V}_1\)</td><td>\(h_c,\; h_f = h_c/2\)</td><td>coarse lattice; boundary refinement</td></tr>
+<tr><td>\(C_i,\;\mathbf{f}_i,\;g_\theta\)</td><td>\(\mathbb{R}^8 \to [0,1]^3\)</td><td>cell, its latent, the shared decoder</td></tr>
+<tr><td>\(\Pi_k=(\mathbf{n}_k,d_k)\)</td><td>\(S^2 \times \mathbb{R}\)</td><td>plane, \(\mathbf{n}_k^\top\mathbf{x}+d_k=0\)</td></tr>
+<tr><td>\(A[r,\varphi,z]\)</td><td>\(3\times N_r\times N_\varphi\times N_z\)</td><td>the cylindrical state; \(x_t\) its noised version at level \(t\)</td></tr>
+<tr><td>\(S_{\varphi_k},\;S_{z_j}\)</td><td>selections</td><td>longitudinal slice at azimuth \(\varphi_k\); transverse slice at height \(z_j\)</td></tr>
+<tr><td>\(p_L,\;p_T\)</td><td>\(\epsilon_L,\;\epsilon_T\)</td><td>the two single-image priors and their denoisers</td></tr>
+<tr><td>\(\bar\alpha_t\)</td><td>\((0,1]\)</td><td>the DDPM signal fraction; \(x_t=\sqrt{\bar\alpha_t}\,x_0+\sqrt{1-\bar\alpha_t}\,\epsilon\)</td></tr>
+<tr><td>\(w(r)\)</td><td>\([w_\infty,1]\)</td><td>longitudinal weight at radius \(r\)</td></tr>
+<tr><td>\(\Phi_\sigma\)</td><td>low-pass</td><td>Gaussian blur of width \(\sigma\) on a plane</td></tr>
+</tbody></table></div>
 
-<p>Three things were learned on the way and are worth more than the number. The cross-conditioned priors used before this were not priors: fed their own input as the condition they reproduce it, fed zeros they collapse to noise, and every transverse face that had looked right was the fitted field's own layout leaking through the condition channel. The honest unconditional priors have no global layout of their own, so the less of the fitted field's structure they are asked to reinvent the better: the held-out distance falls monotonically as the longitudinal starting noise is lowered from 90% to 30%, and turns back toward the fitted field below that. And training length is a per-family choice: the longitudinal prior keeps improving to thirty thousand steps, while the transverse polar prior memorises its three strips past four thousand and the held-out distance rises with every step after.</p>
+<h3>3.1&ensp;The carrier: a decoupled lattice, fitted without poses, cut in closed form</h3>
 
-<p>Open, in order: the same program on the other six objects; the renderer-protocol score; and writing the interior back into the O-Voxel cells, which is the asset the rest of the site is about.</p>
+<p>Let \(\Omega \subset \mathbb{R}^3\) be a bounded solid with boundary \(\partial\Omega\). The carrier is an axis-aligned two-level hierarchy \(\mathcal{V} = \mathcal{V}_0 \cup \mathcal{V}_1\): the coarse level spans the bounding box at spacing \(h_c = L/125\), and the fine level refines only the boundary band at \(h_f = h_c/2\). The dual-grid exterior carries a dual vertex and a split weight in each active surface voxel; each interior cell stores one latent \(\mathbf{f}_i \in \mathbb{R}^8\) and no rendering primitive. A value at \(\mathbf{x}\) is interpolated over the neighbouring cells and decoded by a shared MLP:</p>
 
-<h2>Lifting one 2-D cut prior into a 3-D interior</h2>
+<div class="eq"><div class="body">
+$$ \mathbf{c}(\mathbf{x}) \;=\; g_\theta\!\Big( \mathcal{I}\big[\{\mathbf{f}_i\}\big](\mathbf{x}) \Big). $$
+</div><div class="num">(1)</div></div>
 
-<p>An O-Voxel gives an object a shell and a supervised skin, but its interior is only the handful of cut planes a few photographs constrain; every other depth is unseen. The task is to fill that interior so any cut looks like a real cut of this specimen. Earlier versions of this method generated each cut face <em>in 2-D</em> and wrote it back into the lattice &mdash; first by overfitting one diffusion per plane, then by input-driven SDEdit from a warped reference. Both were sharp on the planes they generated, and both paid for the round trip: a face written into cells and re-read is a compromise between whatever else was written near it, and nothing in the procedure made two faces agree in three dimensions except averaging.</p>
+<p><strong>Pose-free cross-specimen supervision.</strong> Given an unposed collection of transverse and longitudinal cross-sections of <em>different specimens</em>, the latents and the decoder are optimised without recovering camera poses. In-plane rotation of transverse sections is resolved by circular cross-correlation of angular luminance profiles, and the discrete assignment of photographs to planes together with the inter-family alignment by minimising the discrepancy along the chords in which transverse and longitudinal planes intersect &mdash; solved exactly by enumeration, offline. During training a plane renders a section with silhouette \(\alpha_j\); a similarity transform from second-order moments warps the exemplar to the current geometry, isolated by a stop-gradient so that the geometry fit is a calibration rather than a parameter of the loss:</p>
 
-<p>The method here inverts that. <strong>The state is the 3-D volume, and the 2-D prior only ever proposes an update for one slice of it.</strong> Consistency is then structural rather than enforced: there is one volume, so any two cut faces necessarily agree along the line where they meet. What makes it work is that the prior is asked its question in the only frame it can answer.</p>
+<div class="eq"><div class="body">
+$$ s_j = \frac{r(\alpha_j)}{r(\tilde{\mathbf{I}}_{k(j)})}, \qquad
+    \mathbf{t}_j = c(\alpha_j) - s_j\,c(\tilde{\mathbf{I}}_{k(j)}), \qquad
+    \mathbf{T}_j(\mathbf{u}) = \tilde{\mathbf{I}}_{k(j)}\!\left(\frac{\mathbf{u}-\mathbf{t}_j}{s_j}\right). $$
+</div><div class="num">(2)</div></div>
 
-<figure style="margin:18px 0 28px">
-<svg viewBox="0 0 760 470" width="100%" role="img" aria-label="Pipeline: fitted field to volume, per-slice canonical frame, denoise, residual back, coverage anchor, loop, then back to the lattice" style="max-width:760px;display:block;margin:0 auto;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
-  <defs>
-    <marker id="cah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b6b6b"/>
-    </marker>
-  </defs>
-  <rect x="250" y="14" width="260" height="44" rx="6" fill="#eef2f5" stroke="#5b7f93"/>
-  <text x="380" y="33" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">fitted O-Voxel field</text>
-  <text x="380" y="49" text-anchor="middle" font-size="11.5" fill="#5c5c5c">2&ndash;3 cut photographs, one colour per cell</text>
-  <line x1="380" y1="58" x2="380" y2="82" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
-  <rect x="200" y="82" width="360" height="44" rx="6" fill="#eef2f5" stroke="#5b7f93"/>
-  <text x="380" y="101" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">dense volume in the object's own frame</text>
-  <text x="380" y="117" text-anchor="middle" font-size="11.5" fill="#5c5c5c">sweep axis = the transverse normal, so slices are the family</text>
-  <line x1="380" y1="126" x2="380" y2="150" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
-  <rect x="40" y="150" width="680" height="212" rx="8" fill="#fcfaf7" stroke="#c9bfae" stroke-dasharray="5 4"/>
-  <text x="60" y="171" font-size="11.5" fill="#8a7f6d" font-weight="600" letter-spacing="0.06em">PER OUTER STEP, NOISE LEVEL ANNEALED</text>
-  <rect x="62" y="184" width="150" height="52" rx="6" fill="#fff" stroke="#a8412a"/>
-  <text x="137" y="205" text-anchor="middle" font-size="12.5" fill="#111" font-weight="600">canonical frame</text>
-  <text x="137" y="222" text-anchor="middle" font-size="11" fill="#5c5c5c">each slice to its own bbox</text>
-  <line x1="212" y1="210" x2="243" y2="210" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
-  <rect x="245" y="184" width="140" height="52" rx="6" fill="#fff" stroke="#a8412a"/>
-  <text x="315" y="205" text-anchor="middle" font-size="12.5" fill="#111" font-weight="600">add iid noise</text>
-  <text x="315" y="222" text-anchor="middle" font-size="11" fill="#5c5c5c">in that frame</text>
-  <line x1="385" y1="210" x2="416" y2="210" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
-  <rect x="418" y="184" width="140" height="52" rx="6" fill="#fff" stroke="#a8412a"/>
-  <text x="488" y="205" text-anchor="middle" font-size="12.5" fill="#111" font-weight="600">one prior step</text>
-  <text x="488" y="222" text-anchor="middle" font-size="11" fill="#5c5c5c">predict clean slice</text>
-  <line x1="558" y1="210" x2="589" y2="210" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
-  <rect x="591" y="184" width="120" height="52" rx="6" fill="#fff" stroke="#a8412a"/>
-  <text x="651" y="205" text-anchor="middle" font-size="12.5" fill="#111" font-weight="600">residual back</text>
-  <text x="651" y="222" text-anchor="middle" font-size="11" fill="#5c5c5c">at volume scale</text>
-  <line x1="651" y1="236" x2="651" y2="262" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
-  <rect x="230" y="262" width="440" height="46" rx="6" fill="#f6e9e4" stroke="#a8412a"/>
-  <text x="450" y="282" text-anchor="middle" font-size="13" fill="#111" font-weight="600">anchor to the fitted field by measured coverage</text>
-  <text x="450" y="299" text-anchor="middle" font-size="11.5" fill="#5c5c5c">keep the data where photographs cut, let the prior speak where they did not</text>
-  <path d="M 230 285 L 137 285 L 137 244" fill="none" stroke="#6b6b6b" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#cah)"/>
-  <text x="150" y="330" font-size="11.5" fill="#8a7f6d" font-style="italic">next noise level</text>
-  <line x1="450" y1="362" x2="450" y2="386" stroke="#6b6b6b" stroke-width="1.4" marker-end="url(#cah)"/>
-  <rect x="230" y="386" width="440" height="50" rx="6" fill="#e9eef0" stroke="#5b7f93"/>
-  <text x="450" y="406" text-anchor="middle" font-size="13.5" fill="#111" font-weight="600">average back into the lattice &mdash; the asset</text>
-  <text x="450" y="424" text-anchor="middle" font-size="11.5" fill="#5c5c5c">any plane at any angle reads its face; nothing generated at cut time</text>
-</svg>
-<figcaption style="text-align:center">The whole pipeline for one object, about a minute end to end. The 2-D prior never holds state; it only proposes a clean slice, and the volume decides what to keep.</figcaption>
+<div class="eq"><div class="body">
+$$ \mathcal{L} = \sum_{j}
+    w_{q(j)}\,\mathbb{E}_{d_j}\!\Big[ \mathcal{L}_{\mathrm{sec}}\big(
+    \mathcal{R}(\mathcal{F},\theta;\Pi_j),\; \mathrm{sg}[\mathbf{T}_j]\big)\Big]
+    \;+\; \lambda_{\mathrm{TV}}\,\mathcal{L}_{\mathrm{prior}}
+    \;+\; \lambda_{\mathcal{S}}\,\mathcal{L}_{\mathrm{skin}}, $$
+</div><div class="num">(3)</div></div>
+
+<p>with the nominal depth of every plane replaced by a random variable so that the supervised supports union to a slab, and \(\mathcal{L}_{\mathrm{sec}}\) an SSIM, pixel and band-distribution term over crops inside the face&#8217;s own silhouette. No perceptual network enters the objective. What this fits is exactly what section&nbsp;3.2 keeps: the layout and colour of the interior, the skin, and a texture that is an average over specimens on the supervised planes and a block-tiled average between them.</p>
+
+<p><strong>Closed-form planar cutting.</strong> Cells crossed by a plane \(\Pi\) are selected in parallel by the separating-axis test, \(\mathcal{B} = \{ i : |\mathbf{n}^\top\mathbf{c}_i + d| \le \tfrac{1}{2}h\sum_a|n_a| \}\); within each, the twelve cell edges straddling the plane are solved for their exact roots, \(\mathbf{v}_e = \mathbf{a}_e + t_e(\mathbf{b}_e-\mathbf{a}_e)\), \(t_e = -(\mathbf{n}^\top\mathbf{a}_e + d)/\mathbf{n}^\top(\mathbf{b}_e-\mathbf{a}_e)\), sorted into one convex polygon per cell. Face-adjacent cells share their roots exactly, so the union is closed and 2-manifold (Proposition&nbsp;1 of the carrier paper), the cost is \(\mathcal{O}(|\mathcal{B}|)\) (Proposition&nbsp;2), and every vertex satisfies its plane equation to \(8.88\times10^{-16}\). Vertex colours come from equation&nbsp;(1); after section&nbsp;3.5 they come from the lifted interior through the same equation.</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/cutstates.jpg?v=s_v2" style="width:100%;border-radius:4px" alt="the planar cut as four states of the lattice">
+  <figcaption><span class="fnum">Figure 2</span><br><strong>The carrier&#8217;s cut, as four states of its own lattice.</strong> <strong>(a)</strong> the plane against 770,182 solid cells, of which 17,855 satisfy the crossing test; <strong>(b)</strong> one crossed cell, its twelve edges, the roots and the convex polygon they bound; <strong>(c)</strong> the sign field over one slice, labelled into two components; <strong>(d)</strong> the exposed face, coloured by the interior field. This operator is untouched by the rest of the paper; what changes is the colour it reads.</figcaption>
 </figure>
 
-<figure style="margin:6px 0 28px">
-  <div class="tw" style="margin:0">
-    <img src="assets/cfsd_stages.png" alt="one slice at each stage: as held, canonically framed, noised, the prior's clean slice, the residual, the update, and the coverage weight" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  </div>
-  <figcaption style="text-align:center">The same boxes, on a real slice &mdash; one transverse slice well off the equator, at a mid-anneal noise level. The residual is shown at \(3\times\) to be visible at all; it is a correction, not a repaint. The last panel is the coverage weight on this slice, and it is worth a second look: the dark radial spokes are where the <em>longitudinal</em> photographs cut, because a pencil of planes through the axis meets a transverse slice as a set of radii. That picture is the reason the longitudinal family constrains so little of the volume.</figcaption>
+<h3>3.2&ensp;The interior prior: a product of two single-image priors over slices</h3>
+
+<p>The evidence about the inside is two or three photographs of longitudinal cuts and two or three of transverse cuts, of different specimens. The one assumption that connects them to a volume has to be stated: a volume \(x\) is real if every longitudinal slice of it lies in the longitudinal photographs&#8217; patch distribution and every transverse slice in the transverse photographs&#8217;. As a prior that is a product of experts&nbsp;[76] over all slices,</p>
+
+<div class="eq"><div class="body">
+$$ p(x)\;\propto\;\prod_{k} p_L\!\big(S_{\varphi_k} x\big)\;\prod_{j} p_T\!\big(S_{z_j} x\big), $$
+</div><div class="num">(4)</div></div>
+
+<p>whose score is a sum over the slices through each voxel,</p>
+
+<div class="eq"><div class="body">
+$$ \nabla_{x}\log p_t(x_t)\;\approx\;\sum_{k} S_{\varphi_k}^{\!\top}\, s_L\!\big(S_{\varphi_k} x_t,\,t\big)\;+\;\sum_{j} S_{z_j}^{\!\top}\, s_T\!\big(S_{z_j} x_t,\,t\big). $$
+</div><div class="num">(5)</div></div>
+
+<p>Two facts make (5) computable with nothing but 2-D models. A single-image diffusion model&nbsp;[65] &mdash; a denoiser with no attention and a receptive field of a few dozen pixels &mdash; learns the patch distribution of its exemplars rather than the exemplars, which is what two or three photographs can support and what (4) asks for. And a slice of a Gaussian-noised volume is a Gaussian-noised image at the same level: if \(x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon\) with \(\epsilon\) white in 3-D, then \(S x_t = \sqrt{\bar\alpha_t}\,S x_0 + \sqrt{1-\bar\alpha_t}\,S\epsilon\) with \(S\epsilon\) white on the slice. The 2-D denoisers therefore apply to the 3-D chain unchanged. There is no 3-D training and no 3-D data.</p>
+
+<p>The approximation in (5) is the usual one&nbsp;[75]: the noised marginal of a product is not the product of noised marginals, and each expert&#8217;s score already explains the noise, so the two contributions at a voxel are combined with weights that sum to one. Where the weights come from is the content of section&nbsp;3.3; that they are applied to <em>one</em> \(x_t\) is what distinguishes this from averaging two finished samples, which blurs, and from re-slicing two separate chains through a grid, which blurs and drifts.</p>
+
+<h3>3.3&ensp;The cylinder: both families as exact slices of one state</h3>
+
+<p>Let the state be \(A[r,\varphi,z]\), \(N_r=128\), \(N_\varphi=512\), \(N_z=256\), with \(r\in[0,E]\) at the extent of the longitudinal photographs&#8217; canonical frame, \(\varphi\in[0,2\pi)\), and \(z\in[-E,E]\) on the rows of that frame. A longitudinal plane at azimuth \(\varphi_k\) is the \((s,z)\) image made of column \(k\) for \(s>0\) and column \(k+N_\varphi/2\), reversed, for \(s<0\): a \(256\times256\) image in exactly the framing the longitudinal prior was trained at. A transverse plane at height \(z_j\) is the \((r,\varphi)\) image \(A[:,:,j]\), a \(128\times512\) polar strip. Both are selections, not resamplings: <strong>nothing is interpolated inside the chain</strong>, and both families denoise the same \(x_t\).</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/x3d_polar.png" style="width:100%;border-radius:4px" alt="a transverse photograph and its polar unwrap; the segment membranes become parallel vertical stripes">
+  <figcaption><span class="fnum">Figure 3</span><br><strong>Why polar.</strong> A transverse photograph and its unwrap into \((r,\varphi)\), rows \(r\) from the axis outward, columns \(\varphi\). The segment membranes &mdash; thin radial lines whose organisation is global and beyond any patch in Cartesian coordinates &mdash; are a row of parallel stripes here, and the rind is a horizontal band. The transverse prior is trained on these strips; the wrap-around in \(\varphi\) is a free and exact augmentation.</figcaption>
 </figure>
 
-<h3>The volume is axis-aligned so that slices <em>are</em> the photographed family</h3>
+<p><strong>One step.</strong> At level \(t\), each family predicts its noise on every one of its planes and hence its clean estimate, \(\hat x_0^L = (x_t - \sqrt{1-\bar\alpha_t}\,\epsilon_L)/\sqrt{\bar\alpha_t}\) assembled from the longitudinal slices and \(\hat x_0^T\) from the transverse ones. The product prior&#8217;s step is one line,</p>
 
-<p>Build a dense volume in the object&rsquo;s own frame with the sweep axis set to the transverse cut normal. Then the slices perpendicular to that axis are the transverse family itself, at native resolution &mdash; no resampling stands between a slice and the thing the photographs show. Every voxel maps to a lattice cell; outside the shell is white background; the volume is initialised from the fitted field.</p>
+<div class="eq"><div class="body">
+$$ \hat x_0 \;=\; w(r)\,\hat x_0^{L} \;+\; \big(1-w(r)\big)\,\hat x_0^{T},
+   \qquad w(r) = w_\infty + (1-w_\infty)\,e^{-(r/R_0)^2}, $$
+</div><div class="num">(6)</div></div>
 
-<p>Only one family can be swept. Measured across all seven objects, the transverse planes are a <em>parallel stack</em> (normal spread \(0^\circ\)) and the longitudinal planes are a <em>pencil</em> through the axis (spread \(\approx 85^\circ\)). A stack tiles a volume; a pencil does not. So the volume is driven by the transverse prior alone, and each object needs one prior rather than two.</p>
+<p>the longitudinal family leading at the axis, where it sees the columella as a continuous strip and the transverse family sees only a disc, and the transverse family leading away from it, where it sees the membranes as stripes and the longitudinal family sees them edge-on. \(R_0 = 0.15\,E\), \(w_\infty = 0.1\); both are read off the sweeps of section&nbsp;4.2 and are the same for every object. The state is then re-noised deterministically&nbsp;[68] with the noise direction consistent with the combined estimate, \(\bar\epsilon = (x_t - \sqrt{\bar\alpha_t}\,\hat x_0)/\sqrt{1-\bar\alpha_t}\), \(x_{t'} = \sqrt{\bar\alpha_{t'}}\,\hat x_0 + \sqrt{1-\bar\alpha_{t'}}\,\bar\epsilon\).</p>
 
-<h3>The canonical frame: asking the prior a question it can answer</h3>
+<p><strong>Data terms.</strong> The carrier supplies two things the patch prior cannot. Its shell is observed and is never written: outside the interior mask the state is the carrier&#8217;s value under the forward noise of the current level, with one fixed noise draw, so every plane looks like a properly noised image and the interior is generated against a true boundary&nbsp;[77]. Its layout &mdash; the columella&#8217;s position, the pith band, the colour &mdash; is pinned by ILVR&nbsp;[69] on every longitudinal plane at every step: \(\hat x_0 \leftarrow \hat x_0 - \Phi_\sigma(\hat x_0) + \Phi_\sigma(A^{\mathrm{carrier}})\) with \(\sigma = 16\) px, which is above the 4&ndash;8 px scale of the carrier&#8217;s block tiling and below that of anything the prior is asked to generate. A patch prior has no global layout of its own &mdash; from 90% noise it makes blobs (Figure&nbsp;6) &mdash; and this is where the layout comes from; it is also why the chain starts at \(t_0 = 0.3\,T\) rather than from noise: the less of the carrier&#8217;s structure the prior is asked to reinvent, the better (section&nbsp;4.2).</p>
 
-<p>The prior is a single-image diffusion with no attention and no middle block, so its receptive field is fixed in <em>pixels</em> and it was trained at one object size. A slice at normalised depth \(t\) is only \(\sqrt{1-t^{2}}\) as wide, so away from the equator the object shrinks in the frame and the model is out of distribution. It does not degrade gently: it returns a structureless disc, and sprawls rind-coloured material across the background.</p>
-
-<p>So every slice is resampled into the framing the prior was trained at before it is queried. With the slice&rsquo;s own silhouette bounding box of extent \(d\) and centre \((c_x,c_y)\), the window half-width is</p>
-
-$$h=\frac{d}{2\tau},\qquad \tau=0.82,$$
-
-<p>with \(\tau\) not a tuned constant but the framing every prior&rsquo;s <em>training images</em> are normalised to, so the inference frame is the training frame by construction. Noise is then added in that frame, where it is the iid pixel noise the model was trained on:</p>
-
-$$\tilde x=\sqrt{\bar\alpha_{t}}\,W(x)+\sqrt{1-\bar\alpha_{t}}\,\epsilon,\qquad \epsilon\sim\mathcal N(0,I),$$
-
-<p>with \(W\) the canonical warp. The frame is a <em>query</em> frame only. Warping the model&rsquo;s prediction straight back would resample the whole slice, and doing that once per axis per step blurs the volume away; instead only what the prior <em>added</em> travels back, and the base stays at volume resolution:</p>
-
-$$x \;\leftarrow\; x + W^{-1}\!\big(\hat x_0 - W(x)\big).$$
-
-<figure style="margin:6px 0 24px">
-  <img src="assets/cfsd_scale.png" alt="the prior applied to a raw volume slice against the same slice canonically framed, at four depths" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption style="text-align:center">Four transverse slices, from the equator down toward the pole. <em>Column&nbsp;1</em> the slice as the volume holds it; <em>column&nbsp;2</em> the prior applied to it directly &mdash; fine at the equator, a pale disc and then debris as the object shrinks in the frame; <em>column&nbsp;3</em> the same slice canonically framed; <em>column&nbsp;4</em> the prior on that &mdash; radial membranes and a pith at every depth; <em>column&nbsp;5</em> warped back and masked. The failure was never the prior; it was the frame it was asked in.</figcaption>
-</figure>
-
-<h3>The coverage posterior</h3>
-
-<p>Left alone, the prior repaints everywhere, including the planes the photographs already determine. Coverage is measurable, so read it as a posterior. For each supervised plane \(p\) with unit normal \(n_p\) and offset \(d_p\), accumulate over cell centres \(x\)</p>
-
-$$\mathrm{cov}(x)=\sum_{p}\exp\!\Big(\!-\big(\tfrac{n_p\cdot x + d_p}{\sigma}\big)^{2}\Big),\qquad \omega(x)=1-\min\big(\mathrm{cov}(x),1\big),$$
-
-<p>and after every outer step pull the volume back toward the fitted field \(X_0\) in proportion:</p>
-
-$$X \;\leftarrow\; X_0 + \omega\odot\big(X-X_0\big).$$
-
-<p>Where the photographs cut, \(\omega\to 0\) and the data survives; where they never reached, \(\omega\to 1\) and the prior fills. This is the component that decides the sign of the whole result &mdash; the same total damping applied <em>uniformly</em> instead of by coverage is worth almost nothing, so it is the spatial structure doing the work, not the regularisation.</p>
-
-<figure style="margin:14px 0 26px">
-  <img src="assets/cfsd_anneal.gif" alt="the interior forming over sixteen annealing steps, transverse and longitudinal cut faces side by side" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption style="text-align:center">Sixteen outer steps, noise level annealed from \(\rho=0.40\) to \(0.04\), in the shipped configuration &mdash; data term and axis-correlated noise included. Both faces are held-out planes read from the lattice after every step, so this is the shared 3-D field changing, not two images being denoised. The transverse face grows radial membranes out to the rind; the longitudinal face, which the volume never slices directly, follows because it is reading the same cells.</figcaption>
-</figure>
-
-<figure style="margin:14px 0 26px">
-  <img src="assets/cfsd_best.gif" alt="the same anneal in the current best configuration, transverse and longitudinal cut faces side by side" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption style="text-align:center">The same sixteen steps in the <strong>current best configuration</strong>, which differs from the one above by two flags: the depth-weighted blend between reference photographs is off (<code>REF_DEPTH_BLEND=0</code>), and each outer step walks a five-step reverse chain instead of taking a single \(x_0\) jump (<code>NSTEP=5</code>). Blending two cut faces superposes two sets of segment walls at different angles and produces beat fringes rather than a third plausible face &mdash; measured on the reference images themselves, periodicity rises from 67.9 for a real photograph to 129.0 for a blend, and the fitted field reproduces it amplified. Removing the blend takes the longitudinal periodicity from 231.7 to 93.6 against 65.1 for the photographs, and held-out DreamSim from 0.1282 to 0.1222. <em>Measured on the orange only; the six-object sweep that gates every default here has not been run for it.</em> These frames are written by the sampler itself, and the field they come from is bit-identical to the one scored.</figcaption>
-</figure>
-
-<figure style="margin:14px 0 26px">
-  <img src="assets/cfsd_1000.gif" alt="the same anneal run to a thousand network evaluations per slice" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption style="text-align:center">The same field annealed with <strong>a thousand network evaluations per slice</strong> &mdash; a hundred outer steps, each walking a ten-step reverse chain &mdash; shown every fifth step. Sixteen outer steps is few for a diffusion sampler and the extra work does buy something, but only in one of the two measures: longitudinal periodicity falls 93.6 &rarr; 87.7 &rarr; 83.5 for 80, 160 and 1000 evaluations against 65.1 for the photographs, closing about a third of the gap for twelve times the compute, while held-out DreamSim bottoms out at 160 (0.1216) and then <em>rises</em> again to 0.1234 at 1000. Past that point the extra sampling makes the field a better sample of the prior rather than a better likeness of this orange, so the practical setting is 160, not 1000. One caveat on the number itself: this prior was trained with \(T=100\), so a thousand <em>distinct</em> timesteps do not exist here &mdash; a thousand is the count of network calls, spread over a hundred restarts of the same hundred indices.</figcaption>
-</figure>
-
-<h3>One photograph pins one plane</h3>
-
-<p>Each supervised photograph is affine-warped into the silhouette of the volume slice it belongs to and held there through the anneal. It is tempting, with two photographs and eight supervised planes, to cycle them &mdash; and it is wrong: the same slice then gets stretched into eight different silhouettes at eight different depths, writing content that is right in one place and wrong everywhere else. Planes without a photograph simply receive no data term; the posterior above already knows they are unconstrained. The longitudinal photographs are pinned at a lower weight, because an axis-aligned volume contains only the two azimuths of the pencil that align with its own axes, and pinning those hard writes a visible coordinate cross into every transverse face.</p>
-
-<figure style="margin:6px 0 24px">
-  <img src="assets/cfsd_sweep.png" alt="transverse and longitudinal sweeps, fitted field against the lifted field" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption style="text-align:center">Six transverse depths and six longitudinal azimuths, read from one field. <em>Rows 1 and 3</em> the fitted field alone: flat flesh, a blurred centre, and a dark brown core that is the wrong colour. <em>Rows 2 and 4</em> after the lift: radial membranes running to the rind, a defined pith, and a clean white columella the full height of the fruit. The six azimuths agree with each other about where the columella is because they are slices of one volume, not six separately generated images.</figcaption>
-</figure>
-
-
-<h3>The result is a cuttable 3-D asset</h3>
-
-<p>The volume is averaged back into the lattice and that field <em>is</em> the asset: one colour per cell, every interior cell written, and <em>any</em> plane &mdash; including orientations the volume never sliced &mdash; reads its face straight out of the voxels, with no generation at cut time. Tilt the cut normal continuously from longitudinal to transverse,</p>
-
-$$n(\theta)=\cos\theta\,n_{\parallel}+\sin\theta\,n_{\perp},\qquad \theta:0\to\tfrac{\pi}{2},$$
-
-<p>and the columella passes from a vertical stripe to a central dot with no discontinuity, because it was stored consistently in 3-D. One colour per cell is the price: the interior is exact for the family the volume swept and merely plausible for a strongly oblique cut &mdash; the single-value-per-cell limit any voxel interior carries &mdash; but every cut is filled and renders instantly.</p>
-
-<p>A second limit was reported here in two earlier revisions with a number attached, and both numbers were wrong. The metric behind them took the row-mean profile over the whole silhouette with the exterior shell drawn, so it measured the object&rsquo;s shape rather than its interior: a <em>constant</em> field &mdash; every cell the identical colour, no structure at any frequency &mdash; scored higher under it than any arm it was being used to rank. Measured properly instead (exterior excluded, the rind eroded away, the object&rsquo;s own falloff detrended, reported as an absolute amplitude, and validated to read \(0.000\) on a constant field and \(0.018\) on a linear ramp), the along-axis variation of the lifted field is \(1.25\%\) of mean flesh brightness against a real cut face&rsquo;s \(2.21\%\). <strong>There is no excess striping to remove; a photograph varies more than we do.</strong></p>
-
-<p>What is real, and visible when a cut face is magnified, is cell-scale blocking: every cell carries an independent feature fitted from two or three photographs with no spatial prior, so neighbouring cells differ sharply and a trilinear render turns that into soft squares. The lattice resolution is not the cause &mdash; the FruitNinja arm sits on the <em>same</em> lattice and shows less of it, because a dense point cloud averaged into each cell is smooth cell to cell by construction. Raising the fit&rsquo;s total-variation term to \(2.0\) takes it from \(0.097\) to \(0.073\), below the photographs&rsquo; own \(0.079\), for \(0.005\) of held-out appearance and no change to the lattice. Two further artefacts &mdash; a horizontal line at about \(0.57\) of the object&rsquo;s height and a left/right asymmetry in the flesh &mdash; are visible in the fitted field <em>before any generation</em>, are absent from a constant field through the same renderer, and survive with the data term switched off entirely. They belong to the fit, and nothing in the lift can reach them.</p>
-
-<p>The other open limit is the one the geometry predicts. The volume sweeps the transverse stack, and that is the family the lift improves; the longitudinal planes form a pencil through the axis, of which an axis-aligned volume contains only the two azimuths aligned with its own axes, and on that family the lift is at best neutral. Closing it is a change of representation &mdash; a volume swept in azimuth rather than in depth &mdash; not another stage bolted onto this one.</p>
-
-<figure style="margin:6px 0 24px">
-  <img src="assets/ovring_orange_oblique.png" alt="six oblique cuts of one voxel field" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
-  <figcaption style="text-align:center">The cut normal tilted \(0^\circ\!\to\!90^\circ\) from longitudinal to transverse. None of these angles were generated; each face is read from the same voxel field. The columella moves from a vertical line to a central dot &mdash; geometrically coherent because the interior is one 3-D volume.</figcaption>
-</figure>
-
-<h3>The same program on seven objects</h3>
-
-<p>Nothing above is orange-specific. Per object the only things that change are its own single-image diffusion (trained on that object&rsquo;s cut photograph) and its reference; the pipeline, the constraints, and the render are identical. The same program fills a watermelon, an apple, a pomegranate, a loaf of bread, and a layered cake &mdash; each read from its own voxel field.</p>
-
-<p>One set of settings runs all of them: the anneal schedule, the gate width, the pin weights and the canonical framing are the same numbers for every object. Where an idea needed a value chosen per object it was dropped rather than kept.</p>
-
-<p>Two object-general details earn their place. Each prior&rsquo;s training photographs are renormalised to the canonical framing <em>before</em> training, which is what turns \(\tau\) from a constant guessed on one fruit into a property of the data. And a uniform flesh exposes a moiré the busy orange texture had hidden &mdash; aliasing between the slab&rsquo;s \(n_{\text{sub}}\) samples and the lattice &mdash; so the slab is rendered at \(2\times\) and averaged down.</p>
-
-<div class="cutstrip" style="justify-content:center;margin:8px 0 6px">
-  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_orange_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="orange sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">orange</figcaption></figure>
-  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_watermelon_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="watermelon sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">watermelon</figcaption></figure>
-  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_pomegranate2_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="pomegranate sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">pomegranate</figcaption></figure>
-  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_apple1_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="apple sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">apple</figcaption></figure>
-  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_bread_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="bread sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">bread</figcaption></figure>
-  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_cake2_sp.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="cake sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">cake</figcaption></figure>
-  <figure style="margin:0 6px 6px"><video src="assets/ovsweep_doughnut.mp4?v=6" autoplay loop muted playsinline preload="metadata" style="height:150px;border-radius:3px" aria-label="doughnut sweep"></video><figcaption style="text-align:center;font-size:12px;margin-top:3px">doughnut</figcaption></figure>
+<div class="tw" style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.55;border:1px solid var(--line);border-radius:4px;padding:14px 16px;margin:18px 0">
+<strong style="font-family:inherit">Algorithm 1</strong>&ensp;The interior from two cut families<br>
+<span style="color:#667">input</span>&ensp; carrier volume \(A^{\mathrm{c}}\) and interior mask \(M\) sampled into the cylinder; priors \(\epsilon_L,\epsilon_T\); \(t_0\)<br>
+<span style="color:#667">output</span>&ensp; the interior \(A\)<br><br>
+1&ensp; \(x \leftarrow \sqrt{\bar\alpha_{t_0}}\,A^{\mathrm{c}} + \sqrt{1-\bar\alpha_{t_0}}\,\epsilon_{\mathrm{fix}}\)&ensp;<span style="color:#667">// one noise draw, kept for the outside</span><br>
+2&ensp; <strong>for</strong> \(t\) from \(t_0\) down to 0, 100 steps<br>
+3&ensp;&ensp; \(\hat x_0^L \leftarrow\) denoise every longitudinal slice of \(x\) with \(\epsilon_L\); \(\hat x_0^T \leftarrow\) every transverse slice with \(\epsilon_T\)<br>
+4&ensp;&ensp; \(\hat x_0 \leftarrow w(r)\,\hat x_0^L + (1-w(r))\,\hat x_0^T\)&ensp;<span style="color:#667">// equation (6)</span><br>
+5&ensp;&ensp; \(\hat x_0 \leftarrow \hat x_0 - \Phi_\sigma(\hat x_0) + \Phi_\sigma(A^{\mathrm{c}})\) on every longitudinal plane&ensp;<span style="color:#667">// the carrier's layout</span><br>
+6&ensp;&ensp; \(\hat x_0 \leftarrow M\,\hat x_0 + (1-M)\,A^{\mathrm{c}}\)&ensp;<span style="color:#667">// the shell is never written</span><br>
+7&ensp;&ensp; \(x \leftarrow \sqrt{\bar\alpha_{t'}}\,\hat x_0 + \sqrt{1-\bar\alpha_{t'}}\,\bar\epsilon\), the outside re-noised with \(\epsilon_{\mathrm{fix}}\)<br>
+8&ensp; <strong>return</strong> \(A \leftarrow M\,\hat x_0 + (1-M)\,A^{\mathrm{c}}\), written into the lattice cells once (section 3.5)
 </div>
-<p style="text-align:center;font-size:13px;color:var(--mut);margin:0 0 24px">Seven objects, one program. Each clip is a depth sweep read from that object&rsquo;s voxel field; orange, watermelon and doughnut show both cut families side by side. Per object only the single-image diffusion and the reference photographs change. The doughnut&rsquo;s ring topology survives the sweep, the hole staying open at every depth.</p>
 
-<footer>Companion note to the base O-Voxel work. The interior is lifted from a 2-D cut prior into a 3-D volume and averaged back into the lattice; the base O-Voxel shell and skin are unchanged by any of it.</footer>
+<h3>3.4&ensp;The priors</h3>
+
+<p>Each family&#8217;s prior is a single-image DDPM&nbsp;[65,&nbsp;67]: a small U-Net with no attention and no middle block, trained on the family&#8217;s two or three canonical-frame photographs, unmasked, at \(256\) px for the longitudinal family and on \(128\times512\) polar strips for the transverse, lr \(5\times10^{-4}\), a linear \(\beta\) schedule of a thousand steps. The photographs are canonicalised on a white background by the same rule for every object &mdash; the background colour is read from the corners, so a black-background photograph works &mdash; and the object fills 82% of the frame, which is the framing of every slice the prior will see. Two things are not free and were measured (section&nbsp;4.2). <em>The priors are unconditional.</em> A cross-conditioned variant, each family fed the other&#8217;s current view as extra channels with a mild degradation at training, reproduced its condition when given one and collapsed to noise when given none: it had learned to copy, not a prior, and every face that had looked right under it was the carrier&#8217;s own layout leaking through the condition channel. <em>Training length is a per-family choice.</em> The longitudinal prior improves to thirty thousand steps; the polar prior memorises its three strips past four thousand and the held-out distance rises with every step after.</p>
+
+<h3>3.5&ensp;The asset, and the measured gate</h3>
+
+<p>The interior is written back into the carrier once: every interior cell takes the volume&#8217;s colour at its centre, trilinear in \((r,\varphi,z)\) with the wrap in \(\varphi\); every skin cell keeps its fitted colour; the lattice file is rewritten with only the colour of interior cells changed, so the cut operator, the solver interface and every measurement of section&nbsp;4.5 read the result unchanged. Re-voxelised, the interior differs from the sampled volume by 0.029 on \([-1,1]\), the trilinear round trip that the carrier&#8217;s own planes also pay.</p>
+
+<p>One rule decides whether an object receives the lift at all, and it has no threshold: the lift is kept only where it lowers the object&#8217;s distance to its <em>own training photographs</em>, which every object has, per family; otherwise the asset keeps the fitted interior. Held-out photographs are never consulted by the rule, and it can never fall below the carrier. Section&nbsp;4.3 reports where it fires.</p>
+
+<h2 id="results">4&ensp;Experiments</h2>
+
+<p class="lead">Every candidate is scored the same way. A split is declared per object and per family: with four or more photographs, three train the prior and the rest are held out and never touched; with fewer, all train and the object is scored against its training photographs and flagged as such. Cut faces are canonical-frame slices of the voxel grid at 512 px, and the score is the mean over faces of the DreamSim&nbsp;[62] distance to the nearest held-out photograph, lower better; the real floor is the training photographs scored against the held-out ones. Grid slices rather than the carrier&#8217;s renderer, so the absolute numbers are not the carrier paper&#8217;s Table&nbsp;2; the ranking is fair because every row walks the same path. The orange has three held out per family and is where every design choice was measured; the six other objects then run through one program with no setting changed.</p>
+
+<h3>4.1&ensp;The number the method has to beat</h3>
+
+<div class="tw"><p class="tnum">Table 1</p><table>
+<thead><tr><th>orange, held-out DreamSim &darr;</th><th>longitudinal</th><th>transverse</th><th>mean</th></tr></thead>
+<tbody>
+<tr><td>real: training photographs against the held-out ones</td><td>0.070</td><td>0.040</td><td>0.055</td></tr>
+<tr><td>the carrier, fitted directly, no generation</td><td>0.148</td><td>0.077</td><td>0.113</td></tr>
+<tr><td>FruitNinja&nbsp;[3], released model</td><td>0.154</td><td>0.162</td><td>0.158</td></tr>
+<tr><td>two families in separate chains, averaged at the end</td><td>0.151</td><td>0.133</td><td>0.142</td></tr>
+<tr><td>Cartesian grid, joint chain re-sliced every step</td><td colspan="3" class="mut">blurred to a blob; scored above the photograph on texture, caught by the 3-px probe and the eye</td></tr>
+<tr><td>Cartesian grid, intersection sync, honest priors</td><td>0.160</td><td>0.142</td><td>0.151</td></tr>
+<tr><td><strong>the cylinder, section 3.3</strong></td><td class="win">0.112</td><td class="win">0.062</td><td class="win">0.087</td></tr>
+</tbody></table></div>
+
+<p>The cylinder is below the carrier on both faces and the mean, with honest unconditional priors and nothing copied; the colour of its flesh is the photographs&#8217; (value 0.962 against 0.961), its horizontal banding is below the photographs&#8217; (0.0068 against 0.0079; the carrier 0.0123), and it has no block tiling. Every Cartesian arm is above the carrier. Figure&nbsp;4 shows the faces the numbers are distances between.</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/x3d_faces.png" style="width:100%;border-radius:4px" alt="transverse and longitudinal faces: the carrier, the lift with two prior lengths, a held-out photograph">
+  <figcaption><span class="fnum">Figure 4</span><br><strong>Cut faces in the photographs&#8217; canonical frame.</strong> Transverse above, longitudinal below: the carrier, the lift with the longitudinal prior at thirty thousand and at eight thousand steps, and a held-out photograph of a different orange. Segment membranes in the right number, a continuous columella, vesicle grain, the photographs&#8217; colour; faint streaks along \(z\) remain on the longitudinal face.</figcaption>
+</figure>
+
+<h3>4.2&ensp;Ablations, on the orange</h3>
+
+<p>Table&nbsp;2 changes one thing at a time. The scale of a null result is about 0.002: the starting-noise arms at 0.3, 0.2 and 0.1 differ by less than that among themselves.</p>
+
+<div class="tw"><p class="tnum">Table 2</p><table>
+<thead><tr><th>configuration</th><th>long</th><th>trans</th><th>mean</th><th>observation</th></tr></thead>
+<tbody>
+<tr><td><strong>baseline</strong>: cylinder, \(t_0=0.3\), \(w_\infty=0.1\), longitudinal 30k, polar 4k</td><td class="win">0.112</td><td class="win">0.062</td><td class="win">0.087</td><td class="mut">the proposed configuration</td></tr>
+<tr><td>starting noise \(t_0 = 0.9\) / 0.7 / 0.5 / 0.3 / 0.2 / 0.1&nbsp;<span class="mut">(8k priors, \(w_\infty=0.3\))</span></td><td class="mut">0.159 / 0.150 / 0.130 / 0.122 / 0.121 / 0.124</td><td class="mut">0.106 / 0.096 / 0.074 / 0.064 / 0.062 / 0.061</td><td>0.133 / 0.123 / 0.102 / 0.093 / 0.091 / 0.093</td><td>monotone down to 0.2&ndash;0.3, then back toward the carrier</td></tr>
+<tr><td>longitudinal weight far from the axis \(w_\infty\) = 0.5 / 0.3 / 0.1&nbsp;<span class="mut">(\(t_0=0.9\))</span></td><td class="mut">0.167 / 0.159 / 0.153</td><td class="mut">0.110 / 0.106 / 0.102</td><td>0.139 / 0.133 / 0.127</td><td>the longitudinal is the weak family</td></tr>
+<tr><td>longitudinal prior 8k &rarr; 30k&nbsp;<span class="mut">(\(t_0=0.3\))</span></td><td>0.122 &rarr; 0.114</td><td>0.064 &rarr; 0.063</td><td>0.093 &rarr; 0.088</td><td>longer helps this family</td></tr>
+<tr><td>polar prior 4k / 8k / 15k / 30k&nbsp;<span class="mut">(30k long, \(t_0=0.3\))</span></td><td class="mut">0.112 / 0.113 / 0.121 / 0.126</td><td class="mut">0.062 / 0.063 / 0.064 / 0.073</td><td>0.087 / 0.088 / 0.092 / 0.100</td><td>and hurts this one: three strips memorised</td></tr>
+<tr><td>Cartesian, symmetric sync 0.5 / 0.25 / asymmetric / radius-led / stop at 30%</td><td class="mut">0.151 / 0.151 / 0.163 / 0.133 / 0.155</td><td class="mut">0.133 / 0.133 / 0.134 / 0.144 / 0.128</td><td>0.142 / 0.142 / 0.148 / 0.138 / 0.141</td><td>no weighting recovers the transverse face on a grid</td></tr>
+<tr><td>Cartesian, the copier prior conditioned on the carrier&#8217;s own view</td><td>0.129</td><td>0.103</td><td>0.116</td><td>as good as it gets by copying the carrier&#8217;s layout</td></tr>
+<tr><td>clamp inside the chain (removed in all rows above)</td><td colspan="3" class="mut">every channel walked toward grey in proportion to its distance from zero; texture fell with it</td><td>a bug, found by looking</td></tr>
+<tr><td>the residual DC shrink: global mean offset / post-hoc low-pass swap / ILVR</td><td colspan="3" class="mut">over-corrects and clips / colour right, texture &minus;12% / colour right, texture kept</td><td>only the in-chain constraint keeps both</td></tr>
+</tbody></table></div>
+
+<p><strong>The starting noise has a floor and it is not zero.</strong> The honest longitudinal prior has no layout of its own: from 90% noise it draws orange blobs on white (Figure&nbsp;6), and everything global in the result comes from the carrier through the constraint of section&nbsp;3.3. The held-out distance therefore falls monotonically as \(t_0\) is lowered from 0.9 to 0.3, is flat from 0.3 to 0.1, and must turn back toward the carrier&#8217;s 0.113 as \(t_0\to0\). The prior is asked to add texture and local structure under a layout it did not make, and that is what it is good at.</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/x3d_long_8k_30k.png" style="width:100%;border-radius:4px" alt="the longitudinal prior alone, restoring a carrier slice from three noise levels, at 8k and 30k steps">
+  <figcaption><span class="fnum">Figure 6</span><br><strong>The longitudinal prior alone, in-plane.</strong> A carrier slice restored from 30%, 50% and 90% noise by the prior at eight and at thirty thousand steps. At 30&ndash;50% the longer prior draws segment walls and a crisp columella where the shorter draws mush; at 90% both collapse &mdash; a patch prior has no global layout, and the carrier is where the layout comes from.</figcaption>
+</figure>
+
+<p><strong>Training length is a per-family choice.</strong> The longitudinal prior improves from 8k to 30k on every column. The polar prior goes the other way from 4k on: at 30k its transverse faces show segments in a fixed number at even spacing, the layout of its three strips memorised, and the held-out distance rises with every step (Figure&nbsp;7). Neither curve is the other&#8217;s, and a single training length for both would have hidden one of them.</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/x3d_polar_overfit.png" style="width:100%;border-radius:4px" alt="transverse faces with the polar prior at 8k and at 30k steps, beside the carrier and a held-out photograph">
+  <figcaption><span class="fnum">Figure 7</span><br><strong>The polar prior overtrained.</strong> The carrier, the lift with the polar prior at eight and at thirty thousand steps, and a held-out photograph. At 30k the membranes are fixed in number and evenly spaced: the three training strips, reproduced.</figcaption>
+</figure>
+
+<p><strong>A conditioned prior that was a copier.</strong> Before the cylinder, each family&#8217;s prior took the other family&#8217;s view as three extra input channels, degraded at training by a mild blur and noise. Figure&nbsp;8 is the test that should have been run first: fed its own input as the condition, every such prior reproduces it; fed zeros, every one collapses to noise blobs. The degradation was too weak and the answer leaked through the condition. Every transverse face that had looked right under those priors was the carrier&#8217;s own layout arriving through the condition channel &mdash; and in the Cartesian sampler, where the transverse condition came from the longitudinal family, the segment membranes vanished and no sync weight, radius rule or constraint could bring them back (Table&nbsp;2, the five Cartesian rows). The product of experts requires priors; a copier is not one.</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/x3d_copier.png" style="width:100%;border-radius:4px" alt="three cross-conditioned transverse priors restoring a carrier slice with the slice itself as condition and with zeros as condition">
+  <figcaption><span class="fnum">Figure 8</span><br><strong>The copier test.</strong> A carrier transverse slice restored by three cross-conditioned priors &mdash; trained on the declared split at 8k and 30k steps, and on all six photographs &mdash; with the slice itself as the condition and with zeros. With the condition, a cross-section; without it, noise. None of them had learned a prior.</figcaption>
+</figure>
+
+<p><strong>What the numbers could not see.</strong> Three artefacts on the way were invisible to the texture statistic that was steering the work and were caught by the eye and then by a scorer written for each: a colour shift toward grey (the clamp; a flesh-colour scorer), radial spokes on the transverse face from ninety longitudinal planes at ninety brightnesses (a transverse-view scorer), and horizontal bands on the longitudinal face from per-transverse-plane brightness &mdash; the same artefact rotated by ninety degrees, caught by a row-profile scorer. Every number in this section is read beside a composite of the faces; none was believed alone.</p>
+
+<h3>4.3&ensp;Seven objects, one program</h3>
+
+<p>The six other objects run through the same program as the orange: the same canonicalisation, the same split rule, the same priors at the same lengths, the same sampler at the same \(t_0\), \(R_0\) and \(w_\infty\). A family without photographs is inactive in the chain &mdash; bread and cake have only longitudinal cuts, the doughnut one transverse. The single per-object declaration is the polar axis, read from the occupancy: the doughnut lies in a vertical plane and its axis is the lattice&#8217;s third dimension; every other object keeps the vertical. The bread&#8217;s loaf axis is horizontal and its photographs are cross-sections perpendicular to it, which under that convention are longitudinal planes at one azimuth; this is reported, not tuned around.</p>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/six_objects.png" style="width:100%;border-radius:4px" alt="seven objects: the carrier's face, the lifted face and a photograph, for both families">
+  <figcaption><span class="fnum">Figure 9</span><br><strong>Every object, both families.</strong> Left to right: the carrier&#8217;s longitudinal face, the lift&#8217;s, a photograph; then the same for the transverse family. Where a family has no photograph the panel is empty. The orange, apple, pomegranate and doughnut lose the carrier&#8217;s tiling and keep its layout; the watermelon&#8217;s seeds are smeared along \(z\); the bread and the cake are what a bad fit looks like after smoothing.</figcaption>
+</figure>
+
+<div class="tw"><p class="tnum">Table 3</p><table>
+<thead><tr><th>object</th><th>split</th><th>ours, long / trans / mean</th><th>carrier, long / trans / mean</th><th>gate</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>3+3 / 3+3 held out</td><td class="win">0.112 / 0.062 / 0.087</td><td>0.148 / 0.077 / 0.113</td><td>lift</td></tr>
+<tr><td>apple</td><td>long vs. training; trans 3+6 held out</td><td class="win">0.240 / 0.264 / 0.252</td><td>0.283 / 0.289 / 0.286</td><td>lift</td></tr>
+<tr><td>pomegranate</td><td>long 3+2 held out; trans vs. training</td><td class="win">0.306 / 0.251 / 0.279</td><td>0.362 / 0.296 / 0.329</td><td>lift</td></tr>
+<tr><td>watermelon</td><td>3+20 / 3+17 held out</td><td>0.152 / 0.112 / 0.132</td><td class="win">0.137 / 0.086 / 0.112</td><td>fitted</td></tr>
+<tr><td>bread</td><td>long 3+2 held out; no transverse</td><td class="win">0.364 / &mdash; / &mdash;</td><td>0.384 / &mdash; / &mdash;</td><td>fitted, by 0.001</td></tr>
+<tr><td>cake</td><td>long vs. training; no transverse</td><td class="win">0.440 / &mdash; / &mdash;</td><td>0.454 / &mdash; / &mdash;</td><td>lift</td></tr>
+<tr><td>doughnut</td><td>no longitudinal; trans 1 vs. training</td><td class="win">&mdash; / 0.196 / &mdash;</td><td>&mdash; / 0.256 / &mdash;</td><td>lift</td></tr>
+</tbody></table></div>
+
+<p>Six of seven are below the carrier, and the watermelon is above it, for a reason that is general rather than the watermelon&#8217;s: its fitted interior is already near the real floor &mdash; 0.112 against a floor of 0.097 &mdash; because smooth flesh and discrete high-contrast seeds are what direct fitting does well, and the patch prior smears the seeds along \(z\) and adds texture that is a distance. The bread and the cake are wins of a different kind: their fitted fields are blotches, the lift smooths them, and both remain far from their photographs, which Figure&nbsp;9 shows plainly.</p>
+
+<p><strong>The gate.</strong> The rule of section&nbsp;3.5 scores each object against its own training photographs, and its verdict agrees with the held-out one on every object but one: it keeps the lift on the apple, cake, doughnut and pomegranate, refuses it on the watermelon (0.139&nbsp;/&nbsp;0.129 &rarr; 0.143&nbsp;/&nbsp;0.139, clear), and refuses it on the bread by 0.001 (0.3392 &rarr; 0.3403), where the held-out photographs say the lift is better (0.384 &rarr; 0.364). That is a tie at the rule&#8217;s boundary and is reported as one; the rule is not adjusted to pass it.</p>
+
+<h3>4.4&ensp;The unsupervised planes</h3>
+
+<p>No photograph supervises an oblique cut, so whether one looks right is a property of the two families&#8217; consistency, not an assumption. On the orange, a plane containing the horizontal axis and tilted 45&deg; from the polar axis shows the same membranes, columella and grain as the two supervised families, with no seam where the families meet; its 15-px texture is 91% of the carrier&#8217;s on the same plane, and the carrier&#8217;s own tiling is absent. Figure&nbsp;1 is the continuous version of this: the plane turning through every azimuth and every height.</p>
+
+<h3>4.5&ensp;The carrier&#8217;s numbers, unchanged</h3>
+
+<p>The lift changes the colour of interior cells and nothing else, so the carrier paper&#8217;s measurements of its geometry hold for the result. Over four planes on each of the seven objects &mdash; three axis-aligned and one oblique, offset off the grid &mdash; every cut vertex satisfies its plane equation with residual bounded by \(8.88\times10^{-16}\); the extracted surface is 2-manifold with no T-junction; no pixel of a cut face is unpainted at 2048&nbsp;px; a cut and its rasterisation take 8.6&ndash;16.5&nbsp;ms, following the crossed-cell count \(K\) at 0.72&ndash;2.13% of the volume; through one codec the representation is 10.0&nbsp;MiB against 25.6 and 52.0 for two Gaussian baselines on the same object.</p>
+
+<div class="tw"><p class="tnum">Table 4</p><table>
+<thead><tr><th>object</th><th>cells \(N\)</th><th>crossed \(K\)</th><th>\(K/N\)</th><th>triangles</th><th>cut (ms)</th><th>alignment (ms)</th><th>peak (MiB)</th></tr></thead>
+<tbody>
+<tr><td>orange</td><td>770,182</td><td>14,455</td><td>1.88%</td><td>86,730</td><td>16.1</td><td>42.6</td><td>1,060</td></tr>
+<tr><td>watermelon</td><td>709,368</td><td>14,078</td><td>1.98%</td><td>84,468</td><td>13.7</td><td>27.0</td><td>773</td></tr>
+<tr><td>apple</td><td>756,905</td><td>13,558</td><td>1.79%</td><td>81,348</td><td>16.5</td><td>41.9</td><td>1,098</td></tr>
+<tr><td>loaf</td><td>396,075</td><td>6,940</td><td>1.75%</td><td>41,640</td><td>11.1</td><td>34.6</td><td>569</td></tr>
+<tr><td>cake</td><td>395,613</td><td>7,263</td><td>1.84%</td><td>43,578</td><td>12.0</td><td>34.1</td><td>628</td></tr>
+<tr><td>pomegranate</td><td>491,350</td><td>10,483</td><td>2.13%</td><td>62,898</td><td>13.7</td><td>39.4</td><td>711</td></tr>
+<tr><td>doughnut</td><td>544,568</td><td>3,894</td><td>0.72%</td><td>23,364</td><td>8.6</td><td>21.8</td><td>369</td></tr>
+</tbody></table></div>
+
+<div class="cutstrip" style="margin-top:20px"><video src="assets/ovcut_orange_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="orange, cut transverse and longitudinal"></video><video src="assets/ovcut_watermelon_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="watermelon"></video><video src="assets/ovcut_apple1_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="apple"></video><video src="assets/ovcut_bread_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="bread"></video><video src="assets/ovcut_cake2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="cake"></video><video src="assets/ovcut_pomegranate2_sp.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="pomegranate"></video><video src="assets/ovcut_doughnut.mp4?v=s_v2" autoplay loop muted playsinline preload="metadata" aria-label="doughnut"></video></div>
+<p class="mut" style="margin-top:-14px">The carrier&#8217;s closed-form cuts on all seven objects, drawn from the dual grid and the lattice. The lifted interiors of Table&nbsp;3 are read through this same operator.</p>
+
+<h2 id="conclusion">5&ensp;Conclusion and limitations</h2>
+
+<h3>5.1&ensp;Conclusion</h3>
+
+<p>Two or three photographs per cut family cannot supervise a volume, but they can define its patch distribution through two marginals, and a single-image diffusion prior is the object that learns a patch distribution from that little. Composed as a product of experts over the slices of one cylindrical state, with the fitted lattice supplying the layout it cannot invent and the shell it must not touch, the two priors sample an interior whose held-out cut faces are closer to real photographs than the directly fitted lattice on six of seven objects, with no block tiling, no seam between the families, and nothing generated at cut time. The lattice, its closed-form cut and its solver interface are the ones of the superseded paper and are unchanged by the lift.</p>
+
+<p>The work&#8217;s method is as much in what it refused as in what it kept: a conditioned prior that was a copier, a clamp that greyed every colour, eight aggregation rules that blurred, a joint chain through a grid that blurred to a blob, and a training length that had to be chosen per family. Each was caught by a measurement that had to be built after the eye had seen the fault, and each is recorded.</p>
+
+<h3>5.2&ensp;Limitations and future work</h3>
+
+<ul>
+  <li><strong>Objects the carrier already fits.</strong> Where direct fitting is near the real floor &mdash; smooth flesh, discrete seeds &mdash; the patch prior adds distance, and the gate keeps the carrier. The gate is a measurement, not a remedy: a prior that learned discrete objects as objects, rather than smearing them along the axis, is the open problem the watermelon poses.</li>
+  <li><strong>Objects the carrier does not fit.</strong> The bread and the cake are blotches before the lift and smoothed blotches after it. The lift inherits the carrier&#8217;s ghosting under non-rigid variation between specimens; a chord-conditioned deformation before fitting, proposed for the carrier, remains the natural extension.</li>
+  <li><strong>One family.</strong> With a single photographed family the product degenerates to one prior on one family of exact slices; the other direction is constrained only by the shared state and the carrier&#8217;s layout. Three objects are in this regime and their numbers are against training photographs.</li>
+  <li><strong>The axis and the frame.</strong> The polar axis is a declaration read from the occupancy; the bread&#8217;s is horizontal and the convention does not follow it. The canonical frame assumes an object that fills its own bounding square at 82%; a long loaf does not.</li>
+  <li><strong>The resampling floor.</strong> The carrier&#8217;s own planes lose 7&ndash;17% of fine texture through one write-and-read of the grid, at 128<sup>3</sup> and at 256<sup>3</sup> alike: it is the tent filters of the write and the read, not the resolution. What the prior generates in-plane exceeds what the asset holds by that much, and the asset&#8217;s interior cells are coarse. Interior cells at the fine level and a write without a tent filter are the route past it.</li>
+  <li><strong>The protocol.</strong> Faces are grid slices, not the carrier&#8217;s renders; the renderer-protocol numbers of the superseded paper are not comparable to Table&nbsp;3 and have not been re-taken for the lift.</li>
+</ul>
+
+<h2 id="refs">References</h2>
+
+<ol class="refs">
+  <li>B. Kerbl, G. Kopanas, T. Leimk&uuml;hler and G. Drettakis. <em>3D Gaussian Splatting for
+      Real-Time Radiance Field Rendering.</em> ACM TOG 42(4), 2023.</li>
+  <li>B. Mildenhall et&nbsp;al. <em>NeRF: Representing Scenes as Neural Radiance Fields for View
+      Synthesis.</em> ECCV 2020.</li>
+  <li>F. Wu and Y. Chen. <em>FruitNinja: 3D Object Interior Texture Generation with Gaussian
+      Splatting.</em> <a href="https://arxiv.org/abs/2411.12089">arXiv:2411.12089</a>, CVPR 2025.</li>
+
+  <li>W. E. Lorensen and H. E. Cline. <em>Marching Cubes: A High Resolution 3D Surface
+      Construction Algorithm.</em> SIGGRAPH 1987.</li>
+  <li>T. Ju, F. Losasso, S. Schaefer and J. Warren. <em>Dual Contouring of Hermite Data.</em>
+      ACM TOG 21(3), SIGGRAPH 2002.</li>
+  <li>S. Schaefer and J. Warren. <em>Dual Marching Cubes: Primal Contouring of the Dual Grid.</em>
+      Pacific Graphics 2004.</li>
+  <li>L. P. Kobbelt, M. Botsch, U. Schwanecke and H.-P. Seidel. <em>Feature Sensitive Surface
+      Extraction from Volume Data.</em> SIGGRAPH 2001.</li>
+  <li>M. Garland and P. S. Heckbert. <em>Surface Simplification Using Quadric Error Metrics.</em>
+      SIGGRAPH 1997.</li>
+  <li>T. Ju. <em>Robust Repair of Polygonal Models.</em> ACM TOG 23(3), SIGGRAPH 2004.</li>
+  <li>J. Xiang et&nbsp;al. <em>Native and Compact Structured Latents for 3D Generation.</em>
+      CVPR 2026. <a href="https://github.com/microsoft/TRELLIS.2">TRELLIS.2</a>.</li>
+  <li>J. Xiang et&nbsp;al. <em>Structured 3D Latents for Scalable and Versatile 3D Generation.</em>
+      CVPR 2025.</li>
+
+  <li>T. Lu et&nbsp;al. <em>Scaffold-GS: Structured 3D Gaussians for View-Adaptive Rendering.</em>
+      CVPR 2024.</li>
+  <li>B. Zhang et&nbsp;al. <em>GaussianCube: A Structured and Explicit Radiance Representation for
+      3D Generative Modeling.</em> NeurIPS 2024.</li>
+  <li>K. Ren et&nbsp;al. <em>Octree-GS: Towards Consistent Real-time Rendering with LOD-Structured
+      3D Gaussians.</em> IEEE TPAMI, 2025.</li>
+  <li>A. Yu, R. Li, M. Tancik, H. Li, R. Ng and A. Kanazawa. <em>PlenOctrees for Real-time
+      Rendering of Neural Radiance Fields.</em> ICCV 2021.</li>
+  <li>C. Sun, M. Sun and H.-T. Chen. <em>Direct Voxel Grid Optimization: Super-fast Convergence for
+      Radiance Fields Reconstruction.</em> CVPR 2022.</li>
+  <li>T. M&uuml;ller, A. Evans, C. Schied and A. Keller. <em>Instant Neural Graphics Primitives
+      with a Multiresolution Hash Encoding.</em> ACM TOG 41(4), 2022.</li>
+
+  <li>T. Xie et&nbsp;al. <em>PhysGaussian: Physics-Integrated 3D Gaussians for Generative
+      Dynamics.</em> <a href="https://arxiv.org/abs/2311.12198">arXiv:2311.12198</a>, CVPR 2024.</li>
+  <li>C. Jiang, C. Schroeder, J. Teran, A. Stomakhin and A. Selle. <em>The Material Point Method
+      for Simulating Continuum Materials.</em> SIGGRAPH Courses 2016.</li>
+  <li>A. Stomakhin, C. Schroeder, L. Chai, J. Teran and A. Selle. <em>A Material Point Method for
+      Snow Simulation.</em> ACM TOG 32(4), 2013.</li>
+  <li>Y. Hu et&nbsp;al. <em>A Moving Least Squares Material Point Method with Displacement
+      Discontinuity and Two-Way Rigid Body Coupling.</em> ACM TOG 37(4), 2018.</li>
+  <li>Y. Jiang et&nbsp;al. <em>VR-GS: A Physical Dynamics-Aware Interactive Gaussian Splatting
+      System in Virtual Reality.</em> SIGGRAPH 2024.</li>
+  <li>B. Huang, Y. Chen, R. Lu, G. Zeng, H. Zha, Y. Pei and S. Huang. <em>GaussianFluent:
+      Gaussian Simulation for Dynamic Scenes with Mixed Materials.</em>
+      <a href="https://arxiv.org/abs/2601.09265">arXiv:2601.09265</a>, CVPR 2026.</li>
+  <li>J. P. Lewis, M. Cordner and N. Fong. <em>Pose Space Deformation: A Unified Approach to Shape
+      Interpolation and Skeleton-Driven Deformation.</em> SIGGRAPH 2000.</li>
+  <li>R. W. Sumner, J. Schmid and M. Pauly. <em>Embedded Deformation for Shape Manipulation.</em>
+      ACM TOG 26(3), 2007.</li>
+
+  <li>R. Rombach, A. Blattmann, D. Lorenz, P. Esser and B. Ommer. <em>High-Resolution Image
+      Synthesis with Latent Diffusion Models.</em> CVPR 2022.</li>
+  <li>B. Poole, A. Jain, J. T. Barron and B. Mildenhall. <em>DreamFusion: Text-to-3D using 2D
+      Diffusion.</em> ICLR 2023.</li>
+  <li>E. Richardson et&nbsp;al. <em>TEXTure: Text-Guided Texturing of 3D Shapes.</em>
+      SIGGRAPH 2023.</li>
+  <li>J. Kopf et&nbsp;al. <em>Solid Texture Synthesis from 2D Exemplars.</em> ACM TOG 26(3), 2007.</li>
+  <li>H. Liu et&nbsp;al. <em>InFusion: Inpainting 3D Gaussians via Learning Depth Completion from
+      Diffusion Prior.</em> arXiv:2404.11613, 2024.</li>
+  <li>E. Liang et&nbsp;al. <em>InnerGS: Internal Scenes Reconstruction and Segmentation with
+      Gaussian Splatting.</em> arXiv, 2025.</li>
+
+  <li>M. Heusel, H. Ramsauer, T. Unterthiner, B. Nessler and S. Hochreiter. <em>GANs Trained by a
+      Two Time-Scale Update Rule Converge to a Local Nash Equilibrium.</em> NeurIPS 2017.
+      <span class="mut">(FID)</span></li>
+  <li>M. Bi&nacute;kowski, D. J. Sutherland, M. Arbel and A. Gretton. <em>Demystifying MMD
+      GANs.</em> ICLR 2018. <span class="mut">(KID)</span></li>
+  <li>J. Hessel, A. Holtzman, M. Forbes, R. Le Bras and Y. Choi. <em>CLIPScore: A Reference-free
+      Evaluation Metric for Image Captioning.</em> EMNLP 2021.</li>
+  <li>M. J. Chong and D. Forsyth. <em>Effectively Unbiased FID and Inception Score and Where to
+      Find Them.</em> CVPR 2020. <span class="mut">(why FID is unusable at the sample sizes here)</span></li>
+  <li>T. Kynk&auml;&auml;nniemi, T. Karras, M. Aittala, T. Aila and J. Lehtinen. <em>The Role of
+      ImageNet Classes in Fr&eacute;chet Inception Distance.</em> ICLR 2023.</li>
+  <li>P. Debevec, C. Taylor and J. Malik. <em>Modeling and Rendering Architecture from
+      Photographs.</em> SIGGRAPH 1996.</li>
+  <li>C. Buehler, M. Bosse, L. McMillan, S. Gortler and M. Cohen. <em>Unstructured Lumigraph
+      Rendering.</em> SIGGRAPH 2001.</li>
+  <li>C. Ericson. <em>Real-Time Collision Detection.</em> Morgan Kaufmann, 2004, &sect;5.2.3.</li>
+  <li>S. Niedermayr, J. Stumpfegger and R. Westermann. <em>Compressed 3D Gaussian Splatting for
+      Accelerated Novel View Synthesis.</em> CVPR 2024.</li>
+  <li>J. C. Lee, D. Rho, X. Sun, J. H. Ko and E. Park. <em>Compact 3D Gaussian Representation for
+      Radiance Field.</em> CVPR 2024.</li>
+  <li>Z. Fan et&nbsp;al. <em>LightGaussian: Unbounded 3D Gaussian Compression with 15&times;
+      Reduction.</em> NeurIPS 2024.</li>
+  <li>Y. Chen et&nbsp;al. <em>HAC: Hash-grid Assisted Context for 3D Gaussian Splatting
+      Compression.</em> ECCV 2024.</li>
+  <li>W. Morgenstern et&nbsp;al. <em>Compact 3D Scene Representation via Self-Organizing Gaussian
+      Grids.</em> ECCV 2024.</li>
+  <li>M. Bagdasarian et&nbsp;al. <em>3DGS.zip: A Survey on 3D Gaussian Splatting Compression.</em>
+      Eurographics STAR 2025.</li>
+  <li>G. Fang and B. Wang. <em>Mini-Splatting: Representing Scenes with a Constrained Number of
+      Gaussians.</em> ECCV 2024.</li>
+  <li>S. Mallick et&nbsp;al. <em>Taming 3DGS: High-Quality Radiance Fields with Limited
+      Resources.</em> SIGGRAPH Asia 2024.</li>
+  <li>N. Molino, Z. Bao and R. Fedkiw. <em>A Virtual Node Algorithm for Changing Mesh Topology
+      During Simulation.</em> SIGGRAPH 2004.</li>
+  <li>E. Sifakis, K. Der and R. Fedkiw. <em>Arbitrary Cutting of Deformable Tetrahedra.</em>
+      SCA 2007.</li>
+  <li>D. Koschier, J. Bender and N. Thuerey. <em>Robust eXtended Finite Elements for Complex Cutting
+      of Deformables.</em> ACM TOG 36(4), SIGGRAPH 2017.</li>
+  <li>D. Bielser and M. Gross. <em>Interactive Simulation of Surgical Cuts.</em> Pacific Graphics
+      2000.</li>
+  <li>J. Wolper, Y. Fang, M. Li, J. Lu, M. Gao and C. Jiang. <em>CD-MPM: Continuum Damage Material
+      Point Methods for Dynamic Fracture Animation.</em> ACM TOG 38(4), SIGGRAPH 2019.</li>
+  <li>Z. Yu, A. Chen, B. Huang, T. Sattler and A. Geiger. <em>Mip-Splatting: Alias-free 3D Gaussian
+      Splatting.</em> CVPR 2024.</li>
+  <li>Z. Liang et&nbsp;al. <em>Analytic-Splatting: Anti-Aliased 3D Gaussian Splatting via Analytic
+      Integration.</em> ECCV 2024.</li>
+  <li>J. T. Barron et&nbsp;al. <em>Mip-NeRF: A Multiscale Representation for Anti-Aliasing Neural
+      Radiance Fields.</em> ICCV 2021.</li>
+<li>M. Levoy. <em>Display of Surfaces from Volume Data.</em> IEEE Computer Graphics and
+Applications 8(3), 1988.</li>
+<li>R. A. Drebin, L. Carpenter and P. Hanrahan. <em>Volume Rendering.</em> SIGGRAPH 1988.</li>
+<li>A. Kaufman, D. Cohen and R. Yagel. <em>Volume Graphics.</em> IEEE Computer 26(7), 1993.</li>
+<li>S. F. Frisken, R. N. Perry, A. P. Rockwood and T. R. Jones. <em>Adaptively Sampled Distance
+Fields: A General Representation of Shape for Computer Graphics.</em> SIGGRAPH 2000.</li>
+<li>K. Museth. <em>VDB: High-Resolution Sparse Volumes with Dynamic Topology.</em> ACM TOG 32(3),
+2013.</li>
+<li>S. Laine and T. Karras. <em>Efficient Sparse Voxel Octrees.</em> I3D 2010.</li>
+  <li>S. Fu, N. Tamir, S. Sundaram, L. Chai, R. Zhang, T. Dekel and P. Isola. <em>DreamSim: Learning New Dimensions of Human Visual Similarity using Synthetic Data.</em> NeurIPS 2023.</li>
+  <li>T. Shen, J. Munkberg, J. Hasselgren, K. Yin, Z. Wang, W. Chen, Z. Gojcic, S. Fidler,
+      N. Sharp and J. Gao. <em>Flexible Isosurface Extraction for Gradient-Based Mesh
+      Optimization.</em> ACM TOG 42(4), Article 37, 2023.
+      <a href="https://arxiv.org/abs/2308.05371">arXiv:2308.05371</a>.</li>
+  <li>J. Hwang and M. Sung. <em>Occupancy-Based Dual Contouring.</em> SIGGRAPH Asia 2024.
+      <a href="https://doi.org/10.1145/3680528.3687581">doi:10.1145/3680528.3687581</a>.</li>
+  <li>S. Fridovich-Keil, A. Yu, M. Tancik, Q. Chen, B. Recht and A. Kanazawa.
+      <em>Plenoxels: Radiance Fields without Neural Networks.</em> CVPR 2022.</li>
+  <li>W. Wang, J. Bao, W. Zhou, D. Chen, D. Chen, L. Yuan and H. Li. <em>SinDiffusion: Learning a Diffusion Model from a Single Natural Image.</em> arXiv:2211.12445, 2022.</li>
+  <li>T. R. Shaham, T. Dekel and T. Michaeli. <em>SinGAN: Learning a Generative Model from a Single Natural Image.</em> ICCV 2019.</li>
+  <li>J. Ho, A. Jain and P. Abbeel. <em>Denoising Diffusion Probabilistic Models.</em> NeurIPS 2020.</li>
+  <li>J. Song, C. Meng and S. Ermon. <em>Denoising Diffusion Implicit Models.</em> ICLR 2021.</li>
+  <li>J. Choi, S. Kim, Y. Jeong, Y. Gwon and S. Yoon. <em>ILVR: Conditioning Method for Denoising Diffusion Probabilistic Models.</em> ICCV 2021.</li>
+  <li>C. Meng, Y. He, Y. Song, J. Song, J. Wu, J.-Y. Zhu and S. Ermon. <em>SDEdit: Guided Image Synthesis and Editing with Stochastic Differential Equations.</em> ICLR 2022.</li>
+  <li>S. Lee, H. Chung, M. Park, J. Park, W.-S. Ryu and J. C. Ye. <em>Improving 3D Imaging with Pre-Trained Perpendicular 2D Diffusion Models.</em> ICCV 2023. <span class="mut">(TPDM)</span></li>
+  <li>B. Song, J. Hu, Z. Luo, J. A. Fessler and L. Shen. <em>DiffusionBlend: Learning 3D Image Prior through Position-aware Diffusion Score Blending for 3D Computed Tomography Reconstruction.</em> NeurIPS 2024.</li>
+  <li>Y. Liu, C. Lin, Z. Zeng, X. Long, L. Liu, T. Komura and W. Wang. <em>SyncDreamer: Generating Multiview-consistent Images from a Single-view Image.</em> ICLR 2024.</li>
+  <li>Y. Shi, P. Wang, J. Ye, M. Long, K. Li and X. Yang. <em>MVDream: Multi-view Diffusion for 3D Generation.</em> ICLR 2024.</li>
+  <li>Y. Du, S. Li, J. Tenenbaum and I. Mordatch. <em>Compositional Visual Generation with Composable Diffusion Models.</em> ECCV 2022.</li>
+  <li>G. E. Hinton. <em>Training Products of Experts by Minimizing Contrastive Divergence.</em> Neural Computation 14(8), 2002.</li>
+  <li>A. Lugmayr, M. Danelljan, A. Romero, F. Yu, R. Timofte and L. Van Gool. <em>RePaint: Inpainting using Denoising Diffusion Probabilistic Models.</em> CVPR 2022.</li>
+</ol>
+
+<p class="mut">The references that carry the most weight here are [65], the single-image diffusion model that is the prior of every family; [69], whose low-pass constraint inside the chain is how the carrier&#8217;s layout enters; [71] and [72], the perpendicular-slice priors this work is the cylindrical answer to; and [5] and [10], where the carrier&#8217;s lattice and dual grid come from.</p>
+
+<h2 id="bibtex">BibTeX</h2>
+<pre>@misc{threedfusion,
+  title  = {3DFusion: Cuttable Interiors from Two Cut Families -- Single-Image
+            Diffusion Priors Lifted onto an O-Voxel Lattice},
+  author = {Anonymous},
+  year   = {2026},
+  note   = {Preprint}
+}</pre>
+
+<footer>
+Every number attributed to the lift was measured on a declared split, with every candidate scored by the same program, and read beside the faces it is a distance between. The carrier&#8217;s numbers are those of the superseded paper, on the same seven objects.
+</footer>
 
 </div>
 </body>
