@@ -77,7 +77,7 @@ for step in range(1, STEPS + 1):
               f"{time.time()-t0:.0f}s", flush=True)
 
 # a new params.pt that is Stage 1 with feat replaced
-out = f"{W}/s_v2_{OBJ}_lift"
+out = f"{W}/s_v2_lift_{OBJ}"
 os.makedirs(out, exist_ok=True)
 q = dict(p)
 q["dec_i"] = {k: v.clone().detach() for k, v in p["dec_i"].items()}

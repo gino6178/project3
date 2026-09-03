@@ -1,5 +1,10 @@
 # Two routes to an object with an interior
 
+> The interior the paper reports no longer comes from this pipeline alone: it is fitted here and
+> then re-sampled by `code/slicefill/`, which has its own README. Everything below builds the
+> carrier that `slicefill` starts from, and its exterior, cut operator and evaluation are unchanged.
+
+
 Everything here builds a voxel lattice, gives it an exterior, trains only its interior against
 cross-sections, and scores held-out cuts. Seven objects run through it and the command is the
 same for all of them.

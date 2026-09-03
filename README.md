@@ -6,17 +6,26 @@ only where a cut passes, and only the newly exposed cross-section becomes an O-V
 interior is supervised directly by cross-section photographs — no per-object fine-tuning and no
 score distillation.
 
-**Page:** <https://gino6178.github.io/project3/> — `index.html` is the paper, `supplement.html` the
-detail behind it. Numbers on the page are measured under one protocol on one machine and include
-the results that did not work.
+**Pages:** <https://gino6178.github.io/project3/>
+
+| page | what it is |
+|---|---|
+| `3dfusion.html` | **the paper.** The interior as a product of two single-image diffusion priors on a cylindrical lattice, from two or three unposed cut photographs per family |
+| `3dfusion_route.html` | the route to it: every arm that failed on the way, kept for the record |
+| `ovoxel.html` | the carrier paper, superseded. Its lattice, pose-free supervision and closed-form cut are kept and restated in the paper |
+| `index.html`, `supplement.html` | the splatted pipeline that preceded both |
+
+Numbers on the pages are measured under one protocol on one machine and include the results that
+did not work.
 
 This repository holds the page, the code that produced it, the inputs that fit, and this file.
 
 ```
-index.html supplement.html assets/   the page. Serving it is a git push; there is no build step.
-code/                               the method
-data/                               every input small enough to keep in a git repository
-README.md                           this
+*.html assets/     the pages. Serving them is a git push; there is no build step.
+code/              the method: code/slicefill/ is the paper's, the rest is the carrier's
+data/              every input small enough to keep in a git repository
+paper/             drafts, including superseded ones
+README.md          this
 ```
 
 ## What is in `code/`
@@ -33,6 +42,24 @@ code/inherited/          PhysGaussian's solver and filling, vendored unmodified
 code/setup.sh            lays code/ and data/ out as the one tree FN_ROOT has to be
 code/fetch.sh            the released reconstructions, too large for a git repository
 code/README.md           the two routes, and what each constant does
+code/slicefill/          the paper's interior: the priors, the cylindrical sampler, the scorers
+```
+
+## The paper's method, `code/slicefill/`
+
+The carrier above fits a lattice to the photographs. `code/slicefill/` replaces its interior with
+one sampled from two single-image diffusion priors, and writes the result back into the same cells.
+
+```
+code/slicefill/prep_obj.py     an object's photographs -> canonical frames, polar strips, the split
+code/slicefill/sd3d_train.py   the longitudinal prior;  polar_train.py   the transverse one
+code/slicefill/x3dcyl.py       the cylindrical sampler -- both families on one shared state
+code/slicefill/writeback.py    the interior into the lattice cells; the skin is never touched
+code/slicefill/runobj.sh       all of it, per object:  bash runobj.sh orange 0
+code/slicefill/dsscore.py dsrun.py fidelity.py colour.py transverse.py hband.py   the scorers
+code/slicefill/baseline/       the priors the paper's numbers come from, and its figures
+code/slicefill/split/          the declared held-out photographs, canonical
+code/slicefill/README.md       every measurement on the way, including the ones that failed
 ```
 
 Which route an object takes is a property of its source, not a flag: a `.ply` brings its own

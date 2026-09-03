@@ -1,0 +1,12 @@
+# built or fetched, never committed
+worktree/
+build/
+build_*/
+eval_*/
+*.tar
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# scratch
+*.tmp
+*.log
