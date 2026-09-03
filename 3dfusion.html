@@ -432,6 +432,18 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 <tr><td>the residual DC shrink: global mean offset / post-hoc low-pass swap / ILVR</td><td colspan="3" class="mut">over-corrects and clips / colour right, texture &minus;12% / colour right, texture kept</td><td>only the in-chain constraint keeps both</td></tr>
 </tbody></table></div>
 
+<p><strong>How many photographs.</strong> Table&nbsp;3 varies the number of training photographs per family with everything else fixed. One, two and three are scored on the same three held-out photographs per family; five can only be trained by taking two of those, so five and three are scored, separately, on the one photograph per family that remains, with the carrier on the same photograph as the reference. The step from one to two photographs is the large one, the step from two to three is real, and the step from three to five is within the noise of the measurement: with the patch statistics of three specimens the priors have what they can use. One photograph per family already beats the carrier &mdash; the volume it reaches is not the photograph copied, since the held-out specimens are different oranges.</p>
+
+<div class="tw"><p class="tnum">Table 3</p><table>
+<thead><tr><th>photographs per family</th><th>held out per family</th><th>ours, long / trans / mean</th><th>carrier, same photographs</th><th>real floor</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>3</td><td>0.121 / 0.065 / 0.093</td><td>0.148 / 0.077 / 0.113</td><td>0.101 / 0.042 / 0.071</td></tr>
+<tr><td>2</td><td>3</td><td>0.120 / 0.071 / 0.096</td><td>0.148 / 0.077 / 0.113</td><td>&mdash;</td></tr>
+<tr><td><strong>3</strong> (the paper&#8217;s setting)</td><td>3</td><td class="win">0.112 / 0.062 / 0.087</td><td>0.148 / 0.077 / 0.113</td><td>0.070 / 0.040 / 0.055</td></tr>
+<tr><td>3</td><td>1</td><td>0.190 / 0.081 / 0.136</td><td>0.223 / 0.092 / 0.157</td><td>0.102 / 0.048 / 0.075</td></tr>
+<tr><td>5</td><td>1</td><td>0.192 / 0.084 / 0.138</td><td>0.223 / 0.092 / 0.157</td><td>&mdash;</td></tr>
+</tbody></table></div>
+
 <p><strong>The starting noise has a floor and it is not zero.</strong> The honest longitudinal prior has no layout of its own: from 90% noise it draws orange blobs on white (Figure&nbsp;7), and everything global in the result comes from the carrier through the constraint of section&nbsp;3.3. The held-out distance therefore falls monotonically as \(t_0\) is lowered from 0.9 to 0.3, is flat from 0.3 to 0.1, and must turn back toward the carrier&#8217;s 0.113 as \(t_0\to0\). The prior is asked to add texture and local structure under a layout it did not make, and that is what it is good at.</p>
 
 <figure style="margin:16px 0 26px">
@@ -461,10 +473,10 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 
 <figure style="margin:16px 0 26px">
   <img src="assets/six_objects.png" style="width:100%;border-radius:4px" alt="seven objects: the carrier's face, the lifted face and a photograph, for both families">
-  <figcaption><span class="fnum">Figure 10</span><br><strong>Every object, both families.</strong> Left to right: the lift&#8217;s longitudinal face and a photograph, then its transverse face and a photograph. Where a family has no photograph the panel says so. The orange, apple, pomegranate and doughnut keep the carrier&#8217;s layout without its tiling; the watermelon&#8217;s seeds are smeared along \(z\); the bread and the cake are what a bad fit looks like after smoothing. The carrier&#8217;s own faces are in the route page and in the numbers of Table&nbsp;3.</figcaption>
+  <figcaption><span class="fnum">Figure 10</span><br><strong>Every object, both families.</strong> Left to right: the lift&#8217;s longitudinal face and a photograph, then its transverse face and a photograph. Where a family has no photograph the panel says so. The orange, apple, pomegranate and doughnut keep the carrier&#8217;s layout without its tiling; the watermelon&#8217;s seeds are smeared along \(z\); the bread and the cake are what a bad fit looks like after smoothing. The carrier&#8217;s own faces are in the route page and in the numbers of Table&nbsp;4.</figcaption>
 </figure>
 
-<div class="tw"><p class="tnum">Table 3</p><table>
+<div class="tw"><p class="tnum">Table 4</p><table>
 <thead><tr><th>object</th><th>split</th><th>carrier</th><th>FruitNinja&nbsp;[3]</th><th>GaussianFluent&nbsp;[23]</th><th>ours</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td>3+3 / 3+3 held out</td><td>0.148 / 0.077 / 0.113</td><td>0.154 / 0.153 / 0.154</td><td class="mut">&mdash;</td><td class="win">0.112 / 0.062 / 0.087</td></tr>
@@ -481,7 +493,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 
 <figure style="margin:16px 0 26px">
   <img src="assets/x3d_vs_baselines.png" style="width:100%;border-radius:4px" alt="six objects: FruitNinja, GaussianFluent, ours and a photograph, for the longitudinal and the transverse cut">
-  <figcaption><span class="fnum">Figure 11</span><br><strong>Against the two released baselines, face by face.</strong> For every object both baselines released, the longitudinal cut (left) and the transverse cut (right): FruitNinja&#8217;s released Gaussians, GaussianFluent&#8217;s where it exists, ours, and a held-out photograph, all through the same grid path and canonical frame as Table&nbsp;3. FruitNinja&#8217;s pomegranate carries the aril structure ours inherits blurred from the carrier; both baselines&#8217; cakes have clean layers where ours has the carrier&#8217;s blotches; on the orange and the apple FruitNinja&#8217;s interiors are smooth where ours has the segment membranes and the vesicle grain of the photographs.</figcaption>
+  <figcaption><span class="fnum">Figure 11</span><br><strong>Against the two released baselines, face by face.</strong> For every object both baselines released, the longitudinal cut (left) and the transverse cut (right): FruitNinja&#8217;s released Gaussians, GaussianFluent&#8217;s where it exists, ours, and a held-out photograph, all through the same grid path and canonical frame as Table&nbsp;4. FruitNinja&#8217;s pomegranate carries the aril structure ours inherits blurred from the carrier; both baselines&#8217; cakes have clean layers where ours has the carrier&#8217;s blotches; on the orange and the apple FruitNinja&#8217;s interiors are smooth where ours has the segment membranes and the vesicle grain of the photographs.</figcaption>
 </figure>
 
 
@@ -493,9 +505,9 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 
 <h3>4.5&ensp;The carrier&#8217;s numbers, unchanged</h3>
 
-<p>The lift changes the colour of interior cells and nothing else, so the carrier paper&#8217;s measurements of its geometry hold for the result. Over four planes on each of the seven objects &mdash; three axis-aligned and one oblique, offset off the grid &mdash; every cut vertex satisfies its plane equation with residual bounded by \(8.88\times10^{-16}\); the extracted surface is 2-manifold with no T-junction; no pixel of a cut face is unpainted at 2048&nbsp;px; a cut and its rasterisation take 8.6&ndash;16.5&nbsp;ms, following the crossed-cell count \(K\) at 0.72&ndash;2.13% of the volume; through one codec the representation is 10.0&nbsp;MiB against 25.6 and 52.0 for two Gaussian baselines on the same object. Table&nbsp;4 is the per-object cost, carried over.</p>
+<p>The lift changes the colour of interior cells and nothing else, so the carrier paper&#8217;s measurements of its geometry hold for the result. Over four planes on each of the seven objects &mdash; three axis-aligned and one oblique, offset off the grid &mdash; every cut vertex satisfies its plane equation with residual bounded by \(8.88\times10^{-16}\); the extracted surface is 2-manifold with no T-junction; no pixel of a cut face is unpainted at 2048&nbsp;px; a cut and its rasterisation take 8.6&ndash;16.5&nbsp;ms, following the crossed-cell count \(K\) at 0.72&ndash;2.13% of the volume; through one codec the representation is 10.0&nbsp;MiB against 25.6 and 52.0 for two Gaussian baselines on the same object. Table&nbsp;5 is the per-object cost, carried over.</p>
 
-<div class="tw"><p class="tnum">Table 4</p><table>
+<div class="tw"><p class="tnum">Table 5</p><table>
 <thead><tr><th>object</th><th>cells \(N\)</th><th>crossed \(K\)</th><th>\(K/N\)</th><th>triangles</th><th>cut (ms)</th><th>alignment (ms)</th><th>peak (MiB)</th></tr></thead>
 <tbody>
 <tr><td>orange</td><td>770,182</td><td>14,455</td><td>1.88%</td><td>86,730</td><td>16.1</td><td>42.6</td><td>1,060</td></tr>
@@ -508,7 +520,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 </tbody></table></div>
 
 <div class="cutstrip" style="margin-top:20px"><img src="assets/x3d_sweep_orange.gif" alt="orange"><img src="assets/x3d_sweep_watermelon.gif" alt="watermelon"><img src="assets/x3d_sweep_apple.gif" alt="apple"><img src="assets/x3d_sweep_bread.gif" alt="bread"><img src="assets/x3d_sweep_cake.gif" alt="cake"><img src="assets/x3d_sweep_pomegranate.gif" alt="pomegranate"><img src="assets/x3d_sweep_doughnut.gif" alt="doughnut"></div>
-<p class="mut" style="margin-top:-14px">The lifted interiors of all seven objects, a longitudinal plane turning and a transverse plane sweeping, read from the volumes of Table&nbsp;3.</p>
+<p class="mut" style="margin-top:-14px">The lifted interiors of all seven objects, a longitudinal plane turning and a transverse plane sweeping, read from the volumes of Table&nbsp;4.</p>
 
 <h2 id="conclusion">5&ensp;Conclusion and limitations</h2>
 
@@ -521,7 +533,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 <h3>5.2&ensp;Limitations and future work</h3>
 
 <ul>
-  <li><strong>Anisotropic smearing of discrete compact structures.</strong> The inductive bias that makes membranes stationary makes seeds non-stationary: a compact dark object is, to the longitudinal patch prior, a fragment of a vertical row, and at \(t_0=0.3\,T\) the chain elongates it along \(z\) (Figure&nbsp;10, watermelon). Where an interior is characterised by discrete compact structures rather than by tissue, the prior&#8217;s texture is a distance, and the lift loses to the carrier (Table&nbsp;3). A prior that represents such structures as objects &mdash; or a third family of cuts that sees them end-on &mdash; is the open extension.</li>
+  <li><strong>Anisotropic smearing of discrete compact structures.</strong> The inductive bias that makes membranes stationary makes seeds non-stationary: a compact dark object is, to the longitudinal patch prior, a fragment of a vertical row, and at \(t_0=0.3\,T\) the chain elongates it along \(z\) (Figure&nbsp;10, watermelon). Where an interior is characterised by discrete compact structures rather than by tissue, the prior&#8217;s texture is a distance, and the lift loses to the carrier (Table&nbsp;4). A prior that represents such structures as objects &mdash; or a third family of cuts that sees them end-on &mdash; is the open extension.</li>
   <li><strong>Objects the carrier already fits.</strong> Where direct fitting is near the real floor &mdash; the watermelon, 0.112 against 0.097 &mdash; there is little for a prior to add and something for it to lose. The method has no switch for this case and the paper proposes none: the watermelon is reported as the loss it is.</li>
   <li><strong>Objects the carrier does not fit.</strong> The bread and the cake are blotches before the lift and smoothed blotches after it. The lift inherits the carrier&#8217;s ghosting under non-rigid variation between specimens; a chord-conditioned deformation before fitting, proposed for the carrier, remains the natural extension.</li>
   <li><strong>One family.</strong> With a single photographed family the product degenerates to one prior on one family of exact slices; the other direction is constrained only by the shared state and the carrier&#8217;s layout. Three objects are in this regime and their numbers are against training photographs.</li>
