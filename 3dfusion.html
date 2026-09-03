@@ -175,6 +175,75 @@ On held-out photographs the priors never saw, the lifted orange scores 0.112&nbs
 
 <p class="lead">The carrier is fitted first (section&nbsp;3.1, restated from the superseded paper). Its interior is then sampled anew from a product of two single-image diffusion priors on a cylindrical state, with the carrier&#8217;s layout and shell as data terms (sections&nbsp;3.2&ndash;3.4), and written back into the carrier&#8217;s cells (section&nbsp;3.5). The cut operator and the solver interface are the carrier&#8217;s and are not touched.</p>
 
+<figure class="flow" style="margin:16px 0 26px">
+<svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" font-family="Charter,Georgia,serif" font-size="13" role="img" aria-label="the pipeline: two photograph families become two single-image priors; the carrier is fitted and sampled into a cylindrical state; one chain denoises both families on that state and writes the interior back into the lattice, which is cut in closed form">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5c5c5c"/></marker></defs>
+<style>.b{fill:#f7f7f7;stroke:#111;stroke-width:1.1}.d{fill:#fff;stroke:#a8412a;stroke-width:1.2}.t{fill:#111}.m{fill:#5c5c5c;font-size:11.5px}.a{stroke:#5c5c5c;stroke-width:1.2;fill:none;marker-end:url(#ah)}.h{font-weight:600}</style>
+
+<!-- inputs -->
+<text x="18" y="24" class="h">inputs, per object</text>
+<rect x="18" y="34" width="150" height="52" class="b"/><text x="28" y="54" class="t">2&#8211;3 longitudinal</text><text x="28" y="72" class="m">photographs, different specimens</text>
+<rect x="18" y="98" width="150" height="52" class="b"/><text x="28" y="118" class="t">2&#8211;3 transverse</text><text x="28" y="136" class="m">photographs, different specimens</text>
+<rect x="18" y="176" width="150" height="66" class="b"/><text x="28" y="196" class="t">the carrier</text><text x="28" y="212" class="m">two-level lattice, fitted</text><text x="28" y="227" class="m">pose-free (&#167;3.1)</text>
+
+<!-- canonicalise -->
+<rect x="212" y="34" width="132" height="52" class="b"/><text x="222" y="54" class="t">canonical frame</text><text x="222" y="72" class="m">white ground, 82%, 256 px</text>
+<rect x="212" y="98" width="132" height="52" class="b"/><text x="222" y="118" class="t">polar unwrap</text><text x="222" y="136" class="m">(r, &#966;), 128&#215;512 strip</text>
+<rect x="212" y="176" width="132" height="66" class="b"/><text x="222" y="196" class="t">sample into</text><text x="222" y="212" class="t">the cylinder</text><text x="222" y="227" class="m">A<tspan class="m" font-style="italic">c</tspan>[r,&#966;,z], mask M</text>
+
+<!-- priors -->
+<rect x="388" y="34" width="150" height="52" class="d"/><text x="398" y="54" class="t">prior &#949;<tspan font-style="italic">L</tspan></text><text x="398" y="72" class="m">single-image DDPM, 30k</text>
+<rect x="388" y="98" width="150" height="52" class="d"/><text x="398" y="118" class="t">prior &#949;<tspan font-style="italic">T</tspan></text><text x="398" y="136" class="m">single-image DDPM, 4k</text>
+
+<path d="M168,60 L212,60" class="a"/><path d="M168,124 L212,124" class="a"/><path d="M168,209 L212,209" class="a"/>
+<path d="M344,60 L388,60" class="a"/><path d="M344,124 L388,124" class="a"/>
+
+<!-- the chain -->
+<rect x="582" y="20" width="360" height="290" fill="none" stroke="#111" stroke-width="1.1" stroke-dasharray="4 3"/>
+<text x="594" y="40" class="h">one chain on one state, t = 0.3T &#8594; 0  (&#167;3.3, Alg. 1)</text>
+<rect x="594" y="52" width="336" height="40" class="b"/><text x="604" y="70" class="t">x<tspan font-style="italic" dy="3" font-size="10">t</tspan><tspan dy="-3"> = &#8730;&#257;<tspan font-style="italic" dy="3" font-size="10">t</tspan><tspan dy="-3"> A + &#8730;(1&#8722;&#257;<tspan font-style="italic" dy="3" font-size="10">t</tspan><tspan dy="-3">) &#949;</tspan></tspan></tspan></text><text x="604" y="85" class="m">the cylindrical state, noised; outside M: the carrier under the same noise</text>
+<rect x="594" y="104" width="160" height="56" class="d"/><text x="604" y="122" class="t">longitudinal slices</text><text x="604" y="137" class="m">columns &#966;<tspan font-style="italic">k</tspan>, &#966;<tspan font-style="italic">k</tspan>+&#960; &#8594; (s,z)</text><text x="604" y="152" class="m">&#949;<tspan font-style="italic">L</tspan> &#8594; x&#770;<tspan font-style="italic" dy="3" font-size="10">0</tspan><tspan dy="-3" font-size="10" baseline-shift="super">L</tspan></text>
+<rect x="770" y="104" width="160" height="56" class="d"/><text x="780" y="122" class="t">transverse slices</text><text x="780" y="137" class="m">plane z<tspan font-style="italic">j</tspan> &#8594; (r,&#966;) strip</text><text x="780" y="152" class="m">&#949;<tspan font-style="italic">T</tspan> &#8594; x&#770;<tspan font-style="italic" dy="3" font-size="10">0</tspan><tspan dy="-3" font-size="10" baseline-shift="super">T</tspan></text>
+<path d="M674,92 L674,104" class="a"/><path d="M850,92 L850,104" class="a"/>
+<rect x="594" y="176" width="336" height="36" class="b"/><text x="604" y="192" class="t">x&#770;<tspan font-style="italic" dy="3" font-size="10">0</tspan><tspan dy="-3"> = w(r) x&#770;</tspan><tspan font-style="italic" dy="3" font-size="10">0</tspan><tspan dy="-3" font-size="10" baseline-shift="super">L</tspan><tspan dy="0"> + (1&#8722;w(r)) x&#770;</tspan><tspan font-style="italic" dy="3" font-size="10">0</tspan><tspan dy="-3" font-size="10" baseline-shift="super">T</tspan></text><text x="604" y="206" class="m">longitudinal leads at the axis (columella), transverse away from it (membranes) &#8212; eq. (6)</text>
+<path d="M674,160 L674,176" class="a"/><path d="M850,160 L850,176" class="a"/>
+<rect x="594" y="224" width="160" height="40" class="b"/><text x="604" y="241" class="t">layout: ILVR</text><text x="604" y="256" class="m">low-pass of A<tspan font-style="italic">c</tspan> pinned, &#963;=16 px</text>
+<rect x="770" y="224" width="160" height="40" class="b"/><text x="780" y="241" class="t">shell: never written</text><text x="780" y="256" class="m">x&#770;<tspan font-style="italic" dy="3" font-size="10">0</tspan><tspan dy="-3"> &#8592; M x&#770;</tspan><tspan font-style="italic" dy="3" font-size="10">0</tspan><tspan dy="-3"> + (1&#8722;M) A</tspan><tspan font-style="italic">c</tspan></text>
+<path d="M674,212 L674,224" class="a"/><path d="M850,212 L850,224" class="a"/>
+<rect x="594" y="276" width="336" height="26" class="b"/><text x="604" y="293" class="t">re-noise to t&#8242; with the consistent &#949;&#773;  (DDIM), and repeat</text>
+<path d="M674,264 L674,276" class="a"/><path d="M850,264 L850,276" class="a"/>
+<path d="M942,289 C958,289 958,72 942,72" class="a"/>
+
+<!-- priors and carrier into the chain -->
+<path d="M538,60 C570,60 560,124 594,124" class="a"/><path d="M538,124 C560,124 740,124 770,132" class="a" stroke-dasharray="3 3"/>
+<path d="M344,209 C470,209 470,244 594,244" class="a"/>
+
+<!-- output -->
+<text x="18" y="292" class="h">output</text>
+<rect x="18" y="302" width="326" height="52" class="b"/><text x="28" y="322" class="t">write back once: interior cells &#8592; A at their centres</text><text x="28" y="340" class="m">skin cells keep their fitted colour; only f<tspan font-style="italic">dc</tspan> of interior cells changes (&#167;3.5)</text>
+<rect x="18" y="366" width="326" height="52" class="b"/><text x="28" y="386" class="t">the measured gate</text><text x="28" y="404" class="m">keep the lift only where it lowers the distance to the object&#8217;s own training photographs</text>
+<rect x="18" y="430" width="326" height="52" class="b"/><text x="28" y="450" class="t">closed-form planar cut, any plane, 8.6&#8211;16.5 ms</text><text x="28" y="468" class="m">the carrier&#8217;s operator, untouched (&#167;3.1); nothing generated at cut time</text>
+<path d="M582,300 C480,300 460,328 344,328" class="a"/>
+<path d="M181,354 L181,366" class="a"/><path d="M181,418 L181,430" class="a"/>
+
+<!-- cylinder geometry -->
+<text x="400" y="292" class="h">the state</text>
+<g transform="translate(400,300)">
+<ellipse cx="80" cy="18" rx="62" ry="16" fill="#fff" stroke="#111" stroke-width="1"/>
+<path d="M18,18 L18,150 A62,16 0 0,0 142,150 L142,18" fill="#fff" stroke="#111" stroke-width="1"/>
+<path d="M18,150 A62,16 0 0,1 142,150" fill="none" stroke="#111" stroke-width="1" stroke-dasharray="2 2"/>
+<line x1="80" y1="2" x2="80" y2="166" stroke="#5c5c5c" stroke-width="1" stroke-dasharray="3 2"/>
+<path d="M28,10 L80,18 L132,26 L132,158 L80,150 L28,142 z" fill="#a8412a" fill-opacity=".14" stroke="#a8412a" stroke-width="1.2"/>
+<ellipse cx="80" cy="88" rx="62" ry="16" fill="#a8412a" fill-opacity=".14" stroke="#a8412a" stroke-width="1.2"/>
+<text x="150" y="100" class="m">transverse: one z, the (r,&#966;) disc</text>
+<text x="150" y="60" class="m">longitudinal: two &#966; columns</text><text x="150" y="74" class="m">&#966;<tspan font-style="italic">k</tspan> and &#966;<tspan font-style="italic">k</tspan>+&#960;, the (s,z) plane</text>
+<text x="150" y="130" class="m">both are selections of A[r,&#966;,z]:</text><text x="150" y="144" class="m">nothing is interpolated in the chain</text>
+<text x="70" y="186" class="m">z</text><text x="128" y="45" class="m">r</text><text x="96" y="176" class="m">&#966;</text>
+</g>
+</svg>
+<figcaption><span class="fnum">Figure 2</span><br><strong>The pipeline.</strong> Two photograph families become two single-image priors, the longitudinal one on canonical-frame images and the transverse one on polar strips. The carrier is fitted first and sampled into one cylindrical state with its interior mask. One reverse chain then denoises both families on that same state: each family reads its exact slices, the two clean estimates are combined by the radius rule of equation&nbsp;(6), the carrier&#8217;s low-pass is pinned on the longitudinal planes and its shell is never written, and the state is re-noised for the next step. At the end the interior is written into the carrier&#8217;s cells once, gated by measurement, and read by the carrier&#8217;s own closed-form cut.</figcaption>
+</figure>
+
 <h3>3.0&ensp;Notation</h3>
 
 <div class="tw"><table>
@@ -222,7 +291,7 @@ $$ \mathcal{L} = \sum_{j}
 
 <figure style="margin:16px 0 26px">
   <img src="assets/cutstates.jpg?v=s_v2" style="width:100%;border-radius:4px" alt="the planar cut as four states of the lattice">
-  <figcaption><span class="fnum">Figure 2</span><br><strong>The carrier&#8217;s cut, as four states of its own lattice.</strong> <strong>(a)</strong> the plane against 770,182 solid cells, of which 17,855 satisfy the crossing test; <strong>(b)</strong> one crossed cell, its twelve edges, the roots and the convex polygon they bound; <strong>(c)</strong> the sign field over one slice, labelled into two components; <strong>(d)</strong> the exposed face, coloured by the interior field. This operator is untouched by the rest of the paper; what changes is the colour it reads.</figcaption>
+  <figcaption><span class="fnum">Figure 3</span><br><strong>The carrier&#8217;s cut, as four states of its own lattice.</strong> <strong>(a)</strong> the plane against 770,182 solid cells, of which 17,855 satisfy the crossing test; <strong>(b)</strong> one crossed cell, its twelve edges, the roots and the convex polygon they bound; <strong>(c)</strong> the sign field over one slice, labelled into two components; <strong>(d)</strong> the exposed face, coloured by the interior field. This operator is untouched by the rest of the paper; what changes is the colour it reads.</figcaption>
 </figure>
 
 <h3>3.2&ensp;The interior prior: a product of two single-image priors over slices</h3>
@@ -249,7 +318,7 @@ $$ \nabla_{x}\log p_t(x_t)\;\approx\;\sum_{k} S_{\varphi_k}^{\!\top}\, s_L\!\big
 
 <figure style="margin:16px 0 26px">
   <img src="assets/x3d_polar.png" style="width:100%;border-radius:4px" alt="a transverse photograph and its polar unwrap; the segment membranes become parallel vertical stripes">
-  <figcaption><span class="fnum">Figure 3</span><br><strong>Why polar.</strong> A transverse photograph and its unwrap into \((r,\varphi)\), rows \(r\) from the axis outward, columns \(\varphi\). The segment membranes &mdash; thin radial lines whose organisation is global and beyond any patch in Cartesian coordinates &mdash; are a row of parallel stripes here, and the rind is a horizontal band. The transverse prior is trained on these strips; the wrap-around in \(\varphi\) is a free and exact augmentation.</figcaption>
+  <figcaption><span class="fnum">Figure 4</span><br><strong>Why polar.</strong> A transverse photograph and its unwrap into \((r,\varphi)\), rows \(r\) from the axis outward, columns \(\varphi\). The segment membranes &mdash; thin radial lines whose organisation is global and beyond any patch in Cartesian coordinates &mdash; are a row of parallel stripes here, and the rind is a horizontal band. The transverse prior is trained on these strips; the wrap-around in \(\varphi\) is a free and exact augmentation.</figcaption>
 </figure>
 
 <p><strong>One step.</strong> At level \(t\), each family predicts its noise on every one of its planes and hence its clean estimate, \(\hat x_0^L = (x_t - \sqrt{1-\bar\alpha_t}\,\epsilon_L)/\sqrt{\bar\alpha_t}\) assembled from the longitudinal slices and \(\hat x_0^T\) from the transverse ones. The product prior&#8217;s step is one line,</p>
@@ -261,7 +330,7 @@ $$ \hat x_0 \;=\; w(r)\,\hat x_0^{L} \;+\; \big(1-w(r)\big)\,\hat x_0^{T},
 
 <p>the longitudinal family leading at the axis, where it sees the columella as a continuous strip and the transverse family sees only a disc, and the transverse family leading away from it, where it sees the membranes as stripes and the longitudinal family sees them edge-on. \(R_0 = 0.15\,E\), \(w_\infty = 0.1\); both are read off the sweeps of section&nbsp;4.2 and are the same for every object. The state is then re-noised deterministically&nbsp;[68] with the noise direction consistent with the combined estimate, \(\bar\epsilon = (x_t - \sqrt{\bar\alpha_t}\,\hat x_0)/\sqrt{1-\bar\alpha_t}\), \(x_{t'} = \sqrt{\bar\alpha_{t'}}\,\hat x_0 + \sqrt{1-\bar\alpha_{t'}}\,\bar\epsilon\).</p>
 
-<p><strong>Data terms.</strong> The carrier supplies two things the patch prior cannot. Its shell is observed and is never written: outside the interior mask the state is the carrier&#8217;s value under the forward noise of the current level, with one fixed noise draw, so every plane looks like a properly noised image and the interior is generated against a true boundary&nbsp;[77]. Its layout &mdash; the columella&#8217;s position, the pith band, the colour &mdash; is pinned by ILVR&nbsp;[69] on every longitudinal plane at every step: \(\hat x_0 \leftarrow \hat x_0 - \Phi_\sigma(\hat x_0) + \Phi_\sigma(A^{\mathrm{carrier}})\) with \(\sigma = 16\) px, which is above the 4&ndash;8 px scale of the carrier&#8217;s block tiling and below that of anything the prior is asked to generate. A patch prior has no global layout of its own &mdash; from 90% noise it makes blobs (Figure&nbsp;5) &mdash; and this is where the layout comes from; it is also why the chain starts at \(t_0 = 0.3\,T\) rather than from noise: the less of the carrier&#8217;s structure the prior is asked to reinvent, the better (section&nbsp;4.2).</p>
+<p><strong>Data terms.</strong> The carrier supplies two things the patch prior cannot. Its shell is observed and is never written: outside the interior mask the state is the carrier&#8217;s value under the forward noise of the current level, with one fixed noise draw, so every plane looks like a properly noised image and the interior is generated against a true boundary&nbsp;[77]. Its layout &mdash; the columella&#8217;s position, the pith band, the colour &mdash; is pinned by ILVR&nbsp;[69] on every longitudinal plane at every step: \(\hat x_0 \leftarrow \hat x_0 - \Phi_\sigma(\hat x_0) + \Phi_\sigma(A^{\mathrm{carrier}})\) with \(\sigma = 16\) px, which is above the 4&ndash;8 px scale of the carrier&#8217;s block tiling and below that of anything the prior is asked to generate. A patch prior has no global layout of its own &mdash; from 90% noise it makes blobs (Figure&nbsp;6) &mdash; and this is where the layout comes from; it is also why the chain starts at \(t_0 = 0.3\,T\) rather than from noise: the less of the carrier&#8217;s structure the prior is asked to reinvent, the better (section&nbsp;4.2).</p>
 
 <div class="tw" style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.55;border:1px solid var(--line);border-radius:4px;padding:14px 16px;margin:18px 0">
 <strong style="font-family:inherit">Algorithm 1</strong>&ensp;The interior from two cut families<br>
@@ -309,7 +378,7 @@ $$ \hat x_0 \;=\; w(r)\,\hat x_0^{L} \;+\; \big(1-w(r)\big)\,\hat x_0^{T},
 
 <figure style="margin:16px 0 26px">
   <img src="assets/x3d_faces.png" style="width:100%;border-radius:4px" alt="transverse and longitudinal faces: the carrier, the lift with two prior lengths, a held-out photograph">
-  <figcaption><span class="fnum">Figure 4</span><br><strong>Cut faces in the photographs&#8217; canonical frame.</strong> Transverse above, longitudinal below: the carrier, the lift with the longitudinal prior at thirty thousand and at eight thousand steps, and a held-out photograph of a different orange. Segment membranes in the right number, a continuous columella, vesicle grain, the photographs&#8217; colour; faint streaks along \(z\) remain on the longitudinal face.</figcaption>
+  <figcaption><span class="fnum">Figure 5</span><br><strong>Cut faces in the photographs&#8217; canonical frame.</strong> Transverse above, longitudinal below: the carrier, the lift with the longitudinal prior at thirty thousand and at eight thousand steps, and a held-out photograph of a different orange. Segment membranes in the right number, a continuous columella, vesicle grain, the photographs&#8217; colour; faint streaks along \(z\) remain on the longitudinal face.</figcaption>
 </figure>
 
 <h3>4.2&ensp;Ablations, on the orange</h3>
@@ -330,25 +399,25 @@ $$ \hat x_0 \;=\; w(r)\,\hat x_0^{L} \;+\; \big(1-w(r)\big)\,\hat x_0^{T},
 <tr><td>the residual DC shrink: global mean offset / post-hoc low-pass swap / ILVR</td><td colspan="3" class="mut">over-corrects and clips / colour right, texture &minus;12% / colour right, texture kept</td><td>only the in-chain constraint keeps both</td></tr>
 </tbody></table></div>
 
-<p><strong>The starting noise has a floor and it is not zero.</strong> The honest longitudinal prior has no layout of its own: from 90% noise it draws orange blobs on white (Figure&nbsp;5), and everything global in the result comes from the carrier through the constraint of section&nbsp;3.3. The held-out distance therefore falls monotonically as \(t_0\) is lowered from 0.9 to 0.3, is flat from 0.3 to 0.1, and must turn back toward the carrier&#8217;s 0.113 as \(t_0\to0\). The prior is asked to add texture and local structure under a layout it did not make, and that is what it is good at.</p>
+<p><strong>The starting noise has a floor and it is not zero.</strong> The honest longitudinal prior has no layout of its own: from 90% noise it draws orange blobs on white (Figure&nbsp;6), and everything global in the result comes from the carrier through the constraint of section&nbsp;3.3. The held-out distance therefore falls monotonically as \(t_0\) is lowered from 0.9 to 0.3, is flat from 0.3 to 0.1, and must turn back toward the carrier&#8217;s 0.113 as \(t_0\to0\). The prior is asked to add texture and local structure under a layout it did not make, and that is what it is good at.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/x3d_long_8k_30k.png" style="width:100%;border-radius:4px" alt="the longitudinal prior alone, restoring a carrier slice from three noise levels, at 8k and 30k steps">
-  <figcaption><span class="fnum">Figure 5</span><br><strong>The longitudinal prior alone, in-plane.</strong> A carrier slice restored from 30%, 50% and 90% noise by the prior at eight and at thirty thousand steps. At 30&ndash;50% the longer prior draws segment walls and a crisp columella where the shorter draws mush; at 90% both collapse &mdash; a patch prior has no global layout, and the carrier is where the layout comes from.</figcaption>
+  <figcaption><span class="fnum">Figure 6</span><br><strong>The longitudinal prior alone, in-plane.</strong> A carrier slice restored from 30%, 50% and 90% noise by the prior at eight and at thirty thousand steps. At 30&ndash;50% the longer prior draws segment walls and a crisp columella where the shorter draws mush; at 90% both collapse &mdash; a patch prior has no global layout, and the carrier is where the layout comes from.</figcaption>
 </figure>
 
-<p><strong>Training length is a per-family choice.</strong> The longitudinal prior improves from 8k to 30k on every column. The polar prior goes the other way from 4k on: at 30k its transverse faces show segments in a fixed number at even spacing, the layout of its three strips memorised, and the held-out distance rises with every step (Figure&nbsp;6). Neither curve is the other&#8217;s, and a single training length for both would have hidden one of them.</p>
+<p><strong>Training length is a per-family choice.</strong> The longitudinal prior improves from 8k to 30k on every column. The polar prior goes the other way from 4k on: at 30k its transverse faces show segments in a fixed number at even spacing, the layout of its three strips memorised, and the held-out distance rises with every step (Figure&nbsp;7). Neither curve is the other&#8217;s, and a single training length for both would have hidden one of them.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/x3d_polar_overfit.png" style="width:100%;border-radius:4px" alt="transverse faces with the polar prior at 8k and at 30k steps, beside the carrier and a held-out photograph">
-  <figcaption><span class="fnum">Figure 6</span><br><strong>The polar prior overtrained.</strong> The carrier, the lift with the polar prior at eight and at thirty thousand steps, and a held-out photograph. At 30k the membranes are fixed in number and evenly spaced: the three training strips, reproduced.</figcaption>
+  <figcaption><span class="fnum">Figure 7</span><br><strong>The polar prior overtrained.</strong> The carrier, the lift with the polar prior at eight and at thirty thousand steps, and a held-out photograph. At 30k the membranes are fixed in number and evenly spaced: the three training strips, reproduced.</figcaption>
 </figure>
 
-<p><strong>A conditioned prior that was a copier.</strong> Before the cylinder, each family&#8217;s prior took the other family&#8217;s view as three extra input channels, degraded at training by a mild blur and noise. Figure&nbsp;7 is the test that should have been run first: fed its own input as the condition, every such prior reproduces it; fed zeros, every one collapses to noise blobs. The degradation was too weak and the answer leaked through the condition. Every transverse face that had looked right under those priors was the carrier&#8217;s own layout arriving through the condition channel &mdash; and in the Cartesian sampler, where the transverse condition came from the longitudinal family, the segment membranes vanished and no sync weight, radius rule or constraint could bring them back (Table&nbsp;2, the five Cartesian rows). The product of experts requires priors; a copier is not one.</p>
+<p><strong>A conditioned prior that was a copier.</strong> Before the cylinder, each family&#8217;s prior took the other family&#8217;s view as three extra input channels, degraded at training by a mild blur and noise. Figure&nbsp;8 is the test that should have been run first: fed its own input as the condition, every such prior reproduces it; fed zeros, every one collapses to noise blobs. The degradation was too weak and the answer leaked through the condition. Every transverse face that had looked right under those priors was the carrier&#8217;s own layout arriving through the condition channel &mdash; and in the Cartesian sampler, where the transverse condition came from the longitudinal family, the segment membranes vanished and no sync weight, radius rule or constraint could bring them back (Table&nbsp;2, the five Cartesian rows). The product of experts requires priors; a copier is not one.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/x3d_copier.png" style="width:100%;border-radius:4px" alt="three cross-conditioned transverse priors restoring a carrier slice with the slice itself as condition and with zeros as condition">
-  <figcaption><span class="fnum">Figure 7</span><br><strong>The copier test.</strong> A carrier transverse slice restored by three cross-conditioned priors &mdash; trained on the declared split at 8k and 30k steps, and on all six photographs &mdash; with the slice itself as the condition and with zeros. With the condition, a cross-section; without it, noise. None of them had learned a prior.</figcaption>
+  <figcaption><span class="fnum">Figure 8</span><br><strong>The copier test.</strong> A carrier transverse slice restored by three cross-conditioned priors &mdash; trained on the declared split at 8k and 30k steps, and on all six photographs &mdash; with the slice itself as the condition and with zeros. With the condition, a cross-section; without it, noise. None of them had learned a prior.</figcaption>
 </figure>
 
 <p><strong>What the numbers could not see.</strong> Three artefacts on the way were invisible to the texture statistic that was steering the work and were caught by the eye and then by a scorer written for each: a colour shift toward grey (the clamp; a flesh-colour scorer), radial spokes on the transverse face from ninety longitudinal planes at ninety brightnesses (a transverse-view scorer), and horizontal bands on the longitudinal face from per-transverse-plane brightness &mdash; the same artefact rotated by ninety degrees, caught by a row-profile scorer. Every number in this section is read beside a composite of the faces; none was believed alone.</p>
@@ -359,7 +428,7 @@ $$ \hat x_0 \;=\; w(r)\,\hat x_0^{L} \;+\; \big(1-w(r)\big)\,\hat x_0^{T},
 
 <figure style="margin:16px 0 26px">
   <img src="assets/six_objects.png" style="width:100%;border-radius:4px" alt="seven objects: the carrier's face, the lifted face and a photograph, for both families">
-  <figcaption><span class="fnum">Figure 8</span><br><strong>Every object, both families.</strong> Left to right: the carrier&#8217;s longitudinal face, the lift&#8217;s, a photograph; then the same for the transverse family. Where a family has no photograph the panel is empty. The orange, apple, pomegranate and doughnut lose the carrier&#8217;s tiling and keep its layout; the watermelon&#8217;s seeds are smeared along \(z\); the bread and the cake are what a bad fit looks like after smoothing.</figcaption>
+  <figcaption><span class="fnum">Figure 9</span><br><strong>Every object, both families.</strong> Left to right: the carrier&#8217;s longitudinal face, the lift&#8217;s, a photograph; then the same for the transverse family. Where a family has no photograph the panel is empty. The orange, apple, pomegranate and doughnut lose the carrier&#8217;s tiling and keep its layout; the watermelon&#8217;s seeds are smeared along \(z\); the bread and the cake are what a bad fit looks like after smoothing.</figcaption>
 </figure>
 
 <div class="tw"><p class="tnum">Table 3</p><table>
@@ -374,7 +443,7 @@ $$ \hat x_0 \;=\; w(r)\,\hat x_0^{L} \;+\; \big(1-w(r)\big)\,\hat x_0^{T},
 <tr><td>doughnut</td><td>no longitudinal; trans 1 vs. training</td><td class="win">&mdash; / 0.196 / &mdash;</td><td>&mdash; / 0.256 / &mdash;</td><td>lift</td></tr>
 </tbody></table></div>
 
-<p>Six of seven are below the carrier, and the watermelon is above it, for a reason that is general rather than the watermelon&#8217;s: its fitted interior is already near the real floor &mdash; 0.112 against a floor of 0.097 &mdash; because smooth flesh and discrete high-contrast seeds are what direct fitting does well, and the patch prior smears the seeds along \(z\) and adds texture that is a distance. The bread and the cake are wins of a different kind: their fitted fields are blotches, the lift smooths them, and both remain far from their photographs, which Figure&nbsp;8 shows plainly.</p>
+<p>Six of seven are below the carrier, and the watermelon is above it, for a reason that is general rather than the watermelon&#8217;s: its fitted interior is already near the real floor &mdash; 0.112 against a floor of 0.097 &mdash; because smooth flesh and discrete high-contrast seeds are what direct fitting does well, and the patch prior smears the seeds along \(z\) and adds texture that is a distance. The bread and the cake are wins of a different kind: their fitted fields are blotches, the lift smooths them, and both remain far from their photographs, which Figure&nbsp;9 shows plainly.</p>
 
 <p><strong>The gate.</strong> The rule of section&nbsp;3.5 scores each object against its own training photographs, and its verdict agrees with the held-out one on every object but one: it keeps the lift on the apple, cake, doughnut and pomegranate, refuses it on the watermelon (0.139&nbsp;/&nbsp;0.129 &rarr; 0.143&nbsp;/&nbsp;0.139, clear), and refuses it on the bread by 0.001 (0.3392 &rarr; 0.3403), where the held-out photographs say the lift is better (0.384 &rarr; 0.364). That is a tie at the rule&#8217;s boundary and is reported as one; the rule is not adjusted to pass it.</p>
 
