@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>3DFusion: Lifting 2-D Diffusion Priors into an O-Voxel Interior</title>
+<title>3DFusion: the route</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
       integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
@@ -48,6 +48,7 @@
 
 <div class="wrap">
 
+<div style="border-left:3px solid #b45309;background:#fffbeb;padding:.6em .9em;margin:18px 0 8px;font-size:.9em;line-height:1.5;color:#78350f;border-radius:0 3px 3px 0"><b>This is the route, kept for the record.</b> Every arm here was measured on the way to the method; the paper, with the seven-object results, the write-back into the lattice and the measured gate, is <a href="3dfusion.html" style="color:#a8412a">3dfusion.html</a>.</div>
 <header>
   <h1>3DFusion: Lifting 2-D Diffusion Priors into an O-Voxel Interior</h1>
   <p class="sub">Two or three photographs per family cannot supervise a volume. The method: make the 3-D volume itself the state, and let a single-image cut prior propose one slice of it at a time &mdash; each slice resampled into the framing the prior was trained at, each proposal anchored back to the fitted field by measured photographic coverage. Cuts are then consistent by construction, and the asset is baked once and read at any angle with no generation at cut time. The current baseline puts both photographed families on one cylindrical state and denoises them jointly; it is the first section below, and it beats the fitted field on held-out photographs.</p>
@@ -96,7 +97,7 @@ $$p(x)\;\propto\;\prod_{k} p_L\!\big(S_{\theta_k} x\big)\;\prod_{j} p_T\!\big(S_
 
 <p>Three things were learned on the way and are worth more than the number. The cross-conditioned priors used before this were not priors: fed their own input as the condition they reproduce it, fed zeros they collapse to noise, and every transverse face that had looked right was the fitted field's own layout leaking through the condition channel. The honest unconditional priors have no global layout of their own, so the less of the fitted field's structure they are asked to reinvent the better: the held-out distance falls monotonically as the longitudinal starting noise is lowered from 90% to 30%, and turns back toward the fitted field below that. And training length is a per-family choice: the longitudinal prior keeps improving to thirty thousand steps, while the transverse polar prior memorises its three strips past four thousand and the held-out distance rises with every step after.</p>
 
-<p>Open, in order: the same program on the other six objects; the renderer-protocol score; and writing the interior back into the O-Voxel cells, which is the asset the rest of the site is about.</p>
+<p>What was open when this section was written &mdash; the other six objects, the write-back into the O-Voxel cells, the gate &mdash; is done in the <a href="3dfusion.html">paper</a>; the renderer-protocol score remains open there.</p>
 
 <h2>Lifting one 2-D cut prior into a 3-D interior</h2>
 
