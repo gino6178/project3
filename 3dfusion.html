@@ -50,7 +50,7 @@
 
 <header>
   <h1>3DFusion: Lifting 2-D Diffusion Priors into an O-Voxel Interior</h1>
-  <p class="sub">Two or three photographs per family cannot supervise a volume. The method: make the 3-D volume itself the state, and let a single-image cut prior propose one slice of it at a time &mdash; each slice resampled into the framing the prior was trained at, each proposal anchored back to the fitted field by measured photographic coverage. Cuts are then consistent by construction, and the asset is baked once and read at any angle with no generation at cut time.</p>
+  <p class="sub">Two or three photographs per family cannot supervise a volume. The method: make the 3-D volume itself the state, and let a single-image cut prior propose one slice of it at a time &mdash; each slice resampled into the framing the prior was trained at, each proposal anchored back to the fitted field by measured photographic coverage. Cuts are then consistent by construction, and the asset is baked once and read at any angle with no generation at cut time. The current baseline puts both photographed families on one cylindrical state and denoises them jointly; it is the first section below, and it beats the fitted field on held-out photographs.</p>
   <p class="authors">Anonymous</p>
   <p class="venue">Preprint &middot; work in progress</p>
   <div class="links">
@@ -58,6 +58,45 @@
     <a href="index.html">The splatted pipeline</a>
   </div>
 </header>
+
+<h2>The current baseline: two cut families, one cylinder</h2>
+<p>The sections below this one record the route. This section is where the method stands now, measured on held-out photographs the priors never saw.</p>
+
+<figure>
+  <img src="assets/x3d_sweep.gif" alt="a longitudinal plane turning about the axis and then a transverse plane sweeping along it, fitted O-Voxel field on the left, the lifted interior on the right" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption><span class="fnum">Figure 0.</span> The baked asset read at every angle: a longitudinal plane turning about the axis, then a transverse plane sweeping along it. Left, the fitted O-Voxel field; right, the interior lifted from two photograph families by the method below. The block tiling of the fitted field is gone, the colour is the photographs', and no cut shows a seam, a spoke or a band.</figcaption>
+</figure>
+
+<p>Two or three photographs of longitudinal cuts and two or three of transverse cuts are all the evidence there is about the inside. The one assumption that connects them to a volume has to be stated: a volume is real if every longitudinal slice of it lies in the longitudinal photographs' patch distribution and every transverse slice in the transverse photographs'. As a prior that is a product of two single-image diffusion priors over all slices,</p>
+$$p(x)\;\propto\;\prod_{k} p_L\!\big(S_{\theta_k} x\big)\;\prod_{j} p_T\!\big(S_{z_j} x\big),$$
+<p>and its score is a sum over the slices through each voxel. A slice of a Gaussian-noised volume is a Gaussian-noised image at the same noise level, so the two 2-D denoisers apply unchanged: there is no 3-D training and no 3-D data.</p>
+
+<p>What makes the product usable is the coordinate system. The state is one array \(A[r,\varphi,z]\). A longitudinal plane at azimuth \(\varphi_k\) is the exact \((s,z)\) slice made of columns \(\varphi_k\) and \(\varphi_k+\pi\); a transverse plane at height \(z_j\) is the exact polar slice \((r,\varphi)\) at that height. Both families are axis-aligned slices of the same array, both denoise the same \(x_t\), and the product prior's step is one line, \(\hat x_0 = w(r)\,\hat x_0^{L} + (1-w(r))\,\hat x_0^{T}\), the longitudinal family leading at the axis, where it sees the columella as a continuous strip, and the transverse family leading away from it, where it sees the segment membranes. Nothing is interpolated inside the chain. The fitted O-Voxel field supplies what a patch prior cannot: its low-pass is pinned on every longitudinal plane at every step, its shell is never written, and the asset is written back once at the end.</p>
+
+<figure>
+  <img src="assets/x3d_polar.png" alt="a transverse photograph and its polar unwrap: the segment membranes become parallel vertical stripes" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption><span class="fnum">Figure 0b.</span> Why polar. A transverse photograph and its unwrap into \((r,\varphi)\). The ten segment membranes, thin radial lines with a global organisation no patch can hold, become a row of parallel stripes that a single-image prior learns as texture. The transverse prior is trained on these strips, with the wrap-around in \(\varphi\) as a free augmentation.</figcaption>
+</figure>
+
+<figure>
+  <img src="assets/x3d_compare.png" alt="transverse and longitudinal cut faces: fitted O-Voxel field, the lifted interior, and a held-out photograph" style="display:block;margin:0 auto;max-width:100%;border-radius:4px">
+  <figcaption><span class="fnum">Figure 0c.</span> Cut faces in the photographs' canonical frame, transverse above and longitudinal below: the fitted field, the lifted interior, and a held-out photograph of a different orange. Segment membranes in the right number, a continuous columella, vesicle grain, the photographs' colour.</figcaption>
+</figure>
+
+<p class="tnum">Table 0. Held-out DreamSim, lower is better</p>
+<div class="tw"><table>
+<tr><th>cut faces against held-out photographs</th><th>longitudinal</th><th>transverse</th><th>mean</th></tr>
+<tr><td>real: the training photographs against the held-out ones</td><td>0.070</td><td>0.040</td><td>0.055</td></tr>
+<tr><td>fitted O-Voxel field, no generation</td><td>0.148</td><td>0.077</td><td>0.113</td></tr>
+<tr><td>FruitNinja</td><td>0.154</td><td>0.162</td><td>0.158</td></tr>
+<tr><td>the earlier lift, two families in separate chains</td><td>0.151</td><td>0.133</td><td>0.142</td></tr>
+<tr><td><strong>the cylinder</strong></td><td><strong>0.112</strong></td><td><strong>0.062</strong></td><td><strong>0.087</strong></td></tr>
+</table></div>
+<p class="mut">Declared split: three photographs per family train the priors, three per family are held out and never touched. Every row is scored the same way, canonical-frame slices of the voxel grid against the nearest held-out photograph. The absolute numbers are therefore not the renderer protocol's; the ranking is fair. One object so far.</p>
+
+<p>Three things were learned on the way and are worth more than the number. The cross-conditioned priors used before this were not priors: fed their own input as the condition they reproduce it, fed zeros they collapse to noise, and every transverse face that had looked right was the fitted field's own layout leaking through the condition channel. The honest unconditional priors have no global layout of their own, so the less of the fitted field's structure they are asked to reinvent the better: the held-out distance falls monotonically as the longitudinal starting noise is lowered from 90% to 30%, and turns back toward the fitted field below that. And training length is a per-family choice: the longitudinal prior keeps improving to thirty thousand steps, while the transverse polar prior memorises its three strips past four thousand and the held-out distance rises with every step after.</p>
+
+<p>Open, in order: the same program on the other six objects; the renderer-protocol score; and writing the interior back into the O-Voxel cells, which is the asset the rest of the site is about.</p>
 
 <h2>Lifting one 2-D cut prior into a 3-D interior</h2>
 
