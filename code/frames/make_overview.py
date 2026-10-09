@@ -26,16 +26,19 @@ E=PJ["ext"]*0.82; NR,NP=160,R; r=(torch.arange(NR)+0.5)/NR*E; ph=torch.arange(NP
 P=torch.stack([rr*torch.cos(pp),torch.full_like(rr,h),rr*torch.sin(pp)],-1).reshape(-1,3)
 c=img(samp(G,P),NR,NP).resize((R,R))
 panels.append(("tree trunk","cylindrical  A[r, φ, z]",w,c,"rings become parallel stripes in (r, φ)"))
-# curved cable: a longitudinal cut through the bent axis, and the same cut straightened along c(s)
-G,PJ=load("wood3"); CL=json.load(open(f"{B}/wood3/centerline.json"))
-w=img(samp(G,S.plane_points(PJ["ext"],("long",0.0,0.0),R)),R,R)
-vs=torch.linspace(-PJ["ext"],PJ["ext"],R); cv=torch.tensor(CL["v"]); cx=torch.tensor(CL["cx"]); cz=torch.tensor(CL["cz"])
-def cl(v):
-    i=torch.bucketize(v,cv).clamp(1,len(cv)-1); t=((v-cv[i-1])/(cv[i]-cv[i-1])).clamp(0,1); return cx[i-1]*(1-t)+cx[i]*t, cz[i-1]*(1-t)+cz[i]*t
-Ccx,Ccz=cl(vs); s_=torch.linspace(-PJ["ext"],PJ["ext"],R)
-P=torch.stack([Ccx[:,None].expand(R,R),vs[:,None].expand(R,R),Ccz[:,None]+s_[None,:]],-1).reshape(-1,3)   # each height about c(v)
-c=img(samp(G,P),R,R)
-panels.append(("curved trunk","curvilinear  A[r, φ, s]",w,c,"straightened along the declared centreline"))
+# banana: no truth inside a generated banana, so the panel is the finished asset itself -- the curvilinear
+# lift of section 4.10 -- cut through its bend, and the same cut straightened along its declared centreline
+BN=os.environ.get("BANANA","")
+if BN:
+    sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),"..","slicefill")); from planes import Vol
+    vb=Vol(f"{BN}/carrier.pt","cpu",res=R); X=torch.load(f"{BN}/curv2/state.pt",map_location="cpu")["X"].float()
+    Gb=dict(V=X,N=vb.N); E=vb.EXT; CL=json.load(open(f"{BN}/centerline.json"))
+    w=img(samp(Gb,S.plane_points(E,("long",0.0,0.0),R)),R,R)
+    vs=torch.linspace(-E,E,R); cv=torch.tensor(CL["v"]); cx=torch.tensor(CL["cx"]); cz=torch.tensor(CL["cz"])
+    i=torch.bucketize(vs,cv).clamp(1,len(cv)-1); t=((vs-cv[i-1])/(cv[i]-cv[i-1])).clamp(0,1); Ccx=cx[i-1]*(1-t)+cx[i]*t; Ccz=cz[i-1]*(1-t)+cz[i]*t
+    s_=torch.linspace(-E,E,R); P=torch.stack([Ccx[:,None]+s_[None,:],vs[:,None].expand(R,R),Ccz[:,None].expand(R,R)],-1).reshape(-1,3)
+    c=img(samp(Gb,P),R,R)
+    panels.append(("banana","curvilinear  A[r, φ, s]",w,c,"straightened along its centreline"))
 fp="/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"
 F1=ImageFont.truetype(fp,24); F2=ImageFont.truetype(fp,19); F3=ImageFont.truetype(fp,17)
 W=3*(2*R+70)+20; H=R+170; im=Image.new("RGB",(W,H),"white"); d=ImageDraw.Draw(im)

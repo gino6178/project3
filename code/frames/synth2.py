@@ -16,6 +16,8 @@
 #   wood2k  wood2 + three branch knots, straight axis                         (the teacher's level 4 alone)
 #   wood3r  wood2 bent along a circular arc, cross-sections turning with it   (rotation bend: parallel transport)
 #   roll    a sheet rolled into a spiral: kraft paper with a printed face       (rolled material, axial)
+#   banana  a banana bent along an arc, its cross-sections turning with it, and SLICED as a banana
+#           is -- normal to its own axis                                        (curved axial: parallel transport)
 #
 # The wood carries its growth-time field G (rings are its integer iso-surfaces); it is saved so the
 # structural metrics can read ring centre, spacing and orientation from the truth.
@@ -223,6 +225,53 @@ class Roll:
         tube=mix(col(150,120,86),col(132,104,74),noise(s.seed+2,P,2.0)*0.5+0.5)
         return mix(tube,c,sstep(s.core+2.8,s.core+3.2,r))                        # cardboard core tube
 
+class Banana:
+    """A banana bent along a circular arc of radius Rb in the (u0, v) plane; every cross-section is normal
+    to the arc: a five-ridged peel (yellow, brown flecks, a pale inner pith layer), cream flesh with a fine
+    radial grain, and the three-locule core -- a pale three-armed star with dark seed traces along its
+    arms.  Its slices are cut normal to the arc, as a banana is sliced."""
+    Rb=66.0; L=50.0; R=25.0
+    def __init__(s,seed=0): s.seed=seed; s.Ox=6.0-s.Rb
+    def arc(s,P):
+        x,v,z=P[:,0],P[:,1],P[:,2]; qx=x-s.Ox; th=torch.atan2(v,qx); rho=torch.sqrt(qx*qx+v*v)
+        return s.Rb*th, rho-s.Rb, z                                                # arc length, offset along the bend normal, u1
+    def axis(s,v):
+        th=torch.asin((v/s.Rb).clamp(-1,1)); return s.Ox+s.Rb*torch.cos(th), torch.zeros_like(v)
+    def frame(s,sv):
+        th=sv/s.Rb; c=torch.stack([s.Ox+s.Rb*torch.cos(th),s.Rb*torch.sin(th),torch.zeros_like(th)],-1)
+        n=torch.stack([torch.cos(th),torch.sin(th),torch.zeros_like(th)],-1)        # in-plane normal (outward)
+        t=torch.stack([-torch.sin(th),torch.cos(th),torch.zeros_like(th)],-1)        # tangent
+        return c,n,t
+    def radius(s,sv): u=(sv/s.L).clamp(-1,1); return s.R*(1-u**6)**0.5*(1-0.15*u*u)
+    def local(s,P):
+        sv,a,b=s.arc(P); r=torch.sqrt(a*a+b*b)+1e-6; return sv,a,b,r,torch.atan2(b,a)
+    def sdf(s,P):
+        sv,a,b,r,ph=s.local(P); Rr=s.radius(sv)*(1+0.03*torch.cos(5*ph))            # faint ridges
+        return torch.maximum(r-Rr,sv.abs()-s.L)
+    def color(s,P):
+        """As a Cavendish banana cuts: ivory flesh with faint fibres along the axis; three broad, darker,
+        translucent yellow locule lobes radiating from the centre; the shrivelled ovules as sparse tiny dark
+        specks near the centre (dots, not a line); a thin peel -- yellow outside, a pale green-white layer
+        inside -- on a faintly five-sided section."""
+        sv,a,b,r,ph=s.local(P); Rr=s.radius(sv)*(1+0.03*torch.cos(5*ph)); q=r/Rr.clamp(min=1e-3)
+        L3=torch.stack([a,sv,b],1)
+        flesh=mix(col(246,238,212),col(236,226,194),noise(s.seed,L3,1.2,(1,5,1))*0.5+0.5)          # fibres along the axis
+        wob=0.25*noise(s.seed+1,L3,4.0,(1,3,1))
+        arm=torch.stack([(torch.remainder(ph+wob-k*2*math.pi/3+math.pi,2*math.pi)-math.pi).abs() for k in range(3)],1).min(1).values
+        half=0.10+0.32*torch.sin(math.pi*(q/0.6).clamp(0,1))                                         # a petal: widest at mid-radius
+        lobe=(1-sstep(half*0.6,half,arm))*(1-sstep(0.48,0.62,q))*sstep(0.02,0.07,q)
+        lobe=lobe*(0.75+0.25*(noise(s.seed+5,L3,1.5)*0.5+0.5))
+        c=mix(flesh,col(226,206,152),0.5*lobe)
+        c=mix(c,col(240,228,190),0.35*(1-sstep(0.0,0.05,arm))*lobe)                                     # a paler midrib along each petal
+        c=mix(c,col(232,214,164),0.35*(1-sstep(0.06,0.14,q)))                                          # the slightly darker centre
+        ring=sstep(0.58,0.64,q)*(1-sstep(0.66,0.72,q)); c=mix(c,col(238,226,182),0.4*ring)            # faint outer locule boundary
+        spk=(noise(s.seed+2,L3,0.7,(1,1.4,1),oct=2)>0.42).float()*(1-sstep(0.14,0.24,q))*sstep(0.02,0.04,q)
+        c=mix(c,col(70,52,36),0.85*spk)                                                               # ovules: sparse dark specks
+        c=mix(c,col(226,230,190),sstep(0.86,0.89,q))                                                  # inner peel, pale green-white
+        peel=mix(col(222,198,64),col(200,182,54),noise(s.seed+3,L3,3.0,(1,4,1))*0.5+0.5)
+        peel=mix(peel,col(150,150,52),0.35*sstep(0.97,1.0,q))                                         # a greener rim at the skin
+        return mix(c,peel,sstep(0.915,0.94,q))
+
 class CCable(Cable):
     def bend(s,v): return 13.0*(v/s.H)**2-5.0, torch.zeros_like(v)                                 # a bow in ONE plane (u1 = 0): the lengthwise cut at theta=0 lies in it
     def axis(s,v): return s.bend(v)
@@ -236,11 +285,12 @@ def make(name,seed=0):
     if name=="wood2k": return Wood(2,seed,knots=True)
     if name=="wood3r": return Wood(2,seed,rotbend=True)
     if name.startswith("wood"): return Wood(int(name[4]),seed)
-    return {"cake":Cake,"cable":Cable,"honeycomb":Honeycomb,"hose":Hose,"ccable":CCable,"roll":Roll}[name](seed)
+    return {"cake":Cake,"cable":Cable,"honeycomb":Honeycomb,"hose":Hose,"ccable":CCable,"roll":Roll,"banana":Banana}[name](seed)
 def render(o,P):
     sd=o.sdf(P); out=torch.ones(len(P),3,device=dv); m=sd<0
     if m.any(): out[m]=o.color(P[m])
     return out
+NFRAME=None   # for an object sliced normal to its centreline: s -> (point, normal, tangent)
 CENTER=None   # for a curved object: v -> (cx, cz); its lengthwise cuts then follow the centreline row by row
 def plane_points(ext,spec,res=RES):
     """spec: ("long",theta,off) | ("trans",h) | ("obl",tilt,az,off) -- the same frames planes.Vol uses.
@@ -254,6 +304,9 @@ def plane_points(ext,spec,res=RES):
             along=cx*c_+cz*s_; P=P+torch.stack([cx-along*c_,torch.zeros_like(GV),cz-along*s_],-1)
     elif spec[0]=="trans":
         P=torch.stack([GU,torch.full_like(GU,spec[1]),GV],-1)
+    elif spec[0]=="ntrans":            # the cross-section NORMAL to the centreline at arc length s (NFRAME set)
+        c,n,t=NFRAME(torch.tensor([float(spec[1])],device=dv)); b=torch.tensor([0.,0.,1.],device=dv)
+        P=c[0]+GU[...,None]*n[0]+GV[...,None]*b
     else:
         _,t,az,off=spec; a=torch.tensor([math.cos(az),0.,math.sin(az)],device=dv)
         b=math.cos(t)*torch.tensor([-math.sin(az),0.,math.cos(az)],device=dv)+math.sin(t)*torch.tensor([0.,1.,0.],device=dv)
@@ -272,7 +325,8 @@ TEST_OBL=[(math.radians(t),math.radians(az),off) for t in (30,45,60) for az,off 
 if __name__=="__main__":
     name,out=sys.argv[1],sys.argv[2]; CROSS=name.endswith("x"); base=name[:-1] if CROSS else name
     o=make(base); os.makedirs(out,exist_ok=True)
-    if base in ("ccable","wood3r"): CENTER=lambda v: o.axis(v)
+    if base in ("ccable","wood3r","banana"): CENTER=lambda v: o.axis(v)
+    if base=="banana": NFRAME=lambda sv: o.frame(sv)
     lin=torch.arange(N,device=dv,dtype=torch.float32)-C
     A,B,Cc=torch.meshgrid(lin,lin,lin,indexing="ij"); P=torch.stack([A,B,Cc],-1).reshape(-1,3)
     sd=o.sdf(P); occ=(sd<0)
@@ -297,9 +351,11 @@ if __name__=="__main__":
     spec=lambda k: make(base,seed=k) if CROSS else o                      # cross-specimen: input k from specimen k+1
     for k,th in enumerate(TRAIN_TH):
         save(render(spec(1+k),plane_points(ext,("long",th,0.0))),f"{out}/spl_long/{k:02d}.png"); planes["long"].append([th,0.0])
+    NORMAL=(base=="banana")
     for k,q in enumerate(TRAIN_HQ):
-        h=h0+(h1-h0)*q; im=render(spec(4+k),plane_points(ext,("trans",h)))
-        save(im,f"{out}/spl_trans/{k:02d}.png"); planes["trans"].append(h)
+        h=h0+(h1-h0)*q; sp=("ntrans",(2*q-1)*o.L*0.8) if NORMAL else ("trans",h)
+        im=render(spec(4+k),plane_points(ext,sp))
+        save(im,f"{out}/spl_trans/{k:02d}.png"); planes["trans"].append(h); planes.setdefault("ntrans",[]).append(sp[1] if NORMAL else None)
         Image.fromarray((polar(im.reshape(RES,RES,3).cpu().numpy())*255).astype(np.uint8)).save(f"{out}/polar_spl_trans/{k:02d}.png")
     json.dump(planes,open(f"{out}/planes.json","w"))
     if CROSS:                                                             # held-out specimens 7-9, every test plane
@@ -310,7 +366,7 @@ if __name__=="__main__":
             for i,q in enumerate(TEST_HQ): save(render(ok,plane_points(ext,("trans",h0+(h1-h0)*q))),f"{out}/hld_trans/{k}_{i}.png")
             for i,t in enumerate(TEST_OBL): save(render(ok,plane_points(ext,("obl",)+t)),f"{out}/hld_obl/{k}_{i}.png")
     json.dump(dict(object=name,kind="box" if base in ("cake","honeycomb") else "revolve",cross=CROSS),open(f"{out}/meta.json","w"))
-    if hasattr(o,"axis") and base in ("wood3","wood4","ccable","wood3r"):          # the declared centreline (user input for curvilinear)
+    if hasattr(o,"axis") and base in ("wood3","wood4","ccable","wood3r","banana"):          # the declared centreline (user input for curvilinear)
         vs=np.linspace(-64,64,129); cxz=[o.axis(torch.tensor([float(v)],device=dv)) for v in vs]
         json.dump(dict(v=vs.tolist(),cx=[float(a) for a,_ in cxz],cz=[float(b) for _,b in cxz]),open(f"{out}/centerline.json","w"))
     print(name,"ext",round(ext,1),"core",int(core.sum()))

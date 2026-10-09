@@ -17,8 +17,10 @@ from PIL import Image
 from scipy import ndimage as ndi
 sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),"..","slicefill"))
 from planes import Vol
-KIND={"log":"revolve","maki":"revolve","onion":"revolve","cable":"revolve","honeycomb":"box","strata":"box","terrazzo":"box","cheese":"box"}
-root,obj=sys.argv[1],sys.argv[2]; D=f"{root}/{obj}"; N=128; C=(N-1)/2; RES=512; SIZE=50.0
+KIND={"banana":"revolve","log":"revolve","maki":"revolve","onion":"revolve","cable":"revolve","honeycomb":"box","strata":"box","terrazzo":"box","cheese":"box"}
+root,obj=sys.argv[1],sys.argv[2]; D=f"{root}/{obj}"
+_reg=os.path.join(os.path.dirname(os.path.abspath(__file__)),"pipeline","objects.json")
+if obj not in KIND and os.path.exists(_reg): KIND[obj]=json.load(open(_reg)).get(obj,{}).get("kind","revolve"); N=128; C=(N-1)/2; RES=512; SIZE=50.0
 rej=set()
 for l in open(f"{root}/REJECT.txt"):
     if l.startswith("#") or not l.strip(): continue
@@ -36,7 +38,14 @@ def bbox(m): ys,xs=np.where(m); return ys.min(),ys.max(),xs.min(),xs.max()
 fams={}
 for fam in ("long","trans"):
     ps=[p for p in sorted(glob.glob(f"{D}/raw/{fam}_*.png"),key=lambda s:int(s.rsplit("_",1)[1][:-4])) if os.path.basename(p)[:-4] not in rej]
-    fams[fam]=[(p,)+cut(p) for p in ps][:6]
+    got=[]
+    for p in ps:
+        a,m=cut(p)
+        if fam=="long":                                    # a lengthwise cut photographed lying down: stand it up
+            ys,xs=np.where(m)
+            if xs.max()-xs.min()>ys.max()-ys.min(): a,m=np.rot90(a).copy(),np.rot90(m).copy()
+        got.append((p,a,m))
+    fams[fam]=got[:6]
     assert len(fams[fam])==6, (obj,fam,len(fams[fam]))
 # ---- the shape: a given grid (GRID=..., e.g. glb2grid.py from a generated exterior), or from the
 # training photographs only ----
@@ -80,7 +89,13 @@ vol=Vol(f"{D}/grid.pt","cpu",res=RES)
 def sil(fam):
     if fam=="long": s=vol.long_slice(vol.OCC.expand(3,-1,-1,-1).contiguous(),0.0)
     else: hs=vol.occupied_heights(); s=vol.trans_slice(vol.OCC.expand(3,-1,-1,-1).contiguous(),float(hs[len(hs)//2]))
-    return s[0].numpy()>0.5
+    m=s[0].numpy()>0.5
+    if fam=="trans":
+        # A cross-section is centred on the axis, so it is centred in the frame: the polar prior unwraps about
+        # the frame centre, and a curved object's mid-height slice sits off the grid axis.  Same size, centred.
+        ys,xs=np.where(m); H,W=m.shape; dy,dx=H//2-(ys.min()+ys.max())//2, W//2-(xs.min()+xs.max())//2
+        m=np.roll(np.roll(m,dy,axis=0),dx,axis=1)
+    return m
 def toframe(a,m,tgt):
     y0,y1,x0,x1=bbox(m); Y0,Y1,X0,X1=bbox(tgt)
     yy,xx=np.mgrid[0:RES,0:RES].astype(np.float32)
@@ -105,5 +120,20 @@ for fam in ("long","trans"):
             os.makedirs(f"{D}/polar_spl_trans",exist_ok=True)
             Image.fromarray((polar(im)*255).astype(np.uint8)).save(f"{D}/polar_spl_trans/{k:02d}.png")
 open(f"{D}/SPLIT.txt","w").write("\n".join(split)+"\n")
+# the curvilinear canonicalisation of a lengthwise photograph: each row shifted so the photograph's own
+# centreline (the row's mid-point of the silhouette, smoothed) is straight -- what polar unwrapping is
+# to a transverse photograph under the cylinder
+if os.environ.get("STRAIGHTEN"):
+    os.makedirs(f"{D}/spl_long_straight",exist_ok=True)
+    for p in sorted(glob.glob(f"{D}/spl_long/*.png")):
+        a=np.asarray(Image.open(p).convert("RGB")).astype(np.float32)/255; m=a.min(2)<0.92; H,W_=m.shape
+        mid=np.array([ (np.where(m[r])[0].mean() if m[r].any() else np.nan) for r in range(H)])
+        ok=~np.isnan(mid); mid=np.interp(np.arange(H),np.where(ok)[0],mid[ok]); mid=ndi.uniform_filter1d(mid,25)
+        out=np.ones_like(a)
+        for r in range(H):
+            sh=int(round(W_/2-mid[r])); out[r]=np.roll(a[r],sh,axis=0)
+            if sh>0: out[r,:sh]=1.0
+            elif sh<0: out[r,sh:]=1.0
+        Image.fromarray((out*255).astype(np.uint8)).save(f"{D}/spl_long_straight/"+os.path.basename(p))
 json.dump(dict(object=obj,kind=KIND[obj],core=int(core.sum()),ext=vol.EXT),open(f"{D}/meta.json","w"))
 print(obj,KIND[obj],"core",int(core.sum()),"ext",round(vol.EXT,1))
