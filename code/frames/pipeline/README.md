@@ -44,6 +44,7 @@ held-out DreamSim (`dsscore.py`, `dsrun.py`) and, for a curved object, the same 
 | a centreline written for 128^3 only, half of a 256^3 banana held constant | `centerline_from_grid.py` covers the grid's whole height |
 | a generated mesh taller than the cut faces, photographs stretched | `ASPECT` from the lengthwise photographs |
 | an open generated mesh filled only at its top | slice-wise filling in `glb2grid.py` |
+| a generated mesh's up running opposite to a lengthwise face's rows: every photograph fitted upside down | `glb2grid.py` mirrors the mesh in y |
 | a job "still running" forever: `pgrep -f` matching its own command line | a pid file |
 | three priors on one GPU at once, each twice as slow; objects pinned to GPUs | one prior at a time per GPU, a shared queue |
 

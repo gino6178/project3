@@ -10,6 +10,10 @@ sc=trimesh.load(src,force="scene"); mesh=trimesh.util.concatenate([g for g in sc
 v=mesh.vertices.copy(); lo,hi=v.min(0),v.max(0); ctr=(lo+hi)/2
 rad=np.sqrt((v[:,0]-ctr[0])**2+(v[:,2]-ctr[2])**2).max(); hh=(hi[1]-lo[1])/2
 mesh.apply_translation(-ctr)
+# glTF's up is +Y; planes.Vol cuts a lengthwise face with its first row at the LOWEST grid index of the axis,
+# and a photograph has its top in its first row -- so the mesh's up must run toward lower indices, or every
+# lengthwise photograph is fitted upside down (an onion's root at its crown).  Mirror in y.
+mesh.vertices[:,1]*=-1; mesh.invert()
 import os
 if os.environ.get("ASPECT"):          # match the height/diameter of the cut photographs (a generated exterior need not)
     a=float(os.environ["ASPECT"]); k=a*(2*rad)/(2*hh); mesh.vertices[:,1]*=k; hh*=k

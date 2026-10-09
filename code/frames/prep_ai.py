@@ -20,7 +20,8 @@ from planes import Vol
 KIND={"banana":"revolve","log":"revolve","maki":"revolve","onion":"revolve","cable":"revolve","honeycomb":"box","strata":"box","terrazzo":"box","cheese":"box"}
 root,obj=sys.argv[1],sys.argv[2]; D=f"{root}/{obj}"
 _reg=os.path.join(os.path.dirname(os.path.abspath(__file__)),"pipeline","objects.json")
-if obj not in KIND and os.path.exists(_reg): KIND[obj]=json.load(open(_reg)).get(obj,{}).get("kind","revolve"); N=128; C=(N-1)/2; RES=512; SIZE=50.0
+if obj not in KIND and os.path.exists(_reg): KIND[obj]=json.load(open(_reg)).get(obj,{}).get("kind","revolve")
+N=128; C=(N-1)/2; RES=512; SIZE=50.0
 rej=set()
 for l in open(f"{root}/REJECT.txt"):
     if l.startswith("#") or not l.strip(): continue
