@@ -13,6 +13,9 @@
 #   hose    a multilayer hose: liner, braid, ply, cover around a bore         (rolled/laminated, axial)
 #   ccable  the cable bent along a curved centreline                          (curved axial: curvilinear)
 #   wood2x  wood2, every input cut from a DIFFERENT specimen (seed)           (cross-specimen, stage two)
+#   wood2k  wood2 + three branch knots, straight axis                         (the teacher's level 4 alone)
+#   wood3r  wood2 bent along a circular arc, cross-sections turning with it   (rotation bend: parallel transport)
+#   roll    a sheet rolled into a spiral: kraft paper with a printed face       (rolled material, axial)
 #
 # The wood carries its growth-time field G (rings are its integer iso-surfaces); it is saved so the
 # structural metrics can read ring centre, spacing and orientation from the truth.
@@ -44,28 +47,46 @@ EARLY,LATE,MIDW,BARK=col(221,188,147),col(163,124,89),col(196,162,126),col(140,1
 
 class Wood:
     R=46.0; H=48.0
-    def __init__(s,level,seed=0):
-        s.level=level; s.seed=seed; rng=np.random.default_rng(seed)
+    def __init__(s,level,seed=0,knots=False,rotbend=False):
+        s.level=level; s.seed=seed; rng=np.random.default_rng(seed); s.rotbend=rotbend; s.Rb=110.0
         w=rng.uniform(0.65,1.35,40)*3.2*np.linspace(1.15,0.85,40)        # ring widths, narrower outward
         s.Rk=torch.tensor(np.concatenate([[0],np.cumsum(w)]),device=dv,dtype=torch.float32)
         s.knots=[]
-        if level>=4:
+        if level>=4 or knots:
             for k in range(3):
                 s.knots.append(dict(v0=float(rng.uniform(-28,28)),az=float(rng.uniform(0,2*math.pi)),up=float(rng.uniform(0.15,0.45))))
+    def arc(s,P):
+        """rotation bend: the axis is a circular arc of radius Rb in the (u0, v) plane, bulging to -u0;
+        returns the arc-length s, and the local offsets (a along the bend normal, b = u1)"""
+        x,v,z=P[:,0],P[:,1],P[:,2]; qx=x+s.Rb-6.0; th=torch.atan2(v,qx); rho=torch.sqrt(qx*qx+v*v)
+        return s.Rb*th, rho-s.Rb, z
     def axis(s,v):
+        if s.rotbend:                                                           # the arc's u0 at height v (cx), and cz = 0
+            th=torch.asin((v/s.Rb).clamp(-1,1)); return s.Rb*torch.cos(th)-s.Rb+6.0, torch.zeros_like(v)
         if s.level>=3: return 7.0+6.0*(v/s.H)**2, 5.0*(v/s.H)                  # off-centre and curved
         z=torch.zeros_like(v); return z,z
     def geom(s,P):
+        if s.rotbend:                                                           # (r, phi) in the plane normal to the arc, v -> arc length
+            sv,a,b=s.arc(P); r=torch.sqrt(a*a+b*b)+1e-6; return r,torch.atan2(b,a),sv,a,b
         x,v,z=P[:,0],P[:,1],P[:,2]; cx,cz=s.axis(v); dx,dz=x-cx,z-cz
         r=torch.sqrt(dx*dx+dz*dz)+1e-6; ph=torch.atan2(dz,dx); return r,ph,v,dx,dz
+    def local(s,P):   # the solid's own (unbent) coordinates, so every texture bends with it
+        if not s.rotbend: return P
+        sv,a,b=s.arc(P); return torch.stack([a,sv,b],1)
     def outer(s,P):
-        r,ph,v,_,_=s.geom(P); Ro=s.R+1.2*noise(s.seed+9,P,6.0,(1,3,1))
+        P=s.local(P) if s.rotbend else P
+        r,ph,v,_,_=s.geom0(P) if s.rotbend else s.geom(P); Ro=s.R+1.2*noise(s.seed+9,P,6.0,(1,3,1))
         if s.level>=3: Ro=Ro-7.0                                                # keep the curved trunk inside the box
         return r,Ro
+    def outer_local(s,P):
+        r,ph,v,_,_=s.geom0(P); return r,s.R+1.2*noise(s.seed+9,P,6.0,(1,3,1))
+    def geom0(s,P):  # straight-axis geometry in local coordinates
+        x,v,z=P[:,0],P[:,1],P[:,2]; r=torch.sqrt(x*x+z*z)+1e-6; return r,torch.atan2(z,x),v,x,z
     def sdf(s,P):
-        r,Ro=s.outer(P); return torch.maximum(r-Ro,P[:,1].abs()-s.H)
+        r,Ro=s.outer(P); vv=s.local(P)[:,1] if s.rotbend else P[:,1]; return torch.maximum(r-Ro,vv.abs()-s.H)
     def G(s,P):
-        r,ph,v,dx,dz=s.geom(P); re=r
+        if s.rotbend: P=s.local(P)
+        r,ph,v,dx,dz=s.geom0(P) if s.rotbend else s.geom(P); re=r
         if s.level>=2:
             re=r*(1+0.07*noise(s.seed+1,torch.stack([torch.cos(ph)*30,v*0.5,torch.sin(ph)*30],1),12.0))+1.3*noise(s.seed+2,P,9.0,(1,2.5,1))
         for kn in s.knots:                                                      # rings bow around each knot
@@ -76,7 +97,9 @@ class Wood:
         k=torch.bucketize(re,s.Rk).clamp(1,len(s.Rk)-1)-1
         return k.float()+(re-s.Rk[k])/(s.Rk[k+1]-s.Rk[k])
     def color(s,P):
-        r,ph,v,dx,dz=s.geom(P); g=s.G(P); f=g%1.0
+        g=s.G(P)
+        if s.rotbend: P=s.local(P)
+        r,ph,v,dx,dz=s.geom0(P) if s.rotbend else s.geom(P); f=g%1.0
         late=sstep(0.62,0.86,f)*(1-sstep(0.95,1.0,f))
         c=mix(EARLY,LATE,late)
         c=mix(c,MIDW*0.92,0.35*(1-sstep(10,26,r)))                             # heartwood darker toward the pith
@@ -93,7 +116,7 @@ class Wood:
             q=P-o; t=(q@a).clamp(min=0); db=(q-t[:,None]*a).norm(dim=1); rk=1.0+0.11*t
             kc=mix(col(120,78,48),col(84,52,32),((db/0.9)%1.0>0.6).float())
             c=mix(c,kc,(1-sstep(rk-0.4,rk+0.4,db))*(t>0).float())
-        rr,Ro=s.outer(P); bark=mix(BARK,BARK*0.6,noise(s.seed+6,P,1.4,(1,3,1))*0.5+0.5)
+        rr,Ro=(s.outer(P) if not s.rotbend else s.outer_local(P)); bark=mix(BARK,BARK*0.6,noise(s.seed+6,P,1.4,(1,3,1))*0.5+0.5)
         c=mix(c,bark,sstep(Ro-3.6,Ro-2.8,rr))
         return c
 
@@ -183,6 +206,23 @@ class Hose:
         c=mix(c,col(30,30,32),sstep(35.5,36.5,r)); c=mix(c,col(200,60,40),sstep(41.5,42.2,r)) # cover, red skin
         return c
 
+class Roll:
+    """A sheet rolled into a spiral about the axis -- kraft paper, one printed face -- the rolled-material
+    case: radial layering that is not concentric but one continuous Archimedean spiral."""
+    R=44.0; H=46.0
+    def __init__(s,seed=0): s.seed=seed; s.pitch=3.2; s.core=9.0
+    def sdf(s,P):
+        r=torch.sqrt(P[:,0]**2+P[:,2]**2); return torch.maximum(torch.maximum(r-s.R,P[:,1].abs()-s.H),s.core-r)   # a cardboard core's bore
+    def color(s,P):
+        x,v,z=P[:,0],P[:,1],P[:,2]; r=torch.sqrt(x*x+z*z); ph=torch.atan2(z,x)
+        u=((r-s.core)/s.pitch-ph/(2*math.pi))%1.0                               # position across one turn of the spiral
+        paper=mix(col(196,160,112),col(176,138,92),noise(s.seed,P,1.2,(1,4,1))*0.5+0.5)
+        ink=mix(col(46,92,150),col(30,64,112),noise(s.seed+1,P,3.0)*0.5+0.5)     # the printed face
+        c=mix(paper,ink,sstep(0.70,0.74,u)*(1-sstep(0.84,0.88,u)))
+        c=mix(c,col(120,92,60),(1-sstep(0.04,0.10,u))+sstep(0.94,0.98,u))       # the thin dark gap between turns
+        tube=mix(col(150,120,86),col(132,104,74),noise(s.seed+2,P,2.0)*0.5+0.5)
+        return mix(tube,c,sstep(s.core+2.8,s.core+3.2,r))                        # cardboard core tube
+
 class CCable(Cable):
     def bend(s,v): return 13.0*(v/s.H)**2-5.0, torch.zeros_like(v)                                 # a bow in ONE plane (u1 = 0): the lengthwise cut at theta=0 lies in it
     def axis(s,v): return s.bend(v)
@@ -193,8 +233,10 @@ class CCable(Cable):
         Q=s.straight(P); Q=torch.stack([Q[:,0]*s.R/(s.R-8),Q[:,1],Q[:,2]*s.R/(s.R-8)],1); return Cable.color(s,Q)
 
 def make(name,seed=0):
+    if name=="wood2k": return Wood(2,seed,knots=True)
+    if name=="wood3r": return Wood(2,seed,rotbend=True)
     if name.startswith("wood"): return Wood(int(name[4]),seed)
-    return {"cake":Cake,"cable":Cable,"honeycomb":Honeycomb,"hose":Hose,"ccable":CCable}[name](seed)
+    return {"cake":Cake,"cable":Cable,"honeycomb":Honeycomb,"hose":Hose,"ccable":CCable,"roll":Roll}[name](seed)
 def render(o,P):
     sd=o.sdf(P); out=torch.ones(len(P),3,device=dv); m=sd<0
     if m.any(): out[m]=o.color(P[m])
@@ -230,7 +272,7 @@ TEST_OBL=[(math.radians(t),math.radians(az),off) for t in (30,45,60) for az,off 
 if __name__=="__main__":
     name,out=sys.argv[1],sys.argv[2]; CROSS=name.endswith("x"); base=name[:-1] if CROSS else name
     o=make(base); os.makedirs(out,exist_ok=True)
-    if base=="ccable": CENTER=lambda v: o.axis(v) if not torch.is_tensor(o.axis(v)[1]) else o.axis(v)
+    if base in ("ccable","wood3r"): CENTER=lambda v: o.axis(v)
     lin=torch.arange(N,device=dv,dtype=torch.float32)-C
     A,B,Cc=torch.meshgrid(lin,lin,lin,indexing="ij"); P=torch.stack([A,B,Cc],-1).reshape(-1,3)
     sd=o.sdf(P); occ=(sd<0)
@@ -268,7 +310,7 @@ if __name__=="__main__":
             for i,q in enumerate(TEST_HQ): save(render(ok,plane_points(ext,("trans",h0+(h1-h0)*q))),f"{out}/hld_trans/{k}_{i}.png")
             for i,t in enumerate(TEST_OBL): save(render(ok,plane_points(ext,("obl",)+t)),f"{out}/hld_obl/{k}_{i}.png")
     json.dump(dict(object=name,kind="box" if base in ("cake","honeycomb") else "revolve",cross=CROSS),open(f"{out}/meta.json","w"))
-    if hasattr(o,"axis") and base in ("wood3","wood4","ccable"):          # the declared centreline (user input for curvilinear)
+    if hasattr(o,"axis") and base in ("wood3","wood4","ccable","wood3r"):          # the declared centreline (user input for curvilinear)
         vs=np.linspace(-64,64,129); cxz=[o.axis(torch.tensor([float(v)],device=dv)) for v in vs]
         json.dump(dict(v=vs.tolist(),cx=[float(a) for a,_ in cxz],cz=[float(b) for _,b in cxz]),open(f"{out}/centerline.json","w"))
     print(name,"ext",round(ext,1),"core",int(core.sum()))

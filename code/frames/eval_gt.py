@@ -22,7 +22,7 @@ D=sys.argv[1]; R=256
 G=torch.load(f"{D}/grid.pt",map_location=dv); N=G["N"]; C=(N-1)/2
 PJ=json.load(open(f"{D}/planes.json")); ext,h0,h1=PJ["ext"],PJ["h0"],PJ["h1"]
 name=json.load(open(f"{D}/meta.json"))["object"]
-if name=="ccable": _o=S.make("ccable"); S.CENTER=lambda v: _o.axis(v)            # its lengthwise cuts follow the centreline
+if name in ("ccable","wood3r"): _o=S.make(name); S.CENTER=lambda v: _o.axis(v)   # its lengthwise cuts follow the centreline
 arms={"carrier":torch.load(f"{D}/carrier.pt",map_location=dv)["V"].float()}
 for a in sys.argv[2:]:
     n,p=a.split("=",1)
@@ -132,11 +132,11 @@ for i,(fam,spec) in enumerate(planes):
             thg=torch.atan2(gy_,gx_); th_a2,_=orient(im); d=(th_a2-thg).abs()%math.pi; d=torch.minimum(d,math.pi-d); wg=gn*m
             res[a][fam]["gorient"].append(float((d*wg).sum()/wg.sum().clamp(min=1e-6))*180/math.pi)
             if fam=="trans":
-                o=S.make(name[:5]) if name.startswith("wood") else None; hv=torch.tensor([spec[1]],device=dv); cxv,czv=o.axis(hv)
+                o=S.make(name[:-1] if name.endswith("x") else name); hv=torch.tensor([spec[1]],device=dv); cxv,czv=o.axis(hv)
                 gxp,gyp=(float(cxv)+ext)/(2*ext)*(R-1),(float(czv)+ext)/(2*ext)*(R-1)
                 cx,cy=centre_ls(im,m); res[a][fam]["ringc"].append(min(math.hypot(cx-gxp,cy-gyp)/px_per_vox,50.0))
                 pg=radial_period(gt,gxp,gyp); pa_=radial_period(im,cx,cy); res[a][fam]["rings"].append(abs(pa_-pg)/pg)
-            if name.startswith("wood4"):
+            if name.startswith("wood4") or name=="wood2k":
                 kn_g=m&(Lg<0.42); kn_a=m&(La<0.42)
                 if int(kn_g.sum())>30: res[a][fam]["knot"].append(float((kn_g&kn_a).sum())/float((kn_g|kn_a).sum()))
     row=torch.cat(tiles,1); Image.fromarray((row.cpu().numpy()*255).astype(np.uint8)).save(f"{dump}/{i:02d}_{fam}.png")
