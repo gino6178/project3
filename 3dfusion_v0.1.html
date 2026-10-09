@@ -100,10 +100,9 @@
   <h1>3DFusion: Cuttable Interiors from Two Cut Families &mdash; Single-Image Diffusion Priors Lifted onto an O-Voxel Lattice</h1>
   <p class="sub">Prior-guided statistical completion: two or three unposed cross-section photographs per cut family, of different specimens, are treated not as views to be inverted but as the two marginal slice distributions of a volume, and the volume is recovered as their product of experts on a cylindrical lattice that turns radial anatomy into stationary stripes &mdash; carried on a decoupled occupancy lattice that is cut in closed form</p>
   <p class="authors">Anonymous</p>
-  <p class="venue">Preprint &middot; v0.1 draft &middot; a revision of the O-Voxel draft of this paper</p>
+  <p class="venue">Preprint &middot; v0.1 draft</p>
   <div class="links">
-    <a href="3dfusion.html">The current version of this paper</a>
-    <a href="ovoxel.html">The earlier revision of this paper (O-Voxel)</a>
+    <a href="3dfusion.html">Version 1 of this page</a>
     <a href="3dfusion_route.html">The route: every arm that failed on the way</a>
     <a href="index.html">The splatted pipeline</a>
     <a href="ovoxel_notes.html">Technical appendices</a>
@@ -187,7 +186,7 @@ Because real photographs carry no 3-D truth, the method is also measured on soli
   <li><strong>A benchmark with full 3-D truth.</strong> Solids generated whole &mdash; trunks of four difficulties, a honeycomb, a hose, a layer cake &mdash; of which the method sees three cuts per family, scored against the truth on unseen and oblique planes in appearance and in structure read from the trunks&#8217; growth field, same-specimen and cross-specimen (sections&nbsp;4.6&ndash;4.9).</li>
   <li><strong>Layout-conditioned diffusion on a discrete carrier.</strong> A directly fitted discrete occupancy carrier enters as a non-destructive data term: its low-frequency layout is anchored by an in-chain constraint (ILVR&nbsp;[70]), its shell is never written, and a radius-dependent leadership rule puts each family in charge where it sees what the other cannot, decoupling macroscopic anatomy from microscopic tissue synthesis (sections&nbsp;3.3&ndash;3.5).</li>
   <li><strong>Measured validation and cuttable assets.</strong> On seven objects with declared splits, the lift improves six over direct fitting on held-out photographs and is the best column against both released generative baselines wherever the carrier is sound; the two objects where it is not are reported as losses. Baked back into the discrete lattice, the assets keep closed-form, machine-precision planar cutting (8.6&ndash;16.5&nbsp;ms) with zero unpainted voids and the carrier&#8217;s solver interface, an acquisition path toward interactive volumetric simulation (section&nbsp;4).</li>
-  <li><strong>The carrier, carried over.</strong> The decoupled two-level lattice, the pose-free supervision and the closed-form planar cut of the earlier revision are restated in section&nbsp;3.1 and their measurements in section&nbsp;4.5.</li>
+  <li><strong>The carrier.</strong> The decoupled two-level lattice, the pose-free supervision and the closed-form planar cut are described in section&nbsp;3.1 and measured in section&nbsp;4.5.</li>
 </ul>
 
 <h3>1.5&ensp;Scope: structurally organised interiors</h3>
@@ -216,7 +215,7 @@ Because real photographs carry no 3-D truth, the method is also measured on soli
 
 <h2 id="method">3&ensp;Method</h2>
 
-<p class="lead">Figure&nbsp;2 is the whole of it, and Figure&nbsp;3 is the same pipeline as the states of one object&#8217;s arrays. The carrier is fitted first (section&nbsp;3.1, restated from the earlier revision). Its interior is then sampled anew from a product of two single-image diffusion priors on a cylindrical state, with the carrier&#8217;s layout and shell as data terms (sections&nbsp;3.2&ndash;3.4), and written back into the carrier&#8217;s cells (section&nbsp;3.5). The cut operator and the solver interface are the carrier&#8217;s and are not touched.</p>
+<p class="lead">Figure&nbsp;2 is the whole of it, and Figure&nbsp;3 is the same pipeline as the states of one object&#8217;s arrays. The carrier is fitted first (section&nbsp;3.1). Its interior is then sampled anew from a product of two single-image diffusion priors on a cylindrical state, with the carrier&#8217;s layout and shell as data terms (sections&nbsp;3.2&ndash;3.4), and written back into the carrier&#8217;s cells (section&nbsp;3.5). The cut operator and the solver interface are the carrier&#8217;s and are not touched.</p>
 
 <figure class="flow" style="margin:16px 0 26px">
   <img src="assets/method_overview.svg" alt="method overview: two photograph families, their canonical and polar framings, two single-image priors, one cylindrical state whose two slice families are real cut faces, one reverse chain shown at each of its stages, and the cuttable asset" style="width:100%;border-radius:4px">
@@ -271,7 +270,7 @@ $$ \mathcal{L} = \sum_{j}
 
 <p>with the nominal depth of every plane replaced by a random variable so that the supervised supports union to a slab, and \(\mathcal{L}_{\mathrm{sec}}\) an SSIM, pixel and band-distribution term over crops inside the face&#8217;s own silhouette. No perceptual network enters the objective. What this fits is exactly what section&nbsp;3.2 keeps: the layout and colour of the interior, the skin, and a texture that is an average over specimens on the supervised planes and a block-tiled average between them.</p>
 
-<p><strong>Closed-form planar cutting.</strong> Cells crossed by a plane \(\Pi\) are selected in parallel by the separating-axis test, \(\mathcal{B} = \{ i : |\mathbf{n}^\top\mathbf{c}_i + d| \le \tfrac{1}{2}h\sum_a|n_a| \}\); within each, the twelve cell edges straddling the plane are solved for their exact roots, \(\mathbf{v}_e = \mathbf{a}_e + t_e(\mathbf{b}_e-\mathbf{a}_e)\), \(t_e = -(\mathbf{n}^\top\mathbf{a}_e + d)/\mathbf{n}^\top(\mathbf{b}_e-\mathbf{a}_e)\), sorted into one convex polygon per cell. Face-adjacent cells share their roots exactly, so the union is closed and 2-manifold (Proposition&nbsp;1 of the O-Voxel revision), the cost is \(\mathcal{O}(|\mathcal{B}|)\) (Proposition&nbsp;2), and every vertex satisfies its plane equation to \(8.88\times10^{-16}\). Vertex colours come from equation&nbsp;(1); after section&nbsp;3.5 they come from the lifted interior through the same equation. Figure&nbsp;4 shows the operator&#8217;s four states on real data.</p>
+<p><strong>Closed-form planar cutting.</strong> Cells crossed by a plane \(\Pi\) are selected in parallel by the separating-axis test, \(\mathcal{B} = \{ i : |\mathbf{n}^\top\mathbf{c}_i + d| \le \tfrac{1}{2}h\sum_a|n_a| \}\); within each, the twelve cell edges straddling the plane are solved for their exact roots, \(\mathbf{v}_e = \mathbf{a}_e + t_e(\mathbf{b}_e-\mathbf{a}_e)\), \(t_e = -(\mathbf{n}^\top\mathbf{a}_e + d)/\mathbf{n}^\top(\mathbf{b}_e-\mathbf{a}_e)\), sorted into one convex polygon per cell. Face-adjacent cells share their roots exactly, so the union is closed and 2-manifold (Proposition&nbsp;1), the cost is \(\mathcal{O}(|\mathcal{B}|)\) (Proposition&nbsp;2), and every vertex satisfies its plane equation to \(8.88\times10^{-16}\). Vertex colours come from equation&nbsp;(1); after section&nbsp;3.5 they come from the lifted interior through the same equation. Figure&nbsp;4 shows the operator&#8217;s four states on real data.</p>
 
 <figure style="margin:16px 0 26px">
   <img src="assets/cutstates.jpg?v=s_v2" style="width:100%;border-radius:4px" alt="the planar cut as four states of the lattice">
@@ -346,7 +345,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 
 <h2 id="results">4&ensp;Experiments</h2>
 
-<p class="lead">Every candidate is scored the same way. A split is declared per object and per family: with four or more photographs, three train the prior and the rest are held out and never touched; with fewer, all train and the object is scored against its training photographs and flagged as such. Cut faces are canonical-frame slices of the voxel grid at 512 px, and the score is the mean over faces of the DreamSim&nbsp;[62] distance to the nearest held-out photograph, lower better; the real floor is the training photographs scored against the held-out ones. Grid slices rather than the carrier&#8217;s renderer, so the absolute numbers are not the O-Voxel revision&#8217;s Table&nbsp;2; the ranking is fair because every row walks the same path. The two released baselines walk the same path: the Gaussian centres of FruitNinja&#8217;s six models&nbsp;[3] and of GaussianFluent&#8217;s watermelon and cake&nbsp;[23] &mdash; the two of their eighteen objects that are also ours &mdash; are voxelised with their colour at opacity above 0.1 and closed by the same fill, and their polar axes are read from their occupancy as ours are (GaussianFluent&#8217;s watermelon lies along the first lattice axis, its cake along the third; FruitNinja&#8217;s apple and cake along the third, the other four along ours). The orange has three held out per family and is where every design choice was measured; the six other objects then run through one program with no setting changed.</p>
+<p class="lead">Every candidate is scored the same way. A split is declared per object and per family: with four or more photographs, three train the prior and the rest are held out and never touched; with fewer, all train and the object is scored against its training photographs and flagged as such. Cut faces are canonical-frame slices of the voxel grid at 512 px, and the score is the mean over faces of the DreamSim&nbsp;[62] distance to the nearest held-out photograph, lower better; the real floor is the training photographs scored against the held-out ones. Grid slices rather than the carrier&#8217;s renderer, so the absolute numbers are not those of the carrier&#8217;s own renderer protocol; the ranking is fair because every row walks the same path. The two released baselines walk the same path: the Gaussian centres of FruitNinja&#8217;s six models&nbsp;[3] and of GaussianFluent&#8217;s watermelon and cake&nbsp;[23] &mdash; the two of their eighteen objects that are also ours &mdash; are voxelised with their colour at opacity above 0.1 and closed by the same fill, and their polar axes are read from their occupancy as ours are (GaussianFluent&#8217;s watermelon lies along the first lattice axis, its cake along the third; FruitNinja&#8217;s apple and cake along the third, the other four along ours). The orange has three held out per family and is where every design choice was measured; the six other objects then run through one program with no setting changed.</p>
 
 <h3>4.1&ensp;The number the method has to beat</h3>
 
@@ -460,7 +459,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 
 <h3>4.5&ensp;The carrier&#8217;s numbers, unchanged</h3>
 
-<p>The lift changes the colour of interior cells and nothing else, so the O-Voxel revision&#8217;s measurements of its geometry hold for the result. Over four planes on each of the seven objects &mdash; three axis-aligned and one oblique, offset off the grid &mdash; every cut vertex satisfies its plane equation with residual bounded by \(8.88\times10^{-16}\); the extracted surface is 2-manifold with no T-junction; no pixel of a cut face is unpainted at 2048&nbsp;px; a cut and its rasterisation take 8.6&ndash;16.5&nbsp;ms, following the crossed-cell count \(K\) at 0.72&ndash;2.13% of the volume; through one codec the representation is 10.0&nbsp;MiB against 25.6 and 52.0 for two Gaussian baselines on the same object. Table&nbsp;5 is the per-object cost, carried over.</p>
+<p>The lift changes the colour of interior cells and nothing else, so the carrier&#8217;s measurements of its geometry hold for the result. Over four planes on each of the seven objects &mdash; three axis-aligned and one oblique, offset off the grid &mdash; every cut vertex satisfies its plane equation with residual bounded by \(8.88\times10^{-16}\); the extracted surface is 2-manifold with no T-junction; no pixel of a cut face is unpainted at 2048&nbsp;px; a cut and its rasterisation take 8.6&ndash;16.5&nbsp;ms, following the crossed-cell count \(K\) at 0.72&ndash;2.13% of the volume; through one codec the representation is 10.0&nbsp;MiB against 25.6 and 52.0 for two Gaussian baselines on the same object. Table&nbsp;5 is the per-object cost, carried over.</p>
 
 <div class="tw"><p class="tnum">Table 5</p><table>
 <thead><tr><th>object</th><th>cells \(N\)</th><th>crossed \(K\)</th><th>\(K/N\)</th><th>triangles</th><th>cut (ms)</th><th>alignment (ms)</th><th>peak (MiB)</th></tr></thead>
@@ -574,7 +573,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
   <li><strong>The cylinder&#8217;s longitudinal bands.</strong> On straight trunks the Cartesian lattice&#8217;s longitudinal faces are at least as good as the cylinder&#8217;s, which keep faint bands from denoising each transverse plane alone (section&nbsp;4.7).</li>
   <li><strong>Curvilinear frames.</strong> The generated curved trunks are bent by shear, for which the translation-only frame is exact; a solid bent by rotation of its cross-sections, where the parallel-transported frame is the right one, has not been measured.</li>
   <li><strong>The carrier&#8217;s configuration.</strong> The repository&#8217;s default configuration does not reproduce the released carrier (0.129 against 0.113, section&nbsp;4.11); the photograph selection it was fitted to should be published with it.</li>
-  <li><strong>The protocol.</strong> Faces are grid slices, not the carrier&#8217;s renders; the renderer-protocol numbers of the O-Voxel revision are not comparable to Table&nbsp;3 and have not been re-taken for the lift.</li>
+  <li><strong>The protocol.</strong> Faces are grid slices, not the carrier&#8217;s renders; the carrier&#8217;s renderer-protocol numbers are not comparable to Table&nbsp;3 and have not been re-taken for the lift.</li>
 </ul>
 
 <h2 id="refs">References</h2>
@@ -739,7 +738,7 @@ Fields: A General Representation of Shape for Computer Graphics.</em> SIGGRAPH 2
 }</pre>
 
 <footer>
-Every number attributed to the lift was measured on a declared split, with every candidate scored by the same program, and read beside the faces it is a distance between. The carrier&#8217;s numbers are those of the O-Voxel revision, on the same seven objects.
+Every number attributed to the lift was measured on a declared split, with every candidate scored by the same program, and read beside the faces it is a distance between. The carrier&#8217;s numbers are measured on the same seven objects.
 </footer>
 
 </div>
