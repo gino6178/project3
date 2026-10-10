@@ -49,7 +49,7 @@
   "curved": false
  },
  "swissroll": {
-  "long": "A thick Swiss roll sponge cake cut lengthwise in half through its centre, lying flat. The camera looks straight down at the flat cut face: a rectangle, standing vertically in the frame, with stripes of cream and sponge running top to bottom",
+  "long": "A thick Swiss roll sponge cake cut lengthwise in half through its centre along its length, the half lying flat with its length running top to bottom in the frame. The camera looks straight down at the flat cut face: a tall rectangle with several thin white cream stripes running vertically from top to bottom between golden sponge stripes. No spiral is visible on this face",
   "trans": "A thick Swiss roll sponge cake cut crosswise. The camera looks straight at the flat round cut face: a spiral of golden sponge and white cream",
   "exterior": "A thick Swiss roll sponge cake standing upright on one end",
   "kind": "revolve",
@@ -63,7 +63,7 @@
   "curved": false
  },
  "cabbage": {
-  "long": "A red cabbage cut in half from top to bottom through the core, lying flat. The camera looks straight down at the flat cut face, the core vertical in the frame: purple and white leaf layers folding around a pale central core",
+  "long": "A red cabbage cut vertically in half from the top down through the white core and the stem. The camera looks straight down at the flat cut face: a pale triangular core rising from the stem at the bottom, purple and white leaf layers folding upward and around it. No concentric rings: this is the vertical cut",
   "trans": "A red cabbage cut crosswise through its middle. The camera looks straight down at the flat round cut face: tightly packed purple and white leaf layers swirling around the centre",
   "exterior": "A whole red cabbage, core at the bottom",
   "kind": "revolve",
@@ -84,16 +84,16 @@
   "curved": false
  },
  "bamboo": {
-  "long": "A thick green bamboo stalk segment cut lengthwise in half through its centre, lying flat. The camera looks straight down at the flat cut face, standing vertically in the frame: the hollow interior, a solid node wall across the middle, fibrous pale walls on both sides",
+  "long": "A short thick green bamboo stalk segment split lengthwise in half exactly through its centre, the half lying flat with its length top to bottom. The camera looks straight down at the flat split face only: two hollow chambers separated by one solid pale node wall across the middle, pale fibrous walls along both sides, a thin green skin at both edges. Only the flat split face is visible, not the round outside",
   "trans": "A thick green bamboo stalk cut crosswise through a node. The camera looks straight at the flat round cut face: a solid pale fibrous disc with a green outer skin ring",
   "exterior": "A short thick green bamboo stalk segment standing upright",
   "kind": "revolve",
   "curved": false
  },
  "cinnamonroll": {
-  "long": "A tall cinnamon roll cut vertically in half through its centre. The camera looks straight at the flat cut face: layers of soft bread and dark cinnamon swirl stacked side by side, standing upright",
+  "long": "A tall cinnamon roll cut vertically in half straight down through its centre. The camera looks straight at the flat vertical cut face: a dome-shaped face showing the rolled dough as several vertical columns of soft bread side by side, separated by thin dark brown cinnamon lines, mirrored about the centre. No spiral is visible on this vertical face",
   "trans": "A cinnamon roll seen from the top after slicing off the top, the flat round cut face: a spiral of soft bread and dark brown cinnamon sugar",
-  "exterior": "A tall cinnamon roll standing upright",
+  "exterior": "A single tall round cinnamon roll, like a short cylinder with a slightly domed top, the spiral visible on top, no icing",
   "kind": "revolve",
   "curved": false
  },
@@ -105,8 +105,8 @@
   "curved": false
  },
  "golfball": {
-  "long": "A golf ball cut in half through its centre. The camera looks straight at the flat round cut face: a thin white dimpled cover, a thin mantle layer and a large coloured rubber core",
-  "trans": "A golf ball cut in half through its centre. The camera looks straight at the flat round cut face: a thin white dimpled cover, a thin mantle layer and a large coloured rubber core",
+  "long": "A golf ball cut in half through its centre with a saw. The camera looks straight at the flat round cut face: a thin white dimpled cover ring, a thin mantle ring, and a large solid rubber core of a single colour",
+  "trans": "A golf ball cut in half through its centre with a saw. The camera looks straight at the flat round cut face: a thin white dimpled cover ring, a thin mantle ring, and a large solid rubber core of a single colour",
   "exterior": "A white golf ball",
   "kind": "revolve",
   "curved": false

@@ -15,6 +15,8 @@
 #   wood2x  wood2, every input cut from a DIFFERENT specimen (seed)           (cross-specimen, stage two)
 #   wood2k  wood2 + three branch knots, straight axis                         (the teacher's level 4 alone)
 #   wood3r  wood2 bent along a circular arc, cross-sections turning with it   (rotation bend: parallel transport)
+#   wood5   wood2 bent strongly (radius 60, ~96 deg), thinner, and SLICED NORMAL to its axis (parallel transport)
+#   laminate  a block of vertical veneer sheets (layer normal along u0)          (planar, not about the axis: Cartesian)
 #   roll    a sheet rolled into a spiral: kraft paper with a printed face       (rolled material, axial)
 #   banana  a banana bent along an arc, its cross-sections turning with it, and SLICED as a banana
 #           is -- normal to its own axis                                        (curved axial: parallel transport)
@@ -49,8 +51,10 @@ EARLY,LATE,MIDW,BARK=col(221,188,147),col(163,124,89),col(196,162,126),col(140,1
 
 class Wood:
     R=46.0; H=48.0
-    def __init__(s,level,seed=0,knots=False,rotbend=False):
-        s.level=level; s.seed=seed; rng=np.random.default_rng(seed); s.rotbend=rotbend; s.Rb=110.0
+    def __init__(s,level,seed=0,knots=False,rotbend=False,Rb=110.0,R=None,H=None):
+        s.level=level; s.seed=seed; rng=np.random.default_rng(seed); s.rotbend=rotbend; s.Rb=Rb
+        if R is not None: s.R=R
+        if H is not None: s.H=H
         w=rng.uniform(0.65,1.35,40)*3.2*np.linspace(1.15,0.85,40)        # ring widths, narrower outward
         s.Rk=torch.tensor(np.concatenate([[0],np.cumsum(w)]),device=dv,dtype=torch.float32)
         s.knots=[]
@@ -62,6 +66,9 @@ class Wood:
         returns the arc-length s, and the local offsets (a along the bend normal, b = u1)"""
         x,v,z=P[:,0],P[:,1],P[:,2]; qx=x+s.Rb-6.0; th=torch.atan2(v,qx); rho=torch.sqrt(qx*qx+v*v)
         return s.Rb*th, rho-s.Rb, z
+    def frame(s,sv):   # the arc's point, in-plane normal and tangent at arc length sv (rotation bend)
+        th=sv/s.Rb; c=torch.stack([s.Rb*torch.cos(th)-s.Rb+6.0,s.Rb*torch.sin(th),torch.zeros_like(th)],-1)
+        return c,torch.stack([torch.cos(th),torch.sin(th),torch.zeros_like(th)],-1),torch.stack([-torch.sin(th),torch.cos(th),torch.zeros_like(th)],-1)
     def axis(s,v):
         if s.rotbend:                                                           # the arc's u0 at height v (cx), and cz = 0
             th=torch.asin((v/s.Rb).clamp(-1,1)); return s.Rb*torch.cos(th)-s.Rb+6.0, torch.zeros_like(v)
@@ -272,6 +279,25 @@ class Banana:
         peel=mix(peel,col(150,150,52),0.35*sstep(0.97,1.0,q))                                         # a greener rim at the skin
         return mix(c,peel,sstep(0.915,0.94,q))
 
+class Laminate:
+    """Vertical veneer sheets stacked along u0, glued: wavy, uneven thicknesses, three wood tones, a dark glue
+    line between sheets, grain along v.  Planar but NOT organised about the vertical axis."""
+    W=40.0; H=38.0
+    def __init__(s,seed=0):
+        s.seed=seed; rng=np.random.default_rng(seed); th=rng.uniform(4.0,8.0,30)
+        s.edges=torch.tensor(np.concatenate([[0],np.cumsum(th)])-rng.uniform(55,70),device=dv,dtype=torch.float32)
+        s.k=torch.tensor(rng.integers(0,3,30),device=dv)
+    def sdf(s,P): return torch.stack([P[:,0].abs()-s.W,P[:,2].abs()-s.W,P[:,1].abs()-s.H]).max(0).values
+    def color(s,P):
+        x,v,z=P[:,0],P[:,1],P[:,2]
+        xx=x+1.2*noise(s.seed,torch.stack([x*0,v,z],1),18.0)
+        i=torch.bucketize(xx,s.edges).clamp(1,len(s.k))-1
+        pal=torch.stack([col(214,176,124),col(176,124,78),col(228,204,160)])
+        base=pal[s.k[i]]; grain=noise(s.seed+1,P,1.2,(3,10,3),oct=3)*0.07
+        c=(base+grain[:,None]).clamp(0,1)
+        f=(xx-s.edges[i])/(s.edges[i+1]-s.edges[i]).clamp(min=1e-3)
+        return mix(c,col(96,66,40),1-sstep(0.0,0.08,f))                                   # glue line at each sheet's start
+
 class CCable(Cable):
     def bend(s,v): return 13.0*(v/s.H)**2-5.0, torch.zeros_like(v)                                 # a bow in ONE plane (u1 = 0): the lengthwise cut at theta=0 lies in it
     def axis(s,v): return s.bend(v)
@@ -284,8 +310,9 @@ class CCable(Cable):
 def make(name,seed=0):
     if name=="wood2k": return Wood(2,seed,knots=True)
     if name=="wood3r": return Wood(2,seed,rotbend=True)
+    if name=="wood5": return Wood(2,seed,rotbend=True,Rb=60.0,R=28.0,H=50.0)
     if name.startswith("wood"): return Wood(int(name[4]),seed)
-    return {"cake":Cake,"cable":Cable,"honeycomb":Honeycomb,"hose":Hose,"ccable":CCable,"roll":Roll,"banana":Banana}[name](seed)
+    return {"cake":Cake,"cable":Cable,"honeycomb":Honeycomb,"hose":Hose,"ccable":CCable,"roll":Roll,"banana":Banana,"laminate":Laminate}[name](seed)
 def render(o,P):
     sd=o.sdf(P); out=torch.ones(len(P),3,device=dv); m=sd<0
     if m.any(): out[m]=o.color(P[m])
@@ -325,8 +352,8 @@ TEST_OBL=[(math.radians(t),math.radians(az),off) for t in (30,45,60) for az,off 
 if __name__=="__main__":
     name,out=sys.argv[1],sys.argv[2]; CROSS=name.endswith("x"); base=name[:-1] if CROSS else name
     o=make(base); os.makedirs(out,exist_ok=True)
-    if base in ("ccable","wood3r","banana"): CENTER=lambda v: o.axis(v)
-    if base=="banana": NFRAME=lambda sv: o.frame(sv)
+    if base in ("ccable","wood3r","banana","wood5"): CENTER=lambda v: o.axis(v)
+    if base in ("banana","wood5"): NFRAME=lambda sv: o.frame(sv)
     lin=torch.arange(N,device=dv,dtype=torch.float32)-C
     A,B,Cc=torch.meshgrid(lin,lin,lin,indexing="ij"); P=torch.stack([A,B,Cc],-1).reshape(-1,3)
     sd=o.sdf(P); occ=(sd<0)
@@ -349,11 +376,12 @@ if __name__=="__main__":
     planes=dict(ext=ext,h0=h0,h1=h1,long=[],trans=[])
     for d in ("spl_long","spl_trans","polar_spl_trans"): os.makedirs(f"{out}/{d}",exist_ok=True)
     spec=lambda k: make(base,seed=k) if CROSS else o                      # cross-specimen: input k from specimen k+1
-    for k,th in enumerate(TRAIN_TH):
-        save(render(spec(1+k),plane_points(ext,("long",th,0.0))),f"{out}/spl_long/{k:02d}.png"); planes["long"].append([th,0.0])
-    NORMAL=(base=="banana")
+    LONGP=[(0.0,-12.0),(0.0,0.0),(0.0,12.0)] if base=="laminate" else [(th,0.0) for th in TRAIN_TH]   # a laminate is cut across its sheets
+    for k,(th,off) in enumerate(LONGP):
+        save(render(spec(1+k),plane_points(ext,("long",th,off))),f"{out}/spl_long/{k:02d}.png"); planes["long"].append([th,off])
+    NORMAL=base in ("banana","wood5"); HALF=getattr(o,"L",getattr(o,"H",0))
     for k,q in enumerate(TRAIN_HQ):
-        h=h0+(h1-h0)*q; sp=("ntrans",(2*q-1)*o.L*0.8) if NORMAL else ("trans",h)
+        h=h0+(h1-h0)*q; sp=("ntrans",(2*q-1)*HALF*0.8) if NORMAL else ("trans",h)
         im=render(spec(4+k),plane_points(ext,sp))
         save(im,f"{out}/spl_trans/{k:02d}.png"); planes["trans"].append(h); planes.setdefault("ntrans",[]).append(sp[1] if NORMAL else None)
         Image.fromarray((polar(im.reshape(RES,RES,3).cpu().numpy())*255).astype(np.uint8)).save(f"{out}/polar_spl_trans/{k:02d}.png")
@@ -365,8 +393,8 @@ if __name__=="__main__":
             for i,th in enumerate(TEST_TH): save(render(ok,plane_points(ext,("long",th,0.0))),f"{out}/hld_long/{k}_{i}.png")
             for i,q in enumerate(TEST_HQ): save(render(ok,plane_points(ext,("trans",h0+(h1-h0)*q))),f"{out}/hld_trans/{k}_{i}.png")
             for i,t in enumerate(TEST_OBL): save(render(ok,plane_points(ext,("obl",)+t)),f"{out}/hld_obl/{k}_{i}.png")
-    json.dump(dict(object=name,kind="box" if base in ("cake","honeycomb") else "revolve",cross=CROSS),open(f"{out}/meta.json","w"))
-    if hasattr(o,"axis") and base in ("wood3","wood4","ccable","wood3r","banana"):          # the declared centreline (user input for curvilinear)
+    json.dump(dict(object=name,kind="box" if base in ("cake","honeycomb","laminate") else "revolve",cross=CROSS),open(f"{out}/meta.json","w"))
+    if hasattr(o,"axis") and base in ("wood3","wood4","ccable","wood3r","banana","wood5"):          # the declared centreline (user input for curvilinear)
         vs=np.linspace(-64,64,129); cxz=[o.axis(torch.tensor([float(v)],device=dv)) for v in vs]
         json.dump(dict(v=vs.tolist(),cx=[float(a) for a,_ in cxz],cz=[float(b) for _,b in cxz]),open(f"{out}/centerline.json","w"))
     print(name,"ext",round(ext,1),"core",int(core.sum()))

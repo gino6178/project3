@@ -18,6 +18,11 @@ M=int(os.environ.get("NC","256"))
 T=1000; ab=torch.cumprod(1-torch.linspace(1e-4,0.02,T,device=dv),0)
 T0=float(os.environ.get("T0","0.3")); NSTEP=int(os.environ.get("NSTEP","100")); DCFIX=float(os.environ.get("DCFIX","16")); BS=int(os.environ.get("BS","8"))
 OUT=os.environ["OUT"]; os.makedirs(OUT,exist_ok=True)
+# The declared orientation (section 3.3): which vertical families the longitudinal photographs describe.
+# FAMS=xy (default) -- both, an object whose vertical cuts all look alike; FAMS=x -- only the planes of fixed
+# u1, the ones a laminate with its sheets normal to u0 shows its stripes on (the other vertical family, its
+# sheets' faces, is left to the intersections).
+FAMS=os.environ.get("FAMS","xy")
 def load(p,mult):
     m=UNet2D(64,mult).to(dv); d=torch.load(p,map_location=dv); m.load_state_dict(d if "sd" not in d else d["sd"]); m.eval(); return m
 HAVE_L=os.environ.get("CKV","none")!="none"; HAVE_T=os.environ.get("CKH","none")!="none"
@@ -60,8 +65,8 @@ x=ab[iT].sqrt()*A0+(1-ab[iT]).sqrt()*efix; t0=time.time()
 for i,(tc,tn) in enumerate(zip(ts[:-1],ts[1:])):
     ests=[]
     if HAVE_L:
-        ests.append(fromX(x0of(MV,toX(x).contiguous(),live[1],tc)))
-        ests.append(fromY(x0of(MV,toY(x).contiguous(),live[2],tc)))
+        if "x" in FAMS: ests.append(fromX(x0of(MV,toX(x).contiguous(),live[1],tc)))
+        if "y" in FAMS: ests.append(fromY(x0of(MV,toY(x).contiguous(),live[2],tc)))
     if HAVE_T: ests.append(fromT(x0of(MT,toT(x).contiguous(),live[0],tc)))
     x0=sum(ests)/len(ests) if ests else A0
     if LP is not None: x0=x0-blur3(x0,DCFIX)+LP

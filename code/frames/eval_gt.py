@@ -22,7 +22,9 @@ D=sys.argv[1]; R=256
 G=torch.load(f"{D}/grid.pt",map_location=dv); N=G["N"]; C=(N-1)/2
 PJ=json.load(open(f"{D}/planes.json")); ext,h0,h1=PJ["ext"],PJ["h0"],PJ["h1"]
 name=json.load(open(f"{D}/meta.json"))["object"]
-if name in ("ccable","wood3r"): _o=S.make(name); S.CENTER=lambda v: _o.axis(v)   # its lengthwise cuts follow the centreline
+if name in ("ccable","wood3r","wood5"): _o=S.make(name); S.CENTER=lambda v: _o.axis(v)   # its lengthwise cuts follow the centreline
+NORMAL=name in ("wood5",)
+if NORMAL: S.NFRAME=lambda sv: _o.frame(sv)                                           # and it is sliced normal to its axis
 arms={"carrier":torch.load(f"{D}/carrier.pt",map_location=dv)["V"].float()}
 for a in sys.argv[2:]:
     n,p=a.split("=",1)
@@ -32,7 +34,7 @@ def cut(X,spec):
     P=S.plane_points(ext,spec,R)+C
     q=torch.stack([P[:,2],P[:,1],P[:,0]],-1)/(N-1)*2-1
     return F.grid_sample(X[None],q[None,None,None],mode="bilinear",padding_mode="border",align_corners=True)[0,:,0,0].T.reshape(R,R,X.shape[0])
-planes=[("trans",("trans",h0+(h1-h0)*q)) for q in S.TEST_HQ]+[("long",("long",th,0.0)) for th in S.TEST_TH]+[("obl",("obl",)+t) for t in S.TEST_OBL]
+planes=[("trans",("ntrans",(2*q-1)*_o.H*0.8) if NORMAL else ("trans",h0+(h1-h0)*q)) for q in S.TEST_HQ]+[("long",("long",th,0.0)) for th in S.TEST_TH]+[("obl",("obl",)+t) for t in S.TEST_OBL]
 import lpips; LP=lpips.LPIPS(net="alex",verbose=False).to(dv)
 from dreamsim import dreamsim; DS,DSP=dreamsim(pretrained=True,device=dv,cache_dir=os.path.expanduser("~/dreamsim_ckpt"))
 from PIL import Image
@@ -132,8 +134,10 @@ for i,(fam,spec) in enumerate(planes):
             thg=torch.atan2(gy_,gx_); th_a2,_=orient(im); d=(th_a2-thg).abs()%math.pi; d=torch.minimum(d,math.pi-d); wg=gn*m
             res[a][fam]["gorient"].append(float((d*wg).sum()/wg.sum().clamp(min=1e-6))*180/math.pi)
             if fam=="trans":
-                o=S.make(name[:-1] if name.endswith("x") else name); hv=torch.tensor([spec[1]],device=dv); cxv,czv=o.axis(hv)
-                gxp,gyp=(float(cxv)+ext)/(2*ext)*(R-1),(float(czv)+ext)/(2*ext)*(R-1)
+                o=S.make(name[:-1] if name.endswith("x") else name); hv=torch.tensor([spec[1]],device=dv)
+                if spec[0]=="ntrans": gxp=gyp=(R-1)/2                                       # a normal slice is centred on the axis
+                else:
+                    cxv,czv=o.axis(hv); gxp,gyp=(float(cxv)+ext)/(2*ext)*(R-1),(float(czv)+ext)/(2*ext)*(R-1)
                 cx,cy=centre_ls(im,m); res[a][fam]["ringc"].append(min(math.hypot(cx-gxp,cy-gyp)/px_per_vox,50.0))
                 pg=radial_period(gt,gxp,gyp); pa_=radial_period(im,cx,cy); res[a][fam]["rings"].append(abs(pa_-pg)/pg)
             if name.startswith("wood4") or name=="wood2k":
