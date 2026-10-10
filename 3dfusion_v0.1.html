@@ -487,7 +487,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 <tr><td>generated trunks, same specimen (wood1, wood2, wood2k, wood3, wood4)</td><td>3-D reconstruction correctness on unseen and oblique planes</td><td>the full 3-D volume and its growth field</td><td>sections&nbsp;4.6, 4.8</td></tr>
 <tr><td>stress tests (wood3r, honeycomb, multilayer hose, rolled sheet, layer cake)</td><td>where the coordinate assumption holds and where it breaks</td><td>the full 3-D volume</td><td>section&nbsp;4.7</td></tr>
 <tr><td>cross-specimen generated trunk (wood2x)</td><td>distributional synthesis, the paper&#8217;s own setting</td><td>held-out specimens on the same planes</td><td>section&nbsp;4.9</td></tr>
-<tr><td>generated objects (log, banana)</td><td>the capture path without a photographer; the curvilinear lattice on a natural curved object</td><td>held-out generated photographs</td><td>section&nbsp;4.10</td></tr>
+<tr><td>generated objects (log, banana, onion)</td><td>the capture path without a photographer; the curvilinear lattice on a natural curved object</td><td>held-out generated photographs</td><td>section&nbsp;4.10</td></tr>
 </tbody></table></div>
 
 <h3 id="gtbench">4.6&ensp;A benchmark with full 3-D truth</h3>
@@ -579,6 +579,24 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 
 <p>The curvilinear lattice is the best of the four (0.194), and the cylinder, whose single straight axis misses the bend, the worst (0.214, worse than the carrier). The translation-only frame again does not lose to the parallel-transported one (0.241 against 0.249 across). The Cartesian lattice keeps the lengthwise face, as on every straight-walled object. All arms stay far from the floor, and the reason is the frame: a banana is long and thin, so its cross-section occupies a small disc of a frame sized by its length &mdash; the canonical-frame limitation of section&nbsp;5.2.</p>
 
+<p><strong>An onion, and what the lift cannot see.</strong> A third generated object goes through the same path with no setting changed: an onion, whose interior is concentric white scales, thin and of very low contrast. Here the lift loses to the carrier.</p>
+
+<div class="tw"><p class="tnum">Table 12</p><table>
+<thead><tr><th>onion</th><th>lengthwise</th><th>across</th><th>mean</th></tr></thead>
+<tbody>
+<tr><td>photograph to photograph (floor)</td><td>0.036</td><td>0.120</td><td>0.078</td></tr>
+<tr><td>carrier</td><td><strong>0.220</strong></td><td><strong>0.259</strong></td><td><strong>0.240</strong></td></tr>
+<tr><td>cylinder</td><td>0.267</td><td>0.260</td><td>0.264</td></tr>
+<tr><td>Cartesian</td><td>0.255</td><td>0.331</td><td>0.293</td></tr>
+</tbody></table></div>
+
+<figure style="margin:16px 0 26px">
+  <img src="assets/v01_onion.png" style="width:100%;max-width:640px;margin:0 auto;display:block;border-radius:4px" alt="the onion: a held-out photograph, the carrier, the cylindrical and Cartesian lifts, lengthwise and across">
+  <figcaption><span class="fnum">Figure 17</span><br><strong>The onion&#8217;s scales.</strong> The carrier keeps the concentric scales as faint lines; the lifts keep the layout, the root and the skin and smooth the scales almost away. A scale is a thin, nearly white line on a white ground: a patch prior trained on three such photographs learns the flesh and barely the line.</figcaption>
+</figure>
+
+<p>The onion is the honeycomb&#8217;s failure in a natural object: a structure that is thin and of low contrast is under-weighted by a patch prior trained on so few photographs, and the lift, which replaces the carrier&#8217;s texture with the prior&#8217;s, removes it. The cylinder keeps the transverse face level with the carrier (0.260 against 0.259) and loses on the lengthwise face.</p>
+
 <h3>4.11&ensp;The carrier is a data term, and it is the paper&#8217;s</h3>
 
 <p>Two measurements on the orange bound what the carrier contributes. <em>Swapping it.</em> A deliberately weaker carrier &mdash; a single-level RGB grid fitted to the same planes with no latents, no decoder and no pose solve &mdash; scores 0.158 where the O-Voxel scores 0.113; lifted, it reaches 0.111&ndash;0.115 where the O-Voxel reaches 0.087. The lift improves both &mdash; by 0.026 from the O-Voxel and by 0.043&ndash;0.047 from the weaker carrier, more where the carrier leaves more to fix &mdash; so the product of experts does its work whatever carrier it is given; but the asset inherits the carrier&#8217;s layout, and the lifted weaker carrier (0.111) does not reach the lifted O-Voxel (0.087), which is why the O-Voxel stays. <em>Re-fitting it.</em> The released carrier re-scores at 0.1481 / 0.0769 / 0.1125, the paper&#8217;s numbers to the third decimal. Fitted again from the repository&#8217;s default configuration it scores 0.159 / 0.099 / 0.129, at 200 iterations and at 325 alike; the released model was most likely fitted to a different selection of longitudinal and transverse photographs than the default configuration names, and that selection is what Table&nbsp;1&#8217;s carrier row depends on. The priors retrained from the photographs reproduce the lift within 0.004 (0.089&ndash;0.091 over three runs, against 0.087).</p>
@@ -603,6 +621,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
   <li><strong>The axis and the frame.</strong> The polar axis is a declaration read from the occupancy; the bread&#8217;s is horizontal and the convention does not follow it. The canonical frame assumes an object that fills its own bounding square at 82%; a long loaf does not.</li>
   <li><strong>The resampling floor.</strong> The carrier&#8217;s own planes lose 7&ndash;17% of fine texture through one write-and-read of the grid, at 128<sup>3</sup> and at 256<sup>3</sup> alike: it is the tent filters of the write and the read, not the resolution. What the prior generates in-plane exceeds what the asset holds by that much, and the asset&#8217;s interior cells are coarse. Interior cells at the fine level and a write without a tent filter are the route past it.</li>
   <li><strong>Rings in distribution, not in place.</strong> Against a known growth field the lift&#8217;s rings are sharper than the carrier&#8217;s but no better placed on perturbed and curved trunks (Table&nbsp;8). Where voxel-wise placement matters, the carrier&#8217;s layout must carry it.</li>
+  <li><strong>Thin, low-contrast structure.</strong> The onion&#8217;s scales are drawn by the carrier and smoothed away by the lift (Table&nbsp;12, Figure&nbsp;17): a patch prior trained on two or three photographs under-weights a thin line of nearly the ground&#8217;s colour, and the lift then scores below the carrier it started from.</li>
   <li><strong>A layout the carrier has not caught.</strong> The honeycomb&#8217;s cell walls are absent from the carrier and from every lift: a patch prior adds texture under a layout and does not invent one (Figure&nbsp;13). The same holds for discrete compact structures in general, as the watermelon&#8217;s seeds showed.</li>
   <li><strong>The cylinder&#8217;s longitudinal bands.</strong> On straight trunks the Cartesian lattice&#8217;s longitudinal faces are at least as good as the cylinder&#8217;s, which keep faint bands from denoising each transverse plane alone (section&nbsp;4.7).</li>
   <li><strong>Curvilinear frames.</strong> On every curved object measured the translation-only frame is at least as good as the parallel-transported one: on the arc-bent trunk, whose transverse photographs are horizontal cuts (section&nbsp;4.7), and on the banana, whose slices are cut across it but whose bend is gentle (section&nbsp;4.10). A strongly bent object sliced normal to its axis, where the transported frame should earn its exactness, has not been measured.</li>
