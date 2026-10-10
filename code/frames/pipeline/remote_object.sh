@@ -9,6 +9,9 @@
 #     ov2grid: converted finer than the lattice's interior cells, every other voxel stays empty (white)
 #   - the priors read only photographs, so they train alongside the carrier, one at a time per GPU
 #   - a curved object's lengthwise prior for the curvilinear lattices is trained on straightened photographs
+#   - the carrier's checkpoints (4-5 GB each) are deleted once it is trained: a batch of objects filled the disk
+#   - local_object.sh submits a generated object as ai_<name>, so it cannot collide with a synthetic solid's
+#     run of the same name (run.sh skips training when a model of that name exists)
 set -u
 o=$1; G=$2; D=~/ov/$o; PY=~/env/bin/python; FPY=~/p3build/mc/envs/fn/bin/python; FR=~/repro/frames
 export FN_ROOT=~/p3work GS_ROOT=~/p3build/gaussian-splatting FN_PY=$FPY GPU=$G CUDA_VISIBLE_DEVICES=$G
@@ -31,6 +34,7 @@ printf 'SRC=prefilled/new/%s.ply\nCOARSE_DX=%s\nCFG=config/orange_physics.json\n
 cd ~/p3paper; for st in geometry exterior phases train; do bash code/run.sh $o $st >> $D/ov_run.log 2>&1; done
 PLY=~/p3work/$o/orange_demo_epoch_199.ply; [ -f $PLY ] || { say "NO CARRIER"; exit 1; }
 say "carrier trained"
+rm -rf ~/p3work/$o/ckpt ~/p3work/$o/snap ~/p3work/$o/progress        # 4-5 GB of checkpoints per object; the trained PLY is kept
 cd ~/repro/code
 [ -f $D/carrier.pt ] || { PLY=$PLY META=~/p3work/build_$o/lattice N=128 DEV=cuda:0 OUT=$D/ovgrid.pt $PY voxelize_ov.py > $D/voxov.log 2>&1
                           $PY $FR/ov2grid.py $D/grid.pt $D/gsply.json $D/ovgrid.pt $D/carrier.pt > $D/ov2grid.log 2>&1; }

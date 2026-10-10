@@ -47,6 +47,8 @@ held-out DreamSim (`dsscore.py`, `dsrun.py`) and, for a curved object, the same 
 | a generated mesh's up running opposite to a lengthwise face's rows: every photograph fitted upside down | `glb2grid.py` mirrors the mesh in y |
 | a job "still running" forever: `pgrep -f` matching its own command line | a pid file |
 | three priors on one GPU at once, each twice as slow; objects pinned to GPUs | one prior at a time per GPU, a shared queue |
+| a batch of 18 objects filled the 291 GB disk with carrier checkpoints | checkpoints deleted once the carrier is trained |
+| a generated honeycomb reused a synthetic honeycomb's trained carrier (same run name) | generated objects run remotely as `ai_<name>` |
 
-Results land in `~/ov/<o>/`: `score.log` (flat protocol), `curved_scores.json` (curved objects),
+Results land in `~/ov/ai_<o>/`: `score.log` (flat protocol), `curved_scores.json` (curved objects),
 `pipeline.log` (stages and times); the cut animation in `~/show/<o>_<arm>.gif`.

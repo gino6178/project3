@@ -47,9 +47,10 @@ rm -rf $EXTR/$o/raw; cp -r $ROOT/$o/raw $EXTR/$o/raw; cp $ROOT/REJECT.txt $EXTR/
 CUDA_VISIBLE_DEVICES= GRID=$G STRAIGHTEN=$ST $PYL $FR/prep_ai.py $EXTR $o
 [ "$CURVED" = 1 ] && cp $EXTR/$o/centerline.json $EXTR/$o/centerline.json 2>/dev/null || true
 # 5 submit
-TGZ=/tmp/${o}_obj.tgz; (cd $EXTR && tar czf $TGZ $(cd $EXTR && ls -d $o/grid.pt $o/meta.json $o/spl_* $o/hld_* $o/polar_spl_trans $o/centerline.json 2>/dev/null))
+R=ai_$o                                     # the remote name: never the same as a synthetic solid's
+TGZ=/tmp/${R}_obj.tgz; rm -rf /tmp/$R && mkdir -p /tmp/$R && (cd $EXTR/$o && cp -r $(ls -d grid.pt meta.json spl_* hld_* polar_spl_trans centerline.json 2>/dev/null) /tmp/$R/) && (cd /tmp && tar czf $TGZ $R)
 gcloud compute instances start p3-train-4g --zone $ZG >/dev/null 2>&1 || true
 until timeout 60 gcloud compute ssh p3-train-4g --zone $ZG --command true >/dev/null 2>&1; do sleep 15; done
 gcloud compute scp $TGZ $H/remote_object.sh $FR/eval_curved.py $FR/x3dcurv.py $FR/x3dcurv2.py $FR/x3dcart.py $FR/train_prior.py $FR/make_gsply.py $FR/ov2grid.py $FR/grid2ov.py $FR/showcase.sh $H/sched_ai.sh p3-train-4g:~/ --zone $ZG >/dev/null 2>&1
-timeout 120 gcloud compute ssh p3-train-4g --zone $ZG --command "mkdir -p ~/ov ~/repro/frames && cp ~/remote_object.sh ~/eval_curved.py ~/x3dcurv.py ~/x3dcurv2.py ~/x3dcart.py ~/train_prior.py ~/make_gsply.py ~/ov2grid.py ~/grid2ov.py ~/showcase.sh ~/sched_ai.sh ~/repro/frames/ && cp ~/make_gsply.py ~/ov2grid.py ~/ov/ && tar xzf ~/${o}_obj.tgz -C ~/ov/ && until mkdir ~/ov/.lock 2>/dev/null; do sleep 1; done; echo $o >> ~/ov/queue.txt; rmdir ~/ov/.lock; ( [ -f ~/ov/sched_ai.pid ] && kill -0 \$(cat ~/ov/sched_ai.pid) 2>/dev/null ) || (setsid nohup bash ~/repro/frames/sched_ai.sh > /dev/null 2>&1 < /dev/null &)" >/dev/null 2>&1 || true
-say "queued on p3-train-4g; progress in ~/ov/$o/pipeline.log, results in ~/ov/$o/score.log (and curved_scores.json), the cut animation in ~/show/"
+timeout 120 gcloud compute ssh p3-train-4g --zone $ZG --command "mkdir -p ~/ov ~/repro/frames && cp ~/remote_object.sh ~/eval_curved.py ~/x3dcurv.py ~/x3dcurv2.py ~/x3dcart.py ~/train_prior.py ~/make_gsply.py ~/ov2grid.py ~/grid2ov.py ~/showcase.sh ~/sched_ai.sh ~/repro/frames/ && cp ~/make_gsply.py ~/ov2grid.py ~/ov/ && tar xzf ~/${R}_obj.tgz -C ~/ov/ && until mkdir ~/ov/.lock 2>/dev/null; do sleep 1; done; echo $R >> ~/ov/queue.txt; rmdir ~/ov/.lock; ( [ -f ~/ov/sched_ai.pid ] && kill -0 \$(cat ~/ov/sched_ai.pid) 2>/dev/null ) || (setsid nohup bash ~/repro/frames/sched_ai.sh > /dev/null 2>&1 < /dev/null &)" >/dev/null 2>&1 || true
+say "queued on p3-train-4g as $R; progress in ~/ov/$R/pipeline.log, results in ~/ov/$R/score.log (and curved_scores.json), the cut animation in ~/show/"
