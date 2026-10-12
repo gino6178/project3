@@ -18,6 +18,9 @@
 #   wood5   wood2 bent strongly (radius 60, ~96 deg), thinner, and SLICED NORMAL to its axis (parallel transport)
 #   laminate  a block of vertical veneer sheets (layer normal along u0)          (planar, not about the axis: Cartesian)
 #   roll    a sheet rolled into a spiral: kraft paper with a printed face       (rolled material, axial)
+#   sroll   the rolled sheet as a Swiss roll: sponge, cream, crust (colours from aiobj/swissroll)
+#   smaki   the multilayer axial solid as a maki roll: nori, rice, five filling prisms (aiobj/maki)
+#   honeycomb2  the honeycomb with 13-voxel cells, translucent walls, empty cells (columnar: Cartesian)
 #   banana  a banana bent along an arc, its cross-sections turning with it, and SLICED as a banana
 #           is -- normal to its own axis                                        (curved axial: parallel transport)
 #
@@ -307,12 +310,88 @@ class CCable(Cable):
     def color(s,P):
         Q=s.straight(P); Q=torch.stack([Q[:,0]*s.R/(s.R-8),Q[:,1],Q[:,2]*s.R/(s.R-8)],1); return Cable.color(s,Q)
 
+
+class SwissRoll:
+    """The rolled sheet as food: a sponge sheet spread with cream and rolled into one Archimedean spiral,
+    its baked face a thin golden line and the outside a crust.  Colours from the generated Swiss-roll
+    photographs (aiobj/swissroll): sponge, cream, crust."""
+    R=42.0; H=40.0
+    def __init__(s,seed=0): s.seed=seed; s.pitch=12.5; s.r0=3.0; s.cream=3.6
+    def sdf(s,P): return torch.maximum(torch.sqrt(P[:,0]**2+P[:,2]**2)-s.R,P[:,1].abs()-s.H)
+    def color(s,P):
+        x,v,z=P[:,0],P[:,1],P[:,2]; r=torch.sqrt(x*x+z*z); ph=torch.atan2(z,x)
+        rw=r+1.2*noise(s.seed,P,12.0,(1,3,1))                                       # a hand-rolled spiral, not a lathe
+        u=((rw-s.r0)/s.pitch-ph/(2*math.pi))%1.0*s.pitch                             # depth into one turn, voxels
+        cw=s.cream*(1+0.35*noise(s.seed+1,P,9.0,(1,3,1)))                            # the cream spread unevenly
+        sponge=mix(col(240,222,176),col(232,203,140),noise(s.seed+2,P,2.5)*0.5+0.5)
+        sponge=mix(sponge,col(214,186,124),0.5*(noise(s.seed+3,P,0.7,oct=2)>0.45).float())   # crumb pores
+        cream=mix(col(250,246,236),col(238,232,218),noise(s.seed+4,P,3.0)*0.5+0.5)
+        c=mix(sponge,cream,1-sstep(cw-0.5,cw+0.5,u))
+        c=mix(c,col(223,176,99),sstep(s.pitch-1.4,s.pitch-0.8,u))                    # the baked face, against the next turn's cream
+        c=torch.where((rw<s.r0+1.5)[:,None],cream,c)                                 # the curl of cream at the centre
+        return mix(c,mix(col(200,140,70),col(176,112,52),noise(s.seed+5,P,1.5)*0.5+0.5),sstep(s.R-1.8,s.R-1.2,r))   # crust
+
+class Maki:
+    """The multilayer axial solid as food: a maki roll -- a nori skin, a thick annulus of rice grains, and
+    five fillings running the length of the roll as prisms (tamago, salmon, tuna, cucumber, avocado).
+    Colours from the generated maki photographs (aiobj/maki)."""
+    R=40.0; H=44.0
+    def __init__(s,seed=0): s.seed=seed
+    def sdf(s,P): return torch.maximum(torch.sqrt(P[:,0]**2+P[:,2]**2)-s.R,P[:,1].abs()-s.H)
+    def color(s,P):
+        x,v,z=P[:,0],P[:,1],P[:,2]
+        x=x+0.8*noise(s.seed,P,16.0,(1,4,1)); z=z+0.8*noise(s.seed+1,P,16.0,(1,4,1)); r=torch.sqrt(x*x+z*z)
+        g=noise(s.seed+2,P,0.6,(1,1.8,1),oct=2)                                       # rice grains and the gaps between them
+        rice=mix(col(236,232,226),col(206,203,198),(g*0.5+0.5)); rice=mix(rice,col(160,156,150),sstep(0.35,0.6,-g)*0.8)
+        c=rice
+        K=1.8                                                                          # the fillings fill the centre, as in the photographs
+        def box(cx,cz,hw,hd,a): ca,sa=math.cos(a),math.sin(a); X=(x-K*cx)*ca+(z-K*cz)*sa; Z=-(x-K*cx)*sa+(z-K*cz)*ca; return torch.maximum(X.abs()-K*hw,Z.abs()-K*hd),X/K,Z/K
+        d,X,Z=box(-7.0,7.0,6.0,5.0,0.2)                                                # tamago, faint folds
+        tam=mix(col(236,208,112),col(222,190,92),(torch.sin(Z*1.6)>0.6).float()*0.6); c=mix(c,tam,1-sstep(-0.4,0.4,d))
+        d,X,Z=box(7.5,-3.0,5.0,7.0,-0.3)                                               # salmon, white fat lines
+        sal=mix(col(232,112,48),col(214,92,32),noise(s.seed+3,P,3.0)*0.5+0.5); sal=mix(sal,col(240,200,180),(torch.sin((X+Z)*1.3)>0.82).float())
+        c=mix(c,sal,1-sstep(-0.4,0.4,d))
+        d,X,Z=box(-6.0,-8.0,5.5,4.5,0.5)                                               # tuna
+        c=mix(c,mix(col(176,44,52),col(140,30,40),noise(s.seed+4,P,2.5)*0.5+0.5),1-sstep(-0.4,0.4,d))
+        dc=torch.sqrt((x-K*6.5)**2+(z-K*8.5)**2)/K                                           # cucumber: skin, flesh, seeds
+        cuc=mix(col(170,196,120),col(150,180,100),noise(s.seed+5,P,1.5)*0.5+0.5); cuc=mix(cuc,col(40,84,40),sstep(3.3,3.8,dc))
+        c=mix(c,cuc,1-sstep(4.3,4.8,dc))
+        d,X,Z=box(0.5,1.0,2.6,3.6,0.9)                                                 # avocado
+        c=mix(c,mix(col(150,176,70),col(196,200,96),sstep(-2.6,2.6,X)),1-sstep(-0.4,0.4,d))
+        nori=mix(col(28,34,26),col(46,54,40),noise(s.seed+6,P,1.0)*0.5+0.5)
+        return mix(c,nori,sstep(s.R-2.6,s.R-2.0,r))
+
+class Honeycomb2:
+    """The honeycomb with cells a lift can resolve: hexagonal cells about 13 voxels across, translucent
+    wax walls, honey varying in depth from cell to cell, and some cells empty -- columnar, no centre."""
+    W=40.0; H=40.0
+    def __init__(s,seed=0):
+        s.seed=seed; rng=np.random.default_rng(seed); s.a=float(rng.uniform(0,math.pi/3)); s.o=rng.uniform(0,20,2); s.cell=13.0
+    def sdf(s,P): return torch.stack([P[:,0].abs()-s.W,P[:,2].abs()-s.W,P[:,1].abs()-s.H]).max(0).values
+    def color(s,P):
+        x,v,z=P[:,0],P[:,1],P[:,2]
+        X=math.cos(s.a)*x+math.sin(s.a)*z+float(s.o[0]); Z=-math.sin(s.a)*x+math.cos(s.a)*z+float(s.o[1])
+        X=X+0.7*noise(s.seed,P,14.0,(1,4,1)); Z=Z+0.7*noise(s.seed+1,P,14.0,(1,4,1))
+        q=torch.stack([X,Z],1)/s.cell; Mi=torch.tensor([[1.0,-1/math.sqrt(3)],[0.0,2/math.sqrt(3)]],device=dv)
+        f=q@Mi.T; i=f.floor(); M=torch.tensor([[1.0,0.5],[0.0,math.sqrt(3)/2]],device=dv)
+        best=torch.full((len(P),),1e9,device=dv); sec=best.clone(); idx=torch.zeros(len(P),2,device=dv)
+        for di in (-1,0,1,2):
+            for dj in (-1,0,1,2):
+                ij=i+torch.tensor([di,dj],device=dv,dtype=torch.float32); c=ij@M.T; d=(q-c).norm(dim=1)
+                closer=d<best; sec=torch.where(closer,best,torch.minimum(sec,d)); idx=torch.where(closer[:,None],ij,idx); best=torch.minimum(best,d)
+        h=torch.frac(torch.sin(idx[:,0]*12.9898+idx[:,1]*78.233)*43758.5453).abs()   # one random number per cell
+        honey=mix(col(226,150,30),col(170,92,14),h); honey=mix(honey,col(120,62,10),best*1.1)  # deeper towards the cell centre
+        honey=mix(honey,col(236,198,120),(h>0.86).float())                             # empty cells, bare wax
+        wall=1-sstep(0.9,1.5,(sec-best)*s.cell)
+        c=mix(honey,mix(col(248,226,160),col(232,206,136),noise(s.seed+2,P,3.0)*0.5+0.5),wall)
+        return mix(c,col(240,214,146),sstep(s.H-4,s.H-2.5,v.abs()))                   # wax caps
+
 def make(name,seed=0):
     if name=="wood2k": return Wood(2,seed,knots=True)
     if name=="wood3r": return Wood(2,seed,rotbend=True)
     if name=="wood5": return Wood(2,seed,rotbend=True,Rb=60.0,R=28.0,H=50.0)
     if name.startswith("wood"): return Wood(int(name[4]),seed)
-    return {"cake":Cake,"cable":Cable,"honeycomb":Honeycomb,"hose":Hose,"ccable":CCable,"roll":Roll,"banana":Banana,"laminate":Laminate}[name](seed)
+    return {"cake":Cake,"cable":Cable,"honeycomb":Honeycomb,"hose":Hose,"ccable":CCable,"roll":Roll,"sroll":SwissRoll,"smaki":Maki,"honeycomb2":Honeycomb2,"banana":Banana,"laminate":Laminate}[name](seed)
 def render(o,P):
     sd=o.sdf(P); out=torch.ones(len(P),3,device=dv); m=sd<0
     if m.any(): out[m]=o.color(P[m])
@@ -393,7 +472,7 @@ if __name__=="__main__":
             for i,th in enumerate(TEST_TH): save(render(ok,plane_points(ext,("long",th,0.0))),f"{out}/hld_long/{k}_{i}.png")
             for i,q in enumerate(TEST_HQ): save(render(ok,plane_points(ext,("trans",h0+(h1-h0)*q))),f"{out}/hld_trans/{k}_{i}.png")
             for i,t in enumerate(TEST_OBL): save(render(ok,plane_points(ext,("obl",)+t)),f"{out}/hld_obl/{k}_{i}.png")
-    json.dump(dict(object=name,kind="box" if base in ("cake","honeycomb","laminate") else "revolve",cross=CROSS),open(f"{out}/meta.json","w"))
+    json.dump(dict(object=name,kind="box" if base in ("cake","honeycomb","honeycomb2","laminate") else "revolve",cross=CROSS),open(f"{out}/meta.json","w"))
     if hasattr(o,"axis") and base in ("wood3","wood4","ccable","wood3r","banana","wood5"):          # the declared centreline (user input for curvilinear)
         vs=np.linspace(-64,64,129); cxz=[o.axis(torch.tensor([float(v)],device=dv)) for v in vs]
         json.dump(dict(v=vs.tolist(),cx=[float(a) for a,_ in cxz],cz=[float(b) for _,b in cxz]),open(f"{out}/centerline.json","w"))
