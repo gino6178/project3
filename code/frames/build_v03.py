@@ -39,11 +39,12 @@ PRINT='''  /* print: a paper -- A4, 9.5pt, the main text in two columns with fig
     figure,.tw,table,.eq,div[style*="monospace"]{break-inside:avoid} figcaption,p.mut{break-before:avoid} h2,h3,p.sub-t{break-after:avoid}
     .tw{overflow:visible;margin:8px 0} table{font-size:7.6pt;width:100%} td,th{padding:2px 4px;overflow-wrap:anywhere}
     figure img{max-height:100mm;width:auto;max-width:100%;margin:0 auto;object-fit:contain}
-    .teaser{grid-template-columns:2.2fr 1fr!important} .teaser img{max-height:62mm;width:auto;max-width:100%;margin:0 auto}
-    .cutstrip{display:none} h2.appendix{break-before:page} .appendix-all{font-size:9pt} }
-  .teaser{display:grid;grid-template-columns:1.9fr 1fr;gap:14px;align-items:center}
+    .teaser{grid-template-columns:1fr!important} .teaser img{max-height:48mm;width:auto;max-width:100%;margin:0 auto}
+    .cutstrip,.webonly{display:none!important} .printonly{display:block!important} h2.appendix{break-before:page} .appendix-all{font-size:9pt} }
+  .teaser{display:grid;grid-template-columns:3fr 1fr;gap:14px;align-items:center}
   @media(max-width:760px){.teaser{grid-template-columns:1fr}}
   p.sub-t{font-weight:600;margin:16px 0 6px}
+  .printonly{display:none}
   h2.appendix{border-top:2px solid #ddd;padding-top:22px;margin-top:56px}
 </style>'''
 head=edit(head,"</style>",PRINT)
@@ -53,8 +54,9 @@ toc=('<nav class="toc">\n  <a href="#abstract">Abstract</a><a href="#intro">1 In
 cap1=re.search(r'<strong>The asset read at every angle.</strong>(.*?)</figcaption>',one(119)).group(1)
 cap2=re.search(r'<strong>One method, a canonical coordinate per structure.</strong>(.*?)</figcaption>',one(124)).group(1)
 teaser=f'''<figure style="margin:14px 0 26px">
-  <div class="teaser"><img src="assets/v01_overview.png" alt="three objects and three canonical coordinate systems: a layer cake in Cartesian coordinates, a tree trunk in cylindrical coordinates whose rings unwrap to parallel stripes, a banana straightened along its declared centreline"><img src="assets/v02_orange.gif" alt="the lifted orange: turned whole, then read by a longitudinal plane turning about the axis, a transverse plane sweeping and an oblique plane tilting"></div>
-  <figcaption><span class="fnum">Figure {{{{F:1}}}}</span><br><strong>A canonical coordinate per structure, and the asset it yields.</strong> <em>Left:</em>{cap2} <em>Right:</em>{cap1}</figcaption>
+  <img src="assets/v01_overview.png" alt="three objects and three canonical coordinate systems: a layer cake in Cartesian coordinates, a tree trunk in cylindrical coordinates whose rings unwrap to parallel stripes, a banana straightened along its declared centreline">
+  <div class="teaser" style="margin-top:10px"><img src="assets/v03_orange_strip.jpg" alt="the lifted orange whole, cut lengthwise, across and obliquely"><img class="webonly" src="assets/v02_orange.gif" alt="the lifted orange: turned whole, then read by a longitudinal plane turning about the axis, a transverse plane sweeping and an oblique plane tilting"></div>
+  <figcaption><span class="fnum">Figure {{{{F:1}}}}</span><br><strong>A canonical coordinate per structure, and the asset it yields.</strong> <em>Top:</em>{cap2} <em>Bottom:</em> four moments of the asset &mdash; whole, cut lengthwise, across and obliquely &mdash; and, on the web page, its animation.{cap1}</figcaption>
 </figure>
 '''
 abstract=g(127,140)
@@ -103,7 +105,7 @@ for k,nm in names.items():
 t9=g(549,552)
 t9b=t9   # the growth-field table, in Appendix D
 t2=('<div class="tw"><p class="tnum">Table {{T:7}}</p><p class="sub-t">DreamSim to the truth&#8217;s faces / volume L1</p><table>\n<thead><tr><th>object</th><th>carrier</th><th>cylinder</th><th>Cartesian</th><th>curvilinear</th></tr></thead>\n<tbody>'
-    +tb+'</tbody></table></div>\n<p class="mut" style="margin-top:-8px">DreamSim: the mean over the unseen heights, the unseen azimuths and the oblique planes. Volume L1: over the interior, colour in [0,1]. Both lower better. Every column is the paper&#8217;s carrier and priors; only the lattice differs; curvilinear is the parallel-transported frame, run where a centreline is declared. Every face kind, with orientation error, PSNR, SSIM and LPIPS, is in Appendix&nbsp;D.</p>\n')
+    +tb+'</tbody></table></div>\n<p class="mut" style="margin-top:-8px">DreamSim: the mean over the unseen heights, the unseen azimuths and the oblique planes. Volume L1: over the interior, colour in [0,1]. Both lower better; bold is the best of the row, DreamSim and L1 separately. Every column is the paper&#8217;s carrier and priors; only the lattice differs; curvilinear is the parallel-transported frame, run where a centreline is declared. Every face kind, with orientation error, PSNR, SSIM and LPIPS, is in Appendix&nbsp;D.</p>\n')
 p519=edit(one(519),"<p>Table&nbsp;{{T:8}} is the whole-volume view.","<p>Table&nbsp;{{T:7}} is also the whole-volume view, with the per-face numbers in Appendix&nbsp;D.")
 p534=edit(one(534),"<p>","<p><strong>The coordinate system follows the structure.</strong> ")
 p547=edit(one(547),"<p>","<p><strong>Structure, read from the growth field.</strong> ")
@@ -137,7 +139,7 @@ s43=("<h3>4.3&ensp;Diagnostics and ablations</h3>\n\n"+p376+"\n\n"+t2a+"\n"+t3b+
 # 4.4: the asset and its cost; the generated route
 fruit=('''<figure style="margin:20px 0 22px">
   <img src="assets/v02_fruit7.jpg" loading="lazy" style="width:100%;max-width:920px;margin:0 auto;display:block;border-radius:4px" alt="the seven objects as finished assets: exterior, lengthwise cut, cross-section and oblique cut">
-  <figcaption><span class="fnum">Figure {{F:fruit}}</span><br><strong>The seven objects as finished assets.</strong> '''+re.sub(r"<[^>]*>","",one(483)).replace("and below each turning and then cut as in Figure&nbsp;{{F:1}}","each turning and then cut in Appendix&nbsp;D").strip()+'''</figcaption>
+  <figcaption><span class="fnum">Figure {{F:fruit}}</span><br><strong>The seven objects as finished assets.</strong> '''+re.sub(r"<[^>]*>","",one(483)).replace("and below each turning and then cut as in Figure&nbsp;{{F:1}}","each turning and then cut in Appendix&nbsp;D").replace("the apple and the cake are shown as their carriers lie, on their sides: their carriers&#8217; interiors were fitted about a different axis than their captured exteriors, and a refit is under way.","the apple and the cake are shown in their carriers&#8217; orientation, their captured axes horizontal.").strip()+'''</figcaption>
 </figure>''')
 p465=one(465)
 p578=one(578)
@@ -167,15 +169,16 @@ refs=g(688,848)
 # ---- appendices
 apA=('<h2 class="appendix" id="appendix">Appendix A&ensp;The carrier lattice and the closed-form planar cut</h2>\n\n'
      +edit(g(211,214),"<h3>2.3&ensp;Surface extraction and dual grid encodings</h3>","<h3>A.1&ensp;Surface extraction and dual grid encodings</h3>")+"\n\n<h3>A.2&ensp;Pose-free supervision and the closed-form cut</h3>\n\n"+g(258,281)+"\n\n"+one(345))
-apB=('<h2 class="appendix">Appendix B&ensp;Notation, priors and the pipeline&#8217;s arrays</h2>\n\n<h3>B.1&ensp;Notation</h3>\n\n'+g(235,248)+"\n\n<h3>B.2&ensp;The priors</h3>\n\n"+one(339)+"\n\n<h3>B.3&ensp;The pipeline as arrays</h3>\n\n"+g(228,231)+"\n\n"+g(305,308))
+g6=g(305,308).replace(" (Figure&nbsp;{{F:6}})","")
+apB=('<h2 class="appendix">Appendix B&ensp;Notation, priors and the pipeline&#8217;s arrays</h2>\n\n<h3>B.1&ensp;Notation</h3>\n\n'+g(235,248)+"\n\n<h3>B.2&ensp;The priors</h3>\n\n"+one(339)+"\n\n<h3>B.3&ensp;The pipeline as arrays</h3>\n\n"+g(228,231)+"\n\n"+g6)
 apC=('<h2 class="appendix">Appendix C&ensp;Diagnostics: what went wrong on the way</h2>\n\n'+g(369,372)+"\n\n"+one(418)+"\n\n"+one(425)+"\n\n"+p625b)
-apD=('<h2 class="appendix">Appendix D&ensp;Full results</h2>\n\n<h3>D.1&ensp;Every real object, both families</h3>\n\n'+g(431,434)+"\n\n"+one(482).replace('<div class="cutstrip">','<div class="cutstrip" style="margin-top:12px">')+'\n<p class="mut" style="margin-top:-14px">The seven assets of Figure&nbsp;{{F:fruit}}, turning and then cut as in Figure&nbsp;{{F:1}}.</p>'
+apD=('<h2 class="appendix">Appendix D&ensp;Full results</h2>\n\n<h3>D.1&ensp;Every real object, both families</h3>\n\n'+g(431,434)+"\n\n"+one(482).replace('<div class="cutstrip">','<div class="cutstrip" style="margin-top:12px">')+'\n<p class="mut webonly" style="margin-top:-14px">The seven assets of Figure&nbsp;{{F:fruit}}, turning and then cut as in Figure&nbsp;{{F:1}}.</p>'
      +"\n\n<h3>D.2&ensp;The benchmark, every face kind</h3>\n\n"
      +re.sub(r"</?details[^>]*>|<summary[^>]*>.*?</summary>","",g(507,512),flags=re.S).replace('<div class="tw"><table>','<div class="tw"><p class="tnum">Table {{T:7full}}</p><table>',1)+"\n"
      +re.sub(r"</?details[^>]*>|<summary[^>]*>.*?</summary>","",g(525,530),flags=re.S).replace('<div class="tw"><table>','<div class="tw"><p class="tnum">Table {{T:8full}}</p><table>',1)+"\n\n"
      +"<h3>D.3&ensp;The strongly bent trunk, the longitudinal bands, the growth field</h3>\n\n"+one(536)+"\n\n"+g(538,541)+"\n\n"+one(543)+"\n\n"+t9b+"\n\n"+p554b
-     +"\n\n<h3>D.4&ensp;Cross-specimen inputs</h3>\n\n"+g(560,572)+"\n\n<h3>D.5&ensp;Generated objects</h3>\n\n"+p578+"\n\n"+g(580,581)+"\n\n"+p583+"\n\n"+g(587,596)+"\n\n"+one(629)+"\n\n"+g(631,647)+"\n\n"+one(649)+"\n\n"+g(651,657))
-apE=('<h2 class="appendix">Appendix E&ensp;Extended limitations and failures</h2>\n\n'+g(607,614)+"\n\n<ul>\n"+g(672,685)+"\n</ul>")
+     +"\n\n<h3>D.4&ensp;Cross-specimen inputs</h3>\n\n"+g(560,572)+"\n\n<h3>D.5&ensp;Generated objects</h3>\n\n"+p578+"\n\n"+one(580)+'\n<img class="printonly" src="assets/v03_log_strip.jpg" style="max-width:640px;margin:8px auto 20px" alt="the generated log, carrier and lift, at four moments of the cut">\n'+one(581).replace("Nothing is generated at cut time.","Nothing is generated at cut time. (In print, four moments of each.)")+"\n\n"+p583+"\n\n"+g(587,596)+"\n\n"+one(629)+"\n\n"+g(631,647)+"\n\n"+one(649)+"\n\n"+g(651,656)+'\n<img class="printonly" src="assets/v03_ai_strip.jpg" style="max-width:700px;margin:8px auto 20px" alt="four of the eleven assets, the transverse plane at five heights">\n'+one(657).replace("Nothing is generated at cut time.","Nothing is generated at cut time. In print: the transverse plane at five heights, for four of the objects."))
+apE=('<h2 class="appendix">Appendix E&ensp;Extended limitations and failures</h2>\n\n'+g(607,614)+"\n\n<ul>\n"+g(672,685)+"\n  <li><strong>The apple&#8217;s and the cake&#8217;s axes.</strong> Their carriers&#8217; interiors were fitted with the lattice&#8217;s vertical as the polar axis, while their captured exteriors lie along another axis; Figure&nbsp;{{F:fruit}} shows them in the carriers&#8217; orientation, and their numbers in Table&nbsp;{{T:4}} are for those carriers.</li>\n</ul>")
 foot=g(849,855)
 doc="\n\n".join([head,toc,teaser,'<div class="paper">',abstract,intro,related,m_head,m_lead,fig3,s31,s32,s33,s34,e_head,s41,s42,s43,s44,s45,s5,s6,"</div>",apA,apB,apC,apD,apE,refs,foot])
 # ---- numbering, by order of appearance
@@ -204,6 +207,24 @@ for a,b in [("sections&nbsp;3.1&ndash;B)","sections&nbsp;3.1&ndash;3.3)"),("(sec
             ("stationary, and section&nbsp;3.3 gives the","stationary, and section&nbsp;3.2 gives the"),("curved-axial interiors (section&nbsp;3.3)","curved-axial interiors (section&nbsp;3.2)"),
             ("canonical coordinate</em> (section&nbsp;3.3)","canonical coordinate</em> (section&nbsp;3.2)"),("Curvilinear is the parallel-transported frame of section&nbsp;3.3","Curvilinear is the parallel-transported frame of section&nbsp;3.2")]:
     assert a in doc,a; doc=doc.replace(a,b)
+APX=[(m.start(),m.group(1)) for m in re.finditer(r'<h2 class="appendix"[^>]*>Appendix ([A-E])',doc)]
+def where(pos):
+    w=None
+    for p0,l in APX:
+        if pos>p0: w=l
+    return w
+loc={}
+for m in re.finditer(r'<span class="fnum">Figure (\d+)</span>',doc): loc[("F",m.group(1))]=where(m.start())
+for m in re.finditer(r'<p class="tnum">Table (\d+)</p>',doc): loc[("T",m.group(1))]=where(m.start())
+cut=APX[0][0]; main,rest=doc[:cut],doc[cut:]
+def suffix(m):
+    kind="F" if m.group(1).startswith("Figure") else "T"; nums=re.findall(r"\d+",m.group(2)); l=loc.get((kind,nums[-1]))
+    if not l: return m.group(0)
+    before=main[max(0,m.start()-60):m.start()]
+    if f"Appendix&nbsp;{l}" in before: return m.group(0)
+    return m.group(0)+f" in Appendix&nbsp;{l}"
+main=re.sub(r"(Figures?|Tables?)&nbsp;(\d+(?:&ndash;\d+)?)(?![\d])",suffix,main)
+doc=main+rest
 assert "{{" not in doc, re.findall(r"\{\{[^}]*\}\}",doc)[:5]
 open(DST,"w").write(doc)
 print("figures",fn); print("tables",tn); print("equations",en)
