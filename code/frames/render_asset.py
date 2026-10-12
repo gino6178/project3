@@ -62,18 +62,20 @@ def render(az,el,plane=None,zoom=1.0):
             vol=((samp(V,torch.tensor(Pp[cand],device=dv,dtype=torch.float32))+1)/2).clamp(0,1).cpu().numpy()
             img[cand]=vol*(0.82+0.18*abs(float(n@LIGHT)))
     return (img.reshape(RES,RES,3)*255).astype(np.uint8)
+# the lengthwise still faces the viewer: its plane's normal 25 degrees off the camera's azimuth, the removed half toward it
+FACE=(np.array([math.cos(math.radians(35)),0.,math.sin(math.radians(35))]),0.0)
 frames=[]; stills=[]
-for k in range(12): frames.append(render(30+k*7.5,22))
-for k in range(24):
-    th=math.pi*k/24; frames.append(render(60,22,(np.array([-math.sin(th),0.,math.cos(th)]),0.0)))
-    if k==6: stills.append(frames[-1])
-for k in range(24):
-    h=C*0.6*(1-2*k/23); frames.append(render(60,32,(np.array([0.,-1.,0.]),h)))
-    if k==12: stills.append(frames[-1])
-for k in range(16):
-    t=math.pi/2*k/15; frames.append(render(60,28,(np.array([0.,-math.cos(t),math.sin(t)]),0.0)))
-    if k==8: stills.append(frames[-1])
-ims=[Image.fromarray(a) for a in frames]; ims[0].save(OUT,save_all=True,append_images=ims[1:],duration=90,loop=0)
+if os.environ.get("STILLS_ONLY")!="1":
+    for k in range(12): frames.append(render(30+k*7.5,22))
+    for k in range(24):
+        th=math.pi*k/24; frames.append(render(60,22,(np.array([-math.sin(th),0.,math.cos(th)]),0.0)))
+    for k in range(24):
+        h=C*0.6*(1-2*k/23); frames.append(render(60,32,(np.array([0.,-1.,0.]),h)))
+    for k in range(16):
+        t=math.pi/2*k/15; frames.append(render(60,28,(np.array([0.,-math.cos(t),math.sin(t)]),0.0)))
+    ims=[Image.fromarray(a) for a in frames]; ims[0].save(OUT,save_all=True,append_images=ims[1:],duration=90,loop=0)
 if len(sys.argv)>5:
-    s=Image.new("RGB",(RES*4,RES),"white"); s.paste(ims[0],(0,0)); [s.paste(Image.fromarray(a),((i+1)*RES,0)) for i,a in enumerate(stills)]; s.save(sys.argv[5])
+    stills=[render(30,22),render(60,22,FACE),render(60,32,(np.array([0.,-1.,0.]),C*0.6*(1-24/23))),
+            render(60,28,(np.array([0.,-math.cos(math.pi/2*8/15),math.sin(math.pi/2*8/15)]),0.0))]
+    s=Image.new("RGB",(RES*4,RES),"white"); [s.paste(Image.fromarray(a),(i*RES,0)) for i,a in enumerate(stills)]; s.save(sys.argv[5])
 print("wrote",OUT,len(frames),"frames")
