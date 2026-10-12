@@ -487,7 +487,7 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 <tr><td>generated trunks, same specimen (wood1, wood2, wood2k, wood3, wood4)</td><td>3-D reconstruction correctness on unseen and oblique planes</td><td>the full 3-D volume and its growth field</td><td>sections&nbsp;4.6, 4.8</td></tr>
 <tr><td>stress tests (wood3r, honeycomb, multilayer hose, rolled sheet, layer cake)</td><td>where the coordinate assumption holds and where it breaks</td><td>the full 3-D volume</td><td>section&nbsp;4.7</td></tr>
 <tr><td>cross-specimen generated trunk (wood2x)</td><td>distributional synthesis, the paper&#8217;s own setting</td><td>held-out specimens on the same planes</td><td>section&nbsp;4.9</td></tr>
-<tr><td>generated objects (log, banana, onion)</td><td>the capture path without a photographer; the curvilinear lattice on a natural curved object</td><td>held-out generated photographs</td><td>section&nbsp;4.10</td></tr>
+<tr><td>generated objects (log, banana, onion, and eleven of varied shape)</td><td>the capture path without a photographer; the curvilinear lattice on a natural curved object; one setting across shapes</td><td>held-out generated photographs</td><td>sections&nbsp;4.10, 4.12</td></tr>
 </tbody></table></div>
 
 <h3 id="gtbench">4.6&ensp;A benchmark with full 3-D truth</h3>
@@ -607,6 +607,38 @@ $$ \hat{x}_0 \;=\; w(r)\,\hat{x}_0^{L} \;+\; \big(1-w(r)\big)\,\hat{x}_0^{T},
 <h3>4.11&ensp;The carrier is a data term, and it is the paper&#8217;s</h3>
 
 <p>Two measurements on the orange bound what the carrier contributes. <em>Swapping it.</em> A deliberately weaker carrier &mdash; a single-level RGB grid fitted to the same planes with no latents, no decoder and no pose solve &mdash; scores 0.158 where the O-Voxel scores 0.113; lifted, it reaches 0.111&ndash;0.115 where the O-Voxel reaches 0.087. The lift improves both &mdash; by 0.026 from the O-Voxel and by 0.043&ndash;0.047 from the weaker carrier, more where the carrier leaves more to fix &mdash; so the product of experts does its work whatever carrier it is given; but the asset inherits the carrier&#8217;s layout, and the lifted weaker carrier (0.111) does not reach the lifted O-Voxel (0.087), which is why the O-Voxel stays. <em>Re-fitting it.</em> The released carrier re-scores at 0.1481 / 0.0769 / 0.1125, the paper&#8217;s numbers to the third decimal. Fitted again from the repository&#8217;s default configuration it scores 0.159 / 0.099 / 0.129, at 200 iterations and at 325 alike; the released model was most likely fitted to a different selection of longitudinal and transverse photographs than the default configuration names, and that selection is what Table&nbsp;1&#8217;s carrier row depends on. The priors retrained from the photographs reproduce the lift within 0.004 (0.089&ndash;0.091 over three runs, against 0.087).</p>
+
+<h3>4.12&ensp;Eleven generated objects, one setting</h3>
+
+<p>The path of section&nbsp;4.10 is run on eleven further objects chosen for their shape as much as their interior: rolls (a maki roll, a Swiss roll), layered and radial vegetables (a red cabbage, a carrot, a star fruit), a geode, a terrazzo block, a cheese wedge, a bagel, an ice-cream cone and a custard pudding. Every setting is the paper&#8217;s and is the same for all eleven: nine generated longitudinal and nine transverse cut faces per object, three of each family for training and three held out; the exterior lifted by TRELLIS.2 at one fixed seed; the carrier fitted by its first route at the default lattice (span/125, skin refined twice); the priors and the sampler of section&nbsp;3 at \(t_0=0.3\) and 100 steps. The coordinate system is declared per object from its organisation, as for the log: Cartesian for the terrazzo block and the cheese wedge, whose interiors have no axis, the cylinder for the rest; both lattices are run on every object.</p>
+
+<div class="tw"><p class="tnum">Table 13</p><table>
+<thead><tr><th>held-out DreamSim, mean of lengthwise and across</th><th>floor</th><th>carrier</th><th>cylinder</th><th>Cartesian</th></tr></thead>
+<tbody>
+<tr><td>maki roll</td><td>0.126</td><td>0.452</td><td>0.406&thinsp;*</td><td><strong>0.369</strong></td></tr>
+<tr><td>Swiss roll</td><td>0.085</td><td>0.228</td><td><strong>0.220</strong>&thinsp;*</td><td>0.251</td></tr>
+<tr><td>red cabbage</td><td>0.040</td><td>0.274</td><td><strong>0.227</strong>&thinsp;*</td><td>0.230</td></tr>
+<tr><td>carrot</td><td>0.102</td><td><strong>0.232</strong></td><td>0.260&thinsp;*</td><td>0.259</td></tr>
+<tr><td>terrazzo block</td><td>0.163</td><td>0.389</td><td>0.342</td><td><strong>0.338</strong>&thinsp;*</td></tr>
+<tr><td>geode</td><td>0.099</td><td>0.296</td><td><strong>0.286</strong>&thinsp;*</td><td>0.306</td></tr>
+<tr><td>star fruit</td><td>0.064</td><td>0.214</td><td><strong>0.212</strong>&thinsp;*</td><td>0.250</td></tr>
+<tr><td>ice-cream cone</td><td>0.252</td><td><strong>0.312</strong></td><td>0.347&thinsp;*</td><td>0.339</td></tr>
+<tr><td>cheese wedge</td><td>0.132</td><td>0.314</td><td>0.310</td><td><strong>0.306</strong>&thinsp;*</td></tr>
+<tr><td>bagel</td><td>0.068</td><td>0.334</td><td><strong>0.210</strong>&thinsp;*</td><td>0.224</td></tr>
+<tr><td>custard pudding</td><td>0.078</td><td>0.155</td><td><strong>0.140</strong>&thinsp;*</td><td>0.141</td></tr>
+<tr><td><em>mean of eleven</em></td><td>0.110</td><td>0.291</td><td>0.269</td><td>0.274</td></tr>
+</tbody></table></div>
+<p class="mut" style="margin-top:-14px">* the coordinate system declared for the object. Lower is better; the floor is generated photograph against generated photograph.</p>
+
+<p>The declared lattice improves on the carrier on nine of the eleven objects, and on the mean from 0.291 to 0.268. The largest gain is the bagel&#8217;s (0.334 to 0.210), whose crumb the carrier fitted as blotches; the cabbage&#8217;s leaves and the maki&#8217;s rice-and-filling layout follow (0.274 to 0.227, 0.452 to 0.406). On both Cartesian objects the Cartesian lattice is the better of the two lifts; it is also ahead on the maki, whose square filling is the one structure in it without an axis, and by less than 0.01 on the carrot and the ice-cream cone, where neither lift beats the carrier. The lift loses on two objects. On the carrot (0.232 to 0.260) the interior is nearly uniform, so there is little layout for the priors to add and their texture is scored as a difference. On the ice-cream cone (0.312 to 0.347) the floor itself is 0.252: its generated cross-sections are of wafer alone at some heights and of ice cream at others, so three training slices do not describe one transverse family. Every lift stays far from the floor, as in section&nbsp;4.10, and for the same reason: generated cut faces are not slices of any solid.</p>
+
+<figure style="margin:16px 0 18px">
+  <img src="assets/v01_ai11.jpg" loading="lazy" style="width:100%;max-width:920px;margin:0 auto;display:block;border-radius:4px" alt="eleven generated objects: exterior, lengthwise cut, cross-section and oblique cut">
+  <figcaption><span class="fnum">Figure 19</span><br><strong>Eleven objects, four planes each.</strong> For each object, the exterior, a lengthwise plane, a cross-section and an oblique plane, from the declared lattice. The exterior is drawn from the generated mesh itself, rasterised with its own texture, so its outline is smooth where the lattice&#8217;s skin is stepped; the cut face is the lifted volume, read wherever the plane lies inside the solid. The shapes are the generated exteriors&#8217;: the wedge, the torus, the frustum and the five-pointed section are not cylinders. Two cuts show less than they could: the ice-cream cone&#8217;s cross-section falls in the wafer below the scoop, and the cheese wedge&#8217;s lengthwise plane exposes only a narrow face.</figcaption>
+</figure>
+
+<div class="cutstrip"><img src="assets/v01_ai_maki.gif" loading="lazy" alt="maki roll"><img src="assets/v01_ai_swissroll.gif" loading="lazy" alt="Swiss roll"><img src="assets/v01_ai_cabbage.gif" loading="lazy" alt="red cabbage"><img src="assets/v01_ai_carrot.gif" loading="lazy" alt="carrot"><img src="assets/v01_ai_terrazzo.gif" loading="lazy" alt="terrazzo block"><img src="assets/v01_ai_geode.gif" loading="lazy" alt="geode"><img src="assets/v01_ai_starfruit.gif" loading="lazy" alt="star fruit"><img src="assets/v01_ai_icecreamcone.gif" loading="lazy" alt="ice-cream cone"><img src="assets/v01_ai_cheesewedge.gif" loading="lazy" alt="cheese wedge"><img src="assets/v01_ai_bagel.gif" loading="lazy" alt="bagel"><img src="assets/v01_ai_pudding.gif" loading="lazy" alt="custard pudding"></div>
+<p class="mut" style="margin-top:-14px"><span class="fnum">Figure 20</span>&ensp;The eleven assets turning, then cut by a lengthwise plane turning about the axis, a transverse plane sweeping and an oblique plane tilting, as in Figure&nbsp;1. Nothing is generated at cut time.</p>
 
 <h2 id="conclusion">5&ensp;Conclusion and limitations</h2>
 
