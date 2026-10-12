@@ -14,8 +14,9 @@ X=torch.load(sys.argv[3],map_location=dv)["X"].float()
 # UPAXIS=2: an object whose axis lies along the grid's third dimension (the cake, the doughnut) is turned upright,
 # by a rotation (d0, d1, d2) -> (d0, -d2, d1) of the grid, the interior and the mesh alike
 # (UPAXIS=-2: the other way up, (d0, d1, d2) -> (d0, d2, -d1), for an object whose top faces -d2)
-UPA=os.environ.get("UPAXIS","1"); UP=UPA in ("2","-2")
-rot=(lambda T: T.permute(0,1,3,2).flip(2)) if UPA=="2" else (lambda T: T.permute(0,1,3,2).flip(3))
+# (UPAXIS=-1: the same axis the other way up, a half turn about d0: (d0, d1, d2) -> (d0, -d1, -d2))
+UPA=os.environ.get("UPAXIS","1"); UP=UPA in ("2","-2","-1")
+rot={"2":lambda T: T.permute(0,1,3,2).flip(2),"-2":lambda T: T.permute(0,1,3,2).flip(3),"-1":lambda T: T.flip(2).flip(3)}.get(UPA)
 if UP:
     for k in ("V","OCC","CORE"): G[k]=rot(G[k])
     X=rot(X)
@@ -31,7 +32,7 @@ else:
     tex=np.asarray(m.visual.material.baseColorTexture.convert("RGB")).astype(np.float32)/255; TH,TW,_=tex.shape
     uv=m.visual.uv; vcol=tex[np.clip(((1-uv[:,1]%1)*(TH-1)).astype(int),0,TH-1),np.clip((uv[:,0]%1*(TW-1)).astype(int),0,TW-1)]
     mesh=trimesh.Trimesh(vertices=v,faces=m.faces[:,::-1],process=False)    # faces flipped back after the mirror
-if UP: v=np.stack([v[:,0],-v[:,2],v[:,1]],1) if UPA=="2" else np.stack([v[:,0],v[:,2],-v[:,1]],1); mesh=trimesh.Trimesh(vertices=v,faces=mesh.faces,process=False)
+if UP: v={"2":lambda v:np.stack([v[:,0],-v[:,2],v[:,1]],1),"-2":lambda v:np.stack([v[:,0],v[:,2],-v[:,1]],1),"-1":lambda v:np.stack([v[:,0],-v[:,1],-v[:,2]],1)}[UPA](v); mesh=trimesh.Trimesh(vertices=v,faces=mesh.faces,process=False)
 vnorm=mesh.vertex_normals
 import nvdiffrast.torch as dr
 CTX=dr.RasterizeCudaContext()

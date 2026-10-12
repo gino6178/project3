@@ -1,4 +1,5 @@
 // Render every \( \) and $$ $$ in an HTML file with KaTeX at build time, so the page and its printout need no script.
+// needs the katex package: npm install katex@0.16.9 (or NODE_PATH pointing at one)
 const fs=require('fs'), katex=require('katex'); const [src,dst]=process.argv.slice(2);
 let s=fs.readFileSync(src,'utf8'); let n=0, bad=0;
 const dec=t=>t.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/&#8217;/g,"'");
