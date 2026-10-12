@@ -11,20 +11,31 @@ from PIL import Image
 dv="cuda" if torch.cuda.is_available() else "cpu"
 G=torch.load(sys.argv[1],map_location=dv); N=G["N"]; C=(N-1)/2
 X=torch.load(sys.argv[3],map_location=dv)["X"].float()
+# UPAXIS=2: an object whose axis lies along the grid's third dimension (the cake, the doughnut) is turned upright,
+# by a rotation (d0, d1, d2) -> (d0, -d2, d1) of the grid, the interior and the mesh alike
+UP=os.environ.get("UPAXIS","1")=="2"
+rot=lambda T: T.permute(0,1,3,2).flip(2)
+if UP:
+    for k in ("V","OCC","CORE"): G[k]=rot(G[k])
+    X=rot(X)
 CORE=G["CORE"].float(); V=torch.where(CORE>0.5,F.interpolate(X[None],size=(N,N,N),mode="trilinear",align_corners=True)[0] if X.shape[-1]!=N else X,G["V"].float())
 RES=int(os.environ.get("RES","512")); OUT=sys.argv[4]
 # the mesh, placed in the grid's voxel frame exactly as glb2grid.py placed it (centre, mirror in y, scale)
-m=trimesh.util.concatenate([g for g in trimesh.load(sys.argv[2],force="scene").dump()])
-v=m.vertices.copy(); lo,hi=v.min(0),v.max(0); ctr=(lo+hi)/2; v-=ctr; v[:,1]*=-1
-rad=np.sqrt(v[:,0]**2+v[:,2]**2).max(); hh=(hi[1]-lo[1])/2; s=50.0*N/128/max(rad,hh); v*=s
-tex=np.asarray(m.visual.material.baseColorTexture.convert("RGB")).astype(np.float32)/255; TH,TW,_=tex.shape
-uv=m.visual.uv; vcol=tex[np.clip(((1-uv[:,1]%1)*(TH-1)).astype(int),0,TH-1),np.clip((uv[:,0]%1*(TW-1)).astype(int),0,TW-1)]
-mesh=trimesh.Trimesh(vertices=v,faces=m.faces[:,::-1],process=False)        # faces flipped back after the mirror
+if sys.argv[2].endswith(".npz"):     # a mesh already in the grid's voxel frame, vertex-coloured (grid_mesh.py: a photographed object)
+    d=np.load(sys.argv[2]); v=d["v"].astype(np.float64); vcol=d["c"]; mesh=trimesh.Trimesh(vertices=v,faces=d["f"],process=False)
+else:
+    m=trimesh.util.concatenate([g for g in trimesh.load(sys.argv[2],force="scene").dump()])
+    v=m.vertices.copy(); lo,hi=v.min(0),v.max(0); ctr=(lo+hi)/2; v-=ctr; v[:,1]*=-1
+    rad=np.sqrt(v[:,0]**2+v[:,2]**2).max(); hh=(hi[1]-lo[1])/2; s=50.0*N/128/max(rad,hh); v*=s
+    tex=np.asarray(m.visual.material.baseColorTexture.convert("RGB")).astype(np.float32)/255; TH,TW,_=tex.shape
+    uv=m.visual.uv; vcol=tex[np.clip(((1-uv[:,1]%1)*(TH-1)).astype(int),0,TH-1),np.clip((uv[:,0]%1*(TW-1)).astype(int),0,TW-1)]
+    mesh=trimesh.Trimesh(vertices=v,faces=m.faces[:,::-1],process=False)    # faces flipped back after the mirror
+if UP: v=np.stack([v[:,0],-v[:,2],v[:,1]],1); mesh=trimesh.Trimesh(vertices=v,faces=mesh.faces,process=False)
 vnorm=mesh.vertex_normals
 import nvdiffrast.torch as dr
 CTX=dr.RasterizeCudaContext()
 VT=torch.tensor(v,device=dv,dtype=torch.float32); FT=torch.tensor(np.ascontiguousarray(mesh.faces),device=dv,dtype=torch.int32)
-VC=torch.tensor(vcol,device=dv,dtype=torch.float32); VN=torch.tensor(np.asarray(vnorm),device=dv,dtype=torch.float32)
+VC=torch.tensor(np.ascontiguousarray(vcol),device=dv,dtype=torch.float32).contiguous(); VN=torch.tensor(np.ascontiguousarray(vnorm),device=dv,dtype=torch.float32).contiguous()
 FCEN=VT[FT.long()].mean(1)
 def samp(T,P):
     q=(P/C).flip(-1).reshape(1,1,1,-1,3)
